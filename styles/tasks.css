@@ -1,0 +1,196 @@
+/* Task, sidebar, and parallel specimens; dimensions follow the pinned native captures. */
+.app:has(.sidebar) .sidebar {
+  width: 272px;
+  min-width: 272px;
+  padding: 12px 14px 10px;
+}
+.sidebar > button.primary {
+  min-height: 38px;
+  text-align: left;
+  padding-left: 12px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.sidebar .search { position: relative; display: block; margin: 12px 0 8px; }
+.sidebar .search::before { content: ""; position: absolute; z-index: 1; left: 12px; top: 10px; width: 11px; height: 11px; border: 1.6px solid var(--secondaryText); border-radius: 50%; pointer-events: none; }
+.sidebar .search::after { content: ""; position: absolute; z-index: 1; left: 23px; top: 22px; width: 6px; height: 1.6px; background: var(--secondaryText); transform: rotate(45deg); transform-origin: left center; pointer-events: none; }
+.sidebar .search input {
+  height: 38px;
+  border: 0;
+  border-radius: 11px;
+  background: var(--neutralFill);
+  padding: 7px 12px 7px 34px;
+  font-size: 13px;
+}
+.task-filter { position: relative; margin: 0 0 10px auto; width: max-content; }
+.task-filter > summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 3px 7px;
+  border-radius: 6px;
+  color: var(--secondaryText);
+  font-size: 11px;
+}
+.task-filter > summary::-webkit-details-marker { display: none; }
+.task-filter[open] > summary, .task-filter > summary:hover { background: var(--selectedRow); }
+.task-filter-menu {
+  position: absolute;
+  z-index: 8;
+  top: calc(100% + 4px);
+  right: 0;
+  display: grid;
+  min-width: 132px;
+  padding: 5px;
+  border: 1px solid var(--hairline);
+  border-radius: 9px;
+  background: var(--cardFill);
+  box-shadow: 0 5px 16px #0002;
+}
+.task-filter-menu button { border: 0; background: transparent; text-align: left; font-size: 12px; }
+.sidebar .section-label { margin: 12px 5px 5px; text-transform: none; font-size: 11px; }
+.sidebar .task-row { padding: 8px 8px !important; margin: 0 0 2px; border-radius: 8px; }
+.sidebar .task-row.active { background: var(--selectedRow) !important; }
+.sidebar .task-row strong { font-size: 13px; line-height: 1.3; font-weight: 600; margin-bottom: 4px; }
+.sidebar .task-row small { display: flex; align-items: center; gap: 5px; font-size: 11px; }
+.backend-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  flex: 0 0 8px;
+  border-radius: 50%;
+  background: var(--codexFG);
+  vertical-align: middle;
+}
+.backend-dot.claude { background: var(--dotClaude); }
+.backend-dot.codex { background: var(--dotCodex); }
+.backend-dot.vibe { background: var(--dotVibe); }
+.backend-dot.opencode { background: var(--dotOpencode); }
+.backend-dot.antigravity { background: var(--dotAntigravity); }
+.sidebar-bottom { display: flex; align-items: center; justify-content: space-between; margin: auto -14px 0; padding: 10px 14px 2px; }
+.sidebar-bottom .caption { display: none; }
+.task-meta { gap: 7px; font-size: 13px; }
+.task-meta .backend-dot { margin-right: -2px; }
+.task-meta strong { color: var(--primaryText); font-weight: 500; }
+.heading { padding: 12px 24px 0; }
+.heading h2 { font-size: 22px; line-height: 1.25; margin-bottom: 7px; font-weight: 600; }
+.task-tabs {
+  width: max-content;
+  gap: 0;
+  margin: 16px 24px 0;
+  padding: 3px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--pillFill);
+}
+.task-tabs button { min-width: 74px; border: 0; border-radius: 9px; padding: 6px 12px; color: var(--secondaryText); background: transparent; font-size: 13px; }
+.task-tabs button.active { color: var(--primaryText); background: var(--selectedSegment); box-shadow: 0 1px 3px #0002; font-weight: 600; }
+.app:has(.task-tabs) .toolbar { min-height: 42px; padding: 6px 16px; border: 0; }
+.app:has(.task-tabs) .toolbar > .chip { display: none; }
+.app:has(.task-tabs) .toolbar button { background: transparent; border-color: transparent; }
+.app:has(.task-tabs) .toolbar button:hover { background: var(--selectedRow); }
+.app:has(.task-tabs) > .split > .content > .scroll { padding-top: 0; }
+.inspector[hidden] { display: none !important; }
+.inspector { width: 280px; min-width: 280px; padding: 18px; border-left: 1px solid var(--hairline); background: var(--sidebarBG); overflow: auto; }
+.task-detail-content { min-width: 0; }
+.columns { display: grid; grid-auto-columns: minmax(420px, 1fr); grid-auto-flow: column; overflow-x: auto; min-height: 0; flex: 1; gap: 0; }
+.lane { min-width: 420px; border: 0; border-radius: 0; border-top: 3px solid var(--runningFG); border-right: 1px solid var(--hairline); background: var(--windowBG); }
+.lane.completed { border-top-color: var(--doneGreen); }
+.lane.failed { border-top-color: var(--failedRed); }
+.lane-header { padding: 14px 16px 12px; }
+.lane-header h3 { font-size: 14px; margin: 8px 0 5px !important; }
+.lane .reading { padding: 12px 16px; }
+@media (max-width: 700px) {
+  .app:has(.sidebar) .sidebar { width: 240px; min-width: 240px; }
+  .heading { padding-left: 16px; padding-right: 16px; }
+  .task-tabs { margin-left: 16px; }
+}
+
+/* Source-backed sidebar hierarchy and status marks. */
+.sidebar > .new-session {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 36px;
+  padding: 2px 7px;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  font-size: 14px;
+  font-weight: 600;
+}
+.sidebar > .new-session:hover { background: var(--selectedRow); }
+.new-session svg { width: 15px; height: 15px; fill: none; stroke: var(--accentLink); stroke-width: 2; }
+.new-session kbd { margin-left: auto; padding: 0; border: 0; background: transparent; color: var(--tertiaryText); font: inherit; font-size: 11px; }
+.search-row { display: flex; align-items: center; gap: 6px; margin: 10px 0 13px; }
+.sidebar .search { flex: 1; min-width: 0; margin: 0; }
+.sidebar .task-filter { flex: 0 0 28px; width: 28px; margin: 0; }
+.task-filter > summary { width: 28px; height: 34px; padding: 5px; text-align: center; font-size: 19px; line-height: 22px; }
+.workflows-heading { display: flex; align-items: center; margin: 8px 0 5px 5px; color: var(--secondaryText); font-size: 11px; font-weight: 600; }
+.workflow-add { margin-left: auto; padding: 1px 5px !important; color: var(--secondaryText); font-size: 16px; }
+.workflow-row { display: block; width: 100%; min-height: 27px; padding: 4px 7px !important; border-color: transparent !important; border-radius: 7px !important; background: transparent !important; text-align: left; font-size: 12px; }
+.workflow-row:hover { background: var(--selectedRow) !important; }
+.sidebar .section-label { margin: 13px 5px 5px; font-weight: 600; }
+.task-tree { position: relative; }
+.task-children { position: relative; margin-left: 22px; padding-left: 12px; border-left: 1px solid var(--tertiaryText); }
+.task-children::before { position: absolute; left: -1px; top: 0; width: 11px; height: 13px; border-bottom: 1px solid var(--tertiaryText); content: ""; }
+.sidebar .task-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 5px 7px !important;
+  border-radius: 7px;
+}
+.sidebar .task-row.active { background: transparent !important; }
+.sidebar .task-row:hover { background: var(--selectedRow) !important; }
+.sidebar .task-row-copy { display: block; min-width: 0; flex: 1; }
+.sidebar .task-row strong { display: block; overflow: hidden; margin: 0 0 3px; font-size: 13px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.sidebar .task-row small { display: flex; align-items: center; gap: 5px; overflow: hidden; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.task-status { position: relative; display: inline-flex; width: 16px; height: 16px; flex: 0 0 16px; align-items: center; justify-content: center; border: 2px solid var(--runningFG); border-radius: 50%; color: transparent; }
+.task-status.completed { border: 0; background: var(--doneGreen); color: var(--onAccent); }
+.task-status.completed::before { content: "✓"; font-size: 10px; font-weight: 700; }
+.task-status.failed { border: 0; background: var(--failedRed); color: var(--onAccent); }
+.task-status.failed::before { content: "×"; font-size: 14px; line-height: 1; }
+.task-status.cancelled { border-color: var(--cancelledGray); background: var(--cancelledGray); }
+.task-status.paused { border-color: var(--warningFG); }
+.parallel-group { position: relative; margin: 2px 0 5px; padding-left: 31px !important; }
+.parallel-agents { position: absolute; left: 5px; top: 11px; display: flex; }
+.parallel-agents i { width: 12px; height: 12px; border: 2px solid var(--sidebarBG); border-radius: 50%; background: var(--dotClaude); }
+.parallel-agents i + i { margin-left: -4px; background: var(--dotCodex); }
+.parallel-group .task-row-copy { display: block; }
+.parallel-group strong { font-weight: 600 !important; }
+.mini-progress { position: absolute; left: 31px; right: 7px; bottom: 3px; height: 3px; overflow: hidden; border-radius: 3px; background: var(--neutralFill); }
+.mini-progress i { display: block; width: 50%; height: 100%; background: var(--accentLink); }
+.sidebar-bottom { min-height: 42px; margin: auto -14px 0; padding: 9px 16px 3px; border-top: 1px solid var(--hairline); }
+.sidebar-bottom .connection-status { display: inline-flex; align-items: center; gap: 7px; color: var(--secondaryText); font-size: 12px; }
+.connection-status i { width: 8px; height: 8px; border-radius: 50%; background: var(--doneGreen); }
+.sidebar-bottom .settings-gear { width: 28px; height: 28px; padding: 2px; border: 0; background: transparent; color: var(--secondaryText); font-size: 18px; line-height: 1; }
+/* The native task pane uses the window surface and the native title/body type scale. */
+.app:has(.task-tabs) .content,
+.app:has(.task-tabs) .scroll { background: var(--cardFill); }
+.app:has(.task-tabs) .heading h2 { font-size: 18px; line-height: 1.3; }
+.app:has(.task-tabs) .composer { background: var(--cardFill); }
+.activity-origin { display: grid; gap: 22px; margin: 10px 0 20px; padding-left: 2px; color: var(--secondaryText); font-size: 13px; }
+.activity-origin span:last-child { padding-left: 8px; }
+
+/* Parallel lane order follows ParallelColumnView: title/status, repo/backend, then actions. */
+.columns { background: var(--cardFill); }
+.lane { border: 0; border-right: 1px solid var(--hairline); border-radius: 0; background: var(--cardFill); }
+.lane-header { padding: 14px 16px 12px; background: var(--cardFill); }
+.lane-title-row { display: flex; align-items: center; gap: 8px; min-height: 24px; }
+.lane-title-row h3 { margin: 0 !important; font-size: 14px; line-height: 1.35; font-weight: 600; }
+.lane-title-row .chip { border-radius: 999px; padding: 4px 9px; font-size: 11px; font-weight: 600; }
+.lane-subtitle { display: flex; align-items: center; gap: 6px; margin: 5px 0 11px 24px; color: var(--secondaryText); font-size: 12px; }
+.lane-actions { display: flex; align-items: center; gap: 10px; }
+.lane-actions button { padding: 5px 9px; background: transparent; }
+.lane-actions button.link { border: 0; color: var(--accentLink); }
+.lane-actions button:hover { background: var(--neutralFill); }
+.lane .scroll, .lane .reading { background: var(--cardFill); }
+.lane .reading { max-width: none; padding: 12px 16px; }
+.lane .activity-origin { margin: 0 0 18px; }
+.lane .result { border: 1px solid var(--cardBorder); }
+
+.sidebar .parallel-group { display: grid; grid-template-columns: 18px minmax(0, 1fr); column-gap: 8px; text-align: left; }
+.sidebar .parallel-group strong, .sidebar .parallel-group small, .sidebar .parallel-group .mini-progress { grid-column: 2; }
+.sidebar .parallel-group .parallel-agents { grid-column: 1; grid-row: 1 / 3; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }

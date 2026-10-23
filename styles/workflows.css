@@ -1,0 +1,411 @@
+/* Workflow specimens follow the native workflow panes while remaining editable HTML.
+   Symbol masks are AppKit exports of the SF Symbols named by WorkflowCanvasNode.swift. */
+.workflow-specimen > .titlebar { display: none; }
+.workflow-specimen {
+  border-radius: 0;
+  box-shadow: none;
+  min-height: 740px;
+  height: 740px;
+  background: var(--windowBG);
+}
+.workflow-specimen .wf-toolbar {
+  display: flex;
+  min-height: 64px;
+  height: 64px;
+  flex: 0 0 64px;
+  align-items: center;
+  padding: 0 16px;
+  gap: 8px;
+  border-bottom: 1px solid var(--hairline);
+  background: var(--windowBG);
+}
+.workflow-specimen .wf-title {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  white-space: nowrap;
+}
+.workflow-specimen .wf-title > strong { font-size: 18px; font-weight: 600; }
+.workflow-specimen .wf-title > span { color: var(--secondaryText); font-size: 13px; }
+.workflow-specimen .wf-toolbar button { border-radius: 20px; padding: 7px 13px; white-space: nowrap; }
+.workflow-specimen .wf-toolbar .wf-action-icon {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  margin-right: 5px;
+  vertical-align: -2px;
+  background: currentColor;
+  mask-position: center;
+  mask-repeat: no-repeat;
+  mask-size: contain;
+}
+.workflow-specimen .wf-tinted {
+  border: 0;
+  border-radius: 22px;
+  padding: 9px 16px;
+  color: var(--accentLink);
+  background: var(--selectedRow);
+}
+.workflow-specimen .wf-capsule { border-radius: 18px; }
+.workflow-specimen .wf-run-button {
+  border: 0;
+  border-radius: 22px;
+  padding-inline: 17px;
+  color: var(--onAccent);
+  background: var(--accentFill);
+}
+.workflow-specimen .wf-menu { position: relative; }
+.workflow-specimen .wf-menu summary {
+  padding: 6px 10px;
+  color: var(--secondaryText);
+  cursor: pointer;
+  list-style: none;
+}
+.workflow-specimen .wf-menu[open] { z-index: 9; }
+.workflow-specimen .wf-menu button { display: block; width: 180px; text-align: left; }
+.workflow-specimen .wf-menu[open] > button {
+  position: absolute;
+  top: 30px;
+  right: 0;
+  z-index: 10;
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  background: var(--cardFill);
+  box-shadow: 0 5px 14px #0002;
+}
+.workflow-specimen .wf-menu[open] > button + button { top: 68px; }
+
+.wf-editor-layout, .wf-run-layout { display: flex; flex: 1; min-height: 0; }
+.wf-editor-main, .wf-run-main { display: flex; flex: 1; min-width: 400px; min-height: 0; flex-direction: column; }
+.wf-standalone {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-height: 132px;
+  padding: 12px 16px 12px 12px;
+  border-bottom: 1px solid var(--hairline);
+  background: var(--inspectorFill);
+}
+.wf-standalone-label { display: flex; min-width: 120px; flex-direction: column; gap: 4px; }
+.wf-standalone-label strong { font-weight: 600; }
+.wf-standalone-label span { color: var(--tertiaryText); }
+.wf-standalone-items { display: flex; align-items: center; gap: 16px; overflow-x: auto; padding: 4px; }
+.wf-standalone-card {
+  position: relative;
+  display: grid;
+  width: 200px;
+  height: 92px;
+  grid-template-columns: 32px auto 12px;
+  grid-template-rows: 28px 20px 20px;
+  align-items: center;
+  gap: 0 8px;
+  padding: 10px !important;
+  border: 1px solid var(--cardBorder) !important;
+  border-radius: 12px !important;
+  text-align: left;
+  box-shadow: 0 2px 5px #0001;
+}
+.wf-standalone-card strong { grid-column: 2; font-size: 14px; }
+.wf-orchestrator-icon {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  grid-row: 1;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--accentFill);
+}
+.wf-lock { width: 12px; height: 12px; grid-column: 3; opacity: .65; }
+.wf-standalone-card small { grid-column: 1 / 3; display: flex; align-items: center; gap: 6px; font-size: 12px; }
+.wf-subtitle { grid-column: 1 / 4; color: var(--secondaryText); font-size: 12px; }
+.wf-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  flex: 0 0 8px;
+  border-radius: 50%;
+  background: var(--dotOther);
+}
+.wf-dot.codex { background: var(--dotCodex); }
+.wf-dot.claude { background: var(--dotClaude); }
+.wf-dot.vibe { background: var(--dotVibe); }
+.wf-dot.opencode { background: var(--dotOpencode); }
+.wf-dot.antigravity { background: var(--dotAntigravity); }
+.workflow-specimen .wf-add-tile {
+  display: grid;
+  width: 92px;
+  height: 92px;
+  min-width: 92px;
+  place-items: center;
+  border: 1px dashed var(--accentLink) !important;
+  border-radius: 12px !important;
+  color: var(--secondaryText);
+  background: transparent;
+}
+
+.wf-canvas {
+  position: relative;
+  flex: 1;
+  min-height: 350px;
+  overflow: auto;
+  background-color: var(--windowBG);
+  background-image: radial-gradient(var(--tertiaryText) .65px, transparent .65px);
+  background-size: 20px 20px;
+}
+.wf-graph-inner { position: relative; width: 1050px; height: 190px; transform-origin: top left; }
+.wf-graph-row { position: absolute; top: 99px; left: 40px; width: 972px; height: 92px; }
+.wf-graph-row .node {
+  top: 0;
+  display: flex;
+  height: 92px;
+  min-height: 92px;
+  flex-direction: column;
+  justify-content: center;
+  gap: 7px;
+  border: 1px solid var(--cardBorder);
+  border-radius: 12px;
+  padding: 10px 12px !important;
+  box-shadow: 0 2px 5px #0001;
+}
+.wf-graph-row .node strong { font-size: 14px; font-weight: 600; }
+.wf-graph-row .node small { margin-top: 0; color: var(--secondaryText); }
+.wf-graph-row .node .wf-node-icon { display: none; }
+.wf-graph-row .node:not(.wf-terminal) .wf-node-icon { display: grid; position: absolute; top: 15px; left: 12px; width: 24px; height: 24px; place-items: center; border-radius: 6px; background: var(--neutralFill); }
+.wf-graph-row .node:not(.wf-terminal) strong { padding-left: 34px; }
+.wf-graph-row .node:not(.wf-terminal) .wf-backend { display: flex; align-items: center; gap: 6px; color: var(--secondaryText); font-size: 12px; }
+.wf-graph-row .node.wf-terminal {
+  width: 72px;
+  height: 72px;
+  min-height: 72px;
+  top: 10px;
+  align-items: center;
+  border-radius: 50%;
+  padding: 8px !important;
+  text-align: center;
+}
+.wf-graph-row .node.wf-terminal .wf-node-icon { display: grid; width: 20px; height: 20px; place-items: center; }
+.wf-graph-row .node.wf-terminal strong { font-size: 13px; }
+.wf-graph-row .node:before, .wf-graph-row .node:after { top: calc(50% - 5px); bottom: auto; width: 8px; height: 8px; }
+.wf-graph-row .node:before { left: -5px; }
+.wf-graph-row .node:after { right: -5px; left: auto; }
+.wf-graph-row .node:first-child:before, .wf-graph-row .node:last-child:after { display: none; }
+.wf-connectors { position: absolute; top: 99px; left: 40px; width: 1050px; height: 160px; overflow: visible; pointer-events: none; }
+.wf-connectors path { fill: none; stroke: var(--tertiaryText); stroke-width: 1.5; }
+.wf-add-palette {
+  position: absolute;
+  right: 16px;
+  bottom: 12px;
+  left: 16px;
+  display: flex;
+  min-width: max-content;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 12px;
+  background: var(--windowBG);
+}
+.wf-add-palette > span:first-child { margin-right: 2px; color: var(--secondaryText); font-weight: 600; }
+.workflow-specimen .wf-add-palette button { border: 0; border-radius: 16px; background: var(--cardFill); white-space: nowrap; }
+.workflow-specimen .wf-add-palette button:disabled { color: var(--tertiaryText); }
+.wf-palette-divider { height: 24px; margin: 0 6px; border-left: 1px solid var(--hairline); }
+.wf-graph-controls {
+  position: absolute;
+  right: 16px;
+  bottom: 62px;
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--hairline);
+  border-radius: 20px;
+  background: var(--cardFill);
+}
+.workflow-specimen .wf-graph-controls button { min-width: 38px; border: 0; border-radius: 18px; }
+
+.wf-inspector, .wf-run-sidebar {
+  width: 288px;
+  min-width: 288px;
+  flex: 0 0 288px;
+  overflow: auto;
+  border-left: 1px solid var(--hairline);
+  background: var(--inspectorFill);
+}
+.wf-inspector { padding: 16px; }
+.wf-inspector h2 { margin: 0 0 16px; font-size: 18px; }
+.wf-inspector h3 { margin: 18px 0 8px; font-size: 13px; }
+.wf-help { color: var(--secondaryText); font-size: 12px; line-height: 1.45; }
+.wf-form-group { overflow: hidden; border-radius: 12px; background: var(--neutralFill); }
+.wf-form-row { display: flex; min-height: 36px; align-items: center; justify-content: space-between; gap: 12px; padding: 5px 12px; border-bottom: 1px solid var(--hairline); }
+.wf-form-row:last-child { border-bottom: 0; }
+.wf-value { min-width: 92px; padding: 5px 10px; border-radius: 8px; background: var(--cardFill); text-align: right; }
+.wf-value .wf-dot { margin-right: 5px; vertical-align: 1px; }
+.wf-check { display: flex; align-items: flex-start; gap: 8px; margin: 12px 0; line-height: 1.35; }
+.wf-check input { width: auto !important; margin: 1px 0 0; accent-color: var(--accentFill); }
+.wf-disclosure { margin: 14px 0; }
+.wf-disclosure summary { cursor: pointer; }
+.wf-instructions { width: 100%; height: 100px; resize: vertical; border: 1px solid var(--cardBorder) !important; border-radius: 10px !important; background: var(--cardFill) !important; }
+.wf-form-row select, .wf-form-row input[type="number"] {
+  width: auto;
+  min-width: 94px;
+  max-width: 150px;
+  padding: 5px 10px;
+  border-color: transparent;
+  background: var(--cardFill);
+  text-align: right;
+}
+.wf-form-row input[type="number"] { width: 80px; min-width: 80px; }
+.wf-inspector .form-field { margin: 12px 0; }
+.wf-editor-loading { flex: 1; padding: 20px; }
+
+.wf-run-layout { min-height: 0; }
+.wf-run-main { position: relative; }
+.wf-run-main .wf-standalone { min-height: 110px; }
+.wf-run-main .wf-graph-inner { width: 1050px; }
+.wf-run-sidebar { width: 420px; min-width: 420px; flex-basis: 420px; background: var(--windowBG); }
+.wf-run-sidebar > .wf-plan { padding: 18px 20px; }
+.wf-run-toolbar { min-height: 56px !important; height: 56px !important; flex-basis: 56px !important; gap: 6px; }
+.wf-run-toolbar .wf-title { flex-direction: row; align-items: center; gap: 14px; }
+.workflow-specimen .wf-recovery-badge { border: 0; cursor: pointer; }
+.wf-view-label { margin-right: 4px; color: var(--secondaryText); }
+.workflow-specimen .wf-run-toolbar button.selected { border-color: var(--hairline); color: var(--primaryText); background: var(--neutralFill); }
+.workflow-specimen .wf-cancel { border: 0; border-radius: 22px; color: var(--failedRed); background: var(--dangerBG); }
+.wf-progress { height: 4px; margin: 12px 0; border-radius: 4px; background: var(--neutralFill); }
+.wf-progress span { display: block; width: 40%; height: 100%; border-radius: inherit; background: var(--doneGreen); }
+.wf-plan h2 { margin: 0 0 8px; font-size: 16px; }
+.wf-plan ol { padding: 0; list-style: none; }
+.wf-plan li { display: grid; min-height: 46px; grid-template-columns: 18px 1fr auto; align-items: center; gap: 8px; border-bottom: 1px solid var(--hairline); }
+.wf-plan li small { color: var(--secondaryText); }
+.wf-selected > header { display: flex; height: 50px; align-items: center; justify-content: space-between; padding: 0 14px; border-bottom: 1px solid var(--hairline); }
+.wf-selected > header strong { font-size: 14px; }
+.wf-selected .reading { max-width: none; padding: 16px; }
+.wf-recovery {
+  margin: 12px;
+  padding: 12px;
+  border: 1px solid var(--warningFG);
+  border-radius: 14px;
+  background: var(--warningBG);
+}
+.wf-recovery-head { display: flex; align-items: center; justify-content: space-between; font-size: 14px; }
+.wf-recovery-head button { border: 0; background: transparent; font-size: 22px; }
+.wf-recovery-message { margin: 8px 0; color: var(--warningFG); font-weight: 600; }
+.wf-recovery > label { display: block; margin: 10px 0; }
+.wf-recovery textarea { display: block; width: 100%; height: 48px; margin-top: 6px; border: 1px solid var(--cardBorder); background: var(--cardFill); }
+.wf-recovery-controls { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.wf-recovery-controls label { white-space: nowrap; }
+.wf-recovery-controls input { width: 54px !important; }
+.wf-recovery-controls button { border: 0; border-radius: 22px; padding: 8px 16px; color: var(--onAccent); background: var(--accentFill); }
+.wf-recovery-controls button:disabled { opacity: .5; }
+.wf-summary { position: relative; flex: 0 0 36px; border-top: 1px solid var(--hairline); background: var(--cardFill); }
+.wf-summary-head { display: flex; height: 36px; align-items: center; gap: 10px; padding: 0 12px; }
+.wf-summary-head button:first-child { border: 0; background: transparent; font-weight: 600; }
+.wf-summary-details:not([hidden]) { position: absolute; right: 0; bottom: 36px; left: 0; z-index: 6; min-height: 120px; padding: 18px 24px; border-top: 1px solid var(--hairline); background: var(--cardFill); box-shadow: 0 -5px 18px #0002; }
+
+@media (max-width: 1100px) {
+  .wf-inspector { width: 288px; min-width: 288px; flex-basis: 288px; }
+  .wf-run-sidebar { width: 420px; min-width: 420px; flex-basis: 420px; }
+}
+
+html[data-theme="dark"] .wf-lock { filter: invert(1); }
+
+/* Geometry and control metrics from the native workflow captures at 1200 × 740 pt. */
+.workflow-specimen .wf-symbol {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+  background: currentColor;
+  mask: var(--wf-symbol) center / contain no-repeat;
+  vertical-align: middle;
+}
+.workflow-specimen .wf-toolbar .wf-action-icon { width: 18px; height: 18px; flex-basis: 18px; margin-right: 4px; }
+.workflow-specimen .wf-toolbar button { font-size: 13px; padding: 4px 10px; }
+.workflow-specimen .wf-toolbar .wf-tinted { font-weight: 600; padding: 8px 12px; }
+.workflow-specimen .wf-toolbar .wf-run-button { font-weight: 600; padding: 8px 16px; }
+.workflow-specimen .wf-toolbar .wf-capsule { border-radius: 8px; background: transparent; padding: 4px 10px; }
+.workflow-specimen .wf-menu summary { padding: 4px 0; }
+.workflow-specimen .wf-standalone { flex: 0 0 132px; height: 132px; min-height: 132px; padding: 12px; }
+.workflow-specimen .wf-standalone-label { min-width: 138px; width: 138px; font-size: 12px; }
+.workflow-specimen .wf-standalone-label span { font-size: 12px; white-space: nowrap; }
+.workflow-specimen .wf-standalone-items { padding: 8px; gap: 16px; }
+.workflow-specimen .wf-standalone-card { flex: 0 0 200px; grid-template-columns: 24px max-content 12px; grid-template-rows: 24px 16px 16px; row-gap: 4px; padding: 12px !important; }
+.workflow-specimen .wf-orchestrator-icon { width: 24px; height: 24px; border-radius: 7px; background: var(--accentLink); color: white; }
+.workflow-specimen .wf-orchestrator-icon .wf-symbol { width: 22px; height: 22px; }
+.workflow-specimen .wf-standalone-card strong { font-size: 14px; }
+.workflow-specimen .wf-standalone-card small { font-size: 12px; }
+.workflow-specimen .wf-add-tile .wf-symbol { width: 28px; height: 28px; }
+.workflow-specimen .wf-canvas { background-color: var(--inspectorFill); background-image: radial-gradient(circle, var(--hairline) .85px, transparent .9px); background-position: -10px -10px; }
+.workflow-specimen .wf-graph-row .node:not(.wf-terminal) { justify-content: flex-start; padding-top: 18px !important; gap: 8px; }
+.workflow-specimen .wf-graph-row .node:not(.wf-terminal) strong { line-height: 24px; padding-left: 32px; }
+.workflow-specimen .wf-graph-row .node:not(.wf-terminal) .wf-node-icon { top: 18px; border-radius: 7px; }
+.workflow-specimen .wf-node-icon .wf-symbol { width: 22px; height: 22px; color: var(--secondaryText); }
+.workflow-specimen .wf-terminal .wf-node-icon .wf-symbol { width: 20px; height: 20px; }
+.workflow-specimen .wf-terminal:first-child .wf-symbol { color: var(--doneGreen); }
+.workflow-specimen .wf-connectors path { stroke: var(--tertiaryText); }
+.workflow-specimen .wf-connectors marker path { fill: none; }
+.workflow-specimen .wf-add-palette { bottom: 42px; left: 20px; right: 20px; padding: 4px 8px; gap: 8px; border-radius: 0; background: var(--inspectorFill); }
+.workflow-specimen .wf-add-palette button { display: flex; align-items: center; gap: 4px; border-radius: 8px; padding: 4px 8px; font-size: 12px; }
+.workflow-specimen .wf-add-palette .wf-symbol { width: 18px; height: 18px; flex-basis: 18px; }
+.workflow-specimen .wf-graph-controls { bottom: 98px; padding: 0; border: 0; border-radius: 0; background: transparent; }
+.workflow-specimen .wf-graph-controls button { min-width: 34px; padding: 5px 8px; border: 1px solid var(--hairline); border-radius: 8px; background: var(--neutralFill); font-size: 12px; }
+.workflow-specimen .wf-graph-controls button:nth-child(2) { width: 64px; }
+.workflow-specimen .wf-inspector { background: var(--cardFill); display: flex; flex-direction: column; gap: 16px; }
+.workflow-specimen .wf-inspector h2 { margin: 0; font-size: 18px; line-height: 22px; }
+.workflow-specimen .wf-inspector h3 { margin: 0; color: var(--tertiaryText); font-size: 11px; line-height: 13px; }
+.workflow-specimen .wf-inspector .wf-help { margin: 0; font-size: 12px; line-height: 14px; }
+.workflow-specimen .wf-inspector > .wf-help:first-of-type { white-space: nowrap; }
+.workflow-specimen .wf-inspector .wf-form-group { flex: 0 0 auto; border-radius: 10px; }
+.workflow-specimen .wf-form-row { min-height: 36px; padding: 3px 12px; gap: 8px; font-size: 13px; }
+.workflow-specimen .wf-form-row select { height: 28px; min-width: 90px; max-width: 180px; padding: 3px 8px; font-size: 13px; }
+.workflow-specimen .wf-form-row:nth-child(2) select { flex: 1; }
+.workflow-specimen .wf-form-row input[type="number"] { min-width: 48px; width: 48px; padding: 3px 0; border: 0; background: transparent; font-size: 13px; }
+.workflow-specimen .wf-check { margin: -4px 0 0; font-size: 13px; line-height: 16px; color: var(--tertiaryText); }
+.workflow-specimen .wf-check:has(input:disabled) { opacity: .5; }
+.workflow-specimen .wf-disclosure { margin: 0; font-size: 13px; }
+.workflow-specimen .wf-instructions { flex: 0 0 100px; border-radius: 8px !important; }
+.workflow-specimen .wf-run-main .wf-standalone { flex-basis: 132px; }
+.workflow-specimen .wf-run-main .wf-graph-controls { bottom: 16px; }
+.workflow-specimen .wf-run-main .node { border-style: dashed; }
+.workflow-specimen .wf-run-sidebar { background: var(--cardFill); }
+.workflow-specimen .wf-view-picker { display: flex; padding: 0; border-radius: 6px; background: var(--neutralFill); overflow: hidden; }
+.workflow-specimen .wf-view-picker button { border: 0; border-radius: 6px; padding: 4px 14px; background: transparent; }
+.workflow-specimen .wf-view-picker button.selected { background: var(--selectedSegment); box-shadow: 0 1px 4px #0002; }
+.workflow-specimen .wf-recovery-badge { display: flex; align-items: center; gap: 4px; font-weight: 600; }
+.workflow-specimen .wf-cancel { font-weight: 600; padding: 8px 14px !important; margin-left: 8px; }
+.workflow-specimen .wf-recovery { margin: 12px 8px; padding: 14px; border-color: color-mix(in srgb, var(--warningFG) 30%, transparent); }
+.workflow-specimen .wf-recovery-head { font-size: 12px; color: var(--secondaryText); }
+.workflow-specimen .wf-recovery-head button { font-size: 18px; padding: 0 4px; }
+.workflow-specimen .wf-recovery-message { display: flex; align-items: flex-start; gap: 8px; margin: 8px 0; font-size: 12px; line-height: 16px; }
+.workflow-specimen .wf-recovery-message .wf-symbol { width: 18px; height: 18px; flex-basis: 18px; }
+.workflow-specimen .wf-recovery > label { margin: 8px 0; font-size: 12px; color: var(--secondaryText); }
+.workflow-specimen .wf-recovery textarea { min-height: 56px; height: 56px; margin-top: 8px; border-radius: 8px; }
+.workflow-specimen .wf-recovery-controls { justify-content: flex-start; flex-wrap: wrap; gap: 8px; }
+.workflow-specimen .wf-recovery-controls input { padding: 3px 0; border: 0; background: transparent; width: 38px !important; }
+.workflow-specimen .wf-recovery-controls .wf-secondary-control { color: var(--primaryText); background: var(--cardFill); border: 1px solid var(--hairline); border-radius: 8px; }
+.workflow-specimen .wf-summary { background: var(--cardFill); }
+.workflow-specimen .wf-plan summary { cursor: pointer; font-size: 12px; color: var(--secondaryText); }
+.workflow-specimen .wf-plan summary strong { font-weight: 600; }
+.workflow-specimen .wf-plan .wf-progress { margin: 8px 0; }
+.workflow-specimen .wf-plan li { grid-template-columns: 16px 1fr; align-items: start; min-height: 0; border: 0; padding: 6px 0; }
+.workflow-specimen .wf-plan li strong { font-size: 13px; font-weight: 500; }
+.workflow-specimen .wf-plan li .wf-help { margin: 2px 0; font-size: 11px; line-height: 14px; color: var(--tertiaryText); }
+.workflow-specimen .wf-plan-done, .workflow-specimen .wf-plan-pending { width: 18px; height: 18px; flex-basis: 18px; }
+.workflow-specimen .wf-plan-done { color: var(--doneGreen); }
+.workflow-specimen .wf-plan-pending { color: var(--secondaryText); }
+.workflow-specimen .wf-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+.workflow-specimen .wf-inspector { scrollbar-width: none; }
+.workflow-specimen .wf-instructions { resize: none; }
+.workflow-specimen .wf-form-row input[type="number"]::-webkit-inner-spin-button { opacity: 1; }
+.workflow-specimen .wf-form-row select:disabled { color: var(--secondaryText); opacity: .65; }
+.workflow-specimen .wf-form-group:last-of-type .wf-form-row:nth-child(3) { flex-wrap: wrap; }
+.workflow-specimen .wf-form-group:last-of-type .wf-form-row:nth-child(3) > span { flex-basis: 100%; }
+.workflow-specimen .wf-form-group:last-of-type .wf-form-row:nth-child(3) input { margin-left: auto; }
+.workflow-specimen .wf-add-palette { bottom: 30px; }
+.workflow-specimen .wf-graph-controls { bottom: 82px; }
+.workflow-specimen .wf-run-main .wf-graph-controls { bottom: 16px; }
+.workflow-specimen .wf-validation-status { position: absolute; bottom: 12px; left: 28px; font-size: 11px; color: var(--secondaryText); }
+.workflow-specimen .wf-canvas { scrollbar-width: none; }
+.workflow-specimen .wf-canvas::-webkit-scrollbar, .workflow-specimen .wf-inspector::-webkit-scrollbar { display: none; }
+.workflow-specimen .wf-run-main .wf-graph-row .node { border-style: dashed; }
+.workflow-specimen .wf-recovery-controls input::-webkit-inner-spin-button { opacity: 1; }
+.workflow-specimen .wf-run-main .wf-graph-row .node:not(.wf-terminal) { padding-top: 12px !important; }
+.workflow-specimen .wf-run-main .wf-graph-row .node:not(.wf-terminal) .wf-node-icon { top: 12px; }
+.workflow-specimen .wf-recovery textarea { resize: none; }

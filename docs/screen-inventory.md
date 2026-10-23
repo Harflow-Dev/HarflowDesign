@@ -1,0 +1,71 @@
+# Screen inventory and fidelity
+
+Baseline: HarflowMac [`7fbed912`](https://github.com/Harflow-Dev/HarflowMac/tree/7fbed912b61094f2ee427a7d9be76a026767a61e). All specimens are source-derived, editable HTML approximations; none is approved or full-screen pixel-verified. The following state selectors are actual catalog routes, not claims that every native runtime combination has been exercised.
+
+| Family | Editable states | Pinned source | Fidelity |
+|---|---|---|---|
+| Foundations | `default`, `components`, `native-reference` | [Swift source](https://github.com/Harflow-Dev/HarflowMac/blob/7fbed912b61094f2ee427a7d9be76a026767a61e/macos/HfFoundation/HfUI/Sources/HfUI/Style/Palette.swift) | Native foundation reference available |
+| Sessions & sidebar | `populated`, `loading`, `empty`, `no-results`, `backend-empty`, `list-error`, `install-retry`, `degraded-catalog`, `older-history-error` | [Swift source](https://github.com/Harflow-Dev/HarflowMac/blob/7fbed912b61094f2ee427a7d9be76a026767a61e/macos/HfFeatures/MainWindowFeature/Sources/MainWindowFeature/Coordinator/MainWindowNavigationView.swift) | Native sidebar fixture compared; host materials approximated |
+| Task activity | `running`, `completed`, `failed`, `timed-out`, `cancelled`, `taken-over`, `spawned`, `missing`, `deferred`, `no-live`, `no-session` | [Swift source](https://github.com/Harflow-Dev/HarflowMac/blob/7fbed912b61094f2ee427a7d9be76a026767a61e/macos/HfFeatures/MainWindowFeature/Sources/MainWindowFeature/TaskDetail/TaskDetailView.swift) | Native task-content fixture compared; host toolbar approximated |
+| Task summary | `completed`, `loading`, `empty`, `paged`, `error`, `unsupported`, `metadata-only` | [Swift source](https://github.com/Harflow-Dev/HarflowMac/blob/7fbed912b61094f2ee427a7d9be76a026767a61e/macos/HfFeatures/MainWindowFeature/Sources/MainWindowFeature/TaskDetail/TaskDetailView.swift) | Source-derived; native screen comparison pending |
+| Approval requests | `monitor-pending`, `inspected`, `submitting`, `caller-owned`, `history`, `approved`, `denied`, `expired`, `error`, `pagination` | [Swift source](https://github.com/Harflow-Dev/HarflowMac/blob/7fbed912b61094f2ee427a7d9be76a026767a61e/macos/HfFeatures/MainWindowFeature/Sources/MainWindowFeature/TaskDetail/TaskDetailView.swift) | Source-derived; native screen comparison pending |
+| Raw events | `populated`, `empty`, `unknown-event` | [Swift source](https://github.com/Harflow-Dev/HarflowMac/blob/7fbed912b61094f2ee427a7d9be76a026767a61e/macos/HfFeatures/MainWindowFeature/Sources/MainWindowFeature/TaskDetail/Component/RawEventsSheetView.swift) | Source-derived; native screen comparison pending |
+| Parallel group | `mixed`, `empty`, `deferred` | [Swift source](https://github.com/Harflow-Dev/HarflowMac/blob/7fbed912b61094f2ee427a7d9be76a026767a61e/macos/HfFeatures/MainWindowFeature/Sources/MainWindowFeature/Parallel/ParallelView.swift) | Native parallel fixture compared |
+| Workflow editor | `saved`, `dirty`, `empty`, `validation`, `conflict`, `read-error`, `loading`, `node`, `connection`, `branch`, `child-reference`, `missing-reference`, `orchestrator`, `on-demand`, `builder-conversation`, `proposal-ready` | [Swift source](https://github.com/Harflow-Dev/HarflowMac/blob/7fbed912b61094f2ee427a7d9be76a026767a61e/macos/HfFeatures/MainWindowFeature/Sources/MainWindowFeature/Workflow/WorkflowView.swift) | Native saved/orchestrator fixture compared |
+| Workflow run | `running`, `selected-node`, `attempts`, `parallel`, `on-demand-not-called`, `on-demand-calls`, `child-session`, `child-workflow`, `missing-task`, `attention`, `settling`, `paused`, `completed`, `cancelled`, `error`, `loading`, `parent-owned` | [Swift source](https://github.com/Harflow-Dev/HarflowMac/blob/7fbed912b61094f2ee427a7d9be76a026767a61e/macos/HfFeatures/MainWindowFeature/Sources/MainWindowFeature/Workflow/WorkflowRunPanes.swift) | Native attention fixture compared |
+| New session | `default`, `loading`, `unavailable`, `missing-cli`, `validation`, `start-failed`, `busy` | [Swift source](https://github.com/Harflow-Dev/HarflowMac/blob/7fbed912b61094f2ee427a7d9be76a026767a61e/macos/HfFeatures/MainWindowFeature/Sources/MainWindowFeature/NewSession/NewSessionView.swift) | Native default fixture compared |
+| Workflow launch | `library`, `empty`, `read-error`, `launch`, `generate`, `propose`, `validation`, `busy` | [Swift source](https://github.com/Harflow-Dev/HarflowMac/blob/7fbed912b61094f2ee427a7d9be76a026767a61e/macos/HfFeatures/MainWindowFeature/Sources/MainWindowFeature/Workflow/WorkflowRunnerView.swift) | Source-derived; native screen comparison pending |
+| Settings | `general`, `runtime-retry`, `harnesses`, `outdated`, `unknown`, `error`, `loading`, `working`, `remove-confirmation` | [Swift source](https://github.com/Harflow-Dev/HarflowMac/blob/7fbed912b61094f2ee427a7d9be76a026767a61e/macos/HfFeatures/SettingsFeature/Sources/SettingsFeature/General/GeneralSettingsView.swift) | Native General/Harnesses fixtures compared; host controls approximated |
+| MCP permissions | `default`, `loading`, `working`, `error`, `unsupported` | [Swift source](https://github.com/Harflow-Dev/HarflowMac/blob/7fbed912b61094f2ee427a7d9be76a026767a61e/macos/HfFeatures/SettingsFeature/Sources/SettingsFeature/Harnesses/MCPAllowlistView.swift) | Source-derived; native screen comparison pending |
+| Menu bar | `populated`, `loading`, `empty`, `attention`, `disconnected`, `install-banner` | [Swift source](https://github.com/Harflow-Dev/HarflowMac/blob/7fbed912b61094f2ee427a7d9be76a026767a61e/macos/HfFeatures/MenuBarFeature/Sources/MenuBarFeature/MenuBar/MenuBarView.swift) | Native populated fixture compared; materials approximated |
+
+## Source-specific evidence
+
+- Foundations: `HfFoundation/HfUI/Sources/HfUI/Style/{Palette,Style,HfRadius,HfMotion}.swift`. Exact light/dark RGB values and backend identity colors are retained; derived opacity tokens are represented where used by components.
+- Task summary and registered artifact metadata: `TaskDetail/Component/SummaryPaneView.swift` and `TaskArtifactsView.swift`. Artifact references are metadata, not content previews.
+- Approval ownership and inspect-before-action: `TaskDetail/CallerApprovalCard.swift`. Caller-owned requests are read-only; Monitor-owned current pending requests expose actions after inspection.
+- Workflow right sidebar: `Workflow/WorkflowRunPanes.swift`, `WorkflowSelectedSidebar.swift`, `WorkflowRunPlan.swift`, `WorkflowRunSummary.swift`, `WorkflowRecoveryForm.swift`, and `WorkflowOnDemandCallsView.swift`. The sidebar ideal is420 points; on-demand nodes remain outside traversal.
+- Settings global approval list: `SettingsFeature/Harnesses/MCPAllowlistView.swift`; Add approval/Remove/Refresh/Done.
+
+All relative source descriptions above refer to the matching feature under `macos/HfFeatures/` at the pinned commit. The primary family links resolve exact repository paths.
+
+## Native fixture references
+
+These images are reference evidence; edit the HTML/CSS specimens to change the design.
+
+| Surface | Light | Dark |
+|---|---|---|
+| sidebar | [Light](../assets/references/screens/sidebar-light.png) | [Dark](../assets/references/screens/sidebar-dark.png) |
+| task-detail | [Light](../assets/references/screens/task-detail-light.png) | [Dark](../assets/references/screens/task-detail-dark.png) |
+| parallel | [Light](../assets/references/screens/parallel-light.png) | [Dark](../assets/references/screens/parallel-dark.png) |
+| workflow-editor | [Light](../assets/references/screens/workflow-editor-light.png) | [Dark](../assets/references/screens/workflow-editor-dark.png) |
+| workflow-run | [Light](../assets/references/screens/workflow-run-light.png) | [Dark](../assets/references/screens/workflow-run-dark.png) |
+| new-session | [Light](../assets/references/screens/new-session-light.png) | [Dark](../assets/references/screens/new-session-dark.png) |
+| settings-general | [Light](../assets/references/screens/settings-general-light.png) | [Dark](../assets/references/screens/settings-general-dark.png) |
+| settings-harnesses | [Light](../assets/references/screens/settings-harnesses-light.png) | [Dark](../assets/references/screens/settings-harnesses-dark.png) |
+| menu-bar-popover | [Light](../assets/references/screens/menu-bar-popover-light.png) | [Dark](../assets/references/screens/menu-bar-popover-dark.png) |
+
+## Interaction coverage
+
+The catalog supports screen/state/appearance deep links, navigation search, loaded-task filters and selection, detail tabs, follow-up fixtures, inspector disclosure, graph selection, node attempts, retained plan/sidebar, Graph/Parallel mode, summary expansion, 10-point node drag snapping, zoom, builder fields, validation feedback, agent/access choices, settings toggles, and modal close/action feedback. All operations are local fixtures and reset on route/state/appearance change. They do not simulate filesystem, terminal, agent execution, workflow persistence, or native permission enforcement.
+
+## Not applicable and approximation boundaries
+
+- Raw events have no source-backed search, loading, or error presentation in this sheet; only supplied events, empty events, and unknown-event treatment are represented.
+- Caller-owned requests have no Monitor approval buttons. Settled or expired approvals have no active response controls.
+- MCP global approvals are free-text entries, not a per-tool checkbox permission picker.
+- Turn limits apply to Claude and Vibe. Antigravity does not expose xhigh effort. Native backend catalogs may vary; this fixture catalog is fixed.
+- Missing/deferred task records do not imply live composer or takeover availability. Terminal workflow states do not permit Pause/Cancel.
+- Library, modal, settings, and menu-bar dimensions are independent native surfaces; they are intentionally shown within a catalog stage instead of stretched to the main window.
+- Canvas connectors and ports are visual baseline specimens. Drag changes mock positions; connection creation, multi-selection, split-resize, native context menus, and complete graph editing semantics are not implemented.
+- Some isolated states retain surrounding fixture context for comparison. They demonstrate a specific source-derived presentation rather than a complete runtime transition simulation.
+- Native fixture captures are included under `assets/references/screens/` in both appearances: sidebar, task-detail, parallel, workflow-editor, workflow-run, new-session, settings-general, settings-harnesses, and menu-bar-popover. They render actual pinned SwiftUI views at 2× scale with isolated mock data. A capture-only test passed through the source package test runner. The composed main-window capture was unsuitable as a complete reference and is excluded.
+- Transparent native material regions in isolated settings/menu/sidebar captures are not palette evidence. Browser materials and host window chrome remain approximations. The foundation captures are 2000 × 1560 and accompany a 220-test validation result. Reference images are inspectable evidence, not the editable UI.
+
+## Verification status
+
+JavaScript syntax and local asset/source path checks run during authoring. Browser route/interaction checks are recorded separately by the integrating agent. Representative native fixture comparisons cover the surfaces identified in the table. Unlisted variants are source-derived and have not received individual native image comparisons. Complete live-window fidelity, platform material rendering, and accessibility parity remain outstanding.
+
+## Fixture behavior guards
+
+Task selection uses stable fixture IDs and renders the corresponding backend, status, detail, and inspector. Structural workflow nodes do not fabricate task activity. MCP unsupported and busy states follow native control guards; blank approval entries cannot be added. Sheet bodies scroll within the fixed specimen so Advanced controls and final actions remain reachable.
