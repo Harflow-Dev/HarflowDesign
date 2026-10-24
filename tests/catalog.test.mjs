@@ -7,10 +7,10 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const scripts = ['tokens.js', 'registry.js', 'components.js', 'tasks.js', 'task-activity.js', 'task-approvals.js', 'task-summary.js', 'workflows.js', 'dialogs.js', 'foundations.js'];
+const scripts = ['tokens.js', 'registry.js', 'components.js', 'tasks.js', 'task-activity.js', 'parallel.js', 'task-approvals.js', 'task-summary.js', 'workflows.js', 'dialogs.js', 'foundations.js'];
 
 function loadDesignRuntime() {
-  const document = { querySelector: () => ({ textContent: '', classList: { add() {} } }) };
+  const document = { querySelector: () => ({ textContent: '', classList: { add() {} } }), addEventListener() {} };
   const context = vm.createContext({
     window: {},
     document,
@@ -130,6 +130,50 @@ test('rendered specimens preserve fixture identity and ownership semantics', () 
   const inspected = hf.renderTasks('approvals', 'inspected');
   assert.match(inspected, /data-action="approval-decision:approve"/);
   assert.match(inspected, /data-action="approval-decision:reject"/);
+});
+
+test('parallel group keeps lane identity, status strips, and terminal eligibility explicit', () => {
+  const hf = loadDesignRuntime();
+  const mixed = hf.renderParallel('mixed');
+  assert.match(mixed, /class="parallel-lane running"[^>]*data-task-id="mock-session-0"/);
+  assert.match(mixed, /class="parallel-lane completed"[^>]*data-task-id="mock-session-1"/);
+  assert.match(mixed, /class="parallel-lane failed"[^>]*data-task-id="mock-session-2"/);
+  assert.equal((mixed.match(/<\/article>/g) || []).length, 3, 'each lane must close independently for stable scrolling and actions');
+  assert.equal((mixed.match(/Take over in terminal/g) || []).length, 3, 'each lane exposes the same takeover affordance in the standalone group');
+  assert.match(mixed, /No network/);
+  assert.match(mixed, /Enforced for every agent here: Access stays within the repository\./);
+  assert.match(mixed, /Beginning of activity/);
+
+  const twoLanes = hf.renderParallel('two-lanes');
+  assert.equal((twoLanes.match(/class="parallel-lane /g) || []).length, 2);
+  assert.match(twoLanes, /2 agents · read_only, write_in_repo · ~\/HarflowMac/);
+  assert.doesNotMatch(twoLanes, /mock-session-2/);
+
+  const empty = hf.renderParallel('empty');
+  assert.match(empty, /No tasks in this group any more\./);
+  assert.doesNotMatch(empty, /parallel-lane /);
+  assert.doesNotMatch(empty, /No network/);
+
+  const deferred = hf.renderParallel('deferred');
+  assert.match(deferred, /parallel-header-skeleton/);
+  assert.match(deferred, /parallel-lane-skeleton/);
+  assert.doesNotMatch(deferred, /Review persistence|Take over in terminal|parallel-0/);
+
+  const fixtures = hf.parallelFixtures('two-lanes');
+  assert.equal(fixtures.map(task => task.id).join(','), 'mock-session-0,mock-session-1');
+  assert.equal(fixtures[0].prompt, 'Review persistence, validate recovery, and report findings.');
+  assert.equal(fixtures[0].activityFixture, 'native-eight-steps');
+  assert.equal(fixtures[1].activityFixture, 'empty');
+  assert.match(hf.taskTimeline(fixtures[1], 'completed'), /Beginning of activity/);
+  assert.doesNotMatch(hf.taskTimeline(fixtures[1], 'completed'), /8 steps|ta-tool|ta-prose/);
+  assert.equal(hf.parallelTerminalEligibility({ sessionID: 'session-1' }).enabled, true);
+  assert.equal(hf.parallelTerminalEligibility({ sessionID: 'session-1', busy: true }).enabled, false);
+  assert.equal(hf.parallelTerminalEligibility({ sessionID: 'session-1', workflowID: 'workflow-1' }).visible, false);
+
+  const completed = hf.renderParallel('completed');
+  assert.equal((completed.match(/parallel-lane completed/g) || []).length, 3);
+  assert.match(completed, /Fixed the login bug\./);
+  assert.doesNotMatch(completed, /data-action="parallel-cancel"/);
 });
 
 test('approval controller requires a complete current identity before inspection or response', () => {

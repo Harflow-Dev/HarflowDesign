@@ -1,0 +1,84 @@
+/* Standalone parallel group specimen. */
+.parallel-app .parallel-app-body{display:flex;flex:1;min-width:0;min-height:0;flex-direction:column;position:relative;background:var(--cardFill)}
+.parallel-app .titlebar{height:42px;min-height:42px}
+.parallel-app .parallel-toolbar{position:absolute;z-index:2;top:-42px;right:14px;height:42px;display:flex;align-items:center;gap:6px}
+.parallel-app .parallel-toolbar button{border:0;background:transparent;font-size:12px;padding:5px 9px}
+.parallel-app .parallel-toolbar button:hover{background:var(--selectedRow)}
+.parallel-app .parallel-toolbar button.danger{color:var(--failedRed)}
+.parallel-app .parallel-group-header{padding:11px 16px;border-bottom:1px solid var(--hairline);flex-shrink:0}
+.parallel-app .parallel-group-header h2{font-size:18px;line-height:22px;margin:0 0 2px;font-weight:600}
+.parallel-app .parallel-group-header p{margin:0;color:var(--secondaryText);font-size:13px;line-height:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.parallel-app .parallel-status-summary{display:none}
+.parallel-app .parallel-claims{padding:12px 16px 7px;flex-shrink:0}
+.parallel-app .parallel-claims>span{display:inline-block;border-radius:999px;background:var(--pillFill);padding:4px 8px;font-weight:600;color:var(--secondaryText);font-size:12px;line-height:16px}
+.parallel-app .parallel-claims p{margin:6px 0 0;color:var(--tertiaryText);font-size:11px;line-height:14px}
+.parallel-app .parallel-lanes{display:flex;flex:1;min-height:0;overflow-x:auto;overflow-y:hidden;overscroll-behavior:contain}
+.parallel-app .parallel-lane{position:relative;display:flex;flex-direction:column;flex:1 0 420px;min-width:420px;min-height:0;padding:16px;gap:10px;--parallel-status-color:var(--runningFG);border-right:1px solid var(--hairline);background:var(--cardFill);overflow:hidden}
+.parallel-app .parallel-lane:last-child{border-right:0}
+.parallel-app .parallel-lane.completed{--parallel-status-color:var(--doneGreen)}
+.parallel-app .parallel-lane.failed{--parallel-status-color:var(--failedRed)}
+.parallel-app .parallel-lane.cancelled{--parallel-status-color:var(--cancelledGray)}
+.parallel-app .parallel-lane-head{flex-shrink:0;display:flex;flex-direction:column;gap:8px}
+.parallel-app .parallel-lane-title{display:flex;align-items:flex-start;gap:8px;min-width:0}
+.parallel-app .parallel-lane-title h3{font-size:14px;line-height:18px;margin:0;flex:1;min-width:0;font-weight:600}
+.parallel-app .parallel-icon{width:16px;flex:none;display:flex;align-items:center;color:var(--runningFG)}
+.parallel-app .parallel-icon img,.parallel-app .parallel-status img{width:14px;height:14px;object-fit:contain;flex:none}
+.parallel-app .parallel-status{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:4px 9px;font-weight:600;font-size:12px;line-height:16px;white-space:nowrap;background:var(--runningBG);color:var(--runningFG)}
+.parallel-app .parallel-status.completed{background:var(--doneBG);color:var(--doneGreen)}
+.parallel-app .parallel-status.failed{background:var(--dangerBG);color:var(--dangerFG)}
+.parallel-app .parallel-status.cancelled{background:var(--neutralFill);color:var(--cancelledGray)}
+.parallel-app .parallel-lane-meta{display:flex;align-items:center;gap:6px;margin:2px 0 0;font-size:13px;line-height:16px;color:var(--secondaryText)}
+.parallel-app .parallel-lane-meta .backend-dot{width:8px;height:8px}
+.parallel-app .parallel-lane-actions{display:flex;align-items:center;gap:10px}
+.parallel-app .parallel-open{border:0;background:transparent;color:var(--accentLink);padding:2px 0;font-size:13px;line-height:18px}
+.parallel-app .parallel-terminal{display:inline-flex;align-items:center;gap:8px;white-space:nowrap;font-size:13px;border-radius:8px;padding:3px 10px;line-height:18px;background:var(--cardFill);border:1px solid var(--hairline)}
+.parallel-app .parallel-terminal img{width:16px;height:16px;opacity:.8}
+.parallel-app .parallel-outcome{font-size:11px;line-height:14px;color:var(--secondaryText);margin:0}
+.parallel-app .parallel-divider{border-top:1px solid var(--hairline);flex-shrink:0}
+.parallel-app .parallel-step-count{flex:none;font-size:13px;line-height:16px;color:var(--secondaryText)}
+.parallel-app .parallel-feed-scroll{min-height:0;flex:1;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:var(--tertiaryText) transparent}
+.parallel-app .parallel-feed-content{display:flex;flex-direction:column;gap:20px;padding:0 8px 8px}
+.parallel-app .parallel-feed-content .ta-beginning{margin:0;color:var(--secondaryText);font-size:12px;line-height:16px}
+.parallel-app .parallel-feed-content .ta-prose{margin:0 0 16px;font-size:14px;line-height:1.5}
+.parallel-app .parallel-feed-content .ta-tool-group{margin:0;flex-shrink:0}
+.parallel-app .parallel-feed-content .ta-tool-group>summary{font-size:13px;line-height:18px;padding:10px 12px;min-height:36px}
+.parallel-app .parallel-result{flex-shrink:0;max-height:160px;overflow:auto;border-radius:12px;border:1px solid var(--cardBorder)}
+.parallel-app .parallel-summary{padding:12px;font-size:13px;line-height:16px;color:var(--primaryText);background:var(--doneBG)}
+.parallel-app .parallel-summary.failed{background:var(--dangerBG)}
+.parallel-app .parallel-summary.cancelled{background:var(--neutralFill)}
+.parallel-app .parallel-no-tools{font-size:13px;line-height:16px;color:var(--tertiaryText)}
+.parallel-app .parallel-empty{display:flex;flex:1;align-items:center;justify-content:center;color:var(--secondaryText);font-size:14px}
+.parallel-app .parallel-prompt{flex:none;padding:12px 14px;background:var(--promptBubble);border-radius:12px;font-size:13px;line-height:1.45}
+.parallel-app .parallel-dialog-backdrop{position:absolute;inset:0;z-index:5;display:flex;align-items:center;justify-content:center;background:#0004}
+.parallel-app .parallel-dialog{width:min(420px,calc(100% - 40px));padding:22px;background:var(--cardFill);border:1px solid var(--hairline);border-radius:14px;box-shadow:0 12px 32px #0003}
+.parallel-app .parallel-dialog h3{margin:0 0 8px}
+.parallel-app .parallel-dialog button{margin-top:14px}
+.parallel-app .parallel-dialog button:last-child{float:right}
+.parallel-app .parallel-header-skeleton{height:60px;display:flex;flex-direction:column;justify-content:center;gap:6px}
+.parallel-app .parallel-header-skeleton i,.parallel-app .parallel-lane-skeleton i,.parallel-app .parallel-lane-skeleton b{display:block;background:var(--neutralFill);border-radius:6px;animation:parallel-pulse 1.2s ease-in-out infinite alternate}
+.parallel-app .parallel-header-skeleton i{height:18px;width:210px}
+.parallel-app .parallel-header-skeleton i+i{height:12px;width:320px}
+.parallel-app .parallel-lane-skeleton{flex:1 0 420px;min-width:420px;padding:16px;border-right:1px solid var(--hairline);background:var(--cardFill)}
+.parallel-app .parallel-lane-skeleton i{width:160px;height:14px;margin-bottom:4px}
+.parallel-app .parallel-lane-skeleton i+i{width:120px;height:10px}
+.parallel-app .parallel-lane-skeleton hr{margin:10px 0;border:0;border-top:1px solid var(--hairline)}
+.parallel-app .parallel-lane-skeleton b{height:46px;margin:14px 0}
+.parallel-app .parallel-lane-skeleton b:nth-of-type(2){height:24px;width:85%}
+.parallel-app .parallel-spinner{width:14px;height:14px;border:2px solid var(--runningFG);border-right-color:transparent;border-radius:50%;display:inline-block;animation:parallel-spin 1s linear infinite}
+@keyframes parallel-spin{to{transform:rotate(360deg)}}
+@keyframes parallel-pulse{to{opacity:.45}}
+@media(prefers-reduced-motion:reduce){.parallel-app .parallel-spinner,.parallel-app .parallel-header-skeleton i,.parallel-app .parallel-lane-skeleton i,.parallel-app .parallel-lane-skeleton b{animation:none}}
+
+.parallel-app .parallel-symbol{display:block;width:14px;height:14px;flex:none;background-color:currentColor;mask-size:contain;mask-repeat:no-repeat;mask-position:center}
+.parallel-app .parallel-icon.completed{color:var(--doneGreen)}
+.parallel-app .parallel-icon.failed{color:var(--failedRed)}
+.parallel-app .parallel-icon.cancelled{color:var(--cancelledGray)}
+
+.parallel-app .parallel-lane.completed .parallel-symbol{mask-image:url('../assets/symbols/task-activity/checkmark.circle.fill.png')}
+.parallel-app .parallel-lane.failed .parallel-symbol{mask-image:url('../assets/symbols/task-activity/xmark.circle.fill.png')}
+.parallel-app .parallel-lane.cancelled .parallel-symbol{mask-image:url('../assets/symbols/task-activity/stop.circle.fill.png')}
+
+.parallel-app .parallel-lane::before{position:absolute;top:0;left:0;right:0;height:3px;background:var(--parallel-status-color);content:""}
+.parallel-app .parallel-lane-copy{flex:1;min-width:0}
+.parallel-app .parallel-lane-meta{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html[data-theme="dark"] .parallel-app .parallel-terminal img{filter:brightness(0) invert(.85)}
