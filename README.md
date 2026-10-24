@@ -1,6 +1,6 @@
 # Harflow interface reference
 
-Editable, offline design catalog derived from the current HarflowMac implementation. This is a source-derived baseline, **not an approved design or a pixel-verified reproduction**.
+Editable, offline design catalog derived from the current HarflowMac implementation. The baseline is source-derived. Approved directions are recorded in the screen inventory; approval does not establish native pixel fidelity.
 
 Open this checkout with the desktop app’s **Open folder** action and preview root `index.html`. You can also open `index.html` directly in a browser, or serve the folder:
 
