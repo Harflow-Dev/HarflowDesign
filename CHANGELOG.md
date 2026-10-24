@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Preview caller-owned approval responses in the Mac design, with a separate read-only compatibility state.
 - Match approval requests to native panel references and retain the shared task context across Activity, Summary, and Prompt.
 - Align task Summary and Prompt with native references and share their panes across task-detail tabs and catalog entry points.
 - Added an offline, editable source-derived HarflowMac interface catalog.

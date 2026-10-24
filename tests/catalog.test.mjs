@@ -118,9 +118,15 @@ test('rendered specimens preserve fixture identity and ownership semantics', () 
   assert.match(hf.renderTasks('summary', 'completed'), /abc12345/);
 
   const callerOwned = hf.renderTasks('approvals', 'caller-owned');
-  assert.match(callerOwned, /Caller-owned/);
-  assert.match(callerOwned, /Respond through the owning caller.s MCP or CLI/);
-  assert.doesNotMatch(callerOwned, /data-action="approval-decision:/);
+  assert.match(callerOwned, /data-action="approval-decision:approve"/);
+  assert.equal(hf.approvalController.state.requests[0].ownership, 'caller');
+  assert.equal(hf.approvalController.state.futureMacResponseCapability, true);
+  assert.equal(hf.approvalController.state.taskID, 'abc12345');
+  const callerOwnedLegacy = hf.renderTasks('approvals', 'caller-owned-legacy');
+  assert.match(callerOwnedLegacy, /engine does not support Mac responses/);
+  assert.doesNotMatch(callerOwnedLegacy, /data-action="approval-decision:/);
+  assert.equal(hf.approvalController.state.requests[0].ownership, 'caller');
+  assert.equal(hf.approvalController.state.futureMacResponseCapability, false);
   const inspected = hf.renderTasks('approvals', 'inspected');
   assert.match(inspected, /data-action="approval-decision:approve"/);
   assert.match(inspected, /data-action="approval-decision:reject"/);
@@ -193,6 +199,64 @@ test('approval inspection rejects missing task identity and changed supplied pay
   assert.match(hf.approvalController.state.error, /full payload is unavailable/);
 });
 
+test('caller-owned responses require the explicit Mac capability and remain fully guarded', () => {
+  const hf = loadDesignRuntime();
+  hf.approvalController.reset('caller-owned');
+  const caller = hf.approvalController.state;
+  assert.equal(hf.approvalController.canRespond(), true);
+  const callerSettlement = hf.approvalController.beginResponse('approve');
+  assert.equal(callerSettlement(), true);
+  assert.equal(caller.requests[0].disposition, 'approved');
+
+  hf.approvalController.reset('caller-owned');
+  const uninspected = hf.approvalController.state;
+  uninspected.current = false;
+  uninspected.detail = null;
+  assert.equal(hf.approvalController.canRespond(), false, 'capability cannot bypass inspection');
+
+  hf.approvalController.reset('caller-owned-legacy');
+  const legacy = hf.approvalController.state;
+  assert.equal(hf.approvalController.canRespond(), false, 'legacy caller ownership has no Mac response capability');
+  legacy.detail.futureMacResponseCapability = true;
+  assert.equal(hf.approvalController.canRespond(), false, 'a payload flag cannot grant the model capability');
+});
+
+test('caller and monitor response guards reject expiry, stale delivery, busy state, and ownership changes', () => {
+  const hf = loadDesignRuntime();
+  for (const state of ['inspected', 'caller-owned']) {
+    hf.approvalController.reset(state);
+    const model = hf.approvalController.state;
+    assert.equal(hf.approvalController.canRespond(), true);
+    model.detail.deadline = Date.parse('2026-10-24T11:59:59+07:00');
+    assert.equal(hf.approvalController.canRespond(), false);
+
+    hf.approvalController.reset(state);
+    const stale = hf.approvalController.state;
+    stale.requests[0].delivery = 'delivered';
+    assert.equal(hf.approvalController.canRespond(), false);
+
+    hf.approvalController.reset(state);
+    const busy = hf.approvalController.state;
+    busy.loading = true;
+    assert.equal(hf.approvalController.canRespond(), false);
+
+    hf.approvalController.reset(state);
+    const settle = hf.approvalController.beginResponse('reject');
+    assert.equal(typeof settle, 'function');
+    hf.approvalController.state.requests[0].ownership = state === 'caller-owned' ? 'monitor' : 'caller';
+    assert.equal(settle(), false, 'ownership changes invalidate the captured response');
+  }
+});
+
+test('leaving the approval route resets caller response capability', () => {
+  const hf = loadDesignRuntime();
+  hf.approvalController.reset('caller-owned');
+  assert.equal(hf.approvalController.state.futureMacResponseCapability, true);
+  hf.approvalController.deactivate();
+  assert.equal(hf.approvalController.state.futureMacResponseCapability, false);
+  assert.equal(hf.approvalController.pendingCount(), 0);
+});
+
 test('approval settlement ignores route resets and settles only the captured current model', () => {
   const hf = loadDesignRuntime();
   hf.approvalController.reset('inspected');
@@ -239,7 +303,8 @@ test('approval settled, caller-owned, submitting, and error states expose the co
     hf.approvalController.reset(state);
     const html = hf.renderTasks('approvals', state);
     assert.match(html, /Caller approvals/);
-    if (state === 'caller-owned' || state === 'error') assert.doesNotMatch(html, /data-action="approval-decision:/);
+    if (state === 'error') assert.doesNotMatch(html, /data-action="approval-decision:/);
+    else if (state === 'caller-owned') assert.match(html, /data-action="approval-decision:approve"(?![^>]*disabled)/);
     else assert.match(html, /data-action="approval-decision:approve"[^>]*disabled/);
   }
   hf.approvalController.reset('submitting');
