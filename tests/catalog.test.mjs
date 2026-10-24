@@ -254,6 +254,10 @@ test('registry source links resolve in the pinned HarflowMac tree', () => {
   assert.match(hf.base, /HarflowMac\/blob\/[0-9a-f]{40}\/macos\/$/);
   const commit = hf.commit;
   for (const family of hf.screens) {
+    if (!family.source) {
+      assert.ok(family.proposal && !family.proposals, `${family.id} may omit a native source only as a whole-proposal family`);
+      continue;
+    }
     const result = requireGit(mac, ['cat-file', '-e', `${commit}:macos/${family.source}`]);
     assert.equal(result, 0, `${family.id} source is missing at pinned commit: ${family.source}`);
   }
@@ -1717,4 +1721,90 @@ test('setup styling uses appearance tokens for both light and dark surfaces', ()
   const css = fs.readFileSync(path.join(root, 'styles', 'sidebar-setup.css'), 'utf8');
   assert.match(css, /var\(--(?:cardBorder|cardFill|primaryText|secondaryText|accentLink)\)/);
   assert.doesNotMatch(css, /prefers-color-scheme/);
+});
+
+test('proposal metadata names real states and valid ticket references', () => {
+  const hf = loadDesignRuntime();
+  for (const family of hf.screens) {
+    if (family.proposal) assert.ok(family.proposal.tickets.length > 0 && family.proposal.tickets.every(hf.isTicketRef), `${family.id} proposal tickets`);
+    if (!family.source) assert.ok(family.proposal, `${family.id} has no native source and is not a whole-proposal family`);
+    for (const [state, entry] of Object.entries(family.proposals || {})) {
+      assert.ok(family.states.includes(state), `${family.id} proposal names unknown state ${state}`);
+      assert.ok(entry.tickets.length > 0 && entry.tickets.every(hf.isTicketRef), `${family.id}/${state} tickets`);
+      assert.ok(['state', 'element'].includes(entry.scope), `${family.id}/${state} scope`);
+    }
+    for (const state of family.approved?.states || []) assert.ok(family.states.includes(state), `${family.id} approved state ${state}`);
+  }
+  assert.ok(hf.isTicketRef('#13') && hf.isTicketRef('HarflowMCP#18'));
+  assert.ok(!hf.isTicketRef('13') && !hf.isTicketRef('#') && !hf.isTicketRef('HarflowMac#1x'));
+});
+
+test('specimen status captions label exploratory, element-scope, approved, and source-derived states', () => {
+  const hf = loadDesignRuntime();
+  assert.deepEqual(JSON.parse(JSON.stringify(hf.specimenStatus('approvals', 'inspected'))), { kind: 'exploratory', tickets: ['#13'], caption: 'Exploratory · ticket #13 · Not approved · Inline Activity cards with a compact pending indicator on Summary and Prompt' });
+  assert.match(hf.specimenStatus('approvals', 'caller-owned').caption, /^Exploratory · tickets #13, #14 · Not approved/);
+  assert.match(hf.specimenStatus('approvals', 'caller-owned-legacy').caption, /Read-only guidance is current native behavior/);
+  assert.equal(hf.specimenStatus('tasks', 'store-incompatible').kind, 'exploratory');
+  assert.equal(hf.specimenStatus('workflow-run', 'running').kind, 'contains-exploratory');
+  assert.equal(hf.specimenStatus('workflow-run', 'running').caption, 'Source-derived · contains exploratory element (#15) · Not approved');
+  assert.equal(hf.specimenStatus('tasks', 'setup-required').kind, 'approved');
+  assert.equal(hf.specimenStatus('tasks', 'setup-required').caption, 'First-install setup layout approved · Native fidelity under validation');
+  assert.equal(hf.specimenStatus('tasks', 'populated').caption, 'Source-derived · Not approved · See coverage and native references');
+  assert.equal(hf.specimenStatus('missing-family', 'x').kind, 'source-derived');
+  const catalog = fs.readFileSync(path.join(root, 'scripts/catalog.js'), 'utf8');
+  assert.match(catalog, /HF\.specimenStatus\(/);
+  assert.match(catalog, /HF\.stateLabel\(/);
+  assert.doesNotMatch(catalog, /Exploratory approval design|First-install setup layout approved/, 'captions must come from the registry helper');
+  assert.doesNotMatch(fs.readFileSync(path.join(root, 'scripts/state-recovery.js'), 'utf8'), /EXPLORATORY/, 'the recovery kicker is replaced by the shared specimen label');
+});
+
+test('state labels and navigation search expose exploratory states', () => {
+  const hf = loadDesignRuntime();
+  assert.equal(hf.stateLabel('approvals', 'inspected'), 'inspected · Exploratory');
+  assert.equal(hf.stateLabel('approvals', 'monitor-pending'), 'Harflow-owned pending · Exploratory');
+  assert.equal(hf.stateLabel('workflow-run', 'running'), 'running · Exploratory element');
+  assert.equal(hf.stateLabel('tasks', 'backend-empty'), 'No tasks for harness');
+  assert.equal(hf.stateLabel('tasks', 'populated'), 'populated');
+  const search = family => hf.familySearchText(hf.screens.find(screen => screen.id === family)).toLowerCase();
+  assert.ok(search('approvals').includes('exploratory'));
+  assert.ok(search('workflow-run').includes('exploratory element'));
+  assert.ok(!search('raw-events').includes('exploratory'));
+});
+
+test('exploratory specimens carry an in-stage label and other specimens do not', () => {
+  const hf = loadDesignRuntime();
+  const labelled = hf.specimenStage('approvals', 'inspected', '<section class="app"></section>');
+  assert.match(labelled, /^<p class="exploratory-kicker" role="note" data-specimen-status="exploratory">Exploratory · ticket #13 · Not approved/);
+  assert.ok(labelled.endsWith('<section class="app"></section>'));
+  for (const [family, state] of [['workflow-run', 'running'], ['tasks', 'populated'], ['tasks', 'setup-required']]) {
+    assert.equal(hf.specimenStage(family, state, '<section></section>'), '<section></section>');
+  }
+});
+
+test('compact workflow-run sidebar proposal (#15) covers every state that can display it', () => {
+  const hf = loadDesignRuntime();
+  const run = hf.screens.find(family => family.id === 'workflow-run');
+  hf.route = { theme: 'light', screen: 'workflow-run' };
+  const display = [];
+  for (const state of run.states) {
+    hf.route = { theme: 'light', screen: 'workflow-run', state };
+    hf.resetWorkflowRun(hf.route);
+    const html = renderers['workflow-run'](hf, state);
+    // The compact default shows initially, or after deselection or a mode change when a node starts selected.
+    const canShowCompact = html.includes('wfr-sidebar-default') || html.includes('has-selection');
+    if (canShowCompact) display.push(state);
+    const status = hf.specimenStatus('workflow-run', state);
+    assert.equal(status.kind === 'contains-exploratory', canShowCompact, `workflow-run/${state} #15 element metadata`);
+    if (canShowCompact) assert.deepEqual(Array.from(status.tickets), ['#15']);
+  }
+  assert.ok(display.length >= 10, 'expected the shared run sidebar to appear in most run states');
+  assert.ok(!display.includes('loading') && !display.includes('error'));
+  for (const family of hf.screens) {
+    if (family.id === 'workflow-run') continue;
+    hf.route = { theme: 'light', screen: family.id, state: family.states[0] };
+    for (const state of family.states) {
+      hf.route.state = state;
+      assert.doesNotMatch(renderers[family.id](hf, state), /wfr-run-sidebar|wfr-sidebar-default/, `${family.id}/${state} renders the compact run sidebar`);
+    }
+  }
 });

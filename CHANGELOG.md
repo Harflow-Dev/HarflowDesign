@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Label exploratory ticket proposals from registry metadata with one caption helper, state picker and search suffix, and an in-stage label, and mark compact-sidebar run states as containing an exploratory element.
+
 - Match native icon-only Light/Dark/System controls and titlebar connection status; separate catalog preview appearance from the locally persisted app preference.
 
 - Share native rounded connector geometry, open arrowheads, backward dashes, and zoom scaling between workflow editor and run.

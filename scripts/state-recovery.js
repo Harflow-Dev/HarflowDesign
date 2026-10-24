@@ -19,7 +19,7 @@
   const step = (state, title, detail) => `<a class="recovery-step ${state === HF.route?.state ? 'current' : ''}" href="#${route(state)}/${HF.appearance?.themeMode || 'system'}"><span>${title}</span><small>${detail}</small></a>`;
 
   HF.renderStateRecovery = state => {
-    const header = `<header class="recovery-heading"><span class="recovery-kicker">DATA STORE · EXPLORATORY</span><h2>${labels[state]}</h2></header>`;
+    const header = `<header class="recovery-heading"><h2>${labels[state]}</h2></header>`;
     const paths = pathRow('Selected store', root);
     let body = '';
     switch (state) {

@@ -4,3 +4,6 @@
 
 /* Hidden state must take precedence over component display layouts. */
 .catalog [hidden]{display:none!important}
+
+/* Catalog-level status label for exploratory specimens; it sits outside the native app surface. */
+.exploratory-kicker{width:fit-content;max-width:100%;margin:0 0 10px;padding:6px 10px;border:1px solid #d4d9e3;border-left:3px solid #8a5a00;border-radius:6px;background:#fff;color:#4a4f5e;font-size:12px;line-height:1.4}
