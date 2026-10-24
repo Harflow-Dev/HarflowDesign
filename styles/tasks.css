@@ -2,6 +2,7 @@
 .app:has(.sidebar) .sidebar {
   width: 272px;
   min-width: 272px;
+  background: color-mix(in srgb, var(--windowBG) 50%, var(--sidebarBG));
   padding: 12px 14px 10px;
 }
 .sidebar > button.primary {
@@ -132,7 +133,6 @@
 .sidebar .section-label { margin: 13px 5px 5px; font-weight: 600; }
 .task-tree { position: relative; }
 .task-children { position: relative; margin-left: 22px; padding-left: 12px; border-left: 1px solid var(--tertiaryText); }
-.task-children::before { position: absolute; left: -1px; top: 0; width: 11px; height: 13px; border-bottom: 1px solid var(--tertiaryText); content: ""; }
 .sidebar .task-row {
   display: flex;
   align-items: center;
@@ -194,3 +194,44 @@
 .sidebar .parallel-group strong, .sidebar .parallel-group small, .sidebar .parallel-group .mini-progress { grid-column: 2; }
 .sidebar .parallel-group .parallel-agents { grid-column: 1; grid-row: 1 / 3; }
 .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+
+/* Sidebar rows follow the native row rhythm and keep symbols as alpha masks. */
+.sidebar > .new-session { min-height: 26px; }
+.sidebar .search-row { margin: 8px 0 13px; }
+.app:has(.sidebar) .sidebar .search input { height: 28px; border: 0; border-radius: 7px; background: var(--neutralFill); padding-top: 4px; padding-bottom: 4px; }
+.sidebar .search::before { top: 8px; }
+.sidebar .search::after { top: 19px; }
+.sidebar .workflow-row { display: flex; align-items: center; gap: 8px; min-height: 28px; padding: 4px 8px !important; color: var(--primaryText); font-size: 12px; }
+.sidebar .workflow-add { margin-left: 6px; }
+.sidebar .sidebar-workflow-icon { width: 15px; height: 15px; flex: 0 0 15px; background: var(--secondaryText); -webkit-mask: url("../assets/symbols/point.3.connected.trianglepath.dotted.png") center / contain no-repeat; mask: url("../assets/symbols/point.3.connected.trianglepath.dotted.png") center / contain no-repeat; }
+.sidebar .task-row { min-height: 42px; gap: 8px; padding: 7px 8px !important; }
+.sidebar .task-row.active { background: var(--accentFill) !important; color: white; }
+.sidebar .task-row.active .task-row-copy small { color: white; }
+.sidebar .task-status { width: 15px; height: 15px; flex-basis: 15px; border: 1.5px solid var(--runningFG); border-top-color: var(--accentLink); border-radius: 50%; background: transparent; }
+.sidebar .task-status.completed { border: 0; background: var(--doneGreen); -webkit-mask: url("../assets/symbols/checkmark.circle.fill.png") center / contain no-repeat; mask: url("../assets/symbols/checkmark.circle.fill.png") center / contain no-repeat; }
+.sidebar .task-status.failed { border: 0; background: var(--failedRed); -webkit-mask: url("../assets/symbols/xmark.circle.fill.png") center / contain no-repeat; mask: url("../assets/symbols/xmark.circle.fill.png") center / contain no-repeat; }
+.sidebar .task-status.completed::before, .sidebar .task-status.failed::before { content: none; }
+.sidebar .task-status.cancelled { border-color: var(--cancelledGray); background: var(--cancelledGray); }
+.sidebar .task-status.paused { border-color: var(--warningFG); border-top-color: var(--warningFG); }
+.sidebar .task-row.active .task-status { background-color: white; }
+.sidebar .task-row.active .task-status.completed,
+.sidebar .task-row.active .task-status.failed { background-color: white; }
+.sidebar .task-row.active .task-status:not(.completed):not(.failed) { border-color: white; background: transparent; }
+.sidebar .task-children { position: relative; margin-left: 20px; padding-left: 0; border-left: 0; }
+.sidebar .task-tree::before { position: absolute; z-index: 1; top: 24px; bottom: 24px; left: 20px; width: 1px; background: var(--tertiaryText); content: ""; pointer-events: none; }
+.sidebar .task-children::after { position: absolute; top: 24px; left: 0; width: 8px; height: 1px; background: var(--tertiaryText); content: ""; }
+.sidebar .parallel-group { display: flex; align-items: center; gap: 8px; min-height: 54px !important; margin: 2px 0 5px; padding: 7px 8px !important; text-align: left; }
+.sidebar .parallel-group .parallel-agents { position: static; display: flex; flex: 0 0 20px; flex-direction: row; align-items: center; }
+.sidebar .parallel-agents i { width: 8px; height: 8px; border: 1.5px solid color-mix(in srgb, var(--windowBG) 50%, var(--sidebarBG)); background: var(--dotClaude); }
+.sidebar .parallel-agents i + i { margin-left: -3px; background: var(--dotCodex); }
+.sidebar .parallel-copy { display: flex; min-width: 0; flex: 1; flex-direction: column; gap: 3px; }
+.sidebar .parallel-copy strong { overflow: hidden; font-size: 13px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.sidebar .parallel-copy small { color: var(--secondaryText); font-size: 11px; white-space: nowrap; }
+.sidebar .mini-progress { position: static; display: block; width: 100%; height: 3px; flex: none; margin-top: 2px; }
+.sidebar .parallel-spinner { width: 13px; height: 13px; flex: 0 0 13px; border: 1.5px solid var(--tertiaryText); border-top-color: var(--accentLink); border-radius: 50%; }
+.sidebar .parallel-chevron { width: 7px; height: 7px; flex: 0 0 7px; margin-right: 2px; border-top: 1.5px solid var(--secondaryText); border-right: 1.5px solid var(--secondaryText); transform: rotate(45deg); }
+.sidebar .parallel-group.active .parallel-copy small { color: white; }
+.sidebar .parallel-group.active .mini-progress { background: rgb(255 255 255 / 25%); }
+.sidebar .parallel-group.active .mini-progress i { background: white; }
+.sidebar .parallel-group.active .parallel-spinner { border-color: rgb(255 255 255 / 55%); border-top-color: white; }
+.sidebar .parallel-group.active .parallel-chevron { border-color: white; }

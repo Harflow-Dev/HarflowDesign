@@ -31,11 +31,12 @@ All relative source descriptions above refer to the matching feature under `maco
 
 ## Native fixture references
 
-These images are reference evidence; edit the HTML/CSS specimens to change the design.
+These images are reference evidence; edit the HTML/CSS specimens to change the design. The populated-workflow sidebar references were captured from an active native host on 2026-10-24 at 272 × 696 points (2×), matching the browser sidebar content size.
 
 | Surface | Light | Dark |
 |---|---|---|
 | sidebar | [Light](../assets/references/screens/sidebar-light.png) | [Dark](../assets/references/screens/sidebar-dark.png) |
+| sidebar, populated workflows | [Light](../assets/references/screens/sidebar-populated-light.png) | [Dark](../assets/references/screens/sidebar-populated-dark.png) |
 | task-detail | [Light](../assets/references/screens/task-detail-light.png) | [Dark](../assets/references/screens/task-detail-dark.png) |
 | parallel | [Light](../assets/references/screens/parallel-light.png) | [Dark](../assets/references/screens/parallel-dark.png) |
 | workflow-editor | [Light](../assets/references/screens/workflow-editor-light.png) | [Dark](../assets/references/screens/workflow-editor-dark.png) |
