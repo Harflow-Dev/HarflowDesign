@@ -2,7 +2,7 @@
 
 Editable, offline design catalog derived from the current HarflowMac implementation. The baseline is source-derived. Approved directions are recorded in the screen inventory; approval does not establish native pixel fidelity.
 
-Open this checkout with the desktop app’s **Open folder** action and preview root `index.html`. You can also open `index.html` directly in a browser, or serve the folder:
+HarflowDesign is maintained directly in Git. Open root `index.html` in a browser, or serve the folder:
 
 ```sh
 python3 -m http.server 8080
@@ -29,3 +29,16 @@ Deep links use `#screen/state/theme`, for example `#workflow-run/selected-node/d
 See [DESIGN.md](DESIGN.md) for foundations and the design approval workflow, and [the product glossary](docs/terminology.md) for user-facing terminology.
 
 Validation: run `node --test tests/catalog.test.mjs` with the sibling HarflowMac checkout available at the pinned commit. Previewing the catalog does not require that checkout.
+
+
+## Hosting and CI
+
+Cloudflare Pages publishes `main` through its GitHub integration. The intended production domain is `design.harflow.dev`. Pull requests receive Pages preview deployments. GitHub Actions runs JavaScript syntax checks and the standalone catalog suite on pushes to `main` and pull requests. The native source-path test remains a local check because it requires the sibling HarflowMac repository at its pinned commit.
+
+Pages configuration: framework **None**, production branch **main**, output directory **dist**, and build command:
+
+```sh
+for file in scripts/*.js features/*.js; do node --check "$file" || exit 1; done; node --test --test-skip-pattern='^registry source links resolve in the pinned HarflowMac tree$' tests/catalog.test.mjs && mkdir -p dist && cp index.html dist/ && cp -R scripts styles assets docs features dist/
+```
+
+Set the Pages build environment variable `NODE_VERSION` to `24`. Pages reruns validation before publishing, so a failed catalog suite blocks that deployment independently of GitHub Actions. Only the staged site directories are published; repository metadata, tests, CI configuration, and local editor projects are excluded.
