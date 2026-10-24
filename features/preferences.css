@@ -42,11 +42,9 @@ h1 { margin: 0 0 8px; font-size: 28px; line-height: 1.2; letter-spacing: -.025em
 .backend-dot.claude { background: var(--dotClaude); }.backend-dot.codex { background: var(--dotCodex); }.backend-dot.opencode { background: var(--dotOpencode); }
 .live-dot { background: var(--liveDot); box-shadow: 0 0 0 3px var(--runningBG); }
 .sidebar-bottom { position: absolute; right: 0; bottom: 0; left: 0; padding: 8px 10px 10px; border-top: 1px solid var(--hairline); }
-.sidebar-connection { display: flex; align-items: center; gap: 7px; margin: 0 2px 8px; color: var(--secondaryText); font-size: 11px; }
-.connection-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--doneGreen); }
-.sidebar-footer-main { display: flex; align-items: end; justify-content: space-between; gap: 6px; }
+.connection-dot { flex: 0 0 auto; width: 7px; height: 7px; margin-left: -4px; border-radius: 50%; background: var(--doneGreen); }
+.sidebar-footer-main { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
 .sidebar-appearance { min-width: 0; }
-.sidebar-appearance-label { display: block; margin: 0 0 4px 2px; color: var(--secondaryText); font-size: 11px; font-weight: 650; }
 .sidebar-appearance .segmented { padding: 2px; gap: 2px; }
 .sidebar-appearance .segmented button { position: relative; width: 32px; height: 32px; min-height: 32px; display: grid; place-items: center; padding: 0; border: 1px solid transparent; font-size: 0; }
 .sidebar-appearance .segmented button svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
