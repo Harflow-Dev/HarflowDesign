@@ -8,17 +8,21 @@ Open this checkout with the desktop app’s **Open folder** action and preview r
 python3 -m http.server 8080
 ```
 
-Open `http://localhost:8080`. No dependencies, build, account, engine, or sibling checkout are required. All interactions use deterministic mock data and reset when the screen, state, or appearance changes.
+Open `http://localhost:8080`. No dependencies, build, account, engine, or sibling checkout are required. Interactions use deterministic mock data. Screen and state changes reset specimens; appearance changes preserve the current specimen. The appearance preference is stored locally in this browser, independently of native app settings.
 
 - `styles/tokens.css`: exact appearance-aware RGB values from HfUI.
 - `styles/specimens.css`: shared specimen layouts and components.
 - `styles/tasks.css`, `task-activity.css`, `task-summary.css`, `task-approvals.css`, `parallel.css`, `workflows.css`, `workflow-editor.css`, `workflow-editor-inspector.css`, `workflow-run.css`, `dialogs.css`: screen-specific layouts.
+- `styles/appearance.css`: shared native-derived appearance footer and connection indicator.
+- `scripts/appearance.js`: local Light/Dark/System preference and independent catalog preview override.
 - `styles/catalog.css`: reference website navigation and chrome.
 - `scripts/registry.js`: screen families, states, and pinned source links.
 - `scripts/workflow-connectors.js`: shared native-derived connection geometry for workflow editor and run.
 - `scripts/tasks.js`, `task-activity.js`, `task-summary.js`, `task-approvals.js`, `parallel.js`, `workflows.js`, `workflow-editor.js`, `workflow-editor-inspector.js`, `workflow-run.js`, `dialogs.js`: editable screen specimens.
 - `scripts/catalog.js`: local navigation and mock interactions.
 - `docs/screen-inventory.md`: coverage, limitations, and source evidence.
+
+Use **Preview appearance** to inspect Light or Dark without changing the app preference. **App preference** follows the footer’s Light/Dark/System selection; System follows the browser’s OS appearance. Selecting a footer mode clears the preview override and preserves drafts and selections. The `system` hash suffix means follow the app preference, including an explicitly selected Light or Dark mode. Only the preference mode is persisted.
 
 Deep links use `#screen/state/theme`, for example `#workflow-run/selected-node/dark`. Search navigation to locate a screen or state. Task activity and Task summary open the same task-detail shell; its tabs share their Activity, Summary, and Prompt renderers. Approval requests explore inline Activity cards with pending indicators on Summary and Prompt. Use the catalog width picker for 1000, 1200, or 1440-point specimens and **Focus specimen** to hide navigation. Narrow viewports scroll the native-size specimens horizontally; browser zoom remains available for inspection.
 

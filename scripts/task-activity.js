@@ -75,8 +75,8 @@ HF.renderTasks=(screen,state)=>{
   const takeLabel=running&&!effective.includes('taken-over')?'Take over in Terminal':'Open in Terminal';
   const menu=[...(running?['Cancel task']:[]),...(sessionID?['Copy resume command']:[]),...(effective==='spawned'?['Open parent']:[]),'Raw events'];
   const actions=`<div class="ta-titlebar-actions"><span class="ta-status ${actionState==='failed'?'failed':terminal.has(actionState)?'completed':'running'}">${actionState.replaceAll('-',' ')}</span>${HF.button(takeLabel,takeLabel==='Open in Terminal'?'feedback:Mock terminal selected':'feedback:Mock terminal takeover requested')}<button class="ta-inspector-button" type="button" data-action="toggle-inspector" aria-label="Show inspector" title="Show inspector"><img src="assets/symbols/task-activity/sidebar.right.png" alt=""></button><details><summary aria-label="More actions"><img src="assets/symbols/task-activity/ellipsis.circle.png" alt=""></summary>${menu.map(v=>HF.button(v,v==='Raw events'?'route:raw-events/populated':'feedback:'+v)).join('')}</details></div>`;
-  const titlebar=HF.titlebar('Harflow').replace('<span class="window-title">Harflow</span>','<span class="window-title">Harflow</span>'+actions);
-  return HF.app(body,'task-activity-app','Harflow').replace(HF.titlebar('Harflow'),titlebar);
+  const options={connectionStatus:true,connectionScreen:HF.route?.screen,connectionState:HF.route?.state,actions};
+  return HF.app(body,'task-activity-app','Harflow').replace(HF.titlebar('Harflow',{connectionStatus:true,connectionScreen:HF.route?.screen,connectionState:HF.route?.state}),HF.titlebar('Harflow',options));
 };
 
 HF.updateTaskMessageEligibility=()=>{

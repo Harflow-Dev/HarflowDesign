@@ -7,7 +7,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const scripts = ['tokens.js', 'registry.js', 'components.js', 'tasks.js', 'task-activity.js', 'parallel.js', 'task-approvals.js', 'task-summary.js', 'workflows.js', 'workflow-connectors.js', 'workflow-editor-inspector.js', 'workflow-editor.js', 'workflow-run.js', 'dialogs.js', 'foundations.js'];
+const scripts = ['tokens.js', 'registry.js', 'appearance.js', 'components.js', 'tasks.js', 'task-activity.js', 'parallel.js', 'task-approvals.js', 'task-summary.js', 'workflows.js', 'workflow-connectors.js', 'workflow-editor-inspector.js', 'workflow-editor.js', 'workflow-run.js', 'dialogs.js', 'foundations.js'];
 
 function loadDesignRuntime({ captureEvents = false, querySelectorOverride, querySelectorAllOverride } = {}) {
   const announcement = { textContent: '', classList: { add() {}, remove() {} } };
@@ -40,6 +40,41 @@ function loadDesignRuntime({ captureEvents = false, querySelectorOverride, query
   return context.HF;
 }
 
+function appearanceHarness({ saved = null, matches = false } = {}) {
+  const writes = [];
+  const mediaListeners = [];
+  const root = { dataset: {} };
+  const picker = { value: '' };
+  const buttons = ['light', 'dark', 'system'].map(value => {
+    const classes = new Set();
+    return {
+      dataset: { appearancePreference: value },
+      classList: { toggle(name, enabled) { if (enabled) classes.add(name); else classes.delete(name); } },
+      get selected() { return classes.has('selected'); },
+      setAttribute(name, value) { this[name] = value; },
+    };
+  });
+  const document = {
+    documentElement: root,
+    querySelectorAll: selector => selector === '[data-appearance-preference]' ? buttons : [],
+    querySelector: selector => selector === '#theme-picker' ? picker : null,
+  };
+  const storage = {
+    getItem() { return saved; },
+    setItem(key, value) { writes.push([key, value]); },
+  };
+  const media = {
+    matches,
+    addEventListener(type, listener) { if (type === 'change') mediaListeners.push(listener); },
+  };
+  const location = { hash: '#tasks/populated/system' };
+  const history = { replaceState(_state, _title, hash) { location.hash = hash; } };
+  const hf = loadDesignRuntime();
+  const controller = hf.createAppearanceController({ storage, matchMedia: () => media, document, location, history });
+  controller.publish();
+  return { hf, controller, root, picker, buttons, writes, media, mediaListeners, location };
+}
+
 const renderers = {
   foundations: (hf, state) => hf.renderFoundations(state),
   tasks: (hf, state) => hf.renderTasks('tasks', state),
@@ -56,6 +91,114 @@ const renderers = {
   'mcp-permissions': (hf, state) => hf.renderMCP(state),
   'menu-bar': (hf, state) => hf.renderMenu(state),
 };
+
+test('appearance defaults to System, follows the OS, and keeps the selected control distinct from the resolved theme', () => {
+  const { controller, root, buttons, media, mediaListeners } = appearanceHarness({ matches: false });
+  assert.equal(controller.preference, 'system');
+  assert.equal(controller.theme, 'light');
+  assert.equal(root.dataset.theme, 'light');
+  assert.equal(buttons.find(button => button.selected).dataset.appearancePreference, 'system');
+
+  media.matches = true;
+  mediaListeners[0]();
+  assert.equal(controller.theme, 'dark');
+  assert.equal(controller.themeMode, 'system');
+});
+
+test('appearance responds to OS changes only while System is selected', () => {
+  const { controller, root, media, mediaListeners } = appearanceHarness({ matches: false });
+  assert.equal(mediaListeners.length, 1);
+  media.matches = true;
+  mediaListeners[0]();
+  assert.equal(root.dataset.theme, 'dark');
+
+  controller.setPreference('light');
+  media.matches = false;
+  mediaListeners[0]();
+  assert.equal(controller.theme, 'light');
+  assert.equal(root.dataset.theme, 'light');
+  assert.equal(controller.preference, 'light');
+});
+
+test('appearance preview overrides the resolved theme without changing the stored app preference', () => {
+  const { controller, root, picker, writes, location } = appearanceHarness({ saved: 'system', matches: false });
+  assert.equal(controller.setPreview('dark'), 'dark');
+  assert.equal(controller.preview, 'dark');
+  assert.equal(controller.preference, 'system');
+  assert.equal(root.dataset.theme, 'dark');
+  assert.equal(picker.value, 'dark');
+  assert.deepEqual(writes, []);
+  assert.equal(location.hash, '#tasks/populated/dark');
+
+  controller.setPreference('light');
+  assert.equal(controller.preview, null);
+  assert.equal(controller.theme, 'light');
+  assert.deepEqual(writes, [['harflow.appearance', 'light']]);
+  assert.equal(location.hash, '#tasks/populated/system');
+});
+
+test('appearance persistence is mode-only and storage failures do not prevent selection', () => {
+  const writes = [];
+  const storage = {
+    getItem() { throw new Error('storage unavailable'); },
+    setItem() { throw new Error('storage unavailable'); },
+  };
+  const { hf } = appearanceHarness();
+  const controller = hf.createAppearanceController({ storage, matchMedia: () => ({ matches: false }) });
+  assert.equal(controller.preference, 'system');
+  assert.doesNotThrow(() => controller.setPreference('dark'));
+  assert.equal(controller.theme, 'dark');
+  assert.equal(writes.length, 0);
+});
+
+test('appearance controls expose native icon buttons with an initial selected state', () => {
+  const hf = loadDesignRuntime();
+  const html = hf.appearanceControl();
+  assert.match(html, /class="appearance-button selected"[^>]*data-appearance-preference="system"/);
+  assert.match(html, /assets\/symbols\/appearance\/sun\.max\.png/);
+  assert.match(html, /assets\/symbols\/appearance\/moon\.png/);
+  assert.match(html, /assets\/symbols\/appearance\/desktopcomputer\.png/);
+  assert.match(html, /aria-pressed="true"/);
+});
+
+test('connection indicator reflects the task-list fixture, while task panes stay connected during loading', () => {
+  const hf = loadDesignRuntime();
+  for (const state of ['loading', 'list-error', 'install-retry']) {
+    assert.match(hf.connectionIndicator('tasks', state), /Disconnected/);
+  }
+  for (const state of ['empty', 'populated']) {
+    assert.match(hf.connectionIndicator('tasks', state), /Connected/);
+  }
+  hf.route = { screen: 'summary', state: 'loading', theme: 'light' };
+  const summary = hf.renderTasks('summary', 'loading');
+  assert.match(summary, /aria-label="Connected"/);
+  assert.match(summary, /aria-label="Connected" title="Connected"/, 'connected panes should not claim the task list has not loaded');
+  hf.route = { screen: 'tasks', state: 'loading', theme: 'light' };
+  assert.match(hf.renderTasks('tasks', 'loading'), /aria-label="Disconnected"/);
+});
+
+test('task toolbar actions survive appearance-aware task rendering', () => {
+  const hf = loadDesignRuntime();
+  hf.route = { screen: 'task-detail', state: 'running', theme: 'light' };
+  const html = hf.renderTasks('task-detail', 'running');
+  assert.match(html, /data-action="toggle-inspector"/);
+  assert.match(html, /Take over in Terminal/);
+  assert.match(html, /More actions/);
+  assert.match(html, /class="connection-indicator connected"/);
+});
+
+test('principal title styling is scoped to the specimen title and matches native hierarchy', () => {
+  const css = fs.readFileSync(path.join(root, 'styles/appearance.css'), 'utf8');
+  const titleRule = css.match(/\.main-window-titlebar \.window-title\s*\{([^}]*)\}/)?.[1] || '';
+  assert.match(titleRule, /font-size\s*:\s*15px/);
+  assert.match(titleRule, /font-weight\s*:\s*700/);
+  assert.match(titleRule, /color\s*:\s*var\(--primaryText\)/);
+  const hf = loadDesignRuntime();
+  hf.route = { screen: 'task-detail', state: 'running', theme: 'light' };
+  assert.match(hf.renderTasks('task-detail', 'running'), /class="titlebar main-window-titlebar"/);
+  assert.match(hf.titlebar('Sheet'), /class="titlebar"/);
+  assert.doesNotMatch(hf.titlebar('Sheet'), /main-window-titlebar/);
+});
 
 test('registry has a renderer and distinct state output for every screen state', () => {
   const hf = loadDesignRuntime();

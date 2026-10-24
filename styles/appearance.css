@@ -1,0 +1,19 @@
+.titlebar { position: relative; }
+.main-window-titlebar .window-title { color: var(--primaryText); font-size: 15px; font-weight: 700; }
+.window-title-cluster { position: absolute; left: 50%; transform: translateX(-50%); display: inline-flex; align-items: center; gap: 6px; }
+.titlebar .window-title { flex: none; text-align: center; }
+.connection-indicator { display: inline-block; width: 7px; height: 7px; flex: 0 0 7px; border-radius: 50%; }
+.connection-indicator.connected { background: var(--doneGreen); }
+.connection-indicator.disconnected { background: var(--failedRed); }
+.sidebar-bottom { box-sizing: border-box; min-height: 53px; margin: auto -12px 0; padding: 8px 16px 12px; gap: 6px; border-top: 1px solid var(--hairline); }
+.appearance-control { display: inline-flex; align-items: center; gap: 4px; }
+.appearance-button { position: relative; width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; padding: 0 !important; border: 1px solid transparent !important; border-radius: 8px !important; background: transparent !important; }
+.appearance-button > img:first-child { display: block; width: auto; height: auto; max-width: 20px; max-height: 16px; object-fit: contain; opacity: .78; }
+.app .appearance-button.selected { background: var(--pillFill) !important; border-color: color-mix(in srgb, var(--secondaryText) 45%, transparent) !important; }
+.appearance-button.selected > img:first-child { opacity: 1; }
+.appearance-button:focus-visible { outline: 2px solid var(--accentLink); outline-offset: 1px; }
+.appearance-check { display: none; }
+.sidebar-bottom .settings-gear { width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; padding: 0 !important; border: 0 !important; background: transparent !important; }
+.settings-gear img { width: 16px; height: 16px; opacity: .8; }
+html[data-theme="dark"] .appearance-button > img:first-child,
+html[data-theme="dark"] .settings-gear img { filter: brightness(0) invert(85%); }

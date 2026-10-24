@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Match native icon-only Light/Dark/System controls and titlebar connection status; separate catalog preview appearance from the locally persisted app preference.
+
 - Share native rounded connector geometry, open arrowheads, backward dashes, and zoom scaling between workflow editor and run.
 
 - Calibrate workflow run layouts and states against native mocks; preview compact default and full-width selected Activity sidebars.
