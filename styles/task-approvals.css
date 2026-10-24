@@ -30,10 +30,14 @@
 .approval-inputs > div { display:grid; grid-template-columns:minmax(90px,auto) 1fr; gap:8px; }
 .approval-inputs dt { color:var(--secondaryText); overflow-wrap:anywhere; }
 .approval-inputs dd { margin:0; color:var(--primaryText); overflow-wrap:anywhere; white-space:pre-wrap; }
-.approval-buttons { display:flex; gap:12px; }
-.approval-buttons button { padding:0; border:0; background:transparent; color:var(--accentLink); font-family:inherit; font-size:13px; line-height:18px; }
-.approval-buttons button:last-child { color:var(--dangerFG); }
-.approval-buttons button:disabled { opacity:.42; }
+/* Explicit action styling overrides the card's compact text-button defaults. */
+.approval-buttons { display:flex; flex-wrap:wrap; gap:8px; padding-top:4px; }
+.task-activity-app .approval-card .approval-buttons button { min-height:32px; padding:6px 14px; border:1px solid var(--accentFill); border-radius:var(--radius-row); background:var(--accentFill); color:var(--onAccent); font-family:inherit; font-size:13px; font-weight:600; line-height:18px; }
+.task-activity-app .approval-card .approval-buttons button:last-child { border-color:var(--dangerFG); background:transparent; color:var(--dangerFG); }
+.task-activity-app .approval-card .approval-buttons button:hover:not(:disabled) { filter:brightness(1.1); }
+.task-activity-app .approval-card .approval-buttons button:last-child:hover:not(:disabled) { background:var(--dangerBG); }
+.task-activity-app .approval-card .approval-buttons button:focus-visible { outline:2px solid var(--accentLink); outline-offset:3px; }
+.task-activity-app .approval-card .approval-buttons button:disabled { opacity:.42; }
 .approval-error { margin:0; color:var(--dangerFG); font-size:11px; }
 .approval-notice { margin:0; color:var(--secondaryText); font-size:11px; }
 .approval-more { justify-self:start; font-size:12px; }
