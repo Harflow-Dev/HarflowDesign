@@ -7,7 +7,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const scripts = ['tokens.js', 'registry.js', 'appearance.js', 'components.js', 'tasks.js', 'task-activity.js', 'parallel.js', 'task-approvals.js', 'task-summary.js', 'workflows.js', 'workflow-connectors.js', 'workflow-editor-proposals.js', 'workflow-editor-inspector.js', 'workflow-editor.js', 'council-activity.js', 'workflow-run.js', 'dialogs.js', 'workflow-launch-proposals.js', 'state-recovery.js', 'sidebar-setup.js', 'sidebar-proposals.js', 'foundations.js'];
+const scripts = ['tokens.js', 'registry.js', 'appearance.js', 'components.js', 'tasks.js', 'task-activity.js', 'parallel.js', 'task-approvals.js', 'task-summary.js', 'workflows.js', 'workflow-connectors.js', 'workflow-editor-proposals.js', 'workflow-editor-inspector.js', 'workflow-editor.js', 'council-activity.js', 'workflow-run.js', 'dialogs.js', 'workflow-launch-proposals.js', 'state-recovery.js', 'sidebar-setup.js', 'sidebar-proposals.js', 'statistics.js', 'foundations.js'];
 
 function loadDesignRuntime({ captureEvents = false, querySelectorOverride, querySelectorAllOverride } = {}) {
   const announcement = { textContent: '', classList: { add() {}, remove() {} } };
@@ -90,6 +90,7 @@ const renderers = {
   settings: (hf, state) => hf.renderSettings(state),
   'mcp-permissions': (hf, state) => hf.renderMCP(state),
   'menu-bar': (hf, state) => hf.renderMenu(state),
+  statistics: (hf, state) => hf.renderStatistics(state),
 };
 
 test('appearance defaults to System, follows the OS, and keeps the selected control distinct from the resolved theme', () => {
@@ -2108,4 +2109,38 @@ test('Council run activity is one feed that names agents, rounds, questions, ver
   hf.route = { theme: 'light', screen: 'workflow-run', state: 'running' };
   hf.resetWorkflowRun(hf.route);
   assert.doesNotMatch(hf.renderRun('running'), /wfr-council|wr-select:council/);
+});
+
+test('statistics is a whole-proposal family with no native source and honest figures', () => {
+  const hf = loadDesignRuntime();
+  const family = hf.screens.find(screen => screen.id === 'statistics');
+  assert.deepEqual(Array.from(family.states), ['overview', 'empty']);
+  assert.equal(family.source, undefined);
+  assert.deepEqual(Array.from(family.proposal.tickets), ['#9']);
+  for (const state of family.states) assert.equal(hf.specimenStatus('statistics', state).kind, 'exploratory');
+  assert.match(hf.specimenStatus('statistics', 'overview').caption, /^Exploratory · ticket #9 · Not approved/);
+  assert.match(fs.readFileSync(path.join(root, 'scripts/catalog.js'), 'utf8'), /No native source/);
+  hf.resetStatistics();
+  hf.route = { theme: 'light', screen: 'statistics', state: 'overview' };
+  const html = hf.renderStatistics('overview');
+  for (const text of ['Statistics', 'Runs', 'Elapsed run time', 'Wall clock, per run', 'Summed execution time', 'All nodes added together', 'Cost as reported by harness', 'Averages exclude 6 running or incomplete runs.', 'Token and cost totals cover 112 of 148 runs', 'Requested opus · effective opus', 'Unknown repository', 'Cache: Unavailable', 'aria-label="Time range"']) assert.ok(html.includes(text), text);
+  assert.match(html, /stat-tile unavailable"><span class="stat-label">Cost<\/span><strong class="stat-value">Unavailable</);
+  assert.doesNotMatch(html, /\$\s?0|Cost[^<]*>0</, 'missing figures are Unavailable, never 0');
+  assert.match(html, /data-action="route:statistics\/overview" aria-current="page"/, 'sidebar entry');
+  assert.doesNotMatch(html, /task-row active/, 'no task row is selected beside the Statistics entry');
+  for (const days of [7, 30, 90]) {
+    const range = hf.statisticsRanges[days];
+    assert.equal(range.done + range.failed + range.incomplete, range.runs, `${days}-day status breakdown adds up`);
+    assert.ok(range.coverage <= range.runs);
+    assert.match(hf.statisticsBody('overview', days), new RegExp(`Averages exclude ${range.incomplete} running or incomplete runs\\.`));
+  }
+  const empty = hf.renderStatistics('empty');
+  assert.match(empty, /No statistics yet/);
+  assert.match(empty, /Run a workflow or a task and its history appears here\./);
+  assert.doesNotMatch(empty, /stat-tile|stat-rows/);
+  for (const other of hf.screens) {
+    if (other.id === 'statistics') continue;
+    hf.route = { theme: 'light', screen: other.id, state: other.states[0] };
+    assert.doesNotMatch(renderers[other.id](hf, other.states[0]), /stat-entry|stat-range|statistics-content/, `${other.id} renders statistics markup`);
+  }
 });

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add an exploratory Statistics family with overview and empty states and a sidebar entry, shown without a native source link.
+
 - Add exploratory starred workflows in the Run Workflow chooser and the Council run activity feed, and route the sidebar Rename action to the editor rename dialog.
 
 - Add exploratory workflow editor proposals for rename, standalone node reordering, the Council node configuration, and the readiness report, and fix standalone card order and layout.
