@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Usage ranking & appearance — Harflow design proposal</title>
+  <link rel="stylesheet" href="../styles/tokens.css">
+  <link rel="stylesheet" href="preferences.css">
+  <script src="preferences.js" defer></script>
+</head>
+<body>
+  <header class="catalog-bar">
+    <a class="catalog-home" href="../index.html">Harflow interface reference</a>
+    <span class="catalog-label">Exploratory proposal · Preferences</span>
+    <span class="status-badge">Not approved</span>
+  </header>
+  <main>
+    <section class="intro">
+      <p class="eyebrow">Preferences · usage ranking and appearance</p>
+      <h1>Keep the familiar choices close.</h1>
+      <p>This proposal explores frequency-ranked agent and model choices for New Session and workflow candidates, alongside an app-wide Light, Dark, or System appearance setting. Rank successful submissions across the shared pickers over the lifetime of the feature, beginning at ship. Fixture counts are illustrative.</p>
+    </section>
+
+    <section class="controls" aria-label="Proposal controls">
+      <div class="control-group">
+        <span class="control-label" id="surface-label">Surface</span>
+        <div class="segmented" role="group" aria-labelledby="surface-label">
+          <button type="button" data-surface="new-session" aria-pressed="true">New Session</button>
+          <button type="button" data-surface="orchestrator" aria-pressed="false">Orchestrator</button>
+          <button type="button" data-surface="workflow-node" aria-pressed="false">Workflow node</button>
+        </div>
+      </div>
+      <div class="control-group">
+        <label class="control-label" for="state-select">Fixture state</label>
+        <select id="state-select">
+          <option value="populated">Populated</option><option value="tied">Tied ranking</option>
+          <option value="loading">Loading</option><option value="empty">No usage history</option><option value="error">Catalog error</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label class="control-label" for="profile-select">Fixture ranking</label>
+        <select id="profile-select"><option value="sample-a">Sample A</option><option value="sample-b">Sample B</option></select>
+      </div>
+      <div class="control-group orchestrator-control" hidden>
+        <label class="control-label" for="orchestrator-select">Configured orchestrator</label>
+        <select id="orchestrator-select"><option value="claude">Claude · Anthropic Sonnet 4.5</option><option value="codex">Codex · OpenAI GPT-5.2 Codex</option><option value="opencode">OpenCode · OpenAI GPT-5.2</option></select>
+      </div>
+    </section>
+
+    <section class="specimen-wrap" aria-label="Main window preview">
+      <div class="specimen-caption"><span>Main window · 1000 pt minimum</span><span>Fixture preview</span></div>
+      <div class="app-window">
+        <header class="window-header">
+          <div class="window-title"><span class="app-mark">H</span><span>Harflow</span></div>
+          <div class="header-appearance">
+            <span class="header-appearance-label" id="appearance-label">Appearance</span>
+            <div class="segmented" role="group" aria-labelledby="appearance-label">
+              <button type="button" data-appearance="light" aria-pressed="false">Light</button>
+              <button type="button" data-appearance="dark" aria-pressed="false">Dark</button>
+              <button type="button" data-appearance="system" aria-pressed="true">System</button>
+            </div>
+          </div>
+          <div class="header-actions">
+            <button class="quiet-button">New session</button><button class="primary-button">Run workflow</button>
+          </div>
+        </header>
+        <div class="window-body">
+          <aside class="sidebar" aria-label="Task sidebar">
+            <div class="sidebar-heading"><span>Tasks</span><button aria-label="Add task">＋</button></div>
+            <div class="side-row selected"><span class="backend-dot claude"></span><span><b>Clarify usage ranking</b><small>claude · Running</small></span></div>
+            <div class="side-row"><span class="backend-dot codex"></span><span><b>Review preferences</b><small>codex · Completed</small></span></div>
+            <div class="side-row"><span class="backend-dot opencode"></span><span><b>Improve workflow</b><small>opencode · Yesterday</small></span></div>
+            <div class="sidebar-bottom"><button class="quiet-button">Settings</button></div>
+          </aside>
+          <section class="detail" aria-label="Selected task detail">
+            <div class="detail-toolbar"><div><span class="live-dot"></span><span class="backend-tag claude-tag">Claude</span><b>Clarify usage ranking</b></div><div class="detail-actions"><button aria-label="Copy task details">Copy</button><button aria-label="More task actions">•••</button></div></div>
+            <div class="conversation">
+              <div class="message user-message">Explore how usage ranking and a global appearance choice could fit into Harflow.</div>
+              <div class="assistant-message"><span class="backend-dot claude"></span><div><b>Working through the proposal</b><p>Keep the controls visible while preserving the existing split-view rhythm and task actions.</p><div class="activity-line"><span class="live-dot"></span>Reading source-backed preferences behavior</div></div></div>
+            </div>
+            <div class="composer"><span>Send a follow-up…</span><button class="primary-button">Send</button></div>
+          </section>
+        </div>
+      </div>
+    </section>
+
+    <section class="lower-grid">
+      <article class="panel preference-panel">
+        <div class="panel-heading"><div><p class="eyebrow" id="surface-eyebrow">New Session</p><h2 id="surface-title">Choose an agent</h2></div><span class="fixture-chip">Shared lifetime ranking</span></div>
+        <div class="form-row"><label for="agent-select">Agent</label><select id="agent-select"></select></div>
+        <div class="form-row model-row"><label for="model-select">Model</label><select id="model-select"></select></div>
+        <p class="note" id="selection-note" aria-live="polite"></p>
+        <div class="ranking-block"><div class="ranking-heading"><h3>Most used</h3><span>Example counts</span></div><div id="usage-list" class="usage-list" aria-live="polite"></div></div>
+        <p class="fine-print">Example counts illustrate successful submissions since feature ship. Ranking is shared by New Session, the effective workflow orchestrator, and builder candidates; these values are not collected app data.</p>
+      </article>
+      <article class="panel preview-panel">
+        <div class="panel-heading"><div><p class="eyebrow">Appearance preview</p><h2>Second window</h2></div><span class="fixture-chip">Illustrative</span></div>
+        <div class="mini-window" aria-label="Appearance preview window">
+          <div class="mini-titlebar"><span class="traffic-dots"><i></i><i></i><i></i></span><b>New session</b><span></span></div>
+          <div class="mini-content"><h3>Start a task</h3><p>Choose an agent and describe what it should do.</p><label>Agent</label><div class="mock-field"><span>Claude</span><span>⌄</span></div><label>What should it do?</label><div class="mock-editor">Review the latest changes…</div><div class="mini-footer"><button class="quiet-button">Cancel</button><button class="primary-button">Start</button></div></div>
+        </div>
+        <p class="note">The preview follows the selected Light, Dark, or browser System appearance. The native sheet dimensions and platform materials are approximated.</p>
+      </article>
+    </section>
+
+    <section class="explanation panel">
+      <p class="eyebrow">Behavior under review</p><h2>Keep explicit choices intact</h2>
+      <div class="behavior-grid">
+        <p><b>New Session:</b> order available agents by the fixture ranking. Model choices are ranked within the selected agent and retain a clear <b>Default</b> option.</p>
+        <p><b>Workflow node:</b> list the configured orchestrator agent first once; list its model first only when that exact provider-qualified model is supported by the selected agent.</p>
+        <p><b>Explicit choices:</b> changing the ranking sample or orchestrator fixture preserves selected agent and model. A backend change may reconcile model availability through normal editor behavior.</p>
+        <p><b>Unavailable choices:</b> do not introduce agents or models that are absent from the current catalog. Keep provider-qualified model identity in fixture data.</p>
+      </div>
+      <p class="scope-note">Surface and state selectors are outside the app specimen. They expose deterministic fixture variations for review; native menus, settings navigation, and persistence are not implemented here.</p>
+    </section>
+
+    <footer class="source-note">
+      <b>Source basis</b>
+      <span>HarflowMac <code>079281e72da37145f0de4c7d901a5a1864fc6800</code>: <code>macos/HfFeatures/MainWindowFeature/Sources/MainWindowFeature/Coordinator/MainWindowNavigationView.swift</code>, <code>.../NewSession/NewSessionView.swift</code>, and <code>.../Workflow/WorkflowAgentEditor.swift</code>.</span>
+      <span>Browser approximations: window chrome, sheet, menus, split view, and system appearance; fixture persistence is local to this page and has no native effect.</span>
+    </footer>
+  </main>
+</body>
+</html>
