@@ -1,0 +1,32 @@
+/* Caller approvals share the Activity reading column and task typography. */
+.approval-card { display:grid; gap:8px; padding:12px; border-radius:8px; background:var(--composerFill); color:var(--primaryText); font-size:12px; }
+.approval-inline { width:min(696px,100%); align-self:center; }
+.approval-hint { display:grid; gap:4px; width:100%; margin:0 0 16px; padding:10px 12px; border:1px solid var(--hairline); border-radius:8px; background:var(--composerFill); color:var(--primaryText); text-align:left; cursor:pointer; }
+.approval-hint strong { font-size:12px; font-weight:600; }
+.approval-hint span { color:var(--secondaryText); font-size:11px; }
+.approval-card > header { display:flex; align-items:center; gap:8px; min-height:18px; }
+.approval-card > header strong { font-size:12px; font-weight:600; }
+.approval-card > header button,.approval-inspect,.approval-more { padding:0; border:0; background:transparent; color:var(--primaryText); font:inherit; text-align:left; }
+.approval-card > header button { margin-left:auto; color:var(--secondaryText); }
+.approval-card button { cursor:pointer; }
+.task-activity-app .approval-card button { min-height:0; height:auto; padding:0; border:0; border-radius:0; background:transparent; color:var(--primaryText); font-family:inherit; font-size:13px; font-weight:400; line-height:18px; }
+.task-activity-app .approval-card button:hover { background:transparent; }
+.task-activity-app .approval-card > header button { color:var(--secondaryText); font-size:12px; line-height:16px; }
+.task-activity-app .approval-card .approval-inspect { font-size:13px; font-weight:400; line-height:18px; }
+.task-activity-app .approval-card .approval-more { font-size:13px; line-height:18px; }
+.approval-card button:disabled { cursor:default; opacity:.45; }
+.approval-request { display:grid; gap:4px; }
+.approval-inspect { width:max-content; max-width:100%; font-size:12px; font-weight:500; }
+.approval-metadata,.approval-readonly { margin:0; color:var(--secondaryText); font-size:11px; line-height:14px; }
+.approval-detail { display:grid; gap:8px; padding:2px 0 0; color:var(--secondaryText); font-size:11px; line-height:1.45; }
+.approval-detail pre { width:max-content; max-width:100%; max-height:220px; justify-self:center; overflow:auto; margin:0; padding:8px; color:var(--primaryText); font:11px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace; white-space:pre; }
+.approval-buttons { display:flex; gap:12px; }
+.approval-buttons button { padding:0; border:0; background:transparent; color:var(--accentLink); font-family:inherit; font-size:13px; line-height:18px; }
+.approval-buttons button:last-child { color:var(--dangerFG); }
+.approval-buttons button:disabled { opacity:.42; }
+.approval-error { margin:0; color:var(--dangerFG); font-size:11px; }
+.approval-notice { margin:0; color:var(--secondaryText); font-size:11px; }
+.approval-more { justify-self:start; font-size:12px; }
+.ta-approval-waiting { color:var(--warningFG); }
+
+.ta-approval-slot { display:contents; }
