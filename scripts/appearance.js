@@ -52,10 +52,11 @@ HF.appearanceControl=()=>`<div class="appearance-control" role="group" aria-labe
   ['light','sun.max','Light'],['dark','moon','Dark'],['system','desktopcomputer','System']
 ].map(([value,symbol,label])=>{const selected=HF.appearance.preference===value;return `<button type="button" class="appearance-button${selected?' selected':''}" data-appearance-preference="${value}" aria-label="${label}" title="${value==='system'?'System — follows this Mac':label}" aria-pressed="${selected}"><img src="assets/symbols/appearance/${symbol}.png" alt=""></button>`}).join('')}</div>`;
 HF.connectionIndicator=(screen,state)=>{
-  const disconnected=screen==='tasks'&&['loading','list-error','install-retry'].includes(state);
+  const setupUnavailable=screen==='tasks'&&['setup-required','setup-installing','setup-failed','setup-update-required','setup-updating','setup-update-failed'].includes(state);
+  const disconnected=screen==='tasks'&&(['loading','list-error','install-retry'].includes(state)||setupUnavailable);
   const connected=!disconnected;
   const label=connected?'Connected':'Disconnected';
-  const hint=!disconnected?label:state==='list-error'?'Could not load tasks.':state==='loading'?'Task list has not loaded yet':'Managed runtime could not be prepared';
+  const hint=!disconnected?label:state==='setup-installing'?'Required components are being installed.':state==='setup-updating'?'Required components are being updated.':state==='setup-failed'?'Required components could not be installed.':state==='setup-update-failed'?'The required update could not be installed.':state==='setup-update-required'?'Harflow needs updated components.':state==='setup-required'?'Harflow setup is required.':state==='list-error'?'Could not load tasks.':state==='loading'?'Task list has not loaded yet':'Managed runtime could not be prepared';
   return `<span class="connection-indicator ${connected?'connected':'disconnected'}" role="img" aria-label="${label}" title="${hint}"></span>`;
 };
 })();

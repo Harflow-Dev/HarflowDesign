@@ -60,6 +60,11 @@ HF.taskActivitySurface=(task,state,initialTab='Activity',summaryState=state)=>{
 
 const base=HF.renderTasks;
 HF.renderTasks=(screen,state)=>{
+  if(screen==='tasks'&&HF.isSidebarSetupState?.(state)){
+    HF.currentTask=null;
+    HF.taskDetailContext=null;
+    return HF.renderSidebarSetup(state);
+  }
   if(!['tasks','task-detail','summary'].includes(screen)||['empty','no-results','backend-empty','loading','list-error','missing','deferred'].includes(state)&&screen!=='summary') return base(screen,state);
   let task=HF.currentTask;
   const summaryRoute=screen==='summary';

@@ -6,7 +6,7 @@ HF.empty=(title,body,action='')=>`<div class="empty"><h3>${title}</h3><p>${body}
 HF.skeleton=()=>`<div aria-label="Loading" role="status"><div class="skeleton short"></div><div class="skeleton"></div><div class="skeleton block"></div><div class="skeleton"></div></div>`;
 HF.banner=(text,error=false)=>`<div class="banner ${error?'error':''}" role="status">${text}</div>`;
 HF.titlebar=(title,options={})=>`<div class="titlebar${options.connectionStatus?' main-window-titlebar':''}"><span class="window-dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="window-title-cluster"><span class="window-title">${title}</span>${options.connectionStatus?HF.connectionIndicator(options.connectionScreen,options.connectionState):''}</span>${options.actions||''}</div>`;
-HF.app=(body,cls='',title='Harflow')=>`<section class="app ${cls}" aria-label="${title} specimen">${HF.titlebar(title,{connectionStatus:body.includes('class="sidebar"'),connectionScreen:HF.route?.screen,connectionState:HF.route?.state})}${body}</section>`;
+HF.app=(body,cls='',title='Harflow')=>`<section class="app ${cls}" aria-label="${title} specimen">${HF.titlebar(title,{connectionStatus:body.includes('class="sidebar"')||body.includes('class="sidebar '),connectionScreen:HF.route?.screen,connectionState:HF.route?.state})}${body}</section>`;
 HF.sheet=(body,cls='')=>HF.app(`<div class="sheet-stage"><section class="sheet ${cls}">${body}</section></div>`,'','Harflow');
 HF.field=(label,value='',type='text')=>`<label class="form-field">${label}<input type="${type}" value="${esc(value)}"></label>`;
 HF.select=(label,values)=>`<label class="form-field">${label}<select>${values.map(v=>`<option>${v}</option>`).join('')}</select></label>`;

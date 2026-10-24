@@ -7,7 +7,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const scripts = ['tokens.js', 'registry.js', 'appearance.js', 'components.js', 'tasks.js', 'task-activity.js', 'parallel.js', 'task-approvals.js', 'task-summary.js', 'workflows.js', 'workflow-connectors.js', 'workflow-editor-inspector.js', 'workflow-editor.js', 'workflow-run.js', 'dialogs.js', 'state-recovery.js', 'foundations.js'];
+const scripts = ['tokens.js', 'registry.js', 'appearance.js', 'components.js', 'tasks.js', 'task-activity.js', 'parallel.js', 'task-approvals.js', 'task-summary.js', 'workflows.js', 'workflow-connectors.js', 'workflow-editor-inspector.js', 'workflow-editor.js', 'workflow-run.js', 'dialogs.js', 'state-recovery.js', 'sidebar-setup.js', 'foundations.js'];
 
 function loadDesignRuntime({ captureEvents = false, querySelectorOverride, querySelectorAllOverride } = {}) {
   const announcement = { textContent: '', classList: { add() {}, remove() {} } };
@@ -1611,4 +1611,110 @@ test('workflow editor controller keeps on-demand identities unique after delete 
   assert.notEqual(readdedID, firstID);
   assert.notEqual(readdedID, secondID);
   assert.equal(new Set(readded.draft.standaloneNodes.map(node => node.id)).size, readded.draft.standaloneNodes.length);
+});
+
+test('sidebar setup states are registered as a complete task route family', () => {
+  const hf = loadDesignRuntime();
+  const states = hf.screens.find(screen => screen.id === 'tasks').states;
+  assert.equal(JSON.stringify(states.slice(-7)), JSON.stringify([
+    'setup-required', 'setup-installing', 'setup-failed',
+    'setup-update-required', 'setup-updating', 'setup-update-failed', 'setup-ready'
+  ]));
+  assert.equal(typeof hf.sidebarSetup, 'function');
+  assert.equal(typeof hf.renderSidebarSetup, 'function');
+});
+
+test('unready setup cards keep task history and creation controls unavailable', () => {
+  const hf = loadDesignRuntime();
+  const unready = [
+    'setup-required', 'setup-installing', 'setup-failed',
+    'setup-update-required', 'setup-updating', 'setup-update-failed'
+  ];
+  for (const state of unready) {
+    const sidebar = hf.sidebarSetup(state);
+    const page = hf.renderSidebarSetup(state);
+    assert.match(sidebar, /class="sidebar sidebar-setup/);
+    assert.doesNotMatch(sidebar, /task-row|task-activity-app|workflow-row|setup-empty-history/);
+    assert.doesNotMatch(page, /task-row|task-activity-app|workflow-row|New session|Create workflow/);
+    assert.match(page, /Finish setting up Harflow/);
+  }
+});
+
+test('setup actions route to busy states and busy states suppress duplicate actions', () => {
+  const hf = loadDesignRuntime();
+  const required = hf.sidebarSetup('setup-required');
+  assert.match(required, /Install required components/);
+  assert.match(required, /data-action="route:tasks\/setup-installing"/);
+  assert.doesNotMatch(required, /Update required components/);
+
+  const installing = hf.sidebarSetup('setup-installing');
+  assert.match(installing, /role="status"/);
+  assert.doesNotMatch(installing, /Install required components|Retry installation|data-action="route:tasks\/setup-installing"/);
+
+  const failedInstall = hf.sidebarSetup('setup-failed');
+  assert.match(failedInstall, /Retry installation/);
+  assert.match(failedInstall, /data-action="route:tasks\/setup-installing"/);
+
+  const updateRequired = hf.sidebarSetup('setup-update-required');
+  assert.match(updateRequired, /Installed<\/dt><dd>0\.0\.1/);
+  assert.match(updateRequired, /Required by this app<\/dt><dd>0\.0\.2/);
+  assert.match(updateRequired, /Update required components/);
+  assert.match(updateRequired, /data-action="route:tasks\/setup-updating"/);
+  assert.doesNotMatch(updateRequired, /Install required components/);
+
+  const updating = hf.sidebarSetup('setup-updating');
+  assert.match(updating, /role="status"/);
+  assert.doesNotMatch(updating, /Update required components|Retry update|data-action="route:tasks\/setup-updating"/);
+
+  const failedUpdate = hf.sidebarSetup('setup-update-failed');
+  assert.match(failedUpdate, /Retry update/);
+  assert.match(failedUpdate, /data-action="route:tasks\/setup-updating"/);
+});
+
+test('setup rendering does not leak an existing task into an unavailable session', () => {
+  const hf = loadDesignRuntime();
+  hf.currentTask = hf.fixtures[0];
+  const html = hf.renderSidebarSetup('setup-required');
+  const routed = hf.renderTasks('tasks', 'setup-required');
+  assert.doesNotMatch(html, /task-row|task-activity-app|composer|workflow-row/);
+  assert.match(routed, /sidebar-setup-app/);
+  assert.doesNotMatch(routed, /task-row|task-activity-app|composer|workflow-row/);
+  assert.doesNotMatch(html, new RegExp(hf.fixtures[0].title));
+  hf.currentTask = null;
+});
+
+test('ready setup state is a normal empty shell without the setup card or fabricated history', () => {
+  const hf = loadDesignRuntime();
+  hf.route = { screen: 'tasks', state: 'setup-ready' };
+  const sidebar = hf.sidebarSetup('setup-ready');
+  const page = hf.renderSidebarSetup('setup-ready');
+  assert.match(sidebar, /class="sidebar sidebar-setup setup-ready"/);
+  assert.doesNotMatch(sidebar, /sidebar-setup-card|FIRST-TIME SETUP|UPDATE REQUIRED/);
+  assert.match(sidebar, /No tasks yet/);
+  assert.match(sidebar, /route:new-session\/default/);
+  assert.match(sidebar, /route:workflow-editor\/empty/);
+  assert.doesNotMatch(page, /task-row|task-activity-app|workflow-row|sidebar-setup-card/);
+  assert.match(page, /Harflow is ready to use/);
+  assert.match(page, /connection-indicator connected/);
+  assert.match(page, /aria-label="Connected"/);
+});
+
+test('unready setup titlebars expose a disconnected runtime indicator', () => {
+  const hf = loadDesignRuntime();
+  for (const state of [
+    'setup-required', 'setup-installing', 'setup-failed',
+    'setup-update-required', 'setup-updating', 'setup-update-failed'
+  ]) {
+    hf.route = { screen: 'tasks', state };
+    const page = hf.renderSidebarSetup(state);
+    assert.match(page, /connection-indicator disconnected/);
+    assert.match(page, /aria-label="Disconnected"/);
+    assert.doesNotMatch(page, /aria-label="Connected"/);
+  }
+});
+
+test('setup styling uses appearance tokens for both light and dark surfaces', () => {
+  const css = fs.readFileSync(path.join(root, 'styles', 'sidebar-setup.css'), 'utf8');
+  assert.match(css, /var\(--(?:cardBorder|cardFill|primaryText|secondaryText|accentLink)\)/);
+  assert.doesNotMatch(css, /prefers-color-scheme/);
 });

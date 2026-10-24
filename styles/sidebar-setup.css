@@ -1,0 +1,55 @@
+.sidebar-setup { box-sizing: border-box; }
+.sidebar-setup-card {
+  padding: 14px 13px;
+  border: 1px solid var(--cardBorder);
+  border-radius: var(--radius-card);
+  background: var(--cardFill);
+  color: var(--primaryText);
+}
+.sidebar-setup-card h2 {
+  margin: 5px 0 7px;
+  color: var(--primaryText);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+.sidebar-setup-card p {
+  margin: 0 0 11px;
+  color: var(--secondaryText);
+  font-size: 11px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+.setup-eyebrow {
+  color: var(--secondaryText);
+  font-size: 9px;
+  font-weight: 650;
+  letter-spacing: .075em;
+}
+.sidebar-setup-card .setup-action {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 34px;
+  padding: 7px 8px;
+  border-radius: 8px;
+  font-size: 11px;
+  line-height: 1.3;
+  text-align: center;
+  white-space: normal;
+}
+.setup-versions { margin: 10px 0; }
+.setup-versions div { display: flex; justify-content: space-between; gap: 8px; padding: 4px 0; border-top: 1px solid var(--hairline); font-size: 10px; }
+.setup-versions dt { color: var(--secondaryText); }
+.setup-versions dd { margin: 0; color: var(--primaryText); font-variant-numeric: tabular-nums; }
+.sidebar-setup-card .setup-footnote { margin-top: 9px; font-size: 10px; }
+.setup-spinner { display: block; width: 15px; height: 15px; margin: 5px auto 1px; border: 2px solid var(--cardBorder); border-top-color: var(--accentLink); border-radius: 50%; animation: sidebar-setup-spin .8s linear infinite; }
+@keyframes sidebar-setup-spin { to { transform: rotate(360deg); } }
+.setup-empty-history { padding: 12px 8px; color: var(--secondaryText); font-size: 11px; text-align: center; }
+.setup-content { display: flex; align-items: center; justify-content: center; min-width: 0; padding: 32px; }
+.setup-welcome { width: min(100%, 470px); margin: auto; padding: 24px; color: var(--primaryText); text-align: center; }
+.setup-welcome h2 { margin: 8px 0; color: var(--primaryText); font-size: 20px; font-weight: 600; line-height: 1.25; }
+.setup-welcome p { max-width: 390px; margin: 0 auto; color: var(--secondaryText); font-size: 13px; line-height: 1.5; }
+.setup-welcome-actions { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+.sidebar-setup-app .sidebar-bottom { margin-top: auto; }
+.sidebar-setup-app :is(button, input, a, summary):focus-visible { outline: 2px solid var(--accentLink); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { .setup-spinner { animation-duration: 1.6s; } }
