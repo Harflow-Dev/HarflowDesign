@@ -188,7 +188,8 @@
       if (!item) return;
       if (value === 'delete') { setDialog(item); return; }
       closeMenu(true);
-      HF.feedback(value === 'rename' ? 'Rename · opens the workflow editor · mock only' : `${value === 'cancel' ? 'Cancel' : 'Resume'} requested · mock only`);
+      if (value === 'rename') { closeMenu(false); HF.navigate('workflow-editor', 'rename'); return; }
+      HF.feedback( `${value === 'cancel' ? 'Cancel' : 'Resume'} requested · mock only`);
       return;
     }
     if (action === 'sp-delete-cancel') { closeDialog('Deletion cancelled'); return; }

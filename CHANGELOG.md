@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add exploratory starred workflows in the Run Workflow chooser and the Council run activity feed, and route the sidebar Rename action to the editor rename dialog.
+
 - Add exploratory workflow editor proposals for rename, standalone node reordering, the Council node configuration, and the readiness report, and fix standalone card order and layout.
 
 - Add exploratory sidebar proposals for the header appearance control, starred workflows, and the context menu with delete confirmation.

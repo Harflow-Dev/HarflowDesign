@@ -7,7 +7,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const scripts = ['tokens.js', 'registry.js', 'appearance.js', 'components.js', 'tasks.js', 'task-activity.js', 'parallel.js', 'task-approvals.js', 'task-summary.js', 'workflows.js', 'workflow-connectors.js', 'workflow-editor-proposals.js', 'workflow-editor-inspector.js', 'workflow-editor.js', 'workflow-run.js', 'dialogs.js', 'state-recovery.js', 'sidebar-setup.js', 'sidebar-proposals.js', 'foundations.js'];
+const scripts = ['tokens.js', 'registry.js', 'appearance.js', 'components.js', 'tasks.js', 'task-activity.js', 'parallel.js', 'task-approvals.js', 'task-summary.js', 'workflows.js', 'workflow-connectors.js', 'workflow-editor-proposals.js', 'workflow-editor-inspector.js', 'workflow-editor.js', 'council-activity.js', 'workflow-run.js', 'dialogs.js', 'workflow-launch-proposals.js', 'state-recovery.js', 'sidebar-setup.js', 'sidebar-proposals.js', 'foundations.js'];
 
 function loadDesignRuntime({ captureEvents = false, querySelectorOverride, querySelectorAllOverride } = {}) {
   const announcement = { textContent: '', classList: { add() {}, remove() {} } };
@@ -1856,6 +1856,7 @@ test('compact workflow-run sidebar proposal (#15) covers every state that can di
     const canShowCompact = html.includes('wfr-sidebar-default') || html.includes('has-selection');
     if (canShowCompact) display.push(state);
     const status = hf.specimenStatus('workflow-run', state);
+    if (state === 'council') { assert.equal(status.kind, 'exploratory'); assert.deepEqual(Array.from(status.tickets), ['#17', '#15']); display.pop(); continue; }
     assert.equal(status.kind === 'contains-exploratory', canShowCompact, `workflow-run/${state} #15 element metadata`);
     if (canShowCompact) assert.deepEqual(Array.from(status.tickets), ['#15']);
   }
@@ -1932,6 +1933,7 @@ test('sidebar proposal markup does not leak into shared sidebar renders', () => 
   for (const family of hf.screens) {
     for (const state of family.states) {
       if (family.id === 'tasks' && proposal.includes(state)) continue;
+      if (family.id === 'workflow-launch' && state === 'library-starred') continue;
       hf.route = { theme: 'light', screen: family.id, state };
       if (family.id === 'workflow-run') hf.resetWorkflowRun(hf.route);
       assert.doesNotMatch(renderers[family.id](hf, state), marker, `${family.id}/${state} renders sidebar proposal markup`);
@@ -2071,4 +2073,39 @@ test('workflow editor proposal markup does not leak into other editor states', (
     const html = renderers['workflow-editor'](hf, state);
     assert.equal(marker.test(html), Object.keys(family.proposals).includes(state), `${state} proposal markup`);
   }
+});
+
+test('Run Workflow chooser lists starred workflows first and keeps native sheet copy', () => {
+  const hf = loadDesignRuntime();
+  hf.resetLaunchProposals();
+  hf.route = { theme: 'light', screen: 'workflow-launch', state: 'library-starred' };
+  const html = hf.renderLaunch('library-starred');
+  assert.deepEqual(Array.from(html.matchAll(/data-launch-choice>([^<]+)</g), m => m[1]), ['Session reliability', 'Release checklist', 'Development workflow']);
+  for (const text of ['Run Workflow', 'Choose a saved workflow, then review its permissions and task before running.', 'Choose a workflow', '>Cancel<', 'Continue']) assert.ok(html.includes(text), text);
+  assert.match(html, /aria-label="Starred, unstar Session reliability"/);
+  assert.match(html, /aria-label="Star Development workflow"/);
+  assert.match(html, /data-action="lp-continue" disabled/);
+  assert.match(html, /class="launch-divider" role="separator"/);
+  assert.equal(hf.specimenStatus('workflow-launch', 'library-starred').kind, 'exploratory');
+  assert.doesNotMatch(hf.renderLaunch('library'), /launch-star|launch-list/);
+});
+
+test('Council run activity is one feed that names agents, rounds, questions, versions, and the outcome', () => {
+  const hf = loadDesignRuntime();
+  const html = hf.councilActivity();
+  assert.equal((html.match(/class="wfr-council-feed"/g) || []).length, 1);
+  assert.equal((html.match(/class="council-speaker"/g) || []).length, (html.match(/<article class="council-turn">/g) || []).length);
+  for (const text of ['Facilitator', 'Member', 'Round 1 of 5 · 14:36', 'Round 2 of 5 · 14:41', 'Iris → Noor · about Candidate v1', 'Answered', 'Supersedes v1', 'Prior acceptances reset', 'Objects to v1', 'Dana accepts v2', 'Consensus reached on Candidate v2', 'Conclusion:', 'Rationale:', 'Caveats:']) assert.ok(html.includes(text), text);
+  assert.doesNotMatch(html, /accepts v1/, 'superseded acceptances are not shown as current');
+  assert.doesNotMatch(html, /<strong>(Claude|Codex|Vibe)<\/strong>/, 'the harness is never the speaker');
+  hf.route = { theme: 'light', screen: 'workflow-run', state: 'council' };
+  hf.resetWorkflowRun(hf.route);
+  const run = hf.renderRun('council');
+  assert.match(run, /3 members · round 2 of 5/);
+  assert.match(run, /data-action="wr-select:council"/);
+  assert.match(run, /<button type="button" disabled>Parallel<\/button>/);
+  assert.doesNotMatch(run, /wfr-sidebar-default/, 'selected Council opens the 420-point feed');
+  hf.route = { theme: 'light', screen: 'workflow-run', state: 'running' };
+  hf.resetWorkflowRun(hf.route);
+  assert.doesNotMatch(hf.renderRun('running'), /wfr-council|wr-select:council/);
 });
