@@ -112,7 +112,7 @@
     const recovery = state.startsWith('recovery-');
     const harness = !recovery && !['general', 'runtime-retry'].includes(state);
     const activeTab = harness ? 'harnesses' : 'general';
-    const content = recovery ? HF.renderStateRecovery(state) : harness ? HF.harnesses(state) : HF.general(state);
+    const content = recovery && !HF.taskStoreStates.includes(state) ? HF.renderStateRecovery(state) : harness ? HF.harnesses(state) : HF.general(state);
     return nativeSurface('settings', `
       <nav class="settings-tabs" aria-label="Settings sections">
         ${b('General', 'settings-tab:general', activeTab === 'general' ? 'active' : '')}
@@ -121,15 +121,18 @@
       <div class="settings-content" id="settings-content">${content}</div>`, 'Settings');
   };
 
-  HF.general = state => `
+  HF.general = state => {
+    const failed = state === 'runtime-retry';
+    return `
     <section class="settings-group">
       <h3>Managed runtime</h3>
       <div class="settings-card runtime-card">
-        <p>${state === 'runtime-retry' ? 'Runtime preparation failed.' : 'Harflow runtime is ready.'}</p>
-        ${state === 'runtime-retry' ? b('Try again', 'feedback:Runtime preparation retry requested') : ''}
-        <p class="runtime-detail">The app prepares its paired runtime automatically. MCP registrations are managed in Harnesses.</p>
+        <p>${failed ? 'Setup did not finish' : 'Harflow runtime is ready'}</p>
+        <p class="runtime-detail">${failed ? 'The managed installer could not complete. No session has started.' : 'MCP registrations are managed separately in Harnesses.'}</p>
+        ${failed ? `<div class="runtime-actions">${b('Retry installation', 'feedback:Runtime installation retry requested')}</div>` : ''}
       </div>
     </section>
+    ${HF.taskStorePanel(HF.taskStoreStates.includes(state) ? state : 'general', failed)}
     <section class="settings-group">
       <h3>Behaviour</h3>
       <div class="settings-card behaviour-card">
@@ -137,20 +140,22 @@
         <label class="settings-toggle">Notify when a task finishes<input type="checkbox" checked></label>
       </div>
     </section>`;
+  };
 
   HF.harnesses = state => {
     const busy = state === 'working' || state === 'loading';
+    // Row copy follows HarnessRow.stateLabel (SetupClient.swift) and HarnessRowView.swift at HarflowMac 5128aeb.
     const rows = [
-      { name: 'Claude Code', installed: true, status: state === 'outdated' ? 'Registration outdated' : state === 'unknown' ? 'Registration unknown' : state === 'error' ? 'Could not read registration' : state === 'working' ? 'Updating registration…' : 'Installed' },
+      { name: 'Claude Code', installed: true, outdated: state === 'outdated', status: state === 'outdated' ? 'Installed · out of date' : state === 'unknown' ? 'Unknown' : 'Installed', last: ['unknown', 'error'].includes(state) ? '' : 'install' },
       { name: 'Codex', installed: false, status: 'Not installed' }
     ];
     return `<section class="harness-settings">
       <header class="harness-heading"><h2>Where harflow is registered as an MCP server</h2>${busy ? '<span class="working-indicator" role="status">Working…</span>' : b('Refresh', 'feedback:Harness status refreshed')}</header>
       <p class="server-path">Server: /Example/bin/harflow</p>
       ${state === 'loading' ? '<div class="harness-loading" role="status">Loading harnesses…</div>' : ''}
-      ${state === 'error' ? HF.banner('Registration could not be inspected. Try refreshing.', true) : ''}
+      ${state === 'error' ? '<p class="harness-error" role="status">harflow-setup failed: not found on PATH.</p>' : ''}
       <div class="harness-rows">${rows.map((row, index) => `<div class="harness-row">
-        <div class="harness-identity"><strong>${row.name}</strong><span class="${row.installed ? 'harness-installed' : 'harness-unavailable'}">${row.status}</span></div>
+        <div class="harness-identity"><strong>${row.name}</strong><span class="${row.outdated ? 'harness-outdated' : row.installed && state !== 'unknown' ? 'harness-installed' : 'harness-unavailable'}">${row.status}</span>${row.last ? HF.chip('last: ' + row.last) : ''}</div>
         <div class="harness-actions">${actionButton('MCP approvals', 'route:mcp-permissions/default', '', busy)}${actionButton(row.installed ? (state === 'outdated' ? 'Update' : 'Reinstall') : 'Install', 'feedback:Mock harness installation requested', '', busy)}${actionButton('Remove', 'feedback:Mock harness removal requested', 'secondary', busy || !row.installed)}</div>
       </div>`).join('')}</div>
       ${state === 'remove-confirmation' ? `<div class="banner"><h4>Remove Harflow registration?</h4><p>Claude Code will no longer use this registration.</p>${b('Cancel', 'feedback:Removal cancelled')}${b('Remove', 'feedback:Mock registration removed', 'danger')}</div>` : ''}

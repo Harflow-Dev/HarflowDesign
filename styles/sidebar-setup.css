@@ -1,4 +1,8 @@
 .sidebar-setup { box-sizing: border-box; }
+/* SidebarView.swift at 5128aeb: the card scrolls inside a 16-point inset while the footer stays fixed. */
+.app:has(.sidebar) .sidebar-setup:not(.setup-ready) { padding: 0; }
+.sidebar-setup .setup-scroll { flex: 1 1 auto; min-height: 0; overflow: auto; padding: 16px; scrollbar-width: none; }
+.sidebar-setup:not(.setup-ready) .sidebar-bottom { flex: none; margin: 0; padding: 8px 16px 12px; }
 .sidebar-setup-card {
   padding: 14px 13px;
   border: 1px solid var(--cardBorder);

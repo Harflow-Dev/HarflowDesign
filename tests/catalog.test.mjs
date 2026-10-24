@@ -105,33 +105,95 @@ test('appearance defaults to System, follows the OS, and keeps the selected cont
   assert.equal(controller.themeMode, 'system');
 });
 
-test('store recovery specimens cover explicit inspection, backup, interruption, and unsupported states', () => {
+test('store recovery specimens follow the native task store presentation and keep unmatched states exploratory', () => {
   const hf = loadDesignRuntime();
   const states = Array.from(hf.screens.find(screen => screen.id === 'settings').states.filter(state => state.startsWith('recovery-')));
   assert.deepEqual(states, [
     'recovery-incompatible', 'recovery-inspecting', 'recovery-confirmation', 'recovery-running', 'recovery-busy',
     'recovery-stale', 'recovery-pre-backup-failure', 'recovery-partial', 'recovery-success', 'recovery-unsupported'
   ]);
-  for (const state of states) {
+  const mapped = Array.from(hf.taskStoreStates);
+  assert.deepEqual(mapped, ['recovery-incompatible', 'recovery-inspecting', 'recovery-confirmation', 'recovery-running', 'recovery-success', 'recovery-pre-backup-failure']);
+  const unmatched = states.filter(state => !mapped.includes(state));
+  assert.deepEqual(unmatched, ['recovery-busy', 'recovery-stale', 'recovery-partial', 'recovery-unsupported']);
+  for (const state of mapped) assert.equal(hf.specimenStatus('settings', state).kind, 'source-derived', `${state} is source-derived`);
+  for (const state of unmatched) assert.deepEqual(Array.from(hf.specimenStatus('settings', state).tickets), ['#12']);
+  const storeGroup = state => (hf.renderSettings(state).match(/<section class="settings-group store-group">.*?<\/section>/s) || [''])[0];
+  const title = state => (hf.renderSettings(state).match(/<section class="settings-group store-group">.*?<h4>(.*?)<\/h4>/s) || [])[1];
+  assert.equal(title('general'), 'Task store');
+  assert.equal(title('recovery-incompatible'), 'Task store needs attention');
+  assert.equal(title('recovery-inspecting'), 'Task store needs attention');
+  assert.equal(title('recovery-confirmation'), 'Back up and reset this store?');
+  assert.equal(title('recovery-running'), 'Recovering task store…');
+  assert.equal(title('recovery-success'), 'Task store is ready');
+  assert.equal(title('recovery-pre-backup-failure'), 'Recovery could not finish');
+  const general = hf.renderSettings('general');
+  assert.match(general, /Inspect the task store to check compatibility\. Inspection does not reset history\./);
+  assert.match(general, /MCP registrations are managed separately in Harnesses\./);
+  assert.match(general, /Harflow runtime is ready/);
+  assert.doesNotMatch(general, /prepares its paired runtime automatically|Harflow runtime is ready\./);
+  const inspected = hf.renderSettings('recovery-inspecting');
+  assert.match(inspected, /Inspect task store/);
+  assert.match(inspected, /Review backup and reset/);
+  assert.match(inspected, /Previous task history will be archived, not imported\./);
+  const confirmation = hf.renderSettings('recovery-confirmation');
+  assert.match(confirmation, /Confirm backup and reset/);
+  assert.match(confirmation, /Backup path/);
+  assert.match(confirmation, /class="danger"[^>]*>Confirm backup and reset/);
+  assert.doesNotMatch(confirmation, /Inspect task store/);
+  assert.doesNotMatch(confirmation, /type="checkbox"[^>]*>Confirm/);
+  assert.doesNotMatch(storeGroup('recovery-running'), /<button/, 'recovering shows progress and no actions');
+  assert.match(hf.renderSettings('recovery-success'), /Show backup in Finder/);
+  assert.doesNotMatch(hf.renderSettings('recovery-incompatible') + inspected + confirmation, /\/Users\//);
+  assert.match(hf.renderSettings('runtime-retry'), /Retry installation/);
+  assert.match(hf.renderSettings('runtime-retry'), /store-card disabled/);
+  assert.match(hf.renderSettings('runtime-retry'), /<button type="button" class="" data-action="feedback:Task store inspection requested" disabled>/);
+  assert.match(hf.renderTasks('tasks', 'store-incompatible'), /route:settings\/recovery-incompatible/);
+  for (const state of unmatched) {
     hf.route = { state };
     const html = hf.renderStateRecovery(state);
     assert.match(html, /Selected store/);
-    assert.doesNotMatch(html, /state_incompatible/);
+    assert.doesNotMatch(html, /state_incompatible|\/Users\//);
   }
-  assert.match(hf.renderTasks('tasks', 'store-incompatible'), /route:settings\/recovery-incompatible/);
-  assert.match(hf.renderStateRecovery('recovery-incompatible'), /data format this engine cannot read/);
-  assert.match(hf.renderStateRecovery('recovery-incompatible'), /\.harflow/);
-  const confirmation = hf.renderStateRecovery('recovery-confirmation');
-  assert.match(confirmation, /Back up and initialize/);
-  assert.match(confirmation, /Backup location/);
-  assert.match(confirmation, /This check is tied to this store and operation/);
-  assert.doesNotMatch(confirmation, /type=\"checkbox\"/);
   const partial = hf.renderStateRecovery('recovery-partial');
   assert.match(partial, /Continue recovery/);
-  assert.match(partial, /Recovery backup/);
   assert.match(partial, /preserved across the selected store and recovery backup/);
   assert.match(hf.renderStateRecovery('recovery-unsupported'), /Update Harflow/);
-  assert.doesNotMatch(hf.renderStateRecovery('recovery-running'), /data-action=\"route:settings\/recovery-busy/);
+});
+
+test('harness rows use the native state labels and last-action chip', () => {
+  const hf = loadDesignRuntime();
+  assert.match(hf.harnesses('harnesses'), /Installed<\/span>.*last: install/s);
+  assert.match(hf.harnesses('outdated'), /Installed · out of date/);
+  assert.match(hf.harnesses('unknown'), />Unknown</);
+  assert.doesNotMatch(hf.harnesses('outdated') + hf.harnesses('unknown'), /Registration (outdated|unknown)/);
+  assert.match(hf.harnesses('harnesses'), /Not installed/);
+});
+
+test('the main window titlebar carries the bundled emblem as a template image', () => {
+  const hf = loadDesignRuntime();
+  const bar = hf.titlebar('Harflow', { connectionStatus: true, connectionScreen: 'tasks', connectionState: 'populated' });
+  assert.match(bar, /class="window-emblem" src="assets\/branding\/menubarTemplate\.png" srcset="assets\/branding\/menubarTemplate@2x\.png 2x" alt=""/);
+  assert.doesNotMatch(hf.titlebar('Sheet'), /window-emblem/);
+  const mac = path.resolve(root, '..', 'HarflowMac');
+  const source = 'macos/HfFeatures/MainWindowFeature/Sources/MainWindowFeature/Resources/Branding';
+  for (const file of ['menubarTemplate.png', 'menubarTemplate@2x.png']) {
+    const copy = fs.readFileSync(path.join(root, 'assets/branding', file));
+    assert.ok(copy.length > 0, `${file} copied`);
+    const native = path.join(mac, source, file);
+    if (fs.existsSync(native)) assert.ok(copy.equals(fs.readFileSync(native)), `${file} matches the native resource byte for byte`);
+  }
+  const css = fs.readFileSync(path.join(root, 'styles/appearance.css'), 'utf8');
+  assert.match(css, /\.window-emblem[^}]*invert\(\.11\)/);
+  assert.match(css, /data-theme="dark"\] \.window-emblem[^}]*invert\(\.95\)/);
+});
+
+test('setup card scrolls inside a 16 point inset above a fixed footer', () => {
+  const hf = loadDesignRuntime();
+  assert.match(hf.sidebarSetup('setup-required'), /<div class="setup-scroll"><section class="sidebar-setup-card"/);
+  assert.doesNotMatch(hf.sidebarSetup('setup-ready'), /setup-scroll/);
+  const css = fs.readFileSync(path.join(root, 'styles/sidebar-setup.css'), 'utf8');
+  assert.match(css, /\.sidebar-setup \.setup-scroll \{[^}]*padding: 16px/);
 });
 
 test('appearance responds to OS changes only while System is selected', () => {

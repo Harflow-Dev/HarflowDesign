@@ -472,16 +472,19 @@
   background: var(--cardFill);
 }
 
+.runtime-card { padding: 10px; }
+
 .runtime-card p {
   margin: 0;
-  padding: 10px 0;
   font-size: 13px;
 }
 
 .runtime-card .runtime-detail {
-  border-top: 1px solid var(--hairline);
-  color: var(--tertiaryText);
+  margin-top: 2px;
+  color: var(--secondaryText);
 }
+
+.runtime-actions { margin-top: 10px; }
 
 .behaviour-card { padding: 0 10px; }
 
@@ -548,10 +551,12 @@
   border-bottom: 1px solid var(--hairline);
 }
 
-.harness-identity { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
+.harness-identity { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; min-width: 0; }
 .harness-identity strong { font-size: 14px; white-space: nowrap; }
 .harness-identity span { color: var(--secondaryText); font-size: 12px; white-space: nowrap; }
 .harness-identity .harness-installed { color: var(--doneGreen); }
+.harness-identity .harness-outdated { color: var(--warningFG); }
+.harness-error { margin: 6px 0; color: var(--failedRed); font-size: 12px; overflow-wrap: anywhere; }
 .harness-actions { display: flex; align-items: center; gap: 7px; flex: none; }
 .harness-actions button { padding: 5px 9px !important; white-space: nowrap; }
 .harness-actions button.secondary { background: transparent !important; }

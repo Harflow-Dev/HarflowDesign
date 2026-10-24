@@ -25,7 +25,7 @@
     const ready = state === 'setup-ready';
     const controls = ready
       ? `<button type="button" class="new-session" aria-label="New session, Command N" data-action="route:new-session/default"><svg aria-hidden="true" viewBox="0 0 16 16"><path d="M8 2v12M2 8h12"/></svg><span>New session</span><kbd>⌘N</kbd></button><div class="search-row"><label class="search"><input id="task-search" type="search" aria-label="Search loaded history" placeholder="Search loaded history" disabled></label></div><div class="workflows-heading"><strong>Workflows</strong>${b('<span aria-hidden="true">+</span><span class="visually-hidden">New workflow</span>', 'route:workflow-editor/empty', 'quiet workflow-add')}</div><div class="setup-empty-history">No tasks yet</div>`
-      : setupCard;
+      : `<div class="setup-scroll">${setupCard}</div>`;
     return `<aside class="sidebar sidebar-setup ${ready ? 'setup-ready' : ''}">${controls}<div class="sidebar-bottom">${HF.appearanceControl()}${b('<img src="assets/symbols/gearshape-16pt-2x.png" alt=""><span class="visually-hidden">Settings</span>', 'route:settings/general', 'settings-gear')}</div></aside>`;
   };
 

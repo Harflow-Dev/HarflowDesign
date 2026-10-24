@@ -1,6 +1,6 @@
 (function () {
-  const root = '/Users/example/.harflow';
-  const backup = '/Users/example/.harflow.backup-20261024-a17c';
+  const root = '/Example/.harflow';
+  const backup = '/Example/.harflow.backup-20261024-a17c';
   const labels = {
     'recovery-incompatible': 'Store needs attention',
     'recovery-inspecting': 'Checking the store',
@@ -12,6 +12,31 @@
     'recovery-partial': 'Recovery stopped before finishing',
     'recovery-success': 'Store is ready',
     'recovery-unsupported': 'Recovery needs a newer engine'
+  };
+
+  // Task store group of General settings. Presentations follow StoreRecoveryPresentation.swift and
+  // StoreRecoveryPanel.swift at HarflowMac 5128aeb; fixture values follow the ContractsV1 state fixtures.
+  const storeRoot = '/Example/state';
+  const storeOperation = '1234567890abcdef1234567890abcdef';
+  const storeBackup = `/Example/state.harflow-backup-${storeOperation}`;
+  const reviewNotice = 'Previous task history will be archived, not imported. Recovery checks cooperative ownership; close sessions using this store first. The backup is archival history, not an automatic restore.';
+  const inspected = { root: storeRoot, reason: 'unmarked_nonempty', message: 'Unmarked state root contains data', backup: storeBackup, operation: storeOperation, phase: 'proposed' };
+  const storeModels = {
+    general: { title: 'Task store', message: 'Inspect the task store to check compatibility. Inspection does not reset history.', inspect: ['Inspect task store', 'feedback:Task store inspection requested'] },
+    'recovery-incompatible': { title: 'Task store needs attention', message: 'Unmarked state root contains data', root: storeRoot, reason: 'state_incompatible', inspect: ['Inspect task store', 'route:settings/recovery-inspecting'] },
+    'recovery-inspecting': { ...inspected, title: 'Task store needs attention', notice: true, inspect: ['Inspect task store', 'route:settings/recovery-inspecting'], request: ['Review backup and reset', 'route:settings/recovery-confirmation'] },
+    'recovery-confirmation': { ...inspected, title: 'Back up and reset this store?', notice: true, confirming: true, cancel: ['Cancel', 'route:settings/recovery-inspecting'], confirm: ['Confirm backup and reset', 'route:settings/recovery-running'] },
+    'recovery-running': { ...inspected, title: 'Recovering task store…', busy: true },
+    'recovery-success': { title: 'Task store is ready', message: 'Recovery completed. Previous history is archived in the backup; it is not imported into the new store.', root: storeRoot, backup: storeBackup, operation: storeOperation, phase: 'completed', inspect: ['Inspect task store', 'route:settings/recovery-inspecting'], reveal: ['Show backup in Finder', 'feedback:Mock Finder reveal requested for backup'] },
+    'recovery-pre-backup-failure': { ...inspected, title: 'Recovery could not finish', message: 'State recovery did not complete', reason: 'state_recovery_failed', inspect: ['Inspect task store', 'route:settings/recovery-inspecting'], retained: true }
+  };
+  HF.taskStoreStates = Object.keys(storeModels).filter(state => state !== 'general');
+  const detail = (label, value) => `<div class="store-detail"><span>${label}</span><code tabindex="0">${HF.escape(value)}</code></div>`;
+  HF.taskStorePanel = (state, disabled = false) => {
+    const m = storeModels[state] || storeModels.general;
+    const btn = (spec, cls = '') => `<button type="button" class="${cls}" data-action="${spec[1]}" ${disabled ? 'disabled' : ''}>${spec[0]}</button>`;
+    const rows = [m.root && detail('State root', m.root), m.reason && detail('Reason', m.reason), m.backup && detail('Backup path', m.backup), m.operation && detail('Recovery operation', m.operation), m.phase && detail('Phase', m.phase)].filter(Boolean).join('');
+    return `<section class="settings-group store-group"><h3>Task store</h3><div class="settings-card store-card${disabled ? ' disabled' : ''}" ${m.busy ? 'aria-busy="true"' : ''}><h4>${m.title}</h4>${m.message ? `<p class="store-message">${m.message}</p>` : ''}${rows}${m.notice ? `<p class="store-callout">${reviewNotice}</p>` : ''}${m.busy ? `<span class="spinner" role="status" aria-label="${m.title}"></span>` : ''}<div class="store-actions">${m.inspect ? btn(m.inspect) : ''}${m.request ? btn(m.request) : ''}${m.cancel ? btn(m.cancel) : ''}${m.confirm ? btn(m.confirm, 'danger') : ''}${m.reveal ? btn(m.reveal) : ''}</div>${m.retained ? '<p class="store-callout">Inspect again before retrying. Any reported backup evidence is retained; the operation may have partially completed.</p>' : ''}</div></section>`;
   };
   const route = state => `settings/${state}`;
   const action = (label, state, primary = false) => `<button type="button" class="${primary ? 'primary' : ''}" data-action="route:${route(state)}">${label}</button>`;
