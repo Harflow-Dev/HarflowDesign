@@ -79,7 +79,7 @@ test('index uses only local preview dependencies', () => {
   const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
   for (const [, href] of html.matchAll(/(?:src|href)="([^"]+)"/g)) {
     assert.ok(!/^(?:https?:)?\/\//.test(href), `external dependency in index: ${href}`);
-    if (!href.startsWith('#')) assert.ok(fs.existsSync(path.join(root, href)), `missing local dependency: ${href}`);
+    if (!href.startsWith('#')) assert.ok(fs.existsSync(path.join(root, href.split(/[?#]/)[0])), `missing local dependency: ${href}`);
   }
 });
 
