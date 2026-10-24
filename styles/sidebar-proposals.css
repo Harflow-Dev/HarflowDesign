@@ -1,0 +1,46 @@
+/* Exploratory sidebar proposals: header appearance control (#6), star toggle (#7), context menu and delete confirmation (#8). */
+.titlebar:has(.appearance-header-control) { container-type: inline-size; }
+.appearance-header-control { display: inline-flex; flex: none; align-items: center; gap: 2px; margin-left: auto; padding: 2px; border-radius: 9px; background: var(--neutralFill); }
+.appearance-segment { position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-width: 32px; min-height: 28px; padding: 3px 10px !important; border: 1px solid transparent !important; border-radius: 7px !important; background: transparent !important; color: var(--secondaryText); font-size: 12px; line-height: 1; }
+.appearance-segment img { display: none; width: auto; height: auto; max-width: 18px; max-height: 15px; object-fit: contain; opacity: .8; }
+.appearance-segment-check { display: none; width: 10px; font-size: 11px; font-weight: 700; line-height: 1; }
+.app .appearance-segment.selected { background: var(--cardFill) !important; border-color: var(--hairline) !important; box-shadow: 0 1px 2px #00000022; color: var(--primaryText); }
+.appearance-segment.selected .appearance-segment-check { display: inline-block; }
+.appearance-segment.selected .appearance-segment-check::before { content: "✓"; }
+.appearance-segment:focus-visible { outline: 2px solid var(--accentLink); outline-offset: 1px; }
+/* Narrow headers keep three 32-point targets: icons replace the text labels, which stay as accessible names. */
+@container (max-width: 1100px) {
+  .appearance-segment { min-width: 38px; min-height: 32px; padding: 4px 7px !important; }
+  .appearance-segment img { display: block; }
+  .appearance-segment-label { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .appearance-segment-check { width: 9px; }
+}
+
+.workflow-row-wrap { position: relative; display: flex; align-items: center; }
+.workflow-row-wrap .workflow-row { flex: 1 1 auto; min-width: 0; }
+.workflow-row-wrap.has-star .workflow-row { padding-right: 34px !important; }
+.star-toggle { position: absolute; right: 2px; top: 50%; display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; margin-top: -14px; padding: 0 !important; border: 0 !important; border-radius: 7px !important; background: transparent !important; color: var(--tertiaryText); }
+.star-toggle svg { width: 14px; height: 14px; }
+.star-toggle.starred { color: var(--accentLink); }
+.star-toggle:hover { background: var(--selectedRow) !important; }
+.star-toggle:focus-visible { outline: 2px solid var(--accentLink); outline-offset: 1px; }
+
+.app:has(.sp-overlay-root) { position: relative; }
+.sp-menu { position: absolute; z-index: 20; left: 200px; top: 560px; min-width: 168px; padding: 5px; border: 1px solid var(--hairline); border-radius: 10px; background: var(--cardFill); box-shadow: 0 10px 28px #00000040; color: var(--primaryText); }
+.app .sp-menu-item { display: block; width: 100%; min-height: 26px; padding: 4px 10px !important; border: 0 !important; border-radius: 6px !important; background: transparent !important; color: var(--primaryText); font-size: 13px; text-align: left; }
+.app .sp-menu-item[aria-disabled="true"] { color: var(--tertiaryText); cursor: default; }
+.app .sp-menu-item.danger { color: var(--dangerFG); }
+.app .sp-menu-item:not([aria-disabled="true"]):hover, .app .sp-menu-item:not([aria-disabled="true"]):focus-visible { background: var(--accentFill) !important; color: #fff; }
+.app .sp-menu-item:focus-visible { outline: 2px solid var(--accentLink); outline-offset: -2px; }
+.sp-menu-separator { height: 1px; margin: 4px 6px; background: var(--hairline); }
+.sp-scrim { position: absolute; z-index: 30; inset: 0; background: #0000003d; }
+.sp-alert { position: absolute; z-index: 31; left: 50%; top: 50%; width: 280px; padding: 20px 20px 16px; transform: translate(-50%, -50%); border: 1px solid var(--hairline); border-radius: var(--radius-panel); background: var(--cardFill); box-shadow: 0 18px 48px #00000055; text-align: center; }
+.sp-alert-icon { display: block; width: 34px; height: 34px; margin: 0 auto 8px; color: var(--warningFG); }
+.sp-alert h2 { margin: 0 0 6px; color: var(--primaryText); font-size: 13px; font-weight: 700; line-height: 1.3; overflow-wrap: anywhere; }
+.sp-alert p { margin: 0 0 14px; color: var(--secondaryText); font-size: 12px; line-height: 1.4; }
+.app .sp-alert button { display: block; width: 100%; min-height: 28px; margin-top: 6px; }
+.app .sp-alert button.primary { background: var(--accentFill) !important; border-color: var(--accentFill) !important; color: #fff; font-weight: 600; }
+.app .sp-alert button.danger { color: var(--dangerFG); }
+.sp-alert button:focus-visible { outline: 2px solid var(--accentLink); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { .sp-menu, .sp-alert { transition: none; } }
+.sp-empty-detail { display: flex; align-items: center; justify-content: center; min-width: 0; }

@@ -7,7 +7,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const scripts = ['tokens.js', 'registry.js', 'appearance.js', 'components.js', 'tasks.js', 'task-activity.js', 'parallel.js', 'task-approvals.js', 'task-summary.js', 'workflows.js', 'workflow-connectors.js', 'workflow-editor-inspector.js', 'workflow-editor.js', 'workflow-run.js', 'dialogs.js', 'state-recovery.js', 'sidebar-setup.js', 'foundations.js'];
+const scripts = ['tokens.js', 'registry.js', 'appearance.js', 'components.js', 'tasks.js', 'task-activity.js', 'parallel.js', 'task-approvals.js', 'task-summary.js', 'workflows.js', 'workflow-connectors.js', 'workflow-editor-inspector.js', 'workflow-editor.js', 'workflow-run.js', 'dialogs.js', 'state-recovery.js', 'sidebar-setup.js', 'sidebar-proposals.js', 'foundations.js'];
 
 function loadDesignRuntime({ captureEvents = false, querySelectorOverride, querySelectorAllOverride } = {}) {
   const announcement = { textContent: '', classList: { add() {}, remove() {} } };
@@ -1868,5 +1868,82 @@ test('compact workflow-run sidebar proposal (#15) covers every state that can di
       hf.route.state = state;
       assert.doesNotMatch(renderers[family.id](hf, state), /wfr-run-sidebar|wfr-sidebar-default/, `${family.id}/${state} renders the compact run sidebar`);
     }
+  }
+});
+
+test('starred workflows list first and keep the existing relative order', () => {
+  const hf = loadDesignRuntime();
+  const items = ['A', 'B', 'C', 'D'].map(id => ({ id }));
+  const ids = starred => Array.from(hf.orderStarred(items, starred), item => item.id).join('');
+  assert.equal(ids([]), 'ABCD');
+  assert.equal(ids(['D', 'B']), 'BDAC', 'star D then B');
+  assert.equal(ids(['D']), 'DABC');
+  assert.equal(ids(['D', 'B'].filter(id => id !== 'B')), 'DABC', 'unstar B');
+  const html = hf.renderTasks('tasks', 'starred-workflows');
+  assert.ok(html.indexOf('Release checklist') < html.indexOf('Session reliability') && html.indexOf('Session reliability') < html.indexOf('Development workflow'));
+  assert.match(html, /aria-label="Starred, unstar Release checklist"/);
+  assert.match(html, /aria-label="Star Session reliability"/);
+  assert.match(html, /data-action="route:workflow-run\/running" data-sp-workflow="session-reliability"/, 'starring is a separate control and the row still opens the workflow');
+});
+
+test('sidebar context menu enables Cancel and Resume only when valid and always confirms Delete', () => {
+  const hf = loadDesignRuntime();
+  const items = item => Array.from(hf.contextMenuItems(item), entry => entry.separator ? '-' : `${entry.label}:${entry.enabled ? 'on' : 'off'}`).join(' ');
+  assert.equal(items({ kind: 'task', status: 'completed' }), 'Cancel:off Resume:on - Delete…:on');
+  assert.equal(items({ kind: 'task', status: 'running' }), 'Cancel:on Resume:off - Delete…:on');
+  for (const status of ['failed', 'cancelled', 'timed-out']) assert.equal(items({ kind: 'task', status }), 'Cancel:off Resume:on - Delete…:on');
+  assert.equal(items({ kind: 'workflow' }), 'Rename…:on - Delete…:on');
+  const menu = hf.renderTasks('tasks', 'context-menu');
+  assert.match(menu, /role="menu" aria-label="Actions for Audit artifact references"/);
+  assert.match(menu, /aria-disabled="true">Cancel</);
+  assert.match(menu, /class="sp-menu-item danger" data-action="sp-menu:delete" >Delete…</);
+  const dialog = hf.renderTasks('tasks', 'delete-confirmation');
+  assert.match(dialog, /role="alertdialog" aria-modal="true"/);
+  assert.match(dialog, /Delete “Audit artifact references”\?/);
+  assert.match(dialog, /This cannot be undone\./);
+  assert.ok(dialog.indexOf('class="primary" data-action="sp-delete-cancel">Cancel') < dialog.indexOf('class="danger" data-action="sp-delete-confirm">Delete'), 'Cancel is the default and comes first');
+  const running = hf.deleteConfirmation({ kind: 'task', name: 'Review <b>', status: 'running' });
+  assert.match(running, /is still running/);
+  assert.match(running, /Nothing is cancelled or removed automatically\./);
+  assert.doesNotMatch(running, /sp-delete-confirm/);
+  assert.match(running, /Review &lt;b&gt;/, 'item names are escaped');
+  assert.doesNotMatch(dialog, /\/Users\//);
+});
+
+test('appearance moves into the header only on its exploratory state', () => {
+  const hf = loadDesignRuntime();
+  hf.route = { theme: 'light', screen: 'tasks', state: 'appearance-header' };
+  const html = hf.renderTasks('tasks', 'appearance-header');
+  assert.match(html, /class="appearance-header-control" role="group" aria-label="Appearance"/);
+  assert.deepEqual(Array.from(html.matchAll(/data-appearance-preference="(\w+)" aria-label="(\w+)"/g), m => `${m[1]}:${m[2]}`), ['light:Light', 'dark:Dark', 'system:System']);
+  assert.match(html, /class="appearance-segment selected" data-appearance-preference="system"[^>]*aria-pressed="true"/);
+  assert.ok(html.indexOf('appearance-header-control') < html.indexOf('class="sidebar'), 'the control lives in the titlebar, before the sidebar');
+  assert.doesNotMatch(html, /class="appearance-control"/, 'the footer control is removed');
+  assert.match(html, /settings-gear/, 'Settings stays in the footer');
+  assert.equal(hf.specimenStatus('tasks', 'appearance-header').kind, 'exploratory');
+  assert.deepEqual(Array.from(hf.specimenStatus('tasks', 'appearance-header').tickets), ['#6']);
+});
+
+test('sidebar proposal markup does not leak into shared sidebar renders', () => {
+  const hf = loadDesignRuntime();
+  const marker = /star-toggle|appearance-header-control|sp-menu|sp-alert|sp-overlay-root|data-sp-workflow/;
+  const proposal = hf.sidebarProposalStates;
+  assert.deepEqual(Array.from(proposal), ['appearance-header', 'starred-workflows', 'context-menu', 'delete-confirmation']);
+  for (const family of hf.screens) {
+    for (const state of family.states) {
+      if (family.id === 'tasks' && proposal.includes(state)) continue;
+      hf.route = { theme: 'light', screen: family.id, state };
+      if (family.id === 'workflow-run') hf.resetWorkflowRun(hf.route);
+      assert.doesNotMatch(renderers[family.id](hf, state), marker, `${family.id}/${state} renders sidebar proposal markup`);
+    }
+  }
+  for (const state of proposal) hf.route = { theme: 'light', screen: 'tasks', state };
+  for (const state of ['appearance-header', 'starred-workflows', 'context-menu', 'delete-confirmation']) {
+    hf.route = { theme: 'light', screen: 'tasks', state };
+    const html = renderers.tasks(hf, state);
+    assert.equal(/star-toggle/.test(html), state === 'starred-workflows', `${state} stars`);
+    assert.equal(/appearance-header-control/.test(html), state === 'appearance-header', `${state} header control`);
+    assert.equal(/sp-menu"/.test(html), state === 'context-menu', `${state} menu`);
+    assert.equal(/sp-alert"/.test(html), state === 'delete-confirmation', `${state} alert`);
   }
 });

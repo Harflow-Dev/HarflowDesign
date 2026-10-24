@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add exploratory sidebar proposals for the header appearance control, starred workflows, and the context menu with delete confirmation.
+
 - Align shipped Settings and setup specimens with HarflowMac 5128aeb: the main-window titlebar emblem, the scrolling setup card, the General Task store group with native recovery states, runtime retry copy, and Harnesses row labels.
 
 - Label exploratory ticket proposals from registry metadata with one caption helper, state picker and search suffix, and an in-stage label, and mark compact-sidebar run states as containing an exploratory element.
