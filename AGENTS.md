@@ -6,6 +6,13 @@ This repository owns Harflow's editable design website, reusable interface compo
 
 Work in this checkout. Preserve existing edits. Do not modify sibling repositories, import predecessor prototypes, create worktrees or branches, or push without explicit authorization. Keep professional artifacts neutral.
 
+## Design workspace
+
+This Git checkout is the design source of truth. Edit its files directly and preview root
+`index.html` in a browser, preferably through a local HTTP server. Do not use OpenDesign
+or maintain a separate managed copy. The publication target is `https://design.harflow.dev`
+on Cloudflare Pages; verify deployment status before claiming the hosted site is current.
+
 ## Architecture
 
 Keep root index.html previewable offline and under file://. Use local classic scripts and relative assets. Do not add build tools, package installation, CDN dependencies, fetch-based fixtures, real backend calls, credentials, or real user data. Keep catalog chrome distinct from native app specimens. Use shared semantic tokens and cohesive modules.
