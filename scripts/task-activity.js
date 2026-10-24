@@ -109,7 +109,7 @@ HF.approvalFocusTarget=(root,focus)=>{
   const controls=Array.from(root.querySelectorAll('[data-action]'));
   const same=controls.find(button=>button.dataset.action===focus.action&&!button.disabled);
   if(same)return same;
-  if(focus.json){const json=root.querySelector('pre[aria-label="Complete exact action"]');if(json)return json}
+  if(focus.actionContent){const content=root.querySelector('.approval-action-focus');if(content)return content}
   const inspect=controls.find(button=>button.dataset.action===focus.requestAction)||controls.find(button=>button.dataset.action.startsWith('approval-inspect:')&&!button.disabled);
   if(inspect)return inspect.disabled?inspect.closest('.approval-request'):inspect;
   return root.querySelector('.approval-inline');
@@ -119,7 +119,7 @@ HF.refreshApprovalPresentation=()=>{
   if(!page?.querySelector||!HF.taskDetailContext?.task?.approvalFixture)return;
   const slot=page.querySelector('.ta-approval-slot'),hintSlot=page.querySelector('.approval-hint-slot'),active=document.activeElement;
   const hadCardFocus=!!slot?.contains?.(active),hadHintFocus=!!hintSlot?.contains?.(active);
-  const focus=hadCardFocus?{action:active.dataset?.action,requestAction:active.closest('.approval-request')?.querySelector('[data-action^="approval-inspect:"]')?.dataset.action,json:active.matches('pre[aria-label="Complete exact action"]')}:null;
+  const focus=hadCardFocus?{action:active.dataset?.action,requestAction:active.closest('.approval-request')?.querySelector('[data-action^="approval-inspect:"]')?.dataset.action,actionContent:active.matches('.approval-action-focus')||!!active.closest('.approval-action-focus')}:null;
   const update=root=>{
     const slot=root.querySelector('.ta-approval-slot');if(slot)slot.innerHTML=HF.approvalPanel();
     const tail=root.querySelector('.ta-approval-tail');if(tail)tail.innerHTML=HF.approvalTail();

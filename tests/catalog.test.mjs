@@ -222,24 +222,27 @@ test('caller-owned responses require the explicit Mac capability and remain full
 });
 
 test('caller and monitor response guards reject expiry, stale delivery, busy state, and ownership changes', () => {
-  const hf = loadDesignRuntime();
   for (const state of ['inspected', 'caller-owned']) {
+    let hf = loadDesignRuntime();
     hf.approvalController.reset(state);
     const model = hf.approvalController.state;
     assert.equal(hf.approvalController.canRespond(), true);
     model.detail.deadline = Date.parse('2026-10-24T11:59:59+07:00');
     assert.equal(hf.approvalController.canRespond(), false);
 
+    hf = loadDesignRuntime();
     hf.approvalController.reset(state);
     const stale = hf.approvalController.state;
     stale.requests[0].delivery = 'delivered';
     assert.equal(hf.approvalController.canRespond(), false);
 
+    hf = loadDesignRuntime();
     hf.approvalController.reset(state);
     const busy = hf.approvalController.state;
     busy.loading = true;
     assert.equal(hf.approvalController.canRespond(), false);
 
+    hf = loadDesignRuntime();
     hf.approvalController.reset(state);
     const settle = hf.approvalController.beginResponse('reject');
     assert.equal(typeof settle, 'function');
@@ -283,6 +286,7 @@ test('approval pagination appends pages and deduplicates existing request identi
   const hf = loadDesignRuntime();
   hf.approvalController.reset('pagination');
   const model = hf.approvalController.state;
+  model.selectedID = model.requests[0].id;
   assert.equal(model.requests.length, 5);
   assert.equal(hf.approvalController.loadMore({
     requests: [model.requests[4], { ...model.requests[4], id: 'approval_06', created_at: 1792818010 }],
@@ -332,9 +336,83 @@ test('approval rows retain source metadata, escape action JSON, and sort pending
   const html = hf.approvalPanel();
   const order = [...html.matchAll(/data-action="approval-inspect:([^"]+)/g)].map(([, id]) => id);
   assert.deepEqual(order, ['a-pending', 'm-unknown', 'z-history']);
-  assert.match(html, /Working directory: \/Users\/example\/repo/);
+  assert.match(html, /Run command/);
+  assert.match(html, /In \/Users\/example\/repo/);
+  assert.match(html, /Command/);
   assert.match(html, /&lt;\/script&gt;&lt;img src=x&gt;/);
-  assert.match(html, /Complete exact action/);
+  assert.doesNotMatch(html, /Complete exact action|"tool_name"/);
+});
+
+test('approval action presentation preserves descriptions and every structured input value without raw JSON', () => {
+  const hf = loadDesignRuntime();
+  hf.approvalController.reset('monitor-pending');
+  hf.taskDetailContext = { task: { approvalFixture: true } };
+  const model = hf.approvalController.state;
+  model.selectedID = model.requests[0].id;
+  model.detail = { ...model.requests[0], description: '  Explain <unsafe>  ', action: { tool_name: 'Custom tool', input: {
+    emptyString: '', emptyArray: [], emptyObject: {}, falseValue: false, zeroValue: 0,
+    nested: { list: [null, { deep: 'value' }] },
+  } } };
+  model.current = true;
+  const described = hf.approvalPanel();
+  assert.match(described, /Explain &lt;unsafe&gt;/);
+  assert.match(described, /emptyString/);
+  assert.match(described, /Empty list/);
+  assert.match(described, /Empty object/);
+  assert.match(described, /false/);
+  assert.match(described, />0</);
+  assert.match(described, /nested · list 2 · deep/);
+  assert.match(described, /No value/);
+  assert.match(described, /value/);
+  assert.doesNotMatch(described, /"emptyString"|"nested"|Complete exact action/);
+
+  model.detail = { ...model.detail, description: '   ' };
+  const noDescription = hf.approvalPanel();
+  assert.doesNotMatch(noDescription, /approval-description/);
+});
+
+test('caller-owned fixture resets are isolated within one runtime', () => {
+  const hf = loadDesignRuntime();
+  hf.approvalController.reset('caller-owned');
+  const first = hf.approvalController.state;
+  first.detail.deadline = Date.parse('2026-10-24T11:59:59+07:00');
+  first.requests[0].delivery = 'delivered';
+  hf.approvalController.reset('caller-owned');
+  const second = hf.approvalController.state;
+  assert.equal(second.detail.deadline, Date.parse('2026-10-25T07:00:00+07:00'));
+  assert.equal(second.requests[0].delivery, 'pending');
+  assert.equal(hf.approvalController.canRespond(), true);
+});
+
+test('approval history rows render each listed disposition independently of the inspected row', () => {
+  const hf = loadDesignRuntime();
+  hf.approvalController.reset('history');
+  hf.taskDetailContext = { task: { approvalFixture: true } };
+  const html = hf.approvalPanel();
+  const rows = [...html.matchAll(/data-action="approval-inspect:([^"]+)"[\s\S]*?<div class="approval-metadata">([^<]+)/g)];
+  assert.equal(rows[0][1], 'approval_01');
+  assert.equal(rows[0][2], 'pending');
+  assert.equal(rows[1][1], 'approval_02');
+  assert.equal(rows[1][2], 'approved');
+  assert.equal(rows[2][1], 'approval_03');
+  assert.equal(rows[2][2], 'approved');
+});
+
+test('Bash actions keep non-string command values readable without falling back to raw JSON', () => {
+  const hf = loadDesignRuntime();
+  hf.approvalController.reset('monitor-pending');
+  hf.taskDetailContext = { task: { approvalFixture: true } };
+  const model = hf.approvalController.state;
+  model.selectedID = model.requests[0].id;
+  model.current = true;
+  for (const [command, expected] of [[null, 'No value'], [[], 'Empty list']]) {
+    model.detail = { ...model.requests[0], action: { tool_name: 'Bash', input: { command } } };
+    const html = hf.approvalPanel();
+    assert.match(html, /Run command/);
+    assert.match(html, /<dt>command<\/dt>/);
+    assert.match(html, new RegExp(expected));
+    assert.doesNotMatch(html, /"tool_name"|Complete exact action/);
+  }
 });
 
 test('pending approvals stay inline with Activity while Summary and Prompt share a compact jump indicator', () => {
@@ -380,12 +458,12 @@ test('approval focus restoration targets the matching pending request and falls 
   };
   assert.equal(hf.approvalFocusTarget(disabledRoot, { requestAction: 'approval-inspect:approval_17' }), pendingRequest);
 
-  const json = { dataset: {}, disabled: false, focus: () => focused.push('json') };
+  const actionContent = { dataset: {}, disabled: false, focus: () => focused.push('action-content') };
   const jsonRoot = {
     querySelectorAll: () => [historyInspect],
-    querySelector: (selector) => selector.includes('pre[') ? json : null,
+    querySelector: (selector) => selector === '.approval-action-focus' ? actionContent : null,
   };
-  assert.equal(hf.approvalFocusTarget(jsonRoot, { action: 'approval-decision:approve', json: true }), json);
+  assert.equal(hf.approvalFocusTarget(jsonRoot, { action: 'approval-decision:approve', actionContent: true }), actionContent);
   assert.equal(focused.length, 0, 'pure target selection does not move focus for an unrelated outside control');
 });
 

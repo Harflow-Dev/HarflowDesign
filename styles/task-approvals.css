@@ -19,7 +19,17 @@
 .approval-inspect { width:max-content; max-width:100%; font-size:12px; font-weight:500; }
 .approval-metadata,.approval-readonly { margin:0; color:var(--secondaryText); font-size:11px; line-height:14px; }
 .approval-detail { display:grid; gap:8px; padding:2px 0 0; color:var(--secondaryText); font-size:11px; line-height:1.45; }
-.approval-detail pre { width:max-content; max-width:100%; max-height:220px; justify-self:center; overflow:auto; margin:0; padding:8px; color:var(--primaryText); font:11px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace; white-space:pre; }
+.approval-action-focus:focus-visible { outline:2px solid var(--accentLink); outline-offset:3px; border-radius:4px; }
+.approval-action { display:grid; gap:6px; color:var(--primaryText); }
+.approval-action > strong { font-size:13px; font-weight:600; }
+.approval-description,.approval-context { margin:0; color:var(--secondaryText); }
+.approval-command { display:grid; gap:3px; }
+.approval-command > span { color:var(--secondaryText); font-size:11px; }
+.approval-detail pre { max-width:100%; overflow-wrap:anywhere; margin:0; padding:0; color:var(--primaryText); font:12px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace; white-space:pre-wrap; user-select:text; }
+.approval-inputs { display:grid; gap:5px; margin:0; }
+.approval-inputs > div { display:grid; grid-template-columns:minmax(90px,auto) 1fr; gap:8px; }
+.approval-inputs dt { color:var(--secondaryText); overflow-wrap:anywhere; }
+.approval-inputs dd { margin:0; color:var(--primaryText); overflow-wrap:anywhere; white-space:pre-wrap; }
 .approval-buttons { display:flex; gap:12px; }
 .approval-buttons button { padding:0; border:0; background:transparent; color:var(--accentLink); font-family:inherit; font-size:13px; line-height:18px; }
 .approval-buttons button:last-child { color:var(--dangerFG); }
