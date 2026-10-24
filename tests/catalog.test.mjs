@@ -7,7 +7,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const scripts = ['tokens.js', 'registry.js', 'components.js', 'tasks.js', 'task-activity.js', 'workflows.js', 'dialogs.js', 'foundations.js'];
+const scripts = ['tokens.js', 'registry.js', 'components.js', 'tasks.js', 'task-activity.js', 'task-summary.js', 'workflows.js', 'dialogs.js', 'foundations.js'];
 
 function loadDesignRuntime() {
   const document = { querySelector: () => ({ textContent: '', classList: { add() {} } }) };
@@ -115,7 +115,7 @@ test('rendered specimens preserve fixture identity and ownership semantics', () 
   assert.equal(fixtureIds.size, hf.fixtures.length, 'fixture ids must be unique');
   for (const id of fixtureIds) assert.match(taskList, new RegExp(`select-task:${id}`));
   assert.match(hf.renderRaw('populated'), /fixture_01/);
-  assert.match(hf.renderTasks('summary', 'completed'), /artifact_fixture_01/);
+  assert.match(hf.renderTasks('summary', 'completed'), /abc12345/);
 
   const callerOwned = hf.renderTasks('approvals', 'caller-owned');
   assert.match(callerOwned, /Caller-owned/);
@@ -285,6 +285,97 @@ test('session recovery states preserve their original warning and retry chrome',
   assert.match(olderHistory, /Older history unavailable\./);
   assert.match(olderHistory, /data-action="feedback:Older history retry requested"/);
   assert.match(olderHistory, /data-status="completed"/);
+});
+
+test('task summary and prompt panes share one dispatcher across route and tab entry points', () => {
+  const hf = loadDesignRuntime();
+  const task = { ...hf.fixtures[1], status: 'completed', sessionID: 'session-selected' };
+
+  const summaryPane = hf.taskPane('Summary', task, 'completed', 'completed');
+  const promptPane = hf.taskPane('Prompt', task, 'completed', 'completed');
+  assert.equal(summaryPane, hf.summary('completed', task));
+  assert.equal(promptPane, hf.taskPane('Prompt', task, 'completed', 'completed'));
+
+  hf.currentTask = task;
+  const summaryRoute = hf.renderTasks('summary', 'completed');
+  assert.match(summaryRoute, new RegExp(summaryPane.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+
+  const activityShell = hf.taskActivitySurface(task, 'completed', 'Summary', 'completed');
+  assert.match(activityShell, new RegExp(summaryPane.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+  assert.match(activityShell, /data-action="task-tab:Prompt"/);
+  assert.match(activityShell, /data-action="task-tab:Summary"/);
+});
+
+test('summary identity and status come from the selected task, independent of catalog metadata state', () => {
+  const hf = loadDesignRuntime();
+  const selected = { ...hf.fixtures[1], id: 'selected-summary', title: 'Selected terminal audit', status: 'completed', sessionID: 'session-selected', summary: 'Selected result' };
+  const model = hf.taskSummaryModel(selected, 'loading');
+  assert.equal(model.title, selected.title);
+  assert.equal(model.status, selected.status);
+  assert.equal(model.summaryState, 'loading');
+  assert.equal(model.result, selected.summary);
+  assert.match(hf.taskActivitySurface(selected, 'completed', 'Summary', 'loading'), /Selected terminal audit/);
+  assert.match(hf.taskPane('Summary', selected, 'completed', 'loading'), /Loading edited files/);
+});
+
+test('summary metrics omit unobserved duration while preserving terminal and running distinctions', () => {
+  const hf = loadDesignRuntime();
+  const completed = hf.taskSummaryModel(null, 'completed');
+  assert.equal(completed.durationSeconds, 1260);
+  assert.match(hf.taskPane('Summary', null, 'completed', 'completed'), /Duration/);
+
+  const running = hf.taskSummaryModel(null, 'running');
+  assert.equal(running.durationSeconds, undefined);
+  assert.doesNotMatch(hf.taskPane('Summary', null, 'running', 'running'), /Duration/);
+
+  const missingMetric = hf.taskSummaryModel({ id: 'metricless', title: 'Metricless', backend: 'codex', status: 'completed', summary: 'Done', editedFiles: [] }, 'completed');
+  assert.equal(missingMetric.durationSeconds, undefined);
+  assert.doesNotMatch(hf.taskPane('Summary', { id: 'metricless', title: 'Metricless', backend: 'codex', status: 'completed', summary: 'Done', editedFiles: [] }, 'completed', 'completed'), /Duration/);
+
+  const observed = { id: 'observed-terminal', title: 'Observed terminal', backend: 'codex', status: 'completed', durationSeconds: 1260, exitCode: 0, summary: 'Done', editedFiles: [] };
+  assert.equal(hf.taskSummaryModel(observed, 'completed').durationSeconds, 1260);
+  assert.match(hf.taskPane('Summary', observed, 'completed', 'completed'), /Duration/);
+});
+
+test('prompt preserves absent and empty values and escapes hostile content', () => {
+  const hf = loadDesignRuntime();
+  const absent = hf.taskPane('Prompt', { id: 'absent-prompt', title: 'Absent', backend: 'claude' }, 'completed');
+  const fallback = "The prompt is recorded in the task's event log, which has not been read yet (or does not exist).";
+  assert.ok(absent.includes(hf.escape(fallback)), 'missing prompt should use the native fallback copy');
+
+  const empty = hf.taskPane('Prompt', { id: 'empty-prompt', title: 'Empty', backend: 'claude', prompt: '' }, 'completed');
+  assert.doesNotMatch(empty, /Fix the flaky login test/);
+  assert.match(empty, /<p><\/p>/);
+
+  const hostile = hf.taskPane('Prompt', { id: 'hostile-prompt', title: 'Hostile', backend: 'claude', prompt: '</p><script>alert(1)<\/script>&"' }, 'completed');
+  assert.doesNotMatch(hostile, /<script>|<\/p><script>/);
+  assert.match(hostile, /&lt;\/p&gt;&lt;script&gt;alert\(1\)&lt;\/script&gt;/);
+});
+
+test('artifact and edited-file states preserve the result and guard local disclosures', () => {
+  const hf = loadDesignRuntime();
+  const result = 'Fixed the **login bug**.';
+  for (const state of ['loading', 'error', 'unsupported', 'metadata-only', 'paged']) {
+    const html = hf.taskPane('Summary', null, 'completed', state);
+    assert.match(html, /Result/);
+    assert.match(html, /login bug/);
+  }
+
+  const empty = hf.taskPane('Summary', null, 'completed', 'empty');
+  assert.match(empty, /No final answer/);
+  assert.doesNotMatch(empty, /summary-files/);
+
+  const paged = hf.taskPane('Summary', null, 'completed', 'paged');
+  assert.equal((paged.match(/class="summary-file"/g) || []).length, 8);
+  assert.match(paged, /Show (?:all|loaded) 12/);
+  assert.match(paged, /data-action="summary-show-all"/);
+  assert.match(paged, /data-action="summary-refresh"/);
+  assert.doesNotMatch(paged, /data-action="summary-load-more"/);
+
+  const error = hf.taskPane('Summary', null, 'completed', 'error');
+  assert.match(error, /Edit history isn't available for this task\./);
+  assert.match(error, /data-action="summary-refresh"/);
+  assert.match(error, /login bug/);
 });
 
 test('workflow fixtures keep graph, attempt, and sidebar activity projections aligned', () => {

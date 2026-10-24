@@ -16,7 +16,7 @@ HF.taskActivityStatus=(task,state)=>sessionStates.has(state)?task?.status||'runn
 HF.taskTimeline=(task,state)=>{
   const status=HF.taskActivityStatus(task,state);
   const running=status==='running';
-  const prompt=task?.prompt||fallbackPrompt;
+  const prompt=HF.taskPrompt(task);
   const backend=task?.backend||'claude',backendLabel=backend[0].toUpperCase()+backend.slice(1);
   const finishedLabel=status==='completed'?'Finished':status==='failed'?'Failed · exit 1':status==='timed-out'?'Timed out':status==='cancelled'?'Cancelled':status;
   const finishedSymbol=status==='completed'?'checkmark.circle.fill':status==='cancelled'?'stop.circle.fill':'xmark.circle.fill';
@@ -34,8 +34,9 @@ HF.taskTimeline=(task,state)=>{
     ${ending}
   </div>`;
 };
-HF.taskActivitySurface=(task,state)=>{
+HF.taskActivitySurface=(task,state,initialTab='Activity',summaryState=state)=>{
   const status=HF.taskActivityStatus(task,state);
+  HF.taskDetailContext={task,state,summaryState};
   const title=task?.title|| (state==='spawned'?'Implement persistence checks':'Review session persistence');
   const backend=task?.backend||'claude';
   const missing=['missing','deferred'].includes(status);
@@ -50,16 +51,20 @@ HF.taskActivitySurface=(task,state)=>{
   const placeholder=noSession?reason:running?'Message this task while it runs…':'Send a follow-up — it continues this conversation';
   const composer=missing?'':`<div class="ta-composer-wrap"><div class="ta-composer">${locked?`<div class="ta-lock-field"><img src="assets/symbols/task-activity/lock.fill.png" alt=""><span>${HF.escape(reason)}</span></div>`:`<textarea rows="1" id="task-message" ${fieldEnabled?'':'disabled'} aria-label="${running?'Message this task':'Continue this task'}" placeholder="${placeholder}"></textarea>`}<button class="ta-submit" data-action="send-message" data-kind="${running?'send':'continue'}" aria-label="${running?'Send':'Continue'}" title="${running?'Send':'Continue'}" disabled><img src="assets/symbols/task-activity/arrow.up.png" alt=""></button></div>${fieldEnabled?'<div class="ta-shortcut">⌘↩ to send</div>':''}</div>`;
   const activity=missing?status==='missing'?HF.empty('Task unavailable','The task record could not be found.'):HF.skeleton():`<div class="ta-count">8 steps</div><div class="ta-scroll-frame"><div class="ta-scroll" id="task-activity-scroll" tabindex="0" role="region" aria-label="Task activity"><div class="ta-reading">${HF.taskTimeline(task,status)}</div></div><div class="ta-scrollbar" aria-hidden="true"></div></div>`;
-  return `<div class="ta-page" data-task-state="${HF.escape(state)}"><div class="ta-main"><div class="ta-heading"><h2 id="task-title">${HF.escape(title)}</h2><div class="ta-meta"><span class="backend-dot ${HF.escape(backend)}"></span><strong>${HF.escape(backend[0].toUpperCase()+backend.slice(1))}</strong><span>repo</span><span>·</span><span>Can edit this repo</span></div></div><div class="tabs task-tabs" role="tablist">${['Activity','Summary','Prompt'].map(v=>`<button role="tab" aria-selected="${v==='Activity'}" class="${v==='Activity'?'active':''}" data-action="task-tab:${v}">${v}</button>`).join('')}</div><div id="task-tab-content">${activity}</div>${composer}</div>${HF.taskInspector(status).replace('task_fixture_01',task?.id||'task_fixture_01')}</div>`;
+  return `<div class="ta-page" data-task-state="${HF.escape(state)}"><div class="ta-main"><div class="ta-heading"><h2 id="task-title">${HF.escape(title)}</h2><div class="ta-meta"><span class="backend-dot ${HF.escape(backend)}"></span><strong>${HF.escape(backend[0].toUpperCase()+backend.slice(1))}</strong><span>repo</span><span>·</span><span>Can edit this repo</span></div></div><div class="tabs task-tabs" role="tablist">${['Activity','Summary','Prompt'].map(v=>`<button type="button" role="tab" aria-selected="${v===initialTab}" class="${v===initialTab?'active':''}" data-action="task-tab:${v}">${v}</button>`).join('')}</div><div id="task-tab-content">${initialTab==='Activity'?activity:`<div class="ta-tab-scroll"><div class="ta-reading">${HF.taskPane(initialTab,task,state,summaryState)}</div></div>`}</div>${composer}</div>${HF.taskInspector(status).replace('task_fixture_01',task?.id||'task_fixture_01')}</div>`;
 };
 
 const base=HF.renderTasks;
 HF.renderTasks=(screen,state)=>{
-  if(!['tasks','task-detail'].includes(screen)||['empty','no-results','backend-empty','loading','list-error','missing','deferred'].includes(state)) return base(screen,state);
-  const task=HF.currentTask;
-  const effective=sessionStates.has(state)?task?.status||'running':['taken-over','no-live','no-session'].includes(state)?state:(task?.status||state);
+  if(!['tasks','task-detail','summary'].includes(screen)||['empty','no-results','backend-empty','loading','list-error','missing','deferred'].includes(state)&&screen!=='summary') return base(screen,state);
+  let task=HF.currentTask;
+  const summaryRoute=screen==='summary';
+  if(summaryRoute&&!task)task=HF.taskSummaryFixture();
+  if(!task){const status=HF.taskActivityStatus(null,state);task={id:'task_fixture_01',title:state==='spawned'?'Implement persistence checks':'Review session persistence',backend:'claude',status,prompt:fallbackPrompt,sessionID:state==='no-session'?null:true,liveInput:state!=='no-live',takenOver:state==='taken-over'};}
+  const effective=summaryRoute?(task?.status||'completed'):sessionStates.has(state)?task?.status||'running':['taken-over','no-live','no-session'].includes(state)?state:(task?.status||state);
+  const initialTab=summaryRoute?'Summary':'Activity';
   const warning=['install-retry','degraded-catalog'].includes(state)?HF.banner(state==='install-retry'?'Managed runtime could not be prepared. '+HF.button('Try again','feedback:Runtime retry requested'):'Agent catalog unavailable. Showing known agents.'):'';
-  const body=`<div class="split">${HF.sidebar(screen==='tasks'?state:'populated')}<div class="content ta-content">${warning}<div class="ta-chrome">${HF.taskActivitySurface(task,effective)}</div></div></div>`;
+  const body=`<div class="split">${HF.sidebar(screen==='tasks'?state:'populated')}<div class="content ta-content">${warning}<div class="ta-chrome">${HF.taskActivitySurface(task,effective,initialTab,summaryRoute?state:effective)}</div></div></div>`;
   const actionState=HF.taskActivityStatus(task,effective);
   const running=actionState==='running'||actionState==='taken-over';
   const sessionID=effective==='no-session'?false:(task?.sessionID===undefined?true:task.sessionID);
@@ -72,8 +77,8 @@ HF.renderTasks=(screen,state)=>{
 
 HF.updateTaskMessageEligibility=()=>{
   const button=document.querySelector('.ta-submit');if(!button)return;
-  const task=HF.currentTask||HF.fixtures[0],state=document.querySelector('.ta-page')?.dataset.taskState||HF.route.state,kind=button.dataset.kind;
-  const status=HF.taskActivityStatus(HF.currentTask,state),field=document.querySelector('#task-message');
+  const task=HF.taskDetailContext?.task||HF.currentTask||HF.fixtures[0],state=document.querySelector('.ta-page')?.dataset.taskState||HF.route.state;
+  const status=HF.taskActivityStatus(task,state),field=document.querySelector('#task-message');
   const result=HF.taskMessageEligibility({status,liveInput:task.liveInput!==false&&state!=='no-live',takenOver:task.takenOver===true||state==='taken-over',sessionID:state==='no-session'?false:(task.sessionID===undefined?true:task.sessionID),text:field?.value||'',busy:task.busy===true});
   button.disabled=!result.enabled;
 };
@@ -98,6 +103,8 @@ if(document.addEventListener){
 
 let savedActivity;
 HF.appendTaskMessage=html=>{
+  const page=document.querySelector('.ta-page');
+  if(page&&savedActivity?.page!==page&&!document.querySelector('#task-activity-scroll')){const holder=document.createElement('div'),context=HF.taskDetailContext;holder.innerHTML=HF.taskActivitySurface(context.task,context.state,'Activity',context.summaryState);savedActivity={page,html:holder.querySelector('#task-tab-content').innerHTML,scrollTop:Number.MAX_SAFE_INTEGER};}
   const feed=document.querySelector('#task-activity-scroll .ta-reading');
   if(feed){feed.insertAdjacentHTML('beforeend',html);return}
   if(savedActivity?.page===document.querySelector('.ta-page')){
@@ -108,10 +115,10 @@ HF.appendTaskMessage=html=>{
 };
 HF.renderTaskTab=(tab)=>{
   const content=document.querySelector('#task-tab-content');if(!content)return;
-  const page=document.querySelector('.ta-page'),task=HF.currentTask,state=page?.dataset.taskState||HF.route.state;
+  const page=document.querySelector('.ta-page'),context=HF.taskDetailContext,task=page?context?.task:HF.currentTask,state=page?.dataset.taskState||HF.route.state,summaryState=page?context?.summaryState:state;
   if(content.querySelector('#task-activity-scroll'))savedActivity={page,html:content.innerHTML,scrollTop:content.querySelector('#task-activity-scroll').scrollTop};
-  if(tab==='Summary')content.innerHTML=`<div class="ta-tab-scroll"><div class="ta-reading ta-summary-tab">${HF.summary(task?.status||state,task)}</div></div>`;
-  else if(tab==='Prompt')content.innerHTML=`<div class="ta-tab-scroll"><div class="ta-reading ta-prompt-tab"><pre>${HF.escape(task?.prompt||fallbackPrompt)}</pre></div></div>`;
-  else{if(savedActivity?.page===page){content.innerHTML=savedActivity.html;HF.followTaskTail();content.querySelector('#task-activity-scroll').scrollTop=savedActivity.scrollTop;HF.syncTaskScrollbar()}else{const shell=document.createElement('div');shell.innerHTML=HF.taskActivitySurface(task,state);content.innerHTML=shell.querySelector('#task-tab-content')?.innerHTML||HF.taskActivity(task||HF.fixtures[0]);HF.followTaskTail()}HF.updateTaskMessageEligibility()}
+  if(tab==='Summary'||tab==='Prompt')content.innerHTML=`<div class="ta-tab-scroll"><div class="ta-reading">${HF.taskPane(tab,task,state,summaryState)}</div></div>`;
+  else if(page){if(savedActivity?.page===page){content.innerHTML=savedActivity.html;HF.followTaskTail();content.querySelector('#task-activity-scroll').scrollTop=savedActivity.scrollTop;HF.syncTaskScrollbar()}else{const shell=document.createElement('div');shell.innerHTML=HF.taskActivitySurface(task,state,'Activity',summaryState);content.innerHTML=shell.querySelector('#task-tab-content')?.innerHTML||HF.taskActivity(task||HF.fixtures[0]);HF.followTaskTail()}HF.updateTaskMessageEligibility()}
+  else content.innerHTML=HF.taskPane('Activity',task,state);
 };
 })();
