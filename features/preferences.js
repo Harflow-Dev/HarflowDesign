@@ -61,9 +61,9 @@
     const catalogUnavailable = state === "loading" || state === "error";
     document.querySelector(".orchestrator-control").hidden = surface !== "workflow-node";
     const surfaceCopy = {
-      "new-session": ["New Session", "Choose an agent"],
-      orchestrator: ["Orchestrator", "Choose an orchestrator"],
-      "workflow-node": ["Workflow node", "Configure the node agent"]
+      "new-session": ["New Session", "Choose a harness"],
+      orchestrator: ["Orchestrator", "Choose an orchestrator harness"],
+      "workflow-node": ["Workflow node", "Configure the node harness"]
     }[surface];
     surfaceEyebrow.textContent = surfaceCopy[0];
     surfaceTitle.textContent = surfaceCopy[1];
@@ -111,10 +111,10 @@
     modelSelect.value = model;
     document.querySelector(".model-row").hidden = orderedModels.length === 0;
     selectionNote.textContent = catalogUnavailable
-      ? state === "loading" ? "The agent catalog is loading; picker controls are unavailable." : "The agent catalog could not be loaded; picker controls are unavailable."
+      ? state === "loading" ? "The harness catalog is loading; picker controls are unavailable." : "The harness catalog could not be loaded; picker controls are unavailable."
       : surface === "workflow-node"
-        ? compatibleOrchestratorModel ? "The orchestrator model leads this compatible model list. Default remains available." : "The configured orchestrator model is not available for this agent; choices stay unchanged."
-        : orderedModels.length === 0 ? `${current.name} has no model picker in this fixture.` : "Changing the ranking sample or orchestrator preserves the selected agent and model.";
+        ? compatibleOrchestratorModel ? "The orchestrator model leads this compatible model list. Default remains available." : "The configured orchestrator model is not available for this harness; choices stay unchanged."
+        : orderedModels.length === 0 ? `${current.name} has no model picker in this fixture.` : "Changing the ranking sample or orchestrator preserves the selected harness and model.";
 
     usageList.replaceChildren();
     if (state === "loading" || state === "error") {
@@ -129,7 +129,7 @@
       const message = document.createElement("div");
       message.className = "state-message";
       message.setAttribute("role", "status");
-      message.textContent = "No successful submissions recorded yet. Available agents remain in stable alphabetical order.";
+      message.textContent = "No successful submissions recorded yet. Available harnesses remain in stable alphabetical order.";
       usageList.append(message);
       return;
     }

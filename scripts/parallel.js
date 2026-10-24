@@ -8,7 +8,7 @@
   const taskRecord=task=>({...task,prompt:promptText,activityFixture:task.activity?'native-eight-steps':'empty'});
   let state = 'mixed', promptOpen = false, cancelOpen = false;
   HF.resetParallel = () => { promptOpen=false; cancelOpen=false; };
-  const statuses = {running:['Running','running'],completed:['Done','completed'],failed:['Failed','failed'],cancelled:['Cancelled','cancelled']};
+  const statuses = {running:['Running','running'],pending:['Pending','pending'],completed:['Done','completed'],failed:['Failed','failed'],cancelled:['Cancelled','cancelled']};
   const escape = value => HF.escape(value);
   const group = () => {
     if (state === 'empty') return [];
@@ -27,7 +27,7 @@
     const backend = task.backend[0].toUpperCase()+task.backend.slice(1);
     const timelineTask={id:task.id,backend:task.backend,status:'running',prompt:'Review persistence, validate recovery, and report findings.'};
     const timeline=HF.taskTimeline(timelineTask,'running').replace(/<div class="ta-started">[\s\S]*?(?=<p class="ta-prose">)/,'').replace(/<div class="ta-live">[\s\S]*?<\/div>/,'').replace('class="ta-feed"','class="parallel-feed-content"');
-    const activity = task.activity ? `<div class="parallel-step-count">8 steps</div><div class="parallel-feed-scroll" tabindex="0" role="region" aria-label="${escape(task.title)} activity">${timeline}</div>` : `<div class="parallel-no-tools">No tool calls recorded</div>`;
+    const activity = task.activity ? `<div class="parallel-step-count">8 activity items</div><div class="parallel-feed-scroll" tabindex="0" role="region" aria-label="${escape(task.title)} activity">${timeline}</div>` : `<div class="parallel-no-tools">No tool calls recorded</div>`;
     const terminal = HF.parallelTerminalEligibility(task);
     const prompt = promptOpen ? '<div class="parallel-prompt">Review persistence, validate recovery, and report findings.</div>' : '';
     const result = task.summary ? `<div class="parallel-result"><div class="parallel-summary ${kind}">${escape(task.summary)}</div></div>` : '';
@@ -45,6 +45,17 @@
     else body=`<div class="parallel-claims"><span>No network</span><p>Enforced for every agent here: Access stays within the repository.</p></div><div class="parallel-lanes">${lanes.map(lane).join('')}</div>`;
     const confirm=cancelOpen?`<div class="parallel-dialog-backdrop" role="presentation"><section class="parallel-dialog" role="alertdialog" aria-modal="true" aria-labelledby="parallel-cancel-title"><h3 id="parallel-cancel-title">Cancel every running task in this group?</h3><p>This is a local mock action.</p>${HF.button('Keep running','parallel-close')} ${HF.button('Cancel all','parallel-confirm','danger')}</section></div>`:'';
     return HF.app(`<div class="parallel-app-body">${toolbar}${title}<div class="parallel-status-summary">${escape(summary)}</div>${body}${confirm}</div>`,'parallel-app','Harflow');
+  };
+  HF.renderParallelColumn = task => lane(task);
+  HF.renderParallelColumns = (nextState = 'mixed', tasks = null) => {
+    const previous = state;
+    try {
+      state = nextState;
+      const columns = tasks || group();
+      return `<div class="parallel-lanes">${columns.map(lane).join('')}</div>`;
+    } finally {
+      state = previous;
+    }
   };
   if (typeof document !== 'undefined') document.addEventListener('keydown', event => {
     if (!cancelOpen || event.key !== 'Escape') return;

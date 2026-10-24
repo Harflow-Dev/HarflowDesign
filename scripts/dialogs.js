@@ -21,12 +21,12 @@
 
   HF.renderNew = state => {
     const message = {
-      unavailable: 'Agent catalog unavailable. Showing known agents.',
+      unavailable: 'Harness catalog unavailable. Showing known harnesses.',
       'missing-cli': 'Claude Code CLI was not found. Install it before starting.',
       'start-failed': 'Could not start the session. Check the repository and try again.'
     }[state];
     const cards = state === 'loading'
-      ? `<div class="new-agent-grid" aria-label="Loading agents">${Array.from({ length: 4 }, () => '<div class="new-agent-skeleton"></div>').join('')}</div>`
+      ? `<div class="new-agent-grid" aria-label="Loading harnesses">${Array.from({ length: 4 }, () => '<div class="new-agent-skeleton"></div>').join('')}</div>`
       : `<div class="new-agent-grid">${agentCards.map(([id, name, help, unavailable], index) => `
           <button type="button" class="new-agent-card ${index === 0 ? 'selected' : ''} ${unavailable ? 'not-installed' : ''}"
             data-action="agent:${id}" ${unavailable ? 'disabled' : ''} aria-pressed="${index === 0}">
@@ -49,7 +49,7 @@
             <label class="name-field"><span>Name</span><input id="session-name" aria-label="Name" placeholder="Optional — shown in the sidebar, e.g. MT-2477 iOS review"></label>
           </section>
           <section class="new-session-section">
-            <h3>Agent</h3>
+            <h3>Harness</h3>
             ${cards}
           </section>
           <section class="new-session-section repository-section">
@@ -58,12 +58,12 @@
             <div class="recent-repositories"><span>Recent</span><span>HarflowMac</span><span>HarflowDesign</span></div>
           </section>
           <section class="new-session-section access-section">
-            <h3>What can it change?</h3>
+            <h3>Access level</h3>
             <div class="access-grid">${accessOptions.map(([value, title, description], index) => `
               <button type="button" class="access-option ${index === 0 ? 'selected' : ''}" data-action="access:${value}" aria-pressed="${index === 0}">
                 <span class="access-radio" aria-hidden="true"></span><span><strong>${title}${value === 'unrestricted' ? '<span class="access-warning">Caution</span>' : ''}</strong><small>${description}</small></span>
               </button>`).join('')}</div>
-            <p class="access-note">How strictly this is enforced depends on the agent. The task’s Technical info shows exactly what applied.</p>
+            <p class="access-note">How strictly this is enforced depends on the harness. The task’s Technical info shows exactly what applied.</p>
           </section>
           <details class="new-advanced">
             <summary><span class="disclosure-mark" aria-hidden="true"></span>Advanced — model, effort, turn limit</summary>
@@ -103,9 +103,9 @@
   });
 
   HF.renderLaunch = state => {
-    if (['library', 'empty', 'read-error'].includes(state)) return HF.app(`<div class="toolbar"><h2>Workflows</h2><span class="spacer"></span>${b('Generate workflow', 'route:workflow-launch/generate', 'primary')}</div><div class="reading">${state === 'empty' ? HF.empty('No workflows yet', 'Create a workflow to reuse a sequence of agent tasks.', b('New workflow', 'route:workflow-editor/empty')) : state === 'read-error' ? HF.banner('Could not read workflows. ' + b('Retry', 'feedback:Library retry requested'), true) : `<div class="card"><h3>Development workflow</h3><p>Plan, implement, and review a change.</p><span class="caption">Revision 4 · 5 nodes</span><div class="inline" style="margin-top:16px">${b('Edit', 'route:workflow-editor/saved')}${b('Run', 'route:workflow-launch/launch', 'primary')}</div></div>`}</div>`);
+    if (['library', 'empty', 'read-error'].includes(state)) return HF.app(`<div class="toolbar"><h2>Workflows</h2><span class="spacer"></span>${b('Generate workflow', 'route:workflow-launch/generate', 'primary')}</div><div class="reading">${state === 'empty' ? HF.empty('No workflows yet', 'Create a workflow to reuse a graph of nodes and transitions.', b('New workflow', 'route:workflow-editor/empty')) : state === 'read-error' ? HF.banner('Could not read workflows. ' + b('Retry', 'feedback:Library retry requested'), true) : `<div class="card"><h3>Development workflow</h3><p>Plan, implement, and review a change.</p><span class="caption">Revision 4 · 5 nodes</span><div class="inline" style="margin-top:16px">${b('Edit', 'route:workflow-editor/saved')}${b('Run', 'route:workflow-launch/launch', 'primary')}</div></div>`}</div>`);
     const variant = state === 'generate' ? 'Generate workflow' : state === 'propose' ? 'Propose changes' : 'Run workflow';
-    return HF.sheet(`<h2>${variant}</h2><p class="muted">Development workflow · Revision 4</p><label class="form-field">Task<textarea id="launch-task">Review session persistence and implement verified improvements.</textarea></label>${HF.field('Repository', '/Example/HarflowMac')}${HF.select('Requested access', ['read_only', 'write_in_repo', 'publish', 'unrestricted'])}<h3>Orchestrator</h3>${HF.select('Agent', ['claude', 'codex', 'vibe'])}${HF.select('Model', ['Default', 'Configured model'])}<div class="card"><h4>Review</h4><p>5 graph nodes · 1 on-demand task</p><p class="caption">The orchestrator coordinates the plan and task assignments.</p></div>${state === 'validation' ? HF.banner('Choose a repository before starting.', true) : ''}<div class="footer">${b('Cancel', 'close-modal')}${b(state === 'busy' ? 'Starting…' : variant === 'Run workflow' ? 'Run' : variant, 'launch-workflow', 'primary')}</div>`, 'launch-sheet');
+    return HF.sheet(`<h2>${variant}</h2><p class="muted">Development workflow · Revision 4</p><label class="form-field">Task<textarea id="launch-task">Review session persistence and implement verified improvements.</textarea></label>${HF.field('Repository', '/Example/HarflowMac')}${HF.select('Access level', ['read_only', 'write_in_repo', 'publish', 'unrestricted'])}<h3>Orchestrator</h3>${HF.select('Harness', ['claude', 'codex', 'vibe'])}${HF.select('Model', ['Default', 'Configured model'])}<div class="card"><h4>Review</h4><p>5 graph nodes · 1 on-demand node</p><p class="caption">The orchestrator coordinates the plan and task assignments.</p></div>${state === 'validation' ? HF.banner('Choose a repository before starting.', true) : ''}<div class="footer">${b('Cancel', 'close-modal')}${b(state === 'busy' ? 'Starting…' : variant === 'Run workflow' ? 'Run' : variant, 'launch-workflow', 'primary')}</div>`, 'launch-sheet');
   };
 
   HF.renderSettings = state => {
@@ -193,7 +193,7 @@
       </header>
       ${notice}
       <div class="menu-scroll">${rows}</div>
-      <footer class="menu-footer"><button type="button" data-action="route:tasks/populated" class="primary menu-monitor">Open Monitor <span>⌘O</span></button><button type="button" data-action="route:settings/general" class="menu-settings" aria-label="Settings"><span class="symbol-gearshape" aria-hidden="true"></span></button></footer>`, 'Harflow menu bar popover');
+      <footer class="menu-footer"><button type="button" data-action="route:tasks/populated" class="primary menu-monitor">Open Harflow <span>⌘O</span></button><button type="button" data-action="route:settings/general" class="menu-settings" aria-label="Settings"><span class="symbol-gearshape" aria-hidden="true"></span></button></footer>`, 'Harflow menu bar popover');
   };
 
   function menuRunningRow(title, detail, duration) {

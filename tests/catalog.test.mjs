@@ -7,11 +7,24 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const scripts = ['tokens.js', 'registry.js', 'components.js', 'tasks.js', 'task-activity.js', 'parallel.js', 'task-approvals.js', 'task-summary.js', 'workflows.js', 'workflow-editor-inspector.js', 'workflow-editor.js', 'dialogs.js', 'foundations.js'];
+const scripts = ['tokens.js', 'registry.js', 'components.js', 'tasks.js', 'task-activity.js', 'parallel.js', 'task-approvals.js', 'task-summary.js', 'workflows.js', 'workflow-editor-inspector.js', 'workflow-editor.js', 'workflow-run.js', 'dialogs.js', 'foundations.js'];
 
-function loadDesignRuntime() {
+function loadDesignRuntime({ captureEvents = false, querySelectorOverride, querySelectorAllOverride } = {}) {
   const announcement = { textContent: '', classList: { add() {}, remove() {} } };
-  const document = { querySelector: selector => selector === '#announcement' ? announcement : null, addEventListener() {} };
+  const listeners = new Map();
+  const document = {
+    querySelector: selector => querySelectorOverride?.(selector) ?? (selector === '#announcement' ? announcement : null),
+    querySelectorAll: selector => querySelectorAllOverride?.(selector) ?? [],
+    addEventListener(type, listener) {
+      if (!captureEvents) return;
+      const registered = listeners.get(type) || [];
+      registered.push(listener);
+      listeners.set(type, registered);
+    },
+    dispatchEvent(event) {
+      for (const listener of listeners.get(event.type) || []) listener(event);
+    }
+  };
   const context = vm.createContext({
     window: {},
     document,
@@ -22,6 +35,7 @@ function loadDesignRuntime() {
   for (const file of scripts) {
     vm.runInContext(fs.readFileSync(path.join(root, 'scripts', file), 'utf8'), context, { filename: file });
   }
+  if (captureEvents) context.HF.__dispatchDesignEvent = event => document.dispatchEvent(event);
   return context.HF;
 }
 
@@ -527,23 +541,33 @@ test('renderer HTML carries state-specific disabled guards and recovery conditio
   assert.match(unsupported, /data-action="add-approval"[^>]*disabled/);
   assert.match(hf.renderMCP('default'), /id="approval-entry"/);
 
+  hf.route = { screen: 'workflow-run', state: 'attention', theme: 'light' };
+  hf.resetWorkflowRun(hf.route);
   const attention = hf.renderRun('attention');
   assert.match(attention, /Recovery options/);
-  assert.match(attention, /data-action="open-recovery"/);
+  assert.match(attention, /data-action="wr-open-recovery"/);
+  hf.route = { screen: 'workflow-run', state: 'running', theme: 'light' };
+  hf.resetWorkflowRun(hf.route);
   assert.match(hf.renderRun('running'), /<button[^>]*>Pause<\/button>/);
-  assert.match(hf.renderRun('running'), /data-action="feedback:Workflow cancellation requested"/);
+  assert.match(hf.renderRun('running'), /data-action="wr-cancel"/);
+  hf.route = { screen: 'workflow-run', state: 'paused', theme: 'light' };
+  hf.resetWorkflowRun(hf.route);
   const paused = hf.renderRun('paused');
   assert.doesNotMatch(paused, /<button[^>]*>Pause<\/button>/);
-  assert.match(paused, /data-action="feedback:Workflow cancellation requested"/);
+  assert.match(paused, /data-action="wr-cancel"/);
   for (const terminalState of ['completed', 'cancelled']) {
+    hf.route = { screen: 'workflow-run', state: terminalState, theme: 'light' };
+    hf.resetWorkflowRun(hf.route);
     const terminal = hf.renderRun(terminalState);
     assert.doesNotMatch(terminal, /<button[^>]*>Pause<\/button>/);
     assert.doesNotMatch(terminal, /data-action="feedback:Workflow cancellation requested"/);
   }
+  hf.route = { screen: 'workflow-run', state: 'parent-owned', theme: 'light' };
+  hf.resetWorkflowRun(hf.route);
   const parentOwned = hf.renderRun('parent-owned');
-  assert.match(parentOwned, /controlled by its parent workflow/);
-  assert.match(parentOwned, /Parent workflow selected/);
-  assert.doesNotMatch(parentOwned, /data-action="feedback:Workflow cancellation requested"/);
+  assert.match(parentOwned, /Parent controlled/);
+  assert.match(parentOwned, /Open root to cancel/);
+  assert.doesNotMatch(parentOwned, /data-action="wr-cancel"/);
 
   const waiting = hf.recovery('settling', { exhaustedRetries: true });
   assert.match(waiting, /data-settling="true"/);
@@ -662,8 +686,8 @@ test('session recovery states preserve their original warning and retry chrome',
   assert.match(installRetry, /data-status="completed"/);
 
   const degradedCatalog = hf.renderTasks('tasks', 'degraded-catalog');
-  assert.match(degradedCatalog, /Agent catalog unavailable\./);
-  assert.match(degradedCatalog, /Showing known agents\./);
+  assert.match(degradedCatalog, /Harness catalog unavailable\./);
+  assert.match(degradedCatalog, /Showing known harnesses\./);
   assert.doesNotMatch(degradedCatalog, /Runtime retry requested/);
   assert.match(degradedCatalog, /data-status="completed"/);
 
@@ -797,7 +821,308 @@ test('workflow fixtures keep graph, attempt, and sidebar activity projections al
   assert.match(child, /Task assigned to Codex/);
   assert.match(child, /data-action="route:task-detail\/spawned"/);
   assert.match(hf.renderRun('running'), /wf-sr-only">Expand summary/);
-  assert.match(hf.renderRun('running'), /id="run-summary" hidden/);
+  assert.match(hf.renderRun('running'), /id="run-summary"/);
+});
+
+test('workflow run controller preserves graph and parallel presentation transitions', () => {
+  const hf = loadDesignRuntime();
+  const routeRun = (state, theme = 'light') => {
+    hf.route = { screen: 'workflow-run', state, theme };
+    hf.resetWorkflowRun(hf.route);
+    return hf.workflowRunController;
+  };
+
+  const controller = routeRun('running');
+  assert.equal(controller.snapshot().mode, 'graph');
+  assert.equal(controller.snapshot().selection, null);
+  controller.select('implementation');
+  assert.match(controller.render('running'), /class="wfr-run-layout has-selection/);
+  assert.match(controller.render('running'), /wfr-selected-activity/);
+
+  controller.setMode('parallel');
+  const parallel = controller.render('running');
+  assert.match(parallel, /class="wfr-run-layout[^\"]*parallel-mode/);
+  assert.doesNotMatch(parallel, /class="wfr-run-layout has-selection/);
+  assert.equal((parallel.match(/class="parallel-lane /g) || []).length, 2);
+  assert.match(parallel, /<h3>Implementation<\/h3>/);
+  assert.match(parallel, /<h3>Review<\/h3>/);
+  assert.equal((parallel.match(/Take over in terminal/g) || []).length, 2);
+
+  controller.setMode('graph');
+  const restored = controller.render('running');
+  assert.match(restored, /class="wfr-run-layout has-selection/);
+  assert.match(restored, /wfr-selected-activity/);
+
+  controller.select('start');
+  const structural = controller.render('running');
+  assert.doesNotMatch(structural, /class="wfr-run-layout has-selection/);
+  assert.match(structural, /wfr-sidebar-default/);
+  controller.select('start');
+  assert.equal(controller.snapshot().selection, 'start', 'reselecting a structural node keeps its identity');
+  controller.deselect();
+  assert.equal(controller.snapshot().selection, null);
+});
+
+test('workflow run selected activity keeps attempt identity and truthful special cases', () => {
+  const hf = loadDesignRuntime();
+  const routeRun = state => {
+    hf.route = { screen: 'workflow-run', state, theme: 'light' };
+    hf.resetWorkflowRun(hf.route);
+    return hf.workflowRunController;
+  };
+
+  const attempts = routeRun('attempts');
+  attempts.select('implementation');
+  assert.match(attempts.render('attempts'), /Attempt 2 · Running/);
+  attempts.setAttempt(1);
+  const failedAttempt = attempts.render('attempts');
+  assert.match(failedAttempt, /Attempt 1 · Failed/);
+  assert.match(failedAttempt, /class="parallel-lane failed"/);
+
+  const emptyCall = routeRun('on-demand-not-called');
+  emptyCall.select('on-demand');
+  assert.match(emptyCall.render('on-demand-not-called'), /0 calls/);
+  assert.match(emptyCall.render('on-demand-not-called'), /Not called/);
+
+  const called = routeRun('on-demand-calls');
+  called.select('on-demand');
+  const calledHTML = called.render('on-demand-calls');
+  assert.match(calledHTML, /1 call/);
+  assert.match(calledHTML, /Open task/);
+  assert.match(calledHTML, /#1 · Inspect session recovery/);
+  assert.match(calledHTML, /Completed/);
+  assert.match(calledHTML, /Called by the orchestrator after node/);
+  assert.match(calledHTML, /The session state is persisted correctly/);
+
+  const childSession = routeRun('child-session');
+  childSession.select('implementation');
+  assert.match(childSession.render('child-session'), /wfr-selected-activity/);
+  const childWorkflow = routeRun('child-workflow');
+  childWorkflow.select('implementation');
+  assert.match(childWorkflow.render('child-workflow'), /Child workflow/);
+  const missing = routeRun('missing-task');
+  missing.select('implementation');
+  assert.match(missing.render('missing-task'), /Activity unavailable: the task record is not available\./);
+});
+
+test('workflow run selected Plan and Review retain node identity and status', () => {
+  const hf = loadDesignRuntime();
+  hf.route = { screen: 'workflow-run', state: 'running', theme: 'light' };
+  hf.resetWorkflowRun(hf.route);
+  const controller = hf.workflowRunController;
+  for (const [type, title, status] of [['planning', 'Plan', 'Pending'], ['review', 'Review', 'Pending']]) {
+    controller.select(type);
+    const html = controller.render('running');
+    const sidebar = html.match(/<aside class="wfr-run-sidebar"[\s\S]*?<\/aside>/)?.[0] || '';
+    assert.match(sidebar, new RegExp(`<strong>${title}<\\/strong>`));
+    assert.match(sidebar, new RegExp(`${title} · 1`));
+    assert.match(sidebar, new RegExp(`>${status}<`));
+    assert.doesNotMatch(html, /class="wfr-attempt"/);
+  }
+});
+
+test('workflow run clears on-demand call context when selecting a graph node', () => {
+  const hf = loadDesignRuntime();
+  hf.route = { screen: 'workflow-run', state: 'on-demand-calls', theme: 'light' };
+  hf.resetWorkflowRun(hf.route);
+  const controller = hf.workflowRunController;
+  controller.select('on-demand');
+  assert.match(controller.render('on-demand-calls'), /1 call/);
+  controller.select('implementation');
+  const html = controller.render('on-demand-calls');
+  const sidebar = html.match(/<aside class="wfr-run-sidebar"[\s\S]*?<\/aside>/)?.[0] || '';
+  assert.match(sidebar, /<strong>Implementation<\/strong>/);
+  assert.doesNotMatch(sidebar, /Review persistence|1 call|wfr-call-list/);
+  assert.equal(controller.snapshot().callTask, undefined);
+});
+
+test('workflow run opens the canonical selected task through its real click handler', () => {
+  const openTask = (state, attempt) => {
+    const hf = loadDesignRuntime({ captureEvents: true });
+    let destination;
+    hf.navigate = (screen, nextState) => { destination = { screen, state: nextState }; };
+    hf.route = { screen: 'workflow-run', state, theme: 'light' };
+    hf.resetWorkflowRun(hf.route);
+    const controller = hf.workflowRunController;
+    controller.select('implementation');
+    controller.setAttempt(attempt);
+    const target = {
+      dataset: { action: 'wr-open-task' },
+      disabled: false,
+      isConnected: true,
+      closest: selector => selector.startsWith('[data-action') ? target : null
+    };
+    hf.__dispatchDesignEvent({ type: 'click', target, preventDefault() {}, stopImmediatePropagation() {} });
+    return { task: hf.pendingParallelTask, destination };
+  };
+
+  const running = openTask('running', 1);
+  assert.equal(running.task.id, 'workflow-implementation-attempt-1');
+  assert.equal(running.task.status, 'running');
+  assert.equal(running.task.backend, 'claude');
+  assert.deepEqual(running.destination, { screen: 'task-detail', state: 'running' });
+
+  const failed = openTask('attempts', 1);
+  assert.equal(failed.task.id, 'workflow-implementation-attempt-1');
+  assert.equal(failed.task.status, 'failed');
+  assert.equal(failed.task.backend, 'claude');
+  assert.deepEqual(failed.destination, { screen: 'task-detail', state: 'failed' });
+});
+
+test('workflow run parallel mode preserves its two canonical lane records', () => {
+  const hf = loadDesignRuntime();
+  hf.route = { screen: 'workflow-run', state: 'running', theme: 'light' };
+  hf.resetWorkflowRun(hf.route);
+  const controller = hf.workflowRunController;
+  controller.setMode('parallel');
+  const html = controller.render('running');
+  const lanes = html.match(/<article class="parallel-lane ([^"]+)"[^>]*data-task-id="([^"]+)"[\s\S]*?<\/article>/g) || [];
+  assert.equal(lanes.length, 2);
+  assert.match(lanes[0], /parallel-lane running/);
+  assert.match(lanes[0], /data-task-id="workflow-implementation-attempt-1"/);
+  assert.match(lanes[0], /<h3>Implementation<\/h3>/);
+  assert.match(lanes[0], /Claude/);
+  assert.match(lanes[1], /parallel-lane pending/);
+  assert.match(lanes[1], /data-task-id="workflow-review-attempt-1"/);
+  assert.match(lanes[1], /<h3>Review<\/h3>/);
+  assert.match(lanes[1], /Codex/);
+});
+
+test('workflow run keeps selected activity scroll identity and failed attempt open target', () => {
+  const hf = loadDesignRuntime();
+  hf.route = { screen: 'workflow-run', state: 'attempts', theme: 'light' };
+  hf.resetWorkflowRun(hf.route);
+  const controller = hf.workflowRunController;
+  controller.select('implementation');
+  controller.setAttempt(1);
+  controller.setSummaryState({ scrollTop: 88 });
+  const failed = controller.render('attempts');
+  assert.match(failed, /class="parallel-lane failed" data-task-id="[^"]*implementation-attempt-1"/);
+  assert.match(failed, /data-action="parallel-open:[^"]*implementation-attempt-1"/);
+  controller.select('review');
+  assert.equal(controller.snapshot().scrollTop, 88);
+  controller.select('implementation');
+  assert.equal(controller.snapshot().scrollTop, 88);
+});
+
+test('workflow run retains validated extra attempts and empty goal drafts across summary rerenders', () => {
+  const hf = loadDesignRuntime();
+  hf.route = { screen: 'workflow-run', state: 'attention', theme: 'light' };
+  hf.resetWorkflowRun(hf.route);
+  const controller = hf.workflowRunController;
+  controller.setSummaryState({ extraAttempts: 4, expanded: false });
+  assert.match(controller.render('attention'), /id="wfr-extra-attempts"[^>]*value="4"/);
+  controller.toggleSummary();
+  assert.match(controller.render('attention'), /id="wfr-extra-attempts"[^>]*value="4"/);
+
+  controller.setSummaryState({ goalEditing: true, goalDraft: 'Keep the recovery path explicit.' });
+  assert.doesNotMatch(controller.render('attention'), /data-action="wr-goal-save" disabled/);
+  controller.setSummaryState({ goalDraft: '' });
+  const emptyGoal = controller.render('attention');
+  assert.match(emptyGoal, /id="wfr-goal-draft"><\/textarea>/);
+  assert.match(emptyGoal, /data-action="wr-goal-save" disabled/);
+  controller.toggleSummary();
+  const rerendered = controller.render('attention');
+  assert.match(rerendered, /id="wfr-goal-draft"><\/textarea>/);
+  assert.match(rerendered, /data-action="wr-goal-save" disabled/);
+});
+
+test('workflow run goal actions restore the current goal after cancellation and preserve typed empty drafts', () => {
+  const hf = loadDesignRuntime({ captureEvents: true });
+  hf.route = { screen: 'workflow-run', state: 'running', theme: 'light' };
+  hf.resetWorkflowRun(hf.route);
+  const controller = hf.workflowRunController;
+  const dispatch = action => {
+    const target = { dataset: { action }, disabled: false, isConnected: true, closest: selector => selector.startsWith('[data-action') ? target : null };
+    hf.__dispatchDesignEvent({ type: 'click', target, preventDefault() {}, stopImmediatePropagation() {} });
+  };
+
+  dispatch('wr-goal-edit');
+  assert.equal(controller.snapshot().goalEditing, true);
+  assert.equal(controller.snapshot().goalDraft, 'Ship a reliable workflow run with clear activity and recovery.');
+  controller.setSummaryState({ goalDraft: '' });
+  dispatch('wr-goal-cancel');
+  assert.equal(controller.snapshot().goalEditing, false);
+  assert.equal(controller.snapshot().goalDraft, '');
+
+  dispatch('wr-goal-edit');
+  assert.equal(controller.snapshot().goalDraft, 'Ship a reliable workflow run with clear activity and recovery.');
+  controller.setSummaryState({ goalDraft: '' });
+  dispatch('wr-summary');
+  assert.equal(controller.snapshot().goalDraft, '');
+  assert.match(controller.render('running'), /id="wfr-goal-draft"><\/textarea>/);
+});
+
+test('workflow run restores scroll offsets for every activity feed and the graph canvas', () => {
+  const feeds = ['task-a', 'task-b'].map(id => ({ scrollTop: 0, closest: () => ({ dataset: { taskId: id } }) }));
+  const canvas = { scrollTop: 0, scrollLeft: 0 };
+  const split = {
+    querySelector: selector => selector === '.wfr-selected-activity .parallel-feed-scroll' ? feeds[0] : selector === '.wf-run-canvas' ? canvas : null,
+    querySelectorAll: selector => selector === '.parallel-feed-scroll' ? feeds : []
+  };
+  const hf = loadDesignRuntime({
+    querySelectorOverride: selector => selector === '.wfr-run-layout' ? split : null
+  });
+  hf.route = { screen: 'workflow-run', state: 'running', theme: 'light' };
+  hf.resetWorkflowRun(hf.route);
+  hf.workflowRunController.setSummaryState({ feedScroll: { 'task-a': 17, 'task-b': 29 }, canvasScroll: 11, canvasScrollLeft: 23 });
+  hf.afterWorkflowRunRender();
+  assert.equal(feeds[0].scrollTop, 17);
+  assert.equal(feeds[1].scrollTop, 29);
+  assert.equal(canvas.scrollTop, 11);
+  assert.equal(canvas.scrollLeft, 23);
+});
+
+test('workflow run keeps graph zoom scale and label across selection and summary rerenders', () => {
+  const hf = loadDesignRuntime();
+  hf.route = { screen: 'workflow-run', state: 'running', theme: 'light' };
+  hf.resetWorkflowRun(hf.route);
+  const controller = hf.workflowRunController;
+  controller.setSummaryState({ zoom: 1.2 });
+  const zoomed = controller.render('running');
+  assert.match(zoomed, /data-zoom="1\.2"/);
+  assert.match(zoomed, />120%<\/button>/);
+  controller.select('implementation');
+  controller.toggleSummary();
+  const rerendered = controller.render('running');
+  assert.match(rerendered, /data-zoom="1\.2"/);
+  assert.match(rerendered, />120%<\/button>/);
+});
+
+test('workflow run summary and recovery remain independently guarded', () => {
+  const hf = loadDesignRuntime();
+  hf.route = { screen: 'workflow-run', state: 'attention', theme: 'dark' };
+  hf.resetWorkflowRun(hf.route);
+  const controller = hf.workflowRunController;
+  assert.equal(controller.snapshot().recoveryOpen, true);
+  controller.setSummaryState({ expanded: true, recoveryBusy: true, requiresAnswer: true });
+  const busy = controller.render('attention');
+  assert.match(busy, /class="wfr-summary expanded"/);
+  assert.match(busy, /Recovery options/);
+  assert.match(busy, /data-action="wr-recovery-submit" disabled/);
+  assert.match(busy, /data-action="wr-recovery-retry" disabled/);
+  controller.setRecovery(false);
+  assert.doesNotMatch(controller.render('attention'), /Recovery options/);
+  assert.match(controller.render('attention'), /class="wfr-summary expanded"/);
+
+  hf.route = { screen: 'workflow-run', state: 'loading', theme: 'light' };
+  hf.resetWorkflowRun(hf.route);
+  const loading = hf.workflowRunController.render('loading');
+  assert.match(loading, /wfr-graph-loading/);
+  assert.doesNotMatch(loading, /data-action="wr-cancel"/);
+  hf.route = { screen: 'workflow-run', state: 'error', theme: 'light' };
+  hf.resetWorkflowRun(hf.route);
+  const error = hf.workflowRunController.render('error');
+  assert.match(error, /Workflow could not be loaded/);
+  assert.match(error, /error-state/);
+  assert.doesNotMatch(error, /data-action="wr-retry"/);
+
+  hf.route = { screen: 'workflow-run', state: 'running', theme: 'dark' };
+  hf.resetWorkflowRun(hf.route);
+  hf.workflowRunController.select('implementation');
+  hf.route = { screen: 'workflow-run', state: 'running', theme: 'light' };
+  hf.resetWorkflowRun(hf.route);
+  assert.equal(hf.workflowRunController.snapshot().selection, null, 'changing route theme resets transient selection state');
 });
 
 test('workflow editor exposes the saved, dirty, recovery, and empty states with safe action guards', () => {
@@ -805,7 +1130,7 @@ test('workflow editor exposes the saved, dirty, recovery, and empty states with 
   const source = fs.readFileSync(path.join(root, 'scripts', 'workflow-editor.js'), 'utf8');
   const saved = hf.renderEditor('saved');
   assert.match(saved, /data-editor-route="saved"/);
-  assert.match(saved, /Valid workflow · 3 steps/);
+  assert.match(saved, /Valid workflow · 3 nodes/);
   assert.match(saved, /data-editor-action="save" disabled/);
   assert.match(saved, /data-editor-action="discard" disabled/);
   assert.match(saved, /data-editor-action="run"/);
@@ -818,7 +1143,7 @@ test('workflow editor exposes the saved, dirty, recovery, and empty states with 
 
   const empty = hf.renderEditor('empty');
   assert.match(empty, /editor-empty-canvas/);
-  assert.match(empty, /Valid workflow · 0 steps/);
+  assert.match(empty, /Valid workflow · 0 nodes/);
   const conflict = hf.renderEditor('conflict');
   assert.match(conflict, /class="editor-validation problem"/);
   assert.match(conflict, /data-editor-action="reload"/);
@@ -852,18 +1177,49 @@ test('workflow editor selection inspectors preserve values, conditional fields, 
 
   const implementation = hf.renderEditorInspector('node', { ...hf.editorInspectorDefaults('node', 'implementation'), role: 'implementation' });
   assert.doesNotMatch(implementation, /Require task list/);
-  assert.match(implementation, /Step instructions/);
+  assert.match(implementation, /Node instructions/);
   const connection = hf.renderEditorInspector('connection', { ...hf.editorInspectorDefaults('connection', 'review-implementation'), isBackward: true, limitRetries: true, condition: hostile, maxRetries: 2 });
   assert.match(connection, /Limit retries/);
   assert.match(connection, /Max retries/);
   assert.match(connection, /&lt;\/textarea&gt;&lt;img/);
   const child = hf.renderEditorInspector('child-reference', { ...hf.editorInspectorDefaults('child-reference', 'workflow-step'), workflowId: 'wf-1', workflowName: 'Development workflow', orchestratorMode: 'child', showsChildSessionPolicy: true });
-  assert.match(child, /Child conversation/);
+  assert.match(child, /Child session/);
   assert.match(child, /Workflow tree access requirements/);
   const missing = hf.renderEditorInspector('missing-reference', { ...hf.editorInspectorDefaults('missing-reference', 'workflow-step'), workflowId: 'missing-workflow-id', availableWorkflows: 'wf-2:Recovery workflow' });
   assert.match(missing, /Unavailable workflow/);
   assert.match(missing, /missing-workflow-id/);
-  assert.match(missing, /Replace all matching steps/);
+  assert.match(missing, /Replace all matching nodes/);
+});
+
+test('canonical terminology distinguishes harnesses and nodes from participant agent copy', () => {
+  const hf = loadDesignRuntime();
+  const catalog = hf.renderTasks('tasks', 'degraded-catalog');
+  assert.match(catalog, /aria-label="Filter tasks by harness"/);
+  assert.match(catalog, /Harness catalog unavailable\. Showing known harnesses\./);
+  assert.doesNotMatch(catalog, /Agent catalog unavailable|known agents/);
+
+  const editor = hf.renderEditor('saved');
+  assert.match(editor, /data-editor-select="node:implementation"[^>]*data-node-id="implementation"/);
+  assert.match(editor, /Valid workflow · 3 nodes/);
+  assert.match(editor, /data-editor-field="backend" aria-label="Harness"/);
+
+  const node = hf.renderEditorInspector('node', { ...hf.editorInspectorDefaults('node', 'implementation'), role: 'implementation' });
+  assert.match(node, /Node instructions/);
+  assert.doesNotMatch(node, /Step instructions/);
+  const orchestrator = hf.renderEditorInspector('orchestrator', hf.editorInspectorDefaults('orchestrator', 'orchestrator'));
+  assert.match(orchestrator, /Parallel agents/);
+
+  const summary = hf.taskPane('Summary', { id: 'terminology-task', title: 'Terminology', backend: 'codex', status: 'completed', summaryTurns: 4, summary: 'Done', editedFiles: [] }, 'completed');
+  assert.match(summary, /Agent turns/);
+  assert.match(editor, /Edit with agent/);
+
+  const parallel = hf.renderParallel('two-lanes');
+  assert.match(parallel, /2 agents · read_only, write_in_repo/);
+  assert.match(parallel, /Enforced for every agent here/);
+
+  const workflowSource = fs.readFileSync(path.join(root, 'scripts', 'workflow-editor.js'), 'utf8');
+  assert.match(workflowSource, /data-modal-field="agent"/);
+  assert.match(workflowSource, /data-editor-field/);
 });
 
 test('workflow editor zoom clamps to 50–200 in 25 point increments and preserves graph topology fixtures', () => {

@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Calibrate workflow run layouts and states against native mocks; preview compact default and full-width selected Activity sidebars.
+- Establish a canonical product glossary for Harness, Agent, Node, Session, and related design terminology.
+
 - Align workflow editor states, inspectors, launch sheets, and canvas layout using native fixture comparisons.
 - Align standalone parallel groups with native headers, lane status strips, actions, results, and adaptive lane widths; add fresh native mock references in both appearances.
 - Present approval actions and optional supplied descriptions in readable form instead of raw JSON.

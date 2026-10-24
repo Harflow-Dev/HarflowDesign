@@ -4,9 +4,13 @@
 
 Source: HarflowMac commit `7fbed912b61094f2ee427a7d9be76a026767a61e`. This catalog translates current SwiftUI composition into editable browser specimens. It does not establish design approval or full-screen pixel fidelity.
 
-Semantic RGB values are extracted directly from HfUI `Style/Palette.swift`, including backend colors. Native type sizes are 11, 12, 13, 14, 15, 18, and 22 points. Browser CSS pixels approximate points at 100% zoom. Shared radii are card 12, row/button 8, panel 16, and sheet 20. Spacing follows the native 2–28 point scale. Disclosure motion is 200 ms and arrival motion 180 ms; reduced motion follows the system browser preference.
+Semantic RGB values are extracted directly from HfUI `Style/Palette.swift`, including harness colors. Native type sizes are 11, 12, 13, 14, 15, 18, and 22 points. Browser CSS pixels approximate points at 100% zoom. Shared radii are card 12, row/button 8, panel 16, and sheet 20. Spacing follows the native 2–28 point scale. Disclosure motion is 200 ms and arrival motion 180 ms; reduced motion follows the system browser preference.
 
 The system font stack approximates SF. Native materials, SwiftUI forms, split handles, SF Symbols, platform menus, directory pickers, window controls, and text rasterization remain browser approximations. Workflow symbols use local SF Symbol exports. Other icons and platform controls remain approximations. Decorative window dots do not operate the host window. Canvas drag is a mock positional interaction; it does not author engine workflow contracts.
+
+## Product terminology
+
+Use [the canonical glossary](docs/terminology.md) for UI copy, accessibility labels, fixtures, and documentation. Harness identifies execution tools; Agent identifies participants; Node identifies workflow graph units. Public field names remain unchanged by design copy edits.
 
 ## Editing and approval
 
