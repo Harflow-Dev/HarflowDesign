@@ -1,0 +1,33 @@
+.recovery-panel { max-width: 760px; }
+.recovery-heading { margin-bottom: 18px; }
+.recovery-kicker { color: var(--secondaryText); font-size: 10px; font-weight: 650; letter-spacing: .08em; }
+.recovery-heading h2 { margin: 7px 0 0; color: var(--primaryText); font-size: 18px; line-height: 1.25; }
+.recovery-callout { padding: 14px 16px; border: 1px solid var(--cardBorder); border-radius: var(--radius-card); background: var(--cardFill); color: var(--primaryText); }
+.recovery-callout p, .recovery-progress p { margin: 5px 0 0; color: var(--secondaryText); font-size: 12px; line-height: 1.5; }
+.recovery-callout.warning { border-color: var(--warningBorder, var(--cardBorder)); background: var(--warningBG, var(--cardFill)); }
+.recovery-callout.error { border-color: var(--errorBorder, var(--cardBorder)); background: var(--errorBG, var(--cardFill)); }
+.recovery-callout.success { border-color: var(--successBorder, var(--cardBorder)); background: var(--successBG, var(--cardFill)); }
+.recovery-path { display: grid; grid-template-columns: 150px minmax(0, 1fr); align-items: start; gap: 12px; margin: 12px 0; padding: 10px 12px; border-radius: 8px; background: var(--windowBG); color: var(--secondaryText); font-size: 12px; }
+.recovery-path code { min-width: 0; overflow-wrap: anywhere; color: var(--primaryText); font-size: 11px; }
+.recovery-path code:focus-visible, .recovery-step:focus-visible, .recovery-states summary:focus-visible { outline: 2px solid var(--accentLink); outline-offset: 3px; }
+.recovery-note { color: var(--secondaryText); font-size: 11px; line-height: 1.45; }
+.recovery-check { display: flex; align-items: flex-start; gap: 8px; margin: 14px 0; color: var(--primaryText); font-size: 12px; }
+.recovery-check input { flex: none; margin: 2px 0 0; accent-color: var(--accentLink); }
+.recovery-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.recovery-progress { display: flex; align-items: flex-start; gap: 12px; padding: 14px 0; color: var(--primaryText); }
+.spinner { flex: none; width: 16px; height: 16px; margin-top: 2px; border: 2px solid var(--cardBorder); border-top-color: var(--accentLink); border-radius: 50%; animation: recovery-spin .8s linear infinite; }
+@keyframes recovery-spin { to { transform: rotate(360deg); } }
+.recovery-states { margin-top: 24px; border-top: 1px solid var(--cardBorder); padding-top: 12px; }
+.recovery-states summary { width: fit-content; color: var(--secondaryText); font-size: 11px; cursor: pointer; }
+.recovery-states nav { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 12px; }
+.recovery-step { display: block; min-width: 0; padding: 9px 10px; border: 1px solid var(--cardBorder); border-radius: 8px; color: var(--primaryText); text-decoration: none; }
+.recovery-step.current { border-color: var(--accentLink); background: var(--runningBG); }
+.recovery-step span, .recovery-step small { display: block; }
+.recovery-step span { font-size: 11px; font-weight: 600; }
+.recovery-step small { margin-top: 3px; color: var(--secondaryText); font-size: 10px; }
+@media (max-width: 780px) {
+  .app.settings { width: max(720px, 100%); }
+  .recovery-path { grid-template-columns: 120px minmax(0, 1fr); }
+  .recovery-states nav { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 1.6s; } }

@@ -109,9 +109,10 @@
   };
 
   HF.renderSettings = state => {
-    const harness = !['general', 'runtime-retry'].includes(state);
+    const recovery = state.startsWith('recovery-');
+    const harness = !recovery && !['general', 'runtime-retry'].includes(state);
     const activeTab = harness ? 'harnesses' : 'general';
-    const content = harness ? HF.harnesses(state) : HF.general(state);
+    const content = recovery ? HF.renderStateRecovery(state) : harness ? HF.harnesses(state) : HF.general(state);
     return nativeSurface('settings', `
       <nav class="settings-tabs" aria-label="Settings sections">
         ${b('General', 'settings-tab:general', activeTab === 'general' ? 'active' : '')}

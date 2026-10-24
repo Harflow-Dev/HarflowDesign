@@ -7,7 +7,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const scripts = ['tokens.js', 'registry.js', 'appearance.js', 'components.js', 'tasks.js', 'task-activity.js', 'parallel.js', 'task-approvals.js', 'task-summary.js', 'workflows.js', 'workflow-connectors.js', 'workflow-editor-inspector.js', 'workflow-editor.js', 'workflow-run.js', 'dialogs.js', 'foundations.js'];
+const scripts = ['tokens.js', 'registry.js', 'appearance.js', 'components.js', 'tasks.js', 'task-activity.js', 'parallel.js', 'task-approvals.js', 'task-summary.js', 'workflows.js', 'workflow-connectors.js', 'workflow-editor-inspector.js', 'workflow-editor.js', 'workflow-run.js', 'dialogs.js', 'state-recovery.js', 'foundations.js'];
 
 function loadDesignRuntime({ captureEvents = false, querySelectorOverride, querySelectorAllOverride } = {}) {
   const announcement = { textContent: '', classList: { add() {}, remove() {} } };
@@ -103,6 +103,35 @@ test('appearance defaults to System, follows the OS, and keeps the selected cont
   mediaListeners[0]();
   assert.equal(controller.theme, 'dark');
   assert.equal(controller.themeMode, 'system');
+});
+
+test('store recovery specimens cover explicit inspection, backup, interruption, and unsupported states', () => {
+  const hf = loadDesignRuntime();
+  const states = Array.from(hf.screens.find(screen => screen.id === 'settings').states.filter(state => state.startsWith('recovery-')));
+  assert.deepEqual(states, [
+    'recovery-incompatible', 'recovery-inspecting', 'recovery-confirmation', 'recovery-running', 'recovery-busy',
+    'recovery-stale', 'recovery-pre-backup-failure', 'recovery-partial', 'recovery-success', 'recovery-unsupported'
+  ]);
+  for (const state of states) {
+    hf.route = { state };
+    const html = hf.renderStateRecovery(state);
+    assert.match(html, /Selected store/);
+    assert.doesNotMatch(html, /state_incompatible/);
+  }
+  assert.match(hf.renderTasks('tasks', 'store-incompatible'), /route:settings\/recovery-incompatible/);
+  assert.match(hf.renderStateRecovery('recovery-incompatible'), /data format this engine cannot read/);
+  assert.match(hf.renderStateRecovery('recovery-incompatible'), /\.harflow/);
+  const confirmation = hf.renderStateRecovery('recovery-confirmation');
+  assert.match(confirmation, /Back up and initialize/);
+  assert.match(confirmation, /Backup location/);
+  assert.match(confirmation, /This check is tied to this store and operation/);
+  assert.doesNotMatch(confirmation, /type=\"checkbox\"/);
+  const partial = hf.renderStateRecovery('recovery-partial');
+  assert.match(partial, /Continue recovery/);
+  assert.match(partial, /Recovery backup/);
+  assert.match(partial, /preserved across the selected store and recovery backup/);
+  assert.match(hf.renderStateRecovery('recovery-unsupported'), /Update Harflow/);
+  assert.doesNotMatch(hf.renderStateRecovery('recovery-running'), /data-action=\"route:settings\/recovery-busy/);
 });
 
 test('appearance responds to OS changes only while System is selected', () => {

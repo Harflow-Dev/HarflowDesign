@@ -67,7 +67,7 @@ HF.renderTasks=(screen,state)=>{
   if(!task){const status=HF.taskActivityStatus(null,state);task={id:'task_fixture_01',title:state==='spawned'?'Implement persistence checks':'Review session persistence',backend:'claude',status,prompt:fallbackPrompt,sessionID:state==='no-session'?null:true,liveInput:state!=='no-live',takenOver:state==='taken-over'};}
   const effective=summaryRoute?(task?.status||'completed'):sessionStates.has(state)?task?.status||'running':['taken-over','no-live','no-session'].includes(state)?state:(task?.status||state);
   const initialTab=summaryRoute?'Summary':'Activity';
-  const warning=['install-retry','degraded-catalog'].includes(state)?HF.banner(state==='install-retry'?'Managed runtime could not be prepared. '+HF.button('Try again','feedback:Runtime retry requested'):'Harness catalog unavailable. Showing known harnesses.'):'';
+  const warning=['install-retry','degraded-catalog','store-incompatible'].includes(state)?HF.banner(state==='install-retry'?'Managed runtime could not be prepared. '+HF.button('Try again','feedback:Runtime retry requested'):state==='store-incompatible'?'Harflow cannot read the selected store format. Your data remains in place. '+HF.button('Review in General settings','route:settings/recovery-incompatible'):'Harness catalog unavailable. Showing known harnesses.'):'';
   const body=`<div class="split">${HF.sidebar(screen==='tasks'?state:'populated')}<div class="content ta-content">${warning}<div class="ta-chrome">${HF.taskActivitySurface(task,effective,initialTab,summaryRoute?state:effective)}</div></div></div>`;
   const actionState=HF.taskActivityStatus(task,effective);
   const running=actionState==='running'||actionState==='taken-over';
