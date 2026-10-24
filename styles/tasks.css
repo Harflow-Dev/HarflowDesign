@@ -201,7 +201,7 @@
 .app:has(.sidebar) .sidebar .search input { height: 28px; border: 0; border-radius: 7px; background: var(--neutralFill); padding-top: 4px; padding-bottom: 4px; }
 .sidebar .search::before { top: 8px; }
 .sidebar .search::after { top: 19px; }
-.sidebar .workflow-row { display: flex; align-items: center; gap: 8px; min-height: 28px; padding: 4px 8px !important; color: var(--primaryText); font-size: 12px; }
+.sidebar .workflow-row { display: flex; align-items: center; gap: 8px; min-height: 28px; padding: 4px 8px !important; color: var(--primaryText); font-size: 13px; font-weight: 600; }
 .sidebar .workflow-add { margin-left: 6px; }
 .sidebar .sidebar-workflow-icon { width: 15px; height: 15px; flex: 0 0 15px; background: var(--secondaryText); -webkit-mask: url("../assets/symbols/point.3.connected.trianglepath.dotted.png") center / contain no-repeat; mask: url("../assets/symbols/point.3.connected.trianglepath.dotted.png") center / contain no-repeat; }
 .sidebar .task-row { min-height: 42px; gap: 8px; padding: 7px 8px !important; }
@@ -218,7 +218,7 @@
 .sidebar .task-row.active .task-status.failed { background-color: white; }
 .sidebar .task-row.active .task-status:not(.completed):not(.failed) { border-color: white; background: transparent; }
 .sidebar .task-children { position: relative; margin-left: 20px; padding-left: 0; border-left: 0; }
-.sidebar .task-tree::before { position: absolute; z-index: 1; top: 24px; bottom: 24px; left: 20px; width: 1px; background: var(--tertiaryText); content: ""; pointer-events: none; }
+.sidebar .task-tree::before { position: absolute; z-index: 1; top: 36px; bottom: 24px; left: 20px; width: 1px; background: var(--tertiaryText); content: ""; pointer-events: none; }
 .sidebar .task-children::after { position: absolute; top: 24px; left: 0; width: 8px; height: 1px; background: var(--tertiaryText); content: ""; }
 .sidebar .parallel-group { display: flex; align-items: center; gap: 8px; min-height: 54px !important; margin: 2px 0 5px; padding: 7px 8px !important; text-align: left; }
 .sidebar .parallel-group .parallel-agents { position: static; display: flex; flex: 0 0 20px; flex-direction: row; align-items: center; }
