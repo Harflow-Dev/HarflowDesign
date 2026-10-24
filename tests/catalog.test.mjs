@@ -7,7 +7,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const scripts = ['tokens.js', 'registry.js', 'components.js', 'tasks.js', 'task-activity.js', 'parallel.js', 'task-approvals.js', 'task-summary.js', 'workflows.js', 'workflow-editor-inspector.js', 'workflow-editor.js', 'workflow-run.js', 'dialogs.js', 'foundations.js'];
+const scripts = ['tokens.js', 'registry.js', 'components.js', 'tasks.js', 'task-activity.js', 'parallel.js', 'task-approvals.js', 'task-summary.js', 'workflows.js', 'workflow-connectors.js', 'workflow-editor-inspector.js', 'workflow-editor.js', 'workflow-run.js', 'dialogs.js', 'foundations.js'];
 
 function loadDesignRuntime({ captureEvents = false, querySelectorOverride, querySelectorAllOverride } = {}) {
   const announcement = { textContent: '', classList: { add() {}, remove() {} } };
@@ -35,6 +35,7 @@ function loadDesignRuntime({ captureEvents = false, querySelectorOverride, query
   for (const file of scripts) {
     vm.runInContext(fs.readFileSync(path.join(root, 'scripts', file), 'utf8'), context, { filename: file });
   }
+  if (context.HF && context.HFWorkflowConnectors) context.HF.HFWorkflowConnectors = context.HFWorkflowConnectors;
   if (captureEvents) context.HF.__dispatchDesignEvent = event => document.dispatchEvent(event);
   return context.HF;
 }
@@ -822,6 +823,31 @@ test('workflow fixtures keep graph, attempt, and sidebar activity projections al
   assert.match(child, /data-action="route:task-detail\/spawned"/);
   assert.match(hf.renderRun('running'), /wf-sr-only">Expand summary/);
   assert.match(hf.renderRun('running'), /id="run-summary"/);
+});
+
+test('shared workflow connector geometry clamps rounded corners and emits native open chevrons', () => {
+  const hf = loadDesignRuntime();
+  const connectors = hf.HFWorkflowConnectors;
+  assert.equal(connectors.roundedPath([{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 100 }]), 'M0 0 L90 0 Q100 0 100 10 L100 100');
+  assert.equal(connectors.roundedPath([{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 6 }]), 'M0 0 L7 0 Q10 0 10 3 L10 6');
+  assert.match(connectors.roundedPath([{ x: 0, y: 0 }, { x: 0, y: 0 }, { x: 10, y: 0 }]), /^M0 0 L0 0 L10 0$/);
+  assert.equal(connectors.arrowPath([{ x: 10, y: 20 }, { x: 30, y: 20 }]), 'M23 25 L30 20 L23 15');
+  assert.equal(connectors.arrowPath([{ x: 30, y: 20 }, { x: 10, y: 20 }]), 'M3 25 L10 20 L3 15');
+  assert.equal(connectors.arrowPath([{ x: 10, y: 20 }]), '');
+});
+
+test('workflow connector renderers keep one arrow per edge and semantic backward hitboxes', () => {
+  const hf = loadDesignRuntime();
+  const run = hf.renderRun('running');
+  assert.equal((run.match(/class="wf-connector-edge /g) || []).length, 5);
+  assert.match(run, /class="wf-connector-edge backward"/);
+  assert.doesNotMatch(run, /marker-end|non-scaling-stroke/);
+
+  const editorSource = fs.readFileSync(path.join(root, 'scripts', 'workflow-editor.js'), 'utf8');
+  assert.match(editorSource, /HFWorkflowConnectors\.roundedPath\(points\)/);
+  assert.match(editorSource, /HFWorkflowConnectors\.arrowPath\(points\)/);
+  assert.match(editorSource, /class="edge-hitbox"/);
+  assert.match(editorSource, /edge\.isBackward \? 'backward'/);
 });
 
 test('workflow run controller preserves graph and parallel presentation transitions', () => {

@@ -117,26 +117,15 @@
       const source = state.draft.nodes.find(n => n.id === edge.source), target = state.draft.nodes.find(n => n.id === edge.target); if (!source || !target) return '';
       const sw = source.width || 72, sh = source.height || 72, tw = target.width || 72, th = target.height || 72;
       let x1 = source.x + sw, y1 = source.y + sh / 2, x2 = target.x, y2 = target.y + th / 2;
-      let d;
-      if (edge.isBackward || target.x < source.x) { const top = Math.min(source.y, target.y) - 18; d = roundedPath([{x:x1,y:y1},{x:x1+18,y:y1},{x:x1+18,y:top},{x:x2-18,y:top},{x:x2-18,y:y2},{x:x2,y:y2}]); }
-      else { const mid = (x1 + x2) / 2; d = roundedPath([{x:x1,y:y1},{x:mid,y:y1},{x:mid,y:y2},{x:x2,y:y2}]); }
+      let points;
+      if (edge.isBackward || target.x < source.x) { const top = Math.min(source.y, target.y) - 18; points = [{x:x1,y:y1},{x:x1+18,y:y1},{x:x1+18,y:top},{x:x2-18,y:top},{x:x2-18,y:y2},{x:x2,y:y2}]; }
+      else { const mid = (x1 + x2) / 2; points = [{x:x1,y:y1},{x:mid,y:y1},{x:mid,y:y2},{x:x2,y:y2}]; }
+      const d = HFWorkflowConnectors.roundedPath(points), arrow = HFWorkflowConnectors.arrowPath(points);
       const selected = state.selected?.kind === 'connection' && state.selected.id === edge.id;
-      return `<g class="editor-edge-hit ${selected ? 'selected' : ''}" role="button" tabindex="0" aria-label="Select connection from ${esc(source.title)} to ${esc(target.title)}" data-editor-select="connection:${esc(edge.id)}"><path d="${d}"/><path class="edge-hitbox" d="${d}"/></g>`;
+      return `<g class="editor-edge-hit ${edge.isBackward ? 'backward' : ''} ${selected ? 'selected' : ''}" role="button" tabindex="0" aria-label="Select connection from ${esc(source.title)} to ${esc(target.title)}" data-editor-select="connection:${esc(edge.id)}"><path d="${d} ${arrow}"/><path class="edge-hitbox" d="${d}"/></g>`;
     }).join('');
-    svg.innerHTML = `<defs><marker id="editor-arrow" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0 0L8 4L0 8z" fill="#777982"/></marker></defs>${paths}`;
+    svg.innerHTML = paths;
     svg.setAttribute('width', graph.style.width); svg.setAttribute('height', graph.style.height);
-  }
-  function roundedPath(points) {
-    if (points.length < 2) return '';
-    let path = `M${points[0].x} ${points[0].y}`;
-    for (let i = 1; i < points.length - 1; i++) {
-      const prev=points[i-1],corner=points[i],next=points[i+1];
-      const radius=Math.min(10,Math.abs(corner.x-prev.x)/2||Math.abs(corner.y-prev.y)/2,Math.abs(next.x-corner.x)/2||Math.abs(next.y-corner.y)/2);
-      const before={x:corner.x-Math.sign(corner.x-prev.x)*radius,y:corner.y-Math.sign(corner.y-prev.y)*radius};
-      const after={x:corner.x+Math.sign(next.x-corner.x)*radius,y:corner.y+Math.sign(next.y-corner.y)*radius};
-      path+=` L${before.x} ${before.y} Q${corner.x} ${corner.y} ${after.x} ${after.y}`;
-    }
-    const last=points[points.length-1]; return `${path} L${last.x} ${last.y}`;
   }
   function bottomStatus() {
     const d = state.draft;

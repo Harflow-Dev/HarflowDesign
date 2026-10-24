@@ -15,6 +15,7 @@ Open `http://localhost:8080`. No dependencies, build, account, engine, or siblin
 - `styles/tasks.css`, `task-activity.css`, `task-summary.css`, `task-approvals.css`, `parallel.css`, `workflows.css`, `workflow-editor.css`, `workflow-editor-inspector.css`, `workflow-run.css`, `dialogs.css`: screen-specific layouts.
 - `styles/catalog.css`: reference website navigation and chrome.
 - `scripts/registry.js`: screen families, states, and pinned source links.
+- `scripts/workflow-connectors.js`: shared native-derived connection geometry for workflow editor and run.
 - `scripts/tasks.js`, `task-activity.js`, `task-summary.js`, `task-approvals.js`, `parallel.js`, `workflows.js`, `workflow-editor.js`, `workflow-editor-inspector.js`, `workflow-run.js`, `dialogs.js`: editable screen specimens.
 - `scripts/catalog.js`: local navigation and mock interactions.
 - `docs/screen-inventory.md`: coverage, limitations, and source evidence.

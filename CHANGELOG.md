@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Share native rounded connector geometry, open arrowheads, backward dashes, and zoom scaling between workflow editor and run.
+
 - Calibrate workflow run layouts and states against native mocks; preview compact default and full-width selected Activity sidebars.
 - Establish a canonical product glossary for Harness, Agent, Node, Session, and related design terminology.
 
