@@ -15,7 +15,7 @@
   ];
   const clone = value => JSON.parse(JSON.stringify(value));
   const esc = value => HF.escape(String(value ?? ''));
-  const state = { route: '', draft: null, baseline: null, selected: null, selectedByUser: false, zoom: 100, modal: null, builderMessage: '', mockTask: false, proposal: false };
+  const state = { route: '', draft: null, baseline: null, selected: null, selectedByUser: false, zoom: 100, modal: null, builderMessage: '', mockTask: false, proposal: false, reorder: null, readiness: null };
   const canonical = value => Array.isArray(value) ? value.map(canonical) : value && typeof value === 'object' ? Object.fromEntries(Object.keys(value).sort().map(key => [key, canonical(value[key])])) : value;
   const deepEqual = (a, b) => JSON.stringify(canonical(a)) === JSON.stringify(canonical(b));
   const fieldKind = kind => kind === 'missing-reference' ? 'child-reference' : kind === 'parallel-group' ? 'parallel' : kind;
@@ -34,6 +34,13 @@
       draft.edges = draft.edges.filter(edge => ![edge.source, edge.target].includes('review'));
       draft.edges.push({id:'implementation-parallel-start',source:'implementation',target:'parallel-start',condition:''},{id:'parallel-start-review',source:'parallel-start',target:'parallel-review',condition:''},{id:'parallel-review-parallel-end',source:'parallel-review',target:'parallel-end',condition:''},{id:'parallel-end-end',source:'parallel-end',target:'end',condition:''});
     }
+    if (HF.editorProposalRoutes?.includes(route)) draft.revision = 3;
+    if (route === 'standalone-reorder') draft.standaloneNodes = [{ id: 'rollback-guide', title: 'Rollback guide', type: 'on-demand', backend: 'Codex' }, { id: 'smoke-test', title: 'Smoke test', type: 'on-demand', backend: 'Codex' }];
+    if (route === 'council-config') {
+      draft.nodes = [starterNodes[0], starterNodes[1], { id: 'council', title: 'Council', type: 'council', role: 'council', x: 440, y: 100, width: 200, height: 92 }, { ...starterNodes[4], x: 690 }].map(clone);
+      draft.edges = [{ id: 'start-planning', source: 'start', target: 'planning', condition: '' }, { id: 'planning-council', source: 'planning', target: 'council', condition: '' }, { id: 'council-end', source: 'council', target: 'end', condition: '' }];
+      draft.selected = { kind: 'council', id: 'council' };
+    }
     if (route === 'child-reference' || route === 'missing-reference') draft.nodes.push({id:'workflow-step',title:'Run workflow',type:'workflow',role:'workflow',x:400,y:300,width:200,height:92,backend:'',workflowName:route==='missing-reference'?'Unavailable workflow':''});
     if (route === 'on-demand') draft.standaloneNodes=[{id:'investigation',title:'Investigation',type:'on-demand',backend:'Codex'}];
     if (['node', 'branch', 'child-reference', 'missing-reference', 'on-demand', 'connection', 'parallel-group'].includes(route)) {
@@ -42,7 +49,7 @@
       else if (route === 'child-reference' || route === 'missing-reference') draft.selected = { kind: route === 'missing-reference' ? 'missing-reference' : 'child-reference', id: 'workflow-step' };
       else if (route === 'branch' || route === 'parallel-group') draft.selected = { kind: 'parallel', id: 'parallel-start' };
       else draft.selected = { kind: 'node', id: route === 'child-reference' || route === 'missing-reference' ? 'workflow-step' : 'implementation' };
-    } else draft.selected = { kind: 'orchestrator', id: 'orchestrator' };
+    } else if (route !== 'council-config') draft.selected = { kind: 'orchestrator', id: 'orchestrator' };
     return draft;
   }
 
@@ -54,25 +61,29 @@
     state.allocatedIDs = new Set([...state.draft.nodes, ...state.draft.edges, ...(state.draft.standaloneNodes || [])].map(entity => entity.id));
     initializeFieldMaps(state.draft);
     state.baseline = clone(state.draft);
-    if (route === 'dirty') { state.draft.fieldValues['node:implementation'].instructions += ' Add regression evidence before completion.'; state.draft.nodes.find(n => n.id === 'implementation').instructions = state.draft.fieldValues['node:implementation'].instructions; }
+    if (route === 'dirty' || route === 'rename') { state.draft.fieldValues['node:implementation'].instructions += ' Add regression evidence before completion.'; state.draft.nodes.find(n => n.id === 'implementation').instructions = state.draft.fieldValues['node:implementation'].instructions; }
     state.selected = clone(state.draft.selected);
     state.selectedByUser = false;
     state.zoom = 100;
-    state.modal = null;
+    state.modal = route === 'rename' ? { mode: 'rename', value: HF.otherWorkflowNames[0], returnAction: '[data-editor-action="rename"]' } : null;
+    state.reorder = route === 'standalone-reorder' ? { id: 'smoke-test', index: 0, static: true } : null;
+    state.readiness = route === 'readiness' ? { open: true, signature: signature(), revision: state.draft.revision, at: '14:52' } : null;
     state.builderMessage = '';
     state.mockTask = ['builder-conversation', 'proposal-ready'].includes(route);
     state.proposal = route === 'proposal-ready';
     state.proposalContext = state.proposal ? proposalSnapshot() : null;
     if (state.mockTask) state.draft.workspace = true;
   };
-  HF.afterWorkflowEditorRender = () => { if (typeof document !== 'undefined' && state.route) { drawEdges(); updateButtons(); } };
+  HF.afterWorkflowEditorRender = () => { if (typeof document !== 'undefined' && state.route) { drawEdges(); updateButtons(); if (state.reorder) positionReorderPreview(); if (state.modal?.mode === 'rename') document.querySelector('#editor-rename-input')?.focus(); } };
+  const signature = () => JSON.stringify(canonical(editableDraft()));
   const isDirty = () => !deepEqual(editableDraft(), editableBaseline());
   const editableDraft = () => { const { loading, readError, conflict, validation, busy, selectedRun, workspace, selected, ...draft } = state.draft || {}; return draft; };
   const editableBaseline = () => { const { loading, readError, conflict, validation, busy, selectedRun, workspace, selected, ...draft } = state.baseline || {}; return draft; };
   const blocked = () => !state.draft || state.draft.loading || state.draft.readError || state.draft.conflict || state.draft.busy || state.draft.selectedRun;
   const canSave = () => isDirty() && !blocked() && !state.draft.workspace;
   const canDiscard = () => isDirty() && !state.draft.workspace && !state.draft.loading && !state.draft.readError && !state.draft.busy && !state.draft.selectedRun;
-  const canRun = () => !isDirty() && !blocked() && !state.draft.workspace && !state.draft.validation;
+  const councilProblem = () => { for (const node of state.draft?.nodes || []) if (node.type === 'council') { const errors = HF.councilValidation(state.draft.fieldValues?.[`council:${node.id}`] || {}); if (errors.length) return `${node.title || 'Council'}: ${errors[0]}`; } return ''; };
+  const canRun = () => !isDirty() && !blocked() && !state.draft.workspace && !state.draft.validation && !councilProblem();
 
   HF.renderEditor = route => {
     if (!state.draft || state.route !== route) HF.resetWorkflowEditor('workflow-editor', route);
@@ -81,13 +92,13 @@
     const unavailable = d.loading || d.readError;
     if (d.loading) return loadingScreen();
     return `<section class="app workflow-specimen editor-app" data-editor-route="${esc(route)}">
-      <header class="editor-header"><div class="editor-heading"><strong>${esc(d.name)}</strong><span>Revision ${d.revision} · Workflow editor${isDirty() ? ' · Unsaved changes' : ''}</span></div><div class="editor-actions" ${d.readError ? 'inert' : ''}>${isBuilder ? builderHeaderActions() : `<button class="editor-agent-button" data-editor-action="launch-builder"><span class="editor-glyph sparkles" aria-hidden="true"></span><span>Edit with agent</span></button><details class="editor-menu"><summary aria-label="More workflow actions"><span class="editor-glyph ellipsis" aria-hidden="true"></span></summary><div><button data-editor-action="duplicate">Duplicate</button><button data-editor-action="delete">Delete</button><button data-editor-action="generate">Generate with agent…</button></div></details><button data-editor-action="discard" ${canDiscard() ? '' : 'disabled'}>Discard</button><button data-editor-action="save" ${canSave() ? '' : 'disabled'}>Save</button><button class="editor-run" data-editor-action="run" ${canRun() ? '' : 'disabled'}><span class="editor-glyph play" aria-hidden="true"></span><span>Run</span></button>`}</div></header>
+      <header class="editor-header"><div class="editor-heading"><strong>${esc(d.name)}</strong><span>Revision ${d.revision} · Workflow editor${isDirty() ? ' · Unsaved changes' : ''}</span></div><div class="editor-actions" ${d.readError ? 'inert' : ''}>${isBuilder ? builderHeaderActions() : `${route === 'readiness' ? `<button type="button" class="editor-agent-button editor-readiness-button" data-editor-action="inspect-readiness" aria-expanded="${state.readiness?.open ? 'true' : 'false'}">Inspect readiness</button>` : ''}<button class="editor-agent-button" data-editor-action="launch-builder"><span class="editor-glyph sparkles" aria-hidden="true"></span><span>Edit with agent</span></button><details class="editor-menu"><summary aria-label="More workflow actions"><span class="editor-glyph ellipsis" aria-hidden="true"></span></summary><div>${route === 'rename' ? '<button data-editor-action="rename">Rename…</button>' : ''}<button data-editor-action="duplicate">Duplicate</button><button data-editor-action="delete">Delete</button><button data-editor-action="generate">Generate with agent…</button></div></details><button data-editor-action="discard" ${canDiscard() ? '' : 'disabled'}>Discard</button><button data-editor-action="save" ${canSave() ? '' : 'disabled'}>Save</button><button class="editor-run" data-editor-action="run" ${canRun() ? '' : 'disabled'}><span class="editor-glyph play" aria-hidden="true"></span><span>Run</span></button>`}</div></header>
       <div class="editor-workspace ${isBuilder ? 'has-builder' : ''}">
         <div class="editor-upper"><main class="editor-main">
           ${d.readError ? '' : standalone()}
           <section class="editor-canvas-shell"><div class="editor-canvas" tabindex="0" aria-label="Workflow graph canvas">${unavailable ? (d.loading ? `<div class="editor-loading" aria-label="Loading workflow"><span></span><span></span><span></span></div>` : `<div class="editor-unavailable"><span class="editor-glyph warning"></span><strong>Workflow could not be loaded</strong><button data-editor-action="refresh">Refresh workflow</button></div>`) : graph()}</div>
           <div class="editor-canvas-controls"><button data-editor-action="zoom-out" aria-label="Zoom out">−</button><button data-editor-action="zoom-reset">${state.zoom}%</button><button data-editor-action="zoom-in" aria-label="Zoom in">+</button></div>
-          <div class="editor-tray"><strong>Add</strong><button data-editor-action="add:planning"><span class="editor-glyph planning"></span>Planning</button><button data-editor-action="add:implementation"><span class="editor-glyph implementation"></span>Implementation</button><button data-editor-action="add:review"><span class="editor-glyph review"></span>Review</button><button data-editor-action="add:task"><span class="editor-glyph task"></span>Task</button><button data-editor-action="add:workflow"><span class="editor-glyph workflow"></span>Run workflow</button><i></i><button data-editor-action="add:start" ${d.nodes.some(n => n.type === 'start') ? 'disabled' : ''}>Start</button><button data-editor-action="add:parallel">Parallel group</button><button data-editor-action="add:end" ${d.nodes.some(n => n.type === 'end') ? 'disabled' : ''}>End</button></div>
+          <div class="editor-tray"><strong>Add</strong><button data-editor-action="add:planning"><span class="editor-glyph planning"></span>Planning</button><button data-editor-action="add:implementation"><span class="editor-glyph implementation"></span>Implementation</button><button data-editor-action="add:review"><span class="editor-glyph review"></span>Review</button><button data-editor-action="add:task"><span class="editor-glyph task"></span>Task</button><button data-editor-action="add:workflow"><span class="editor-glyph workflow"></span>Run workflow</button>${route === 'council-config' ? `<button data-editor-action="add:council"><span class="editor-council-tray-glyph" aria-hidden="true">${HF.councilGlyph}</span>Council</button>` : ''}<i></i><button data-editor-action="add:start" ${d.nodes.some(n => n.type === 'start') ? 'disabled' : ''}>Start</button><button data-editor-action="add:parallel">Parallel group</button><button data-editor-action="add:end" ${d.nodes.some(n => n.type === 'end') ? 'disabled' : ''}>End</button></div>
           ${d.readError ? '' : bottomStatus()}
           </section></main>${unavailable ? '' : inspector()}</div>
         ${isBuilder ? builderWorkspace(route) : ''}
@@ -96,7 +107,20 @@
 
   function standalone() {
     const selected = state.selected?.kind === 'orchestrator' && state.selectedByUser;
-    return `<section class="editor-standalone"><div class="editor-standalone-label"><strong>Standalone</strong><span>Outside the workflow path</span></div><button class="editor-standalone-card ${selected ? 'selected' : ''}" data-editor-select="orchestrator"><span class="editor-orchestrator-icon"></span><span class="editor-card-title"><strong>Orchestrator</strong><span class="editor-glyph lock" aria-label="Always present"></span></span><span class="editor-backend"><i></i>Codex</span><span class="editor-subtitle">Decides each node</span></button><button class="editor-add-standalone" data-editor-action="add-on-demand" aria-label="Add on-demand node"><span class="editor-glyph plus" aria-hidden="true"></span></button>${(state.draft.standaloneNodes || []).map(node => `<button class="editor-standalone-card" data-editor-select="on-demand:${esc(node.id)}"><strong>${esc(node.title)}</strong><span>${esc(node.backend || 'Codex')}</span></button>`).join('')}</section>`;
+    const list = state.draft.standaloneNodes || [];
+    const reorderable = state.route === 'standalone-reorder' && !blocked();
+    const drag = state.reorder;
+    const orchestrator = `<button class="editor-standalone-card ${selected ? 'selected' : ''}" data-editor-select="orchestrator"><span class="editor-orchestrator-icon"></span><span class="editor-card-title"><strong>Orchestrator</strong><span class="editor-glyph lock" aria-label="Always present"></span></span><span class="editor-backend"><i></i>Codex</span><span class="editor-subtitle">Decides each node</span></button>`;
+    const line = '<span class="editor-insertion-line" aria-hidden="true"></span>';
+    const cards = list.map((node, index) => {
+      const insertion = drag && drag.index === index ? line : '';
+      if (drag && drag.id === node.id) return `${insertion}<div class="editor-standalone-slot" data-standalone-slot="${index}" aria-hidden="true"></div>`;
+      const picked = state.selected?.kind === 'on-demand' && state.selected.id === node.id && state.selectedByUser;
+      return `${insertion}<button class="editor-standalone-card on-demand ${picked ? 'selected' : ''}" data-editor-select="on-demand:${esc(node.id)}" data-standalone-slot="${index}" ${reorderable ? `data-standalone-id="${esc(node.id)}" aria-describedby="editor-reorder-hint"` : ''}><span class="editor-ondemand-icon" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M9 1.5L3.5 9H8l-1 5.5L12.5 7H8z" fill="currentColor"/></svg></span><span class="editor-card-title"><strong>${esc(node.title)}</strong></span><span class="editor-backend"><i></i>${esc(node.backend || 'Codex')}</span><span class="editor-subtitle">On demand</span></button>`;
+    }).join('');
+    const tail = drag && drag.index === list.length ? line : '';
+    const preview = drag ? (() => { const node = list.find(item => item.id === drag.id); return node ? `<div class="editor-reorder-preview" aria-hidden="true"><span class="editor-ondemand-icon"><svg viewBox="0 0 16 16"><path d="M9 1.5L3.5 9H8l-1 5.5L12.5 7H8z" fill="currentColor"/></svg></span><span class="editor-card-title"><strong>${esc(node.title)}</strong></span><span class="editor-backend"><i></i>${esc(node.backend || 'Codex')}</span></div>` : ''; })() : '';
+    return `<section class="editor-standalone${drag ? ' is-reordering' : ''}" aria-label="Standalone nodes, outside the workflow path"><div class="editor-standalone-label"><strong>Standalone</strong><span>Outside the workflow path</span></div>${orchestrator}${cards}${tail}<button class="editor-add-standalone" data-editor-action="add-on-demand" aria-label="Add on-demand node"><span class="editor-glyph plus" aria-hidden="true"></span></button>${preview}${reorderable ? '<p class="visually-hidden" id="editor-reorder-hint">Drag to reorder. With the card focused, press Alt and the left or right arrow key to move it.</p>' : ''}</section>`;
   }
   function graph() {
     if (!state.draft.nodes.length) return '<div class="editor-empty-canvas" aria-label="Empty workflow canvas"></div>';
@@ -106,9 +130,9 @@
     const selected = state.selected?.id === n.id;
     const terminal = ['start', 'end', 'parallel_start', 'parallel_end'].includes(n.type);
     const title = n.title || n.name || n.type;
-    return `<button class="editor-node ${terminal ? 'terminal' : ''} ${selected ? 'selected' : ''}" data-editor-select="node:${esc(n.id)}" data-node-id="${esc(n.id)}" style="left:${n.x}px;top:${n.y}px;width:${n.width || (terminal ? 72 : 200)}px;height:${n.height || (terminal ? 72 : 92)}px" aria-label="Select ${esc(title)}" ${terminal ? '' : 'draggable="true"'}>${terminal ? `<span class="editor-terminal-icon ${n.type}"></span><strong>${esc(title)}</strong>` : `<span class="editor-node-title"><span class="editor-node-icon ${glyphClass(n.role || n.type)}"></span><strong>${esc(title)}</strong></span>${n.type === 'agent' ? `<span class="editor-backend"><i></i>${esc(({codex:'Codex',claude:'Claude',opencode:'OpenCode',vibe:'Vibe',antigravity:'Antigravity'})[state.draft.fieldValues?.[`node:${n.id}`]?.backend] || n.backend || 'Codex')}</span>` : `<small>${esc(nodeSubtitle(n))}</small>`}`}${n.type !== 'start' ? `<span class="editor-port input" aria-hidden="true"></span>` : ''}${n.type !== 'end' ? `<span class="editor-port output" aria-hidden="true"></span>` : ''}</button>`;
+    return `<button class="editor-node ${terminal ? 'terminal' : ''} ${selected ? 'selected' : ''}" data-editor-select="node:${esc(n.id)}" data-node-id="${esc(n.id)}" style="left:${n.x}px;top:${n.y}px;width:${n.width || (terminal ? 72 : 200)}px;height:${n.height || (terminal ? 72 : 92)}px" aria-label="Select ${esc(title)}" ${terminal ? '' : 'draggable="true"'}>${terminal ? `<span class="editor-terminal-icon ${n.type}"></span><strong>${esc(title)}</strong>` : `<span class="editor-node-title"><span class="editor-node-icon ${glyphClass(n.role || n.type)}">${n.type === 'council' ? HF.councilGlyph : ''}</span><strong>${esc(title)}</strong></span>${n.type === 'council' ? `<small>${esc(HF.councilNodeSummary(state.draft.fieldValues?.[`council:${n.id}`] || HF.editorInspectorDefaults('council', n.id)))}</small>` : n.type === 'agent' ? `<span class="editor-backend"><i></i>${esc(({codex:'Codex',claude:'Claude',opencode:'OpenCode',vibe:'Vibe',antigravity:'Antigravity'})[state.draft.fieldValues?.[`node:${n.id}`]?.backend] || n.backend || 'Codex')}</span>` : `<small>${esc(nodeSubtitle(n))}</small>`}`}${n.type !== 'start' ? `<span class="editor-port input" aria-hidden="true"></span>` : ''}${n.type !== 'end' ? `<span class="editor-port output" aria-hidden="true"></span>` : ''}</button>`;
   }
-  function glyphClass(role) { return ({ planning: 'planning', implementation: 'implementation', review: 'review', task: 'task', workflow: 'workflow', parallel_start: 'parallel', parallel_end: 'parallel' })[role] || 'task'; }
+  function glyphClass(role) { return ({ council: 'council', planning: 'planning', implementation: 'implementation', review: 'review', task: 'task', workflow: 'workflow', parallel_start: 'parallel', parallel_end: 'parallel' })[role] || 'task'; }
   function nodeSubtitle(n) { return n.type === 'workflow' ? n.workflowName || 'Select workflow' : n.type === 'parallel_start' ? `Parallel · ${n.groupLabel || 'Group'}` : n.type; }
   function drawEdges() {
     const graph = document.querySelector('.editor-app #editor-graph'); if (!graph) return;
@@ -129,12 +153,13 @@
   }
   function bottomStatus() {
     const d = state.draft;
-    const message = d.conflict ? `${d.conflict} ${button('reload', 'Reload')}` : d.validation ? d.validation : d.readError ? 'Workflow definition unavailable. Refresh to try again.' : d.loading ? 'Loading workflow definition…' : `Valid workflow · ${d.nodes.filter(n => !['start', 'end', 'parallel_start', 'parallel_end'].includes(n.type)).length} nodes · ${(d.standaloneNodes || []).length} on demand`;
-    return `<div class="editor-validation ${d.conflict || d.validation || d.readError ? 'problem' : ''}" role="status">${escTextWithButton(message)}</div>`;
+    const problem = councilProblem(), message = d.conflict ? `${d.conflict} ${button('reload', 'Reload')}` : d.validation ? d.validation : problem ? `Workflow is not valid: ${problem}` : d.readError ? 'Workflow definition unavailable. Refresh to try again.' : d.loading ? 'Loading workflow definition…' : `Valid workflow · ${d.nodes.filter(n => !['start', 'end', 'parallel_start', 'parallel_end'].includes(n.type)).length} nodes · ${(d.standaloneNodes || []).length} on demand`;
+    return `<div class="editor-validation ${d.conflict || d.validation || problem || d.readError ? 'problem' : ''}" role="status">${escTextWithButton(message)}</div>`;
   }
   function escTextWithButton(message) { return message.replace('<button data-editor-action="reload">Reload</button>', '<button data-editor-action="reload">Reload</button>'); }
   function button(action, label) { return `<button data-editor-action="${action}">${label}</button>`; }
   function inspector() {
+    if (state.readiness?.open) return HF.renderReadinessReport(HF.readinessModel({ stale: state.readiness.signature !== signature(), revision: state.readiness.revision, checkedAt: state.readiness.at }));
     const selected = state.selected || { kind: 'orchestrator', id: 'orchestrator' };
     if (typeof HF.renderEditorInspector === 'function') {
       const kind = selected.kind === 'parallel-group' ? 'parallel' : selected.kind;
@@ -149,7 +174,7 @@
     draft.fieldValues = draft.fieldValues || {};
     draft.orchestrator = draft.orchestrator || { ...HF.editorInspectorDefaults('orchestrator', 'orchestrator') };
     for (const node of draft.nodes) {
-      let kind = node.type === 'start' || node.type === 'end' ? node.type : node.type.startsWith('parallel_') ? 'parallel' : node.type === 'workflow' ? 'child-reference' : 'node';
+      let kind = node.type === 'start' || node.type === 'end' ? node.type : node.type.startsWith('parallel_') ? 'parallel' : node.type === 'workflow' ? 'child-reference' : node.type === 'council' ? 'council' : 'node';
       if (draft.fieldValues[`${kind}:${node.id}`]) continue;
       const fields = { ...HF.editorInspectorDefaults(kind, node.id) };
       if (kind === 'node') Object.assign(fields, HF.editorInspectorDefaults('node', node.role || node.id));
@@ -183,9 +208,10 @@
       const node = state.draft.nodes.find(item => item.id === id);
       if (node?.type === 'start' || node?.type === 'end') kind = node.type;
       else if (node?.type?.startsWith('parallel_')) kind = 'parallel';
+      else if (node?.type === 'council') kind = 'council';
       else if (node?.type === 'workflow') kind = state.draft.fieldValues?.[`child-reference:${id}`]?.isMissing ? 'missing-reference' : 'child-reference';
     }
-    state.selected = { kind, id }; state.selectedByUser = true; refresh();
+    state.selected = { kind, id }; state.selectedByUser = true; if (state.readiness) state.readiness.open = false; refresh();
   }
   function updateField(control) {
     const field = control.dataset.editorField; if (!field) return;
@@ -206,7 +232,7 @@
     updateButtons();
   }
   function applyFieldToEntity(selected, field, value) {
-    if (selected.kind === 'node' || selected.kind === 'child-reference' || selected.kind === 'missing-reference' || selected.kind === 'parallel') { const node = state.draft.nodes.find(n => n.id === selected.id); if (node) { if (field === 'title') node.title = value; else if (field === 'instructions' || field === 'role' || field === 'groupLabel') node[field] = value;  } }
+    if (selected.kind === 'node' || selected.kind === 'council' || selected.kind === 'child-reference' || selected.kind === 'missing-reference' || selected.kind === 'parallel') { const node = state.draft.nodes.find(n => n.id === selected.id); if (node) { if (field === 'title') node.title = value; else if (field === 'instructions' || field === 'role' || field === 'groupLabel') node[field] = value;  } }
     if (selected.kind === 'connection') { const edge = state.draft.edges.find(e => e.id === selected.id); if (edge && ['source', 'target', 'condition'].includes(field)) edge[field] = value; }
     if (selected.kind === 'on-demand') { const node = (state.draft.standaloneNodes || []).find(n => n.id === selected.id); if (node && field === 'title') node[field] = value; }
   }
@@ -228,7 +254,7 @@
     if (blocked()) return;
     const regular = !['start', 'end'].includes(kind), number = state.draft.nodes.length + 1;
     const id = allocateEntityID(kind, kind === 'parallel' ? ['-start', '-end'] : []);
-    const n = { id, title: ({planning:'Plan',implementation:'Implementation',review:'Review',task:'Task',workflow:'Run workflow',start:'Start',end:'End',parallel:'Parallel group'})[kind] || kind, type: kind === 'parallel' ? 'parallel_start' : kind === 'workflow' ? 'workflow' : ['start','end'].includes(kind) ? kind : 'agent', role: kind, x: 250 + (number % 3) * 230, y: 220 + Math.floor(number / 3) * 130, width: regular ? 200 : 72, height: regular ? 92 : 72, backend: 'Codex' };
+    const n = { id, title: ({council:'Council',planning:'Plan',implementation:'Implementation',review:'Review',task:'Task',workflow:'Run workflow',start:'Start',end:'End',parallel:'Parallel group'})[kind] || kind, type: kind === 'parallel' ? 'parallel_start' : kind === 'workflow' ? 'workflow' : kind === 'council' ? 'council' : ['start','end'].includes(kind) ? kind : 'agent', role: kind, x: 250 + (number % 3) * 230, y: 220 + Math.floor(number / 3) * 130, width: regular ? 200 : 72, height: regular ? 92 : 72, backend: 'Codex' };
     if (kind === 'parallel') state.draft.nodes.push({ ...n, id: `${id}-start`, type: 'parallel_start', title: 'Parallel group', width:72,height:72,groupLabel:'Group',groupId:id,partnerId:`${id}-end` }, { ...n, id:`${id}-end`, type:'parallel_end', title:'Parallel group end', x:n.x+290,width:72,height:72,groupLabel:'Group',groupId:id,partnerId:`${id}-start` });
     else state.draft.nodes.push(n);
     if (kind === 'start' || kind === 'end') state.draft.nodes.sort((a,b) => a.x-b.x);
@@ -240,12 +266,59 @@
   function discard() { if (!canDiscard()) return; const revision = state.baseline.revision; state.draft = clone(state.baseline); state.draft.revision = revision; state.selected = clone(state.draft.selected || {kind:'orchestrator',id:'orchestrator'}); HF.feedback('Mock workflow changes discarded'); refresh(); }
   function removeSelected() {
     if (!state.selected || blocked()) return;
-    if (['node','child-reference','missing-reference','parallel'].includes(state.selected.kind)) { const id = state.selected.id; const removeIds = state.selected.kind === 'parallel' ? state.draft.nodes.filter(n=>n.id === id || n.id === state.draft.nodes.find(node => node.id === id)?.partnerId).map(n=>n.id) : [id]; state.draft.nodes = state.draft.nodes.filter(n => !removeIds.includes(n.id)); state.draft.edges = state.draft.edges.filter(e => !removeIds.includes(e.source) && !removeIds.includes(e.target)); }
+    if (['node','council','child-reference','missing-reference','parallel'].includes(state.selected.kind)) { const id = state.selected.id; const removeIds = state.selected.kind === 'parallel' ? state.draft.nodes.filter(n=>n.id === id || n.id === state.draft.nodes.find(node => node.id === id)?.partnerId).map(n=>n.id) : [id]; state.draft.nodes = state.draft.nodes.filter(n => !removeIds.includes(n.id)); state.draft.edges = state.draft.edges.filter(e => !removeIds.includes(e.source) && !removeIds.includes(e.target)); }
     if (state.selected.kind === 'connection') state.draft.edges = state.draft.edges.filter(e => e.id !== state.selected.id);
     if (state.selected.kind === 'on-demand') state.draft.standaloneNodes = (state.draft.standaloneNodes || []).filter(n => n.id !== state.selected.id);
     const entityIds = new Set([...state.draft.nodes, ...state.draft.edges, ...(state.draft.standaloneNodes || [])].map(item => item.id));
     for (const key of Object.keys(state.draft.fieldValues)) if (!entityIds.has(key.slice(key.indexOf(':')+1))) delete state.draft.fieldValues[key];
     state.selected = { kind:'orchestrator', id:'orchestrator' }; refresh();
+  }
+  function councilFields() { const selected = state.selected; return selected?.kind === 'council' ? state.draft.fieldValues?.[`council:${selected.id}`] : null; }
+  function addCouncilMember() {
+    const fields = councilFields(); if (!fields || blocked()) return;
+    const count = Number(fields.memberCount) || 0; if (count >= HF.councilLimits.maxMembers) return;
+    fields.memberCount = count + 1; fields[`member${count + 1}Backend`] = 'codex'; fields[`member${count + 1}Model`] = ''; fields[`member${count + 1}Perspective`] = '';
+    refresh(); document.querySelector(`[data-editor-field="member${count + 1}Backend"]`)?.focus();
+  }
+  function removeCouncilMember(index) {
+    const fields = councilFields(); if (!fields || blocked()) return;
+    const count = Number(fields.memberCount) || 0; if (index < 1 || index > count) return;
+    for (let position = index; position < count; position++) for (const part of ['Backend', 'Model', 'Perspective']) fields[`member${position}${part}`] = fields[`member${position + 1}${part}`];
+    for (const part of ['Backend', 'Model', 'Perspective']) delete fields[`member${count}${part}`];
+    const facilitator = Number(fields.facilitator);
+    fields.facilitator = facilitator === index ? '' : facilitator > index ? String(facilitator - 1) : fields.facilitator;
+    fields.memberCount = count - 1;
+    refresh(); (document.querySelector(`[data-action="editor-remove-member:${Math.min(index, count - 1)}"]`) || document.querySelector('[data-action="editor-add-member"]'))?.focus();
+  }
+  function runReadiness() { state.readiness = { open: true, signature: signature(), revision: state.draft.revision, at: '14:52' }; refresh(); document.querySelector('[data-editor-action="close-readiness"]')?.focus(); }
+  function openReadiness() { if (!state.readiness) return runReadiness(); state.readiness.open = true; refresh(); document.querySelector('[data-editor-action="close-readiness"]')?.focus(); }
+  function closeReadiness() { if (state.readiness) state.readiness.open = false; refresh(); document.querySelector('[data-editor-action="inspect-readiness"]')?.focus(); }
+  function paintReorder() {
+    const section = document.querySelector('.editor-app .editor-standalone'); if (!section) return;
+    section.outerHTML = standalone(); positionReorderPreview();
+  }
+  function positionReorderPreview() {
+    const section = document.querySelector('.editor-app .editor-standalone'), preview = section?.querySelector('.editor-reorder-preview'); if (!preview) return;
+    const r = state.reorder;
+    if (r.static) {
+      const line = section.querySelector('.editor-insertion-line')?.getBoundingClientRect() || section.getBoundingClientRect();
+      preview.style.left = `${line.left - 12}px`; preview.style.top = `${line.top + 52}px`;
+    } else { preview.style.left = `${r.x - (r.grabX || 0)}px`; preview.style.top = `${r.y - (r.grabY || 0)}px`; }
+  }
+  function standaloneGap(clientX) {
+    const slots = [...document.querySelectorAll('.editor-app .editor-standalone [data-standalone-slot]')];
+    return slots.filter(slot => { const box = slot.getBoundingClientRect(); return clientX > box.left + box.width / 2; }).length;
+  }
+  function announceStandalone(message) { HF.feedback(message); }
+  function commitStandalone(list, id, message) {
+    state.draft.standaloneNodes = list; state.reorder = null; refresh(); announceStandalone(message);
+    document.querySelector(`[data-standalone-id="${id}"]`)?.focus();
+  }
+  function moveStandaloneByKey(id, delta) {
+    const list = state.draft.standaloneNodes || [], from = list.findIndex(node => node.id === id); if (from < 0) return;
+    const to = from + delta; const title = list[from].title;
+    if (to < 0 || to >= list.length) { announceStandalone(`${title} is already ${delta < 0 ? 'first' : 'last'}`); return; }
+    commitStandalone(HF.moveStandalone(list, id, delta < 0 ? to : to + 1), id, `${title} moved to position ${to + 1} of ${list.length}`);
   }
   function launchSheet(mode) {
     const trigger = mode === 'run' ? 'run' : mode === 'generate' ? 'generate' : 'launch-builder';
@@ -255,6 +328,7 @@
     first?.focus();
   }
   function modal() {
+    if (state.modal.mode === 'rename') return HF.renameDialog(state.modal.value, state.draft.name, isDirty());
     const mode = state.modal.mode, generating = mode !== 'run', refining = mode === 'builder' || mode === 'propose';
     const title = mode === 'run' ? 'Run workflow' : refining ? 'Edit workflow with agent' : 'Generate a workflow';
     const description = mode === 'run' ? 'Agents follow the graph. Harflow tracks execution and enforces limits.' : refining ? 'An agent proposes changes to your current canvas. Review and apply them, then Save when ready.' : 'An agent creates a draft. Harflow validates and stores it for you to edit.';
@@ -291,6 +365,12 @@
       case 'zoom-in': state.zoom = Math.min(200,state.zoom+25); refresh(); break; case 'zoom-out': state.zoom = Math.max(50,state.zoom-25); refresh(); break; case 'zoom-reset': state.zoom = 100; refresh(); break;
       case 'add': makeNode(value); break;
       case 'add-on-demand': addOnDemand(); break;
+      case 'rename': if (state.route === 'rename' && !blocked()) { state.modal = { mode: 'rename', value: state.draft.name, returnAction: '[data-editor-action="rename"]' }; refresh(); document.querySelector('#editor-rename-input')?.select(); } break;
+      case 'inspect-readiness': if (state.route === 'readiness') { if (state.readiness?.open) runReadiness(); else openReadiness(); } break;
+      case 'close-readiness': closeReadiness(); break;
+      case 'resolve-issue': HF.feedback(`Resolve issue for ${value} · mock only · no change made`); break;
+      case 'editor-add-member': addCouncilMember(); break;
+      case 'editor-remove-member': removeCouncilMember(Number(value)); break;
       case 'duplicate': HF.feedback('Mock workflow duplicate created'); break; case 'delete': HF.feedback('Mock workflow deletion requested'); break;
       case 'editor-delete': removeSelected(); break;
       case 'editor-select-partner': { const node=state.draft.nodes.find(n=>n.id===state.selected.id), partner=state.draft.nodes.find(n=>n.id===node?.partnerId); if(partner)select('parallel',partner.id); break; }
@@ -305,23 +385,59 @@
       case 'dismiss-proposal': state.proposal=false; refresh(); break;
     }
   }, true);
-  document.addEventListener('input', event => { const app=event.target.closest('.editor-app'); if(!app)return; if(event.target.matches('[data-editor-field]')) updateField(event.target); if(event.target.id==='editor-builder-input') state.builderMessage=event.target.value; updateSubmitEligibility(app); }, true);
+  document.addEventListener('input', event => { const app=event.target.closest('.editor-app'); if(!app)return; if(event.target.id==='editor-rename-input'&&state.modal?.mode==='rename'){ state.modal.value=event.target.value; const result=HF.workflowNameValidation(state.modal.value,state.draft.name),invalid=result.kind==='empty'||result.kind==='collision',error=app.querySelector('#editor-rename-error'); error.innerHTML=invalid?`<span class="editor-rename-glyph" aria-hidden="true">⚠</span><span>${esc(result.message)}</span>`:''; if(invalid)event.target.setAttribute('aria-invalid','true'); else event.target.removeAttribute('aria-invalid'); app.querySelector('[data-editor-action="submit-modal"]').disabled=!result.valid; return; } if(event.target.matches('[data-editor-field]')) updateField(event.target); if(event.target.id==='editor-builder-input') state.builderMessage=event.target.value; updateSubmitEligibility(app); }, true);
   document.addEventListener('change', event => { const app=event.target.closest('.editor-app'); if(!app)return; if(event.target.matches('[data-editor-field]')) { updateField(event.target); refresh(); } if(event.target.dataset.modalField==='override') app.querySelector('.editor-override-fields').hidden=!event.target.checked; updateSubmitEligibility(app); }, true);
   document.addEventListener('keydown', event => {
     const app=event.target.closest('.editor-app'); if(!app)return;
     if (event.key === 'Escape' && state.modal) { event.preventDefault(); closeModal(); }
+    if (event.key === 'Enter' && event.target.id === 'editor-rename-input' && state.modal?.mode === 'rename') { event.preventDefault(); submitModal(); return; }
+    if (event.altKey && ['ArrowLeft', 'ArrowRight'].includes(event.key) && state.route === 'standalone-reorder' && !blocked()) { const card = event.target.closest('[data-standalone-id]'); if (card) { event.preventDefault(); moveStandaloneByKey(card.dataset.standaloneId, event.key === 'ArrowLeft' ? -1 : 1); return; } }
     if (state.modal && event.key === 'Tab') { const controls=[...app.querySelectorAll('.editor-modal button:not(:disabled),.editor-modal input:not(:disabled),.editor-modal textarea:not(:disabled),.editor-modal select:not(:disabled)')]; const first=controls[0],last=controls.at(-1); if(event.shiftKey&&document.activeElement===first){event.preventDefault();last?.focus()}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first?.focus()} }
   }, true);
   function closeModal() { const selector=state.modal?.returnAction; state.modal=null; refresh(); const trigger=document.querySelector(selector); const menu=trigger?.closest('details'); if(menu) menu.open=true; trigger?.focus?.(); }
-  function updateSubmitEligibility(app) { const button=app.querySelector('[data-editor-action="submit-modal"]'); if(!button)return; const mode=state.modal?.mode; if(mode==='run') button.disabled=!(app.querySelector('[data-modal-field="task"]')?.value.trim()&&app.querySelector('[data-modal-field="repository"]')?.value.trim()); else button.disabled=!(app.querySelector('[data-modal-field="name"]')?.value.trim()&&app.querySelector('[data-modal-field="prompt"]')?.value.trim()); }
+  function updateSubmitEligibility(app) { const button=app.querySelector('[data-editor-action="submit-modal"]'); if(!button)return; const mode=state.modal?.mode; if(mode==='rename')return; if(mode==='run') button.disabled=!(app.querySelector('[data-modal-field="task"]')?.value.trim()&&app.querySelector('[data-modal-field="repository"]')?.value.trim()); else button.disabled=!(app.querySelector('[data-modal-field="name"]')?.value.trim()&&app.querySelector('[data-modal-field="prompt"]')?.value.trim()); }
   function submitModal() {
     const mode=state.modal?.mode;
+    if(mode==='rename'){ const result=HF.workflowNameValidation(state.modal.value,state.draft.name); if(!result.valid){ document.querySelector('#editor-rename-input')?.focus(); return; } const name=state.modal.value.trim(); state.draft.name=name; state.baseline.name=name; HF.feedback('Mock workflow renamed · list and editor updated'); closeModal(); return; }
     if(mode==='run'){ const task=document.querySelector('[data-modal-field="task"]'),repo=document.querySelector('[data-modal-field="repository"]'); if(!task?.value.trim()||!repo?.value.trim()) { HF.feedback('Enter task instructions and repository path'); (task?.value.trim()?repo:task)?.focus(); return; } state.draft.busy=true; state.draft.selectedRun=true; state.modal=null; HF.feedback('Mock workflow run prepared'); HF.navigate('workflow-run','running'); return; }
     const prompt=document.querySelector('[data-modal-field="prompt"]'), name=document.querySelector('[data-modal-field="name"]'); if(!prompt?.value.trim()||!name?.value.trim()){(prompt?.value.trim()?name:prompt)?.focus();return;} state.draft.name=name.value; state.builderMessage=prompt.value; state.mockTask=true; state.proposal=mode==='propose'||mode==='builder'; state.proposalContext=state.proposal?proposalSnapshot():null; state.draft.workspace=true; state.modal=null; state.route=state.proposal?'proposal-ready':'builder-conversation'; refresh();
   }
   document.addEventListener('dragstart', event => { const app=event.target.closest('.editor-app'); if(!app||!event.target.matches('.editor-node[draggable]'))return; event.dataTransfer.setData('text/plain',event.target.dataset.nodeId); const r=event.target.getBoundingClientRect(); event.target.dataset.dragOffsetX=(event.clientX-r.left)/state.zoom*100; event.target.dataset.dragOffsetY=(event.clientY-r.top)/state.zoom*100; }, true);
   document.addEventListener('dragover', event => { if(event.target.closest('.editor-app .editor-graph')) event.preventDefault(); }, true);
   document.addEventListener('drop', event => { const graph=event.target.closest('.editor-app .editor-graph'); if(!graph)return; const id=event.dataTransfer.getData('text/plain'),node=state.draft.nodes.find(n=>n.id===id); if(!node)return; event.preventDefault(); const rect=graph.getBoundingClientRect(); node.x=Math.max(0,Math.round(((event.clientX-rect.left)/state.zoom*100)/10)*10); node.y=Math.max(0,Math.round(((event.clientY-rect.top)/state.zoom*100)/10)*10); refresh(); }, true);
+  let drag = null, suppressClick = false;
+  document.addEventListener('keydown', event => {
+    if (event.key !== 'Escape' || !state.reorder || state.route !== 'standalone-reorder') return;
+    event.preventDefault(); drag = null; state.reorder = null; paintReorder(); announceStandalone('Reorder cancelled · order unchanged');
+  }, true);
+  document.addEventListener('pointerdown', event => {
+    if (state.route !== 'standalone-reorder' || blocked() || event.button !== 0) return;
+    const card = event.target.closest('.editor-app .editor-standalone-card[data-standalone-id]'); if (!card) return;
+    const box = card.getBoundingClientRect();
+    drag = { id: card.dataset.standaloneId, x: event.clientX, y: event.clientY, grabX: event.clientX - box.left, grabY: event.clientY - box.top, active: false };
+  }, true);
+  document.addEventListener('pointermove', event => {
+    if (!drag) return;
+    if (!drag.active) {
+      if (Math.hypot(event.clientX - drag.x, event.clientY - drag.y) < 5) return;
+      drag.active = true;
+    }
+    state.reorder = { id: drag.id, index: standaloneGap(event.clientX), x: event.clientX, y: event.clientY, grabX: drag.grabX, grabY: drag.grabY };
+    paintReorder();
+  }, true);
+  document.addEventListener('pointerup', event => {
+    if (!drag) return;
+    const current = drag; drag = null;
+    if (!current.active) return;
+    suppressClick = true; setTimeout(() => { suppressClick = false; }, 0);
+    const section = document.querySelector('.editor-app .editor-standalone'), box = section?.getBoundingClientRect();
+    const inside = box && event.clientX >= box.left && event.clientX <= box.right && event.clientY >= box.top - 24 && event.clientY <= box.bottom + 24;
+    const list = state.draft.standaloneNodes || [], index = state.reorder?.index ?? 0, title = list.find(node => node.id === current.id)?.title || 'Node';
+    if (!inside) { state.reorder = null; paintReorder(); announceStandalone('Drop cancelled · order unchanged'); return; }
+    const next = HF.moveStandalone(list, current.id, index);
+    commitStandalone(next, current.id, next.map(node => node.id).join() === list.map(node => node.id).join() ? `${title} stays in position ${list.findIndex(node => node.id === current.id) + 1}` : `${title} moved to position ${next.findIndex(node => node.id === current.id) + 1} of ${next.length}`);
+  }, true);
+  document.addEventListener('click', event => { if (suppressClick && event.target.closest('.editor-app .editor-standalone-card')) { event.preventDefault(); event.stopImmediatePropagation(); } }, true);
   }
   function proposalSnapshot() { return { draft: clone(editableDraft()), baseline: clone(editableBaseline()) }; }
   function canApplyProposal() { return !!state.proposal && !!state.proposalContext && !blocked() && deepEqual(state.proposalContext, proposalSnapshot()); }

@@ -7,7 +7,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const scripts = ['tokens.js', 'registry.js', 'appearance.js', 'components.js', 'tasks.js', 'task-activity.js', 'parallel.js', 'task-approvals.js', 'task-summary.js', 'workflows.js', 'workflow-connectors.js', 'workflow-editor-inspector.js', 'workflow-editor.js', 'workflow-run.js', 'dialogs.js', 'state-recovery.js', 'sidebar-setup.js', 'sidebar-proposals.js', 'foundations.js'];
+const scripts = ['tokens.js', 'registry.js', 'appearance.js', 'components.js', 'tasks.js', 'task-activity.js', 'parallel.js', 'task-approvals.js', 'task-summary.js', 'workflows.js', 'workflow-connectors.js', 'workflow-editor-proposals.js', 'workflow-editor-inspector.js', 'workflow-editor.js', 'workflow-run.js', 'dialogs.js', 'state-recovery.js', 'sidebar-setup.js', 'sidebar-proposals.js', 'foundations.js'];
 
 function loadDesignRuntime({ captureEvents = false, querySelectorOverride, querySelectorAllOverride } = {}) {
   const announcement = { textContent: '', classList: { add() {}, remove() {} } };
@@ -1945,5 +1945,130 @@ test('sidebar proposal markup does not leak into shared sidebar renders', () => 
     assert.equal(/appearance-header-control/.test(html), state === 'appearance-header', `${state} header control`);
     assert.equal(/sp-menu"/.test(html), state === 'context-menu', `${state} menu`);
     assert.equal(/sp-alert"/.test(html), state === 'delete-confirmation', `${state} alert`);
+  }
+});
+
+test('workflow editor proposals are registered as exploratory with their tickets', () => {
+  const hf = loadDesignRuntime();
+  const expected = { rename: '#4', 'standalone-reorder': '#1', 'council-config': '#17', readiness: 'HarflowMCP#18' };
+  for (const [state, ticket] of Object.entries(expected)) {
+    const status = hf.specimenStatus('workflow-editor', state);
+    assert.equal(status.kind, 'exploratory', state);
+    assert.deepEqual(Array.from(status.tickets), [ticket]);
+    assert.match(status.caption, new RegExp(`^Exploratory · ticket ${ticket.replace('#', '\\#')} · Not approved`));
+  }
+  assert.equal(hf.specimenStatus('workflow-editor', 'saved').kind, 'source-derived');
+  assert.equal(hf.specimenStatus('workflow-editor', 'builder-conversation').kind, 'source-derived');
+});
+
+test('workflow rename validates empty names and collisions without dropping the edit', () => {
+  const hf = loadDesignRuntime();
+  const check = (value, current = 'Session reliability') => JSON.parse(JSON.stringify(hf.workflowNameValidation(value, current)));
+  assert.equal(check('').kind, 'empty');
+  assert.equal(check('   ').kind, 'empty');
+  assert.equal(check('Development workflow').message, 'A workflow named “Development workflow” already exists.');
+  assert.equal(check('  release CHECKLIST ').kind, 'collision', 'comparison trims and ignores case');
+  assert.equal(check('Session reliability').valid, false, 'an unchanged name is not a rename');
+  assert.equal(check('Reliability review').valid, true);
+  hf.route = { theme: 'light', screen: 'workflow-editor', state: 'rename' };
+  const html = hf.renderEditor('rename');
+  assert.match(html, /role="dialog" aria-modal="true" aria-labelledby="editor-modal-title"/);
+  assert.match(html, /<h2 id="editor-modal-title">Rename workflow<\/h2>/);
+  assert.match(html, /value="Development workflow"[^>]*aria-invalid="true"/);
+  assert.match(html, /role="alert"><span class="editor-rename-glyph" aria-hidden="true">⚠<\/span><span>A workflow named “Development workflow” already exists\./);
+  assert.match(html, /data-editor-action="submit-modal" disabled>Rename</);
+  assert.match(html, /This editor has unsaved changes\. Renaming keeps them in the editor and does not save them\./);
+  assert.match(html, /data-editor-action="rename">Rename…</, 'Rename… is in the editor menu for this state');
+  hf.route = { theme: 'light', screen: 'workflow-editor', state: 'saved' };
+  assert.doesNotMatch(hf.renderEditor('saved'), /Rename…|editor-rename/);
+});
+
+test('standalone reorder moves one node to an insertion gap and changes nothing else', () => {
+  const hf = loadDesignRuntime();
+  const list = ['a', 'b', 'c', 'd'].map(id => ({ id }));
+  const move = (id, gap) => Array.from(hf.moveStandalone(list, id, gap), item => item.id).join('');
+  assert.equal(move('c', 0), 'cabd');
+  assert.equal(move('a', 4), 'bcda');
+  assert.equal(move('a', 1), 'abcd', 'dropping into its own gap keeps the order');
+  assert.equal(move('b', 2), 'abcd');
+  assert.equal(move('d', 99), 'abcd', 'out-of-range gaps clamp');
+  assert.equal(move('x', 1), 'abcd', 'unknown identity is ignored');
+  assert.deepEqual(list.map(item => item.id), ['a', 'b', 'c', 'd'], 'input is not mutated');
+  hf.route = { theme: 'light', screen: 'workflow-editor', state: 'standalone-reorder' };
+  const html = hf.renderEditor('standalone-reorder');
+  assert.match(html, /class="editor-insertion-line"/);
+  assert.match(html, /class="editor-standalone-slot"/);
+  assert.match(html, /class="editor-reorder-preview"/);
+  assert.match(html, /data-standalone-id="rollback-guide"/);
+  assert.match(html, /Drag to reorder\. With the card focused, press Alt and the left or right arrow key to move it\./);
+  hf.route = { theme: 'light', screen: 'workflow-editor', state: 'on-demand' };
+  const onDemand = hf.renderEditor('on-demand');
+  assert.ok(onDemand.indexOf('editor-orchestrator-icon') < onDemand.indexOf('Investigation') && onDemand.indexOf('Investigation') < onDemand.indexOf('editor-add-standalone'), 'cards precede the add control, as in WorkflowStandaloneBar');
+  assert.doesNotMatch(onDemand, /data-standalone-id|editor-insertion-line/);
+});
+
+test('council node keeps invalid configuration visible and blocks Run without dropping edits', () => {
+  const hf = loadDesignRuntime();
+  const base = { question: 'Q', memberCount: 3, facilitator: '1', maxRounds: 5 };
+  const errors = fields => Array.from(hf.councilValidation({ ...base, ...fields }));
+  assert.deepEqual(errors({}), []);
+  assert.match(errors({ memberCount: 1 })[0], /at least 2 members\. It has 1\./);
+  assert.ok(errors({ facilitator: '' }).some(message => /facilitator/.test(message)));
+  assert.ok(errors({ facilitator: '4' }).some(message => /facilitator/.test(message)));
+  assert.ok(errors({ question: '  ' }).some(message => /question and context/.test(message)));
+  assert.ok(errors({ maxRounds: 0 }).some(message => /Max rounds/.test(message)));
+  assert.deepEqual(errors({ maxRounds: '' }), [], 'an empty limit means the engine default');
+  assert.equal(hf.councilNodeSummary({ memberCount: 3, maxRounds: 5 }), '3 members · max 5 rounds');
+  assert.equal(hf.councilNodeSummary({ memberCount: 1, maxRounds: '' }), '1 member · engine default rounds');
+  hf.route = { theme: 'light', screen: 'workflow-editor', state: 'council-config' };
+  hf.editorController.reset('council-config');
+  const html = hf.renderEditor('council-config');
+  assert.match(html, /Members \(3\)/);
+  assert.match(html, /3 members · max 5 rounds/);
+  assert.match(html, /The facilitator drafts candidates\. Every member must explicitly accept the exact candidate version before the council reaches consensus\./);
+  assert.match(html, /aria-label="Member 1 harness"/);
+  assert.match(html, /data-editor-action="add:council"/);
+  assert.match(html, /Valid workflow · 2 nodes/);
+  assert.equal(hf.editorController.snapshot().selected.kind, 'council');
+  assert.equal(hf.editorController.snapshot().canRun, true, 'a clean, valid council draft can run');
+  const snapshot = hf.editorController.setField('memberCount', 1);
+  assert.equal(snapshot.dirty, true);
+  assert.equal(snapshot.canRun, false);
+  assert.equal(snapshot.draft.fieldValues['council:council'].memberCount, 1, 'the invalid edit is preserved');
+  const invalid = hf.renderEditor('council-config');
+  assert.match(invalid, /editor-council-errors" role="alert"/);
+  assert.match(invalid, /Workflow is not valid: Council: A council needs at least 2 members\. It has 1\./);
+  hf.editorController.reset('saved');
+  hf.route = { theme: 'light', screen: 'workflow-editor', state: 'saved' };
+  assert.doesNotMatch(hf.renderEditor('saved'), /editor-council|add:council/);
+});
+
+test('readiness report separates the three finding states, shows scope, and marks stale results', () => {
+  const hf = loadDesignRuntime();
+  const fresh = hf.renderReadinessReport(hf.readinessModel());
+  for (const text of ['Ready for the checks performed', 'Blocked', 'Needs verification', 'Working directory: <code>/Example/billing-api</code>', 'saved revision 3 · checked 14:52', 'Verified:', 'Inferred:', 'Consequence:', 'Recommended:', 'Resolve issue', 'Blocked: 1 node cannot run']) assert.ok(fresh.includes(text), `report shows ${text}`);
+  assert.equal((fresh.match(/Resolve issue/g) || []).length, 2, 'only findings that need action offer Resolve issue');
+  assert.doesNotMatch(fresh, /editor-readiness-stale/);
+  const stale = hf.renderReadinessReport(hf.readinessModel({ stale: true }));
+  assert.match(stale, /editor-readiness-stale" role="status"/);
+  assert.match(stale, /out of date/);
+  assert.doesNotMatch(fresh + stale, /\/Users\/|secret|token|password/i);
+  hf.route = { theme: 'light', screen: 'workflow-editor', state: 'readiness' };
+  const html = hf.renderEditor('readiness');
+  assert.match(html, /data-editor-action="inspect-readiness" aria-expanded="true">Inspect readiness</);
+  assert.match(html, /aria-label="Readiness report"/);
+  hf.route = { theme: 'light', screen: 'workflow-editor', state: 'saved' };
+  assert.doesNotMatch(hf.renderEditor('saved'), /Inspect readiness|editor-readiness/);
+});
+
+test('workflow editor proposal markup does not leak into other editor states', () => {
+  const hf = loadDesignRuntime();
+  const marker = /editor-rename|editor-readiness|editor-council|editor-reorder-preview|editor-insertion-line|editor-standalone-slot|data-standalone-id|add:council|inspect-readiness|data-editor-action="rename"/;
+  const family = hf.screens.find(screen => screen.id === 'workflow-editor');
+  for (const state of family.states) {
+    hf.route = { theme: 'light', screen: 'workflow-editor', state };
+    hf.editorController.reset(state);
+    const html = renderers['workflow-editor'](hf, state);
+    assert.equal(marker.test(html), Object.keys(family.proposals).includes(state), `${state} proposal markup`);
   }
 });

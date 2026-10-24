@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add exploratory workflow editor proposals for rename, standalone node reordering, the Council node configuration, and the readiness report, and fix standalone card order and layout.
+
 - Add exploratory sidebar proposals for the header appearance control, starred workflows, and the context menu with delete confirmation.
 
 - Align shipped Settings and setup specimens with HarflowMac 5128aeb: the main-window titlebar emblem, the scrolling setup card, the General Task store group with native recovery states, runtime retry copy, and Harnesses row labels.
