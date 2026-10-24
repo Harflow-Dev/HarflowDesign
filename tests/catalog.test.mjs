@@ -174,7 +174,7 @@ test('harness rows use the native state labels and last-action chip', () => {
 test('the main window titlebar carries the bundled emblem as a template image', () => {
   const hf = loadDesignRuntime();
   const bar = hf.titlebar('Harflow', { connectionStatus: true, connectionScreen: 'tasks', connectionState: 'populated' });
-  assert.match(bar, /class="window-emblem" src="assets\/branding\/menubarTemplate\.png" srcset="assets\/branding\/menubarTemplate@2x\.png 2x" alt=""/);
+  assert.match(bar, /class="window-emblem" aria-hidden="true"><img src="assets\/branding\/menubarTemplate\.png" srcset="assets\/branding\/menubarTemplate@2x\.png 2x" alt=""/);
   assert.doesNotMatch(hf.titlebar('Sheet'), /window-emblem/);
   const mac = path.resolve(root, '..', 'HarflowMac');
   const source = 'macos/HfFeatures/MainWindowFeature/Sources/MainWindowFeature/Resources/Branding';
@@ -185,8 +185,10 @@ test('the main window titlebar carries the bundled emblem as a template image', 
     if (fs.existsSync(native)) assert.ok(copy.equals(fs.readFileSync(native)), `${file} matches the native resource byte for byte`);
   }
   const css = fs.readFileSync(path.join(root, 'styles/appearance.css'), 'utf8');
-  assert.match(css, /\.window-emblem[^}]*invert\(\.11\)/);
-  assert.match(css, /data-theme="dark"\] \.window-emblem[^}]*invert\(\.95\)/);
+  assert.match(css, /\.window-emblem \{[^}]*background-color: var\(--primaryText\)[^}]*mask:/, 'the emblem is filled with the primary-text token through a mask');
+  assert.match(css, /html\.file-protocol \.window-emblem img \{ display: block; \}/, 'file:// previews fall back to the image');
+  assert.match(css, /\.window-emblem img \{[^}]*invert\(\.11\)/);
+  assert.match(css, /data-theme="dark"\] \.window-emblem img[^}]*invert\(\.95\)/);
 });
 
 test('setup card scrolls inside a 16 point inset above a fixed footer', () => {
@@ -1883,8 +1885,8 @@ test('starred workflows list first and keep the existing relative order', () => 
   assert.equal(ids(['D', 'B'].filter(id => id !== 'B')), 'DABC', 'unstar B');
   const html = hf.renderTasks('tasks', 'starred-workflows');
   assert.ok(html.indexOf('Release checklist') < html.indexOf('Session reliability') && html.indexOf('Session reliability') < html.indexOf('Development workflow'));
-  assert.match(html, /aria-label="Starred, unstar Release checklist"/);
-  assert.match(html, /aria-label="Star Session reliability"/);
+  assert.match(html, /aria-label="Star Release checklist" aria-pressed="true"/);
+  assert.match(html, /aria-label="Star Session reliability" aria-pressed="false"/);
   assert.match(html, /data-action="route:workflow-run\/running" data-sp-workflow="session-reliability"/, 'starring is a separate control and the row still opens the workflow');
 });
 
@@ -1974,7 +1976,14 @@ test('workflow rename validates empty names and collisions without dropping the 
   assert.equal(check('Session reliability').valid, false, 'an unchanged name is not a rename');
   assert.equal(check('Reliability review').valid, true);
   hf.route = { theme: 'light', screen: 'workflow-editor', state: 'rename' };
-  const html = hf.renderEditor('rename');
+  const opened = hf.renderEditor('rename');
+  assert.match(opened, /value="Session reliability"/, 'opens with the current name and no error');
+  assert.doesNotMatch(opened, /aria-invalid|already exists/);
+  assert.match(opened, /data-editor-action="submit-modal" disabled>Rename</);
+  hf.pendingRenameName = 'Release checklist';
+  assert.match(hf.renderEditor('rename') + hf.editorController.reset('rename') && hf.renderEditor('rename'), /value="Release checklist"/, 'a sidebar rename opens with the clicked workflow name');
+  hf.route = { theme: 'light', screen: 'workflow-editor', state: 'rename-collision' };
+  const html = hf.renderEditor('rename-collision');
   assert.match(html, /role="dialog" aria-modal="true" aria-labelledby="editor-modal-title"/);
   assert.match(html, /<h2 id="editor-modal-title">Rename workflow<\/h2>/);
   assert.match(html, /value="Development workflow"[^>]*aria-invalid="true"/);
@@ -2083,8 +2092,10 @@ test('Run Workflow chooser lists starred workflows first and keeps native sheet 
   const html = hf.renderLaunch('library-starred');
   assert.deepEqual(Array.from(html.matchAll(/data-launch-choice>([^<]+)</g), m => m[1]), ['Session reliability', 'Release checklist', 'Development workflow']);
   for (const text of ['Run Workflow', 'Choose a saved workflow, then review its permissions and task before running.', 'Choose a workflow', '>Cancel<', 'Continue']) assert.ok(html.includes(text), text);
-  assert.match(html, /aria-label="Starred, unstar Session reliability"/);
-  assert.match(html, /aria-label="Star Development workflow"/);
+  assert.match(html, /aria-label="Star Session reliability" aria-pressed="true"/);
+  assert.match(html, /aria-label="Star Development workflow" aria-pressed="false"/);
+  assert.doesNotMatch(html, /aria-haspopup/, 'the chooser is a disclosure, not a menu');
+  assert.match(html, /aria-expanded="true" aria-controls="launch-list"/);
   assert.match(html, /data-action="lp-continue" disabled/);
   assert.match(html, /class="launch-divider" role="separator"/);
   assert.equal(hf.specimenStatus('workflow-launch', 'library-starred').kind, 'exploratory');
@@ -2123,7 +2134,7 @@ test('statistics is a whole-proposal family with no native source and honest fig
   hf.resetStatistics();
   hf.route = { theme: 'light', screen: 'statistics', state: 'overview' };
   const html = hf.renderStatistics('overview');
-  for (const text of ['Statistics', 'Runs', 'Elapsed run time', 'Wall clock, per run', 'Summed execution time', 'All nodes added together', 'Cost as reported by harness', 'Averages exclude 6 running or incomplete runs.', 'Token and cost totals cover 112 of 148 runs', 'Requested opus · effective opus', 'Unknown repository', 'Cache: Unavailable', 'aria-label="Time range"']) assert.ok(html.includes(text), text);
+  for (const text of ['Statistics', 'Runs', 'Elapsed run time', 'Wall clock from start to finish, added over runs', 'Summed execution time', 'All nodes added together', 'Cost as reported by harness', 'Averages exclude 6 running or incomplete runs.', 'Token and cost totals cover 112 of 148 runs', 'Requested opus · effective opus', 'Unknown repository', 'Cache: Unavailable', 'aria-label="Time range"']) assert.ok(html.includes(text), text);
   assert.match(html, /stat-tile unavailable"><span class="stat-label">Cost<\/span><strong class="stat-value">Unavailable</);
   assert.doesNotMatch(html, /\$\s?0|Cost[^<]*>0</, 'missing figures are Unavailable, never 0');
   assert.match(html, /data-action="route:statistics\/overview" aria-current="page"/, 'sidebar entry');
@@ -2142,5 +2153,60 @@ test('statistics is a whole-proposal family with no native source and honest fig
     if (other.id === 'statistics') continue;
     hf.route = { theme: 'light', screen: other.id, state: other.states[0] };
     assert.doesNotMatch(renderers[other.id](hf, other.states[0]), /stat-entry|stat-range|statistics-content/, `${other.id} renders statistics markup`);
+  }
+});
+
+test('council limits are validated, preserved, and block Run', () => {
+  const hf = loadDesignRuntime();
+  hf.route = { theme: 'light', screen: 'workflow-editor', state: 'council-config' };
+  hf.editorController.reset('council-config');
+  const bad = { maxRounds: 0, questionLimit: -1, followUpLimit: 21, timeBudgetMinutes: 0, tokenBudget: 10000001 };
+  for (const [key, value] of Object.entries(bad)) {
+    hf.editorController.reset('council-config');
+    const snapshot = hf.editorController.setField(key, value);
+    assert.equal(snapshot.canRun, false, `${key}=${value} blocks Run`);
+    assert.equal(snapshot.draft.fieldValues['council:council'][key], value, `${key} edit preserved`);
+    assert.match(hf.renderEditor('council-config'), /editor-council-errors" role="alert"/);
+  }
+  hf.editorController.reset('council-config');
+  assert.ok(Array.from(hf.councilValidation({ question: 'Q', memberCount: 3, facilitator: '1', tokenBudget: 1.5 })).some(message => /Token budget must be a whole number from 1 to 10000000\./.test(message)));
+  for (const key of ['questionLimit', 'followUpLimit', 'timeBudgetMinutes', 'tokenBudget', 'maxRounds']) assert.deepEqual(Array.from(hf.councilValidation({ question: 'Q', memberCount: 3, facilitator: '1', [key]: '' })), []);
+  const html = hf.renderEditor('council-config');
+  assert.match(html, /<h3>Structured output<\/h3>/);
+  assert.match(html, /data-editor-field="structuredOutput"/);
+  assert.match(html, /<h3>Routing<\/h3>/);
+  assert.match(html, /<option value="outcome"[^>]*>Route by outcome/);
+  assert.doesNotMatch(html, /Structured output and routing are configured like other nodes/);
+  hf.editorController.setField('structuredOutput', true);
+  assert.equal(hf.editorController.snapshot().canRun, false, 'structured output without fields is flagged');
+  assert.match(hf.renderEditor('council-config'), /Describe the structured output fields/);
+  hf.editorController.setField('outputSchema', 'conclusion, rationale');
+  assert.deepEqual(Array.from(hf.councilValidation(hf.editorController.snapshot().draft.fieldValues['council:council'])), []);
+  hf.editorController.reset('saved');
+});
+
+test('statistics token tile follows the range and the per-workflow list has headers', () => {
+  const hf = loadDesignRuntime();
+  const tokens = days => hf.statisticsBody('overview', days).match(/Tokens<\/span><strong class="stat-value">([^<]+)</)[1];
+  assert.equal(new Set([7, 30, 90].map(tokens)).size, 3);
+  const html = hf.statisticsBody('overview', 30);
+  assert.match(html, /stat-head"><span>Workflow<\/span><span>Runs<\/span><span>Status<\/span><span>Total<\/span><span>Average<\/span><span>Model<\/span>/);
+  assert.match(html, /Standalone tasks<small>Unknown repository<\/small>/);
+  assert.match(html, /<span>Status unavailable<\/span>/);
+});
+
+test('council run and statistics markup appear only in their own states', () => {
+  const hf = loadDesignRuntime();
+  const council = /wfr-council|council-turn|wr-select:council|wr-council-jump/;
+  const statistics = /stat-entry|stat-range|statistics-content|stat-tile/;
+  for (const family of hf.screens) {
+    for (const state of family.states) {
+      hf.route = { theme: 'light', screen: family.id, state };
+      if (family.id === 'workflow-run') hf.resetWorkflowRun(hf.route);
+      if (family.id === 'workflow-editor') hf.editorController.reset(state);
+      const html = renderers[family.id](hf, state);
+      assert.equal(council.test(html), family.id === 'workflow-run' && state === 'council', `${family.id}/${state} council markup`);
+      assert.equal(statistics.test(html), family.id === 'statistics', `${family.id}/${state} statistics markup`);
+    }
   }
 });

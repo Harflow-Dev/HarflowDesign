@@ -145,7 +145,7 @@
 
   HF.harnesses = state => {
     const busy = state === 'working' || state === 'loading';
-    // Row copy follows HarnessRow.stateLabel (SetupClient.swift) and HarnessRowView.swift at HarflowMac 5128aeb.
+    // Row copy follows HarnessRow.stateLabel (SetupClient.swift) and HarnessRowView.swift.
     const rows = [
       { name: 'Claude Code', installed: true, outdated: state === 'outdated', status: state === 'outdated' ? 'Installed · out of date' : state === 'unknown' ? 'Unknown' : 'Installed', last: ['unknown', 'error'].includes(state) ? '' : 'install' },
       { name: 'Codex', installed: false, status: 'Not installed' }

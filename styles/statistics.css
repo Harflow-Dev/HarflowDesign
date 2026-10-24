@@ -24,3 +24,5 @@
 .stat-row strong { color: var(--primaryText); font-size: 13px; }
 .stat-empty { display: flex; min-height: 320px; align-items: center; justify-content: center; }
 .stat-entry-icon { width: 15px; height: 15px; flex: 0 0 15px; border-radius: 3px; background: linear-gradient(to top, currentColor 55%, transparent 55%) 0 0 / 4px 100% no-repeat, linear-gradient(to top, currentColor 100%, transparent 0) 6px 0 / 4px 70% no-repeat, linear-gradient(to top, currentColor 30%, transparent 0) 12px 0 / 3px 100% no-repeat; opacity: .85; }
+.stat-row strong small { display: block; margin-top: 2px; color: var(--secondaryText); font-size: 11px; font-weight: 400; }
+.stat-head { color: var(--tertiaryText); font-size: 11px; font-weight: 600; }

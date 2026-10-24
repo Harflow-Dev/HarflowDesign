@@ -33,7 +33,7 @@
 
   const workflowRow = (workflow, options = {}) => {
     const starred = options.starred;
-    const star = options.stars ? `<button type="button" class="star-toggle${starred ? ' starred' : ''}" data-action="sp-star:${workflow.id}" aria-label="${starred ? 'Starred, unstar' : 'Star'} ${esc(workflow.name)}">${starIcon(starred)}</button>` : '';
+    const star = options.stars ? `<button type="button" class="star-toggle${starred ? ' starred' : ''}" data-action="sp-star:${workflow.id}" aria-label="Star ${esc(workflow.name)}" aria-pressed="${starred ? 'true' : 'false'}">${starIcon(starred)}</button>` : '';
     return `<div class="workflow-row-wrap${options.stars ? ' has-star' : ''}"><button type="button" class="workflow-row" data-action="route:${workflow.route}" data-sp-workflow="${workflow.id}"><span class="sidebar-workflow-icon" aria-hidden="true"></span><span>${esc(workflow.name)}</span></button>${star}</div>`;
   };
 
@@ -90,7 +90,6 @@
   // ---- Interaction (browser only) ------------------------------------------------------------------------
   let current = { starred: DEFAULT_STARRED.slice(), menu: null, dialog: null };
   HF.resetSidebarProposals = () => { current = { starred: DEFAULT_STARRED.slice(), menu: null, dialog: null }; };
-  HF.sidebarProposalSnapshot = () => JSON.parse(JSON.stringify(current));
   const active = () => HF.route?.screen === 'tasks' && STATES.includes(HF.route.state);
   const menuActive = () => HF.route?.screen === 'tasks' && MENU_STATES.includes(HF.route.state);
   const root = () => document.querySelector('#sp-overlay');
@@ -188,7 +187,7 @@
       if (!item) return;
       if (value === 'delete') { setDialog(item); return; }
       closeMenu(true);
-      if (value === 'rename') { closeMenu(false); HF.navigate('workflow-editor', 'rename'); return; }
+      if (value === 'rename') { closeMenu(false); HF.pendingRenameName = item.name; HF.navigate('workflow-editor', 'rename'); return; }
       HF.feedback( `${value === 'cancel' ? 'Cancel' : 'Resume'} requested · mock only`);
       return;
     }

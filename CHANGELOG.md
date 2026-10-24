@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Validate every Council limit, add structured output and routing controls, open Rename with the clicked workflow's name, and tighten proposal accessibility, emblem tinting, and Statistics fixtures.
+
 - Add an exploratory Statistics family with overview and empty states and a sidebar entry, shown without a native source link.
 
 - Add exploratory starred workflows in the Run Workflow chooser and the Council run activity feed, and route the sidebar Rename action to the editor rename dialog.

@@ -2,13 +2,13 @@
   // Exploratory workflow editor proposals: rename (#4), standalone reorder (#1), Council node (#17), and the
   // readiness report (HarflowMCP#18). Pure helpers and markup builders; the editor controller owns state.
   const esc = value => HF.escape(value == null ? '' : String(value));
-  HF.editorProposalRoutes = ['rename', 'standalone-reorder', 'council-config', 'readiness'];
+  HF.editorProposalRoutes = ['rename', 'rename-collision', 'standalone-reorder', 'council-config', 'readiness'];
 
   // ---- #4 Rename ----------------------------------------------------------------------------------------
-  HF.otherWorkflowNames = ['Development workflow', 'Release checklist'];
+  HF.otherWorkflowNames = current => HF.sidebarWorkflows.map(workflow => workflow.name).filter(name => name !== current);
   // The ticket asks for feedback on empty or invalid names and on collisions; it does not define "invalid"
   // beyond empty, so blank names are the only invalid case here.
-  HF.workflowNameValidation = (value, current, others = HF.otherWorkflowNames) => {
+  HF.workflowNameValidation = (value, current, others = HF.otherWorkflowNames(current)) => {
     const name = String(value ?? '').trim();
     if (!name) return { valid: false, kind: 'empty', message: 'Enter a workflow name.' };
     const clash = others.find(other => other.trim().toLocaleLowerCase() === name.toLocaleLowerCase());
@@ -35,6 +35,7 @@
 
   // ---- #17 Council node ---------------------------------------------------------------------------------
   HF.councilLimits = { minMembers: 2, maxMembers: 5 };
+  HF.councilLimitSpecs = [['maxRounds', 'Max rounds', 1, 20], ['questionLimit', 'Question limit', 0, 20], ['followUpLimit', 'Follow-up limit', 0, 20], ['timeBudgetMinutes', 'Time budget (minutes)', 1, 1440], ['tokenBudget', 'Token budget', 1, 10000000]];
   HF.councilMembers = fields => Array.from({ length: Number(fields.memberCount) || 0 }, (_, index) => ({
     number: index + 1,
     backend: fields[`member${index + 1}Backend`] || 'codex',
@@ -50,8 +51,13 @@
     const facilitator = Number(fields.facilitator);
     if (!Number.isInteger(facilitator) || facilitator < 1 || facilitator > count) errors.push('Choose a facilitator from the members.');
     if (!String(fields.question ?? '').trim()) errors.push('Enter the question and context for the council.');
-    const rounds = fields.maxRounds;
-    if (rounds !== '' && rounds != null && (!Number.isInteger(Number(rounds)) || Number(rounds) < 1)) errors.push('Max rounds must be a whole number of at least 1.');
+    // Bounds are placeholders for the values the engine supports.
+    for (const [key, label, min, max] of HF.councilLimitSpecs) {
+      const value = fields[key];
+      if (value === '' || value == null) continue;
+      if (!Number.isInteger(Number(value)) || Number(value) < min || Number(value) > max) errors.push(`${label} must be a whole number from ${min} to ${max}.`);
+    }
+    if (fields.structuredOutput === true && !String(fields.outputSchema ?? '').trim()) errors.push('Describe the structured output fields or turn structured output off.');
     return errors;
   };
   HF.councilNodeSummary = fields => {

@@ -13,6 +13,7 @@
     { id: 'review-end', source: 'review', target: 'end', condition: 'The review approves the implementation and validation; no changes remain.' },
     { id: 'review-implementation', source: 'review', target: 'implementation', condition: 'The review finds concrete changes needed. Implement the review feedback, then request another review.', isBackward: true }
   ];
+  const isRename = route => route === 'rename' || route === 'rename-collision';
   const clone = value => JSON.parse(JSON.stringify(value));
   const esc = value => HF.escape(String(value ?? ''));
   const state = { route: '', draft: null, baseline: null, selected: null, selectedByUser: false, zoom: 100, modal: null, builderMessage: '', mockTask: false, proposal: false, reorder: null, readiness: null };
@@ -35,6 +36,7 @@
       draft.edges.push({id:'implementation-parallel-start',source:'implementation',target:'parallel-start',condition:''},{id:'parallel-start-review',source:'parallel-start',target:'parallel-review',condition:''},{id:'parallel-review-parallel-end',source:'parallel-review',target:'parallel-end',condition:''},{id:'parallel-end-end',source:'parallel-end',target:'end',condition:''});
     }
     if (HF.editorProposalRoutes?.includes(route)) draft.revision = 3;
+    if (isRename(route) && HF.pendingRenameName) draft.name = HF.pendingRenameName;
     if (route === 'standalone-reorder') draft.standaloneNodes = [{ id: 'rollback-guide', title: 'Rollback guide', type: 'on-demand', backend: 'Codex' }, { id: 'smoke-test', title: 'Smoke test', type: 'on-demand', backend: 'Codex' }];
     if (route === 'council-config') {
       draft.nodes = [starterNodes[0], starterNodes[1], { id: 'council', title: 'Council', type: 'council', role: 'council', x: 440, y: 100, width: 200, height: 92 }, { ...starterNodes[4], x: 690 }].map(clone);
@@ -61,12 +63,13 @@
     state.allocatedIDs = new Set([...state.draft.nodes, ...state.draft.edges, ...(state.draft.standaloneNodes || [])].map(entity => entity.id));
     initializeFieldMaps(state.draft);
     state.baseline = clone(state.draft);
-    if (route === 'dirty' || route === 'rename') { state.draft.fieldValues['node:implementation'].instructions += ' Add regression evidence before completion.'; state.draft.nodes.find(n => n.id === 'implementation').instructions = state.draft.fieldValues['node:implementation'].instructions; }
+    if (route === 'dirty' || isRename(route)) { state.draft.fieldValues['node:implementation'].instructions += ' Add regression evidence before completion.'; state.draft.nodes.find(n => n.id === 'implementation').instructions = state.draft.fieldValues['node:implementation'].instructions; }
     state.selected = clone(state.draft.selected);
     state.selectedByUser = false;
     state.zoom = 100;
-    state.modal = route === 'rename' ? { mode: 'rename', value: HF.otherWorkflowNames[0], returnAction: '[data-editor-action="rename"]' } : null;
+    state.modal = isRename(route) ? { mode: 'rename', value: route === 'rename-collision' ? HF.otherWorkflowNames(state.draft.name)[0] : state.draft.name, returnAction: '[data-editor-action="rename"]' } : null;
     state.reorder = route === 'standalone-reorder' ? { id: 'smoke-test', index: 0, static: true } : null;
+    HF.pendingRenameName = null;
     state.readiness = route === 'readiness' ? { open: true, signature: signature(), revision: state.draft.revision, at: '14:52' } : null;
     state.builderMessage = '';
     state.mockTask = ['builder-conversation', 'proposal-ready'].includes(route);
@@ -92,7 +95,7 @@
     const unavailable = d.loading || d.readError;
     if (d.loading) return loadingScreen();
     return `<section class="app workflow-specimen editor-app" data-editor-route="${esc(route)}">
-      <header class="editor-header"><div class="editor-heading"><strong>${esc(d.name)}</strong><span>Revision ${d.revision} · Workflow editor${isDirty() ? ' · Unsaved changes' : ''}</span></div><div class="editor-actions" ${d.readError ? 'inert' : ''}>${isBuilder ? builderHeaderActions() : `${route === 'readiness' ? `<button type="button" class="editor-agent-button editor-readiness-button" data-editor-action="inspect-readiness" aria-expanded="${state.readiness?.open ? 'true' : 'false'}">Inspect readiness</button>` : ''}<button class="editor-agent-button" data-editor-action="launch-builder"><span class="editor-glyph sparkles" aria-hidden="true"></span><span>Edit with agent</span></button><details class="editor-menu"><summary aria-label="More workflow actions"><span class="editor-glyph ellipsis" aria-hidden="true"></span></summary><div>${route === 'rename' ? '<button data-editor-action="rename">Rename…</button>' : ''}<button data-editor-action="duplicate">Duplicate</button><button data-editor-action="delete">Delete</button><button data-editor-action="generate">Generate with agent…</button></div></details><button data-editor-action="discard" ${canDiscard() ? '' : 'disabled'}>Discard</button><button data-editor-action="save" ${canSave() ? '' : 'disabled'}>Save</button><button class="editor-run" data-editor-action="run" ${canRun() ? '' : 'disabled'}><span class="editor-glyph play" aria-hidden="true"></span><span>Run</span></button>`}</div></header>
+      <header class="editor-header"><div class="editor-heading"><strong>${esc(d.name)}</strong><span>Revision ${d.revision} · Workflow editor${isDirty() ? ' · Unsaved changes' : ''}</span></div><div class="editor-actions" ${d.readError ? 'inert' : ''}>${isBuilder ? builderHeaderActions() : `${route === 'readiness' ? `<button type="button" class="editor-agent-button editor-readiness-button" data-editor-action="inspect-readiness" aria-expanded="${state.readiness?.open ? 'true' : 'false'}">Inspect readiness</button>` : ''}<button class="editor-agent-button" data-editor-action="launch-builder"><span class="editor-glyph sparkles" aria-hidden="true"></span><span>Edit with agent</span></button><details class="editor-menu"><summary aria-label="More workflow actions"><span class="editor-glyph ellipsis" aria-hidden="true"></span></summary><div>${isRename(route) ? '<button data-editor-action="rename">Rename…</button>' : ''}<button data-editor-action="duplicate">Duplicate</button><button data-editor-action="delete">Delete</button><button data-editor-action="generate">Generate with agent…</button></div></details><button data-editor-action="discard" ${canDiscard() ? '' : 'disabled'}>Discard</button><button data-editor-action="save" ${canSave() ? '' : 'disabled'}>Save</button><button class="editor-run" data-editor-action="run" ${canRun() ? '' : 'disabled'}><span class="editor-glyph play" aria-hidden="true"></span><span>Run</span></button>`}</div></header>
       <div class="editor-workspace ${isBuilder ? 'has-builder' : ''}">
         <div class="editor-upper"><main class="editor-main">
           ${d.readError ? '' : standalone()}
@@ -365,7 +368,7 @@
       case 'zoom-in': state.zoom = Math.min(200,state.zoom+25); refresh(); break; case 'zoom-out': state.zoom = Math.max(50,state.zoom-25); refresh(); break; case 'zoom-reset': state.zoom = 100; refresh(); break;
       case 'add': makeNode(value); break;
       case 'add-on-demand': addOnDemand(); break;
-      case 'rename': if (state.route === 'rename' && !blocked()) { state.modal = { mode: 'rename', value: state.draft.name, returnAction: '[data-editor-action="rename"]' }; refresh(); document.querySelector('#editor-rename-input')?.select(); } break;
+      case 'rename': if (isRename(state.route) && !blocked()) { state.modal = { mode: 'rename', value: state.draft.name, returnAction: '[data-editor-action="rename"]' }; refresh(); document.querySelector('#editor-rename-input')?.select(); } break;
       case 'inspect-readiness': if (state.route === 'readiness') { if (state.readiness?.open) runReadiness(); else openReadiness(); } break;
       case 'close-readiness': closeReadiness(); break;
       case 'resolve-issue': HF.feedback(`Resolve issue for ${value} · mock only · no change made`); break;

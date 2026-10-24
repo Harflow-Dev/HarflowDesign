@@ -2,9 +2,14 @@
 .main-window-titlebar .window-title { color: var(--primaryText); font-size: 15px; font-weight: 700; }
 .window-title-cluster { position: absolute; left: 50%; transform: translateX(-50%); display: inline-flex; align-items: center; gap: 6px; }
 .titlebar .window-title { flex: none; text-align: center; }
-/* MainWindowEmblem: the bundled template image, drawn as a template in the label colour (#1C1C1F light, #F2F2F4 dark); an image rather than a CSS mask so it also loads under file://. */
-.window-emblem { flex: none; display: block; width: 20px; height: 20px; filter: brightness(0) invert(.11); }
-html[data-theme="dark"] .window-emblem { filter: brightness(0) invert(.95); }
+/* MainWindowEmblem: the bundled template image filled with the primary-text token through a mask. Browsers block
+   file:// masks, so file:// previews (class set in components.js) draw the image directly with a filter approximating
+   the token (#1C1C1F light, #F2F2F4 dark). */
+.window-emblem { flex: none; display: block; width: 20px; height: 20px; background-color: var(--primaryText); -webkit-mask: image-set(url('../assets/branding/menubarTemplate.png') 1x, url('../assets/branding/menubarTemplate@2x.png') 2x) center / contain no-repeat; mask: image-set(url('../assets/branding/menubarTemplate.png') 1x, url('../assets/branding/menubarTemplate@2x.png') 2x) center / contain no-repeat; }
+.window-emblem img { display: none; width: 20px; height: 20px; filter: brightness(0) invert(.11); }
+html[data-theme="dark"] .window-emblem img { filter: brightness(0) invert(.95); }
+html.file-protocol .window-emblem { background: none; -webkit-mask: none; mask: none; }
+html.file-protocol .window-emblem img { display: block; }
 .connection-indicator { display: inline-block; width: 7px; height: 7px; flex: 0 0 7px; border-radius: 50%; }
 .connection-indicator.connected { background: var(--doneGreen); }
 .connection-indicator.disconnected { background: var(--failedRed); }
