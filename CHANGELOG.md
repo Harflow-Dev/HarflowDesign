@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Align workflow editor states, inspectors, launch sheets, and canvas layout using native fixture comparisons.
 - Align standalone parallel groups with native headers, lane status strips, actions, results, and adaptive lane widths; add fresh native mock references in both appearances.
 - Present approval actions and optional supplied descriptions in readable form instead of raw JSON.
 - Preview caller-owned approval responses in the Mac design, with a separate read-only compatibility state.

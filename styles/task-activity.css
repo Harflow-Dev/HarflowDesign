@@ -183,3 +183,7 @@ html[data-theme="dark"] .ta-tool-group > summary > img,html[data-theme="dark"] .
 .task-activity-app .ta-disclosure { padding:0; border:0; border-radius:0; background:none; color:var(--accentLink); font-size:12px; }
 .task-activity-app .ta-composer .ta-submit { background:var(--accentFill); }
 .task-activity-app .ta-composer .ta-submit:disabled { background:color-mix(in srgb,var(--secondaryText) 35%,transparent); }
+
+/* Keep monochrome window actions legible on the dark titlebar. */
+html[data-theme="dark"] .ta-titlebar-actions .ta-inspector-button img,
+html[data-theme="dark"] .ta-titlebar-actions > details > summary img { filter:brightness(0) invert(85%); }

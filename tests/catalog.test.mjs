@@ -7,10 +7,11 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const scripts = ['tokens.js', 'registry.js', 'components.js', 'tasks.js', 'task-activity.js', 'parallel.js', 'task-approvals.js', 'task-summary.js', 'workflows.js', 'dialogs.js', 'foundations.js'];
+const scripts = ['tokens.js', 'registry.js', 'components.js', 'tasks.js', 'task-activity.js', 'parallel.js', 'task-approvals.js', 'task-summary.js', 'workflows.js', 'workflow-editor-inspector.js', 'workflow-editor.js', 'dialogs.js', 'foundations.js'];
 
 function loadDesignRuntime() {
-  const document = { querySelector: () => ({ textContent: '', classList: { add() {} } }), addEventListener() {} };
+  const announcement = { textContent: '', classList: { add() {}, remove() {} } };
+  const document = { querySelector: selector => selector === '#announcement' ? announcement : null, addEventListener() {} };
   const context = vm.createContext({
     window: {},
     document,
@@ -797,4 +798,263 @@ test('workflow fixtures keep graph, attempt, and sidebar activity projections al
   assert.match(child, /data-action="route:task-detail\/spawned"/);
   assert.match(hf.renderRun('running'), /wf-sr-only">Expand summary/);
   assert.match(hf.renderRun('running'), /id="run-summary" hidden/);
+});
+
+test('workflow editor exposes the saved, dirty, recovery, and empty states with safe action guards', () => {
+  const hf = loadDesignRuntime();
+  const source = fs.readFileSync(path.join(root, 'scripts', 'workflow-editor.js'), 'utf8');
+  const saved = hf.renderEditor('saved');
+  assert.match(saved, /data-editor-route="saved"/);
+  assert.match(saved, /Valid workflow · 3 steps/);
+  assert.match(saved, /data-editor-action="save" disabled/);
+  assert.match(saved, /data-editor-action="discard" disabled/);
+  assert.match(saved, /data-editor-action="run"/);
+
+  const dirty = hf.renderEditor('dirty');
+  assert.match(dirty, /Unsaved changes/);
+  assert.match(dirty, /data-editor-action="save"(?![^>]*disabled)/);
+  assert.match(dirty, /data-editor-action="discard"(?![^>]*disabled)/);
+  assert.match(dirty, /data-editor-action="run"[^>]*disabled/);
+
+  const empty = hf.renderEditor('empty');
+  assert.match(empty, /editor-empty-canvas/);
+  assert.match(empty, /Valid workflow · 0 steps/);
+  const conflict = hf.renderEditor('conflict');
+  assert.match(conflict, /class="editor-validation problem"/);
+  assert.match(conflict, /data-editor-action="reload"/);
+  assert.match(conflict, /data-editor-action="save"[^>]*disabled/);
+  const validation = hf.renderEditor('validation');
+  assert.match(validation, /class="editor-validation problem"/);
+  assert.doesNotMatch(validation, /data-editor-action="reload"/);
+  assert.match(validation, /data-editor-action="save"[^>]*disabled/);
+  const loading = hf.renderEditor('loading');
+  assert.match(loading, /aria-label="Loading workflow canvas"/);
+  assert.match(loading, /editor-loading-graph/);
+  const readError = hf.renderEditor('read-error');
+  assert.match(readError, /Workflow could not be loaded|Workflow unavailable/);
+  assert.match(readError, /data-editor-action="refresh"/);
+  assert.match(source, /d\.busy|selectedRun/);
+  assert.match(source, /state\.draft\.busy=true/);
+  assert.match(source, /state\.draft\.selectedRun=true/);
+});
+
+test('workflow editor selection inspectors preserve values, conditional fields, and escaping', () => {
+  const hf = loadDesignRuntime();
+  const hostile = '</textarea><img src=x onerror="bad()">';
+  const nodeDefaults = hf.editorInspectorDefaults('node', 'planning');
+  assert.equal(nodeDefaults.role, 'planning');
+  assert.equal(nodeDefaults.access, 'read_only');
+  const planning = hf.renderEditorInspector('node', { ...nodeDefaults, title: hostile, instructions: hostile, role: 'planning' });
+  assert.match(planning, /Planning/);
+  assert.match(planning, /Require task list/);
+  assert.doesNotMatch(planning, /<img|onerror="/);
+  assert.match(planning, /&lt;\/textarea&gt;&lt;img/);
+
+  const implementation = hf.renderEditorInspector('node', { ...hf.editorInspectorDefaults('node', 'implementation'), role: 'implementation' });
+  assert.doesNotMatch(implementation, /Require task list/);
+  assert.match(implementation, /Step instructions/);
+  const connection = hf.renderEditorInspector('connection', { ...hf.editorInspectorDefaults('connection', 'review-implementation'), isBackward: true, limitRetries: true, condition: hostile, maxRetries: 2 });
+  assert.match(connection, /Limit retries/);
+  assert.match(connection, /Max retries/);
+  assert.match(connection, /&lt;\/textarea&gt;&lt;img/);
+  const child = hf.renderEditorInspector('child-reference', { ...hf.editorInspectorDefaults('child-reference', 'workflow-step'), workflowId: 'wf-1', workflowName: 'Development workflow', orchestratorMode: 'child', showsChildSessionPolicy: true });
+  assert.match(child, /Child conversation/);
+  assert.match(child, /Workflow tree access requirements/);
+  const missing = hf.renderEditorInspector('missing-reference', { ...hf.editorInspectorDefaults('missing-reference', 'workflow-step'), workflowId: 'missing-workflow-id', availableWorkflows: 'wf-2:Recovery workflow' });
+  assert.match(missing, /Unavailable workflow/);
+  assert.match(missing, /missing-workflow-id/);
+  assert.match(missing, /Replace all matching steps/);
+});
+
+test('workflow editor zoom clamps to 50–200 in 25 point increments and preserves graph topology fixtures', () => {
+  const hf = loadDesignRuntime();
+  const source = fs.readFileSync(path.join(root, 'scripts', 'workflow-editor.js'), 'utf8');
+  assert.match(source, /Math\.min\(200,state\.zoom\+25\)/);
+  assert.match(source, /Math\.max\(50,state\.zoom-25\)/);
+  assert.match(hf.renderEditor('branch'), /parallel_start/);
+  assert.match(hf.renderEditor('branch'), /parallel_end/);
+  assert.match(hf.renderEditor('child-reference'), /Run workflow/);
+  assert.match(hf.renderEditor('on-demand'), /Investigation/);
+  assert.match(hf.renderEditor('connection'), /Connection/);
+  assert.match(hf.renderEditor('parallel-group'), /Parallel start/);
+  assert.match(hf.renderEditor('parallel-group'), /data-editor-select="node:parallel-start/);
+});
+
+test('workflow editor builder and run sheets keep their source-shaped launch fields', () => {
+  const hf = loadDesignRuntime();
+  const source = fs.readFileSync(path.join(root, 'scripts', 'workflow-editor.js'), 'utf8');
+  assert.match(source, /launchSheet\('builder'\)/);
+  assert.match(source, /launchSheet\('run'\)/);
+  assert.match(source, /data-modal-field="task"/);
+  assert.match(source, /data-modal-field="repository"/);
+  assert.match(source, /data-modal-field="prompt"/);
+  assert.match(source, /data-modal-field="name"/);
+  assert.match(source, /state\.draft\.selectedRun=true/);
+  assert.match(source, /HF\.navigate\('workflow-run','running'\)/);
+  const builder = hf.renderEditor('builder-conversation');
+  assert.match(builder, /editor-builder-workspace/);
+  assert.match(builder, /Return to canvas/);
+  assert.match(builder, /Cancel run/);
+  assert.doesNotMatch(builder, /data-editor-action="save"|data-editor-action="discard"|data-editor-action="run"/);
+  assert.match(builder, /Describe a workflow change/);
+  const proposal = hf.renderEditor('proposal-ready');
+  assert.match(proposal, /Proposal ready/);
+  assert.match(proposal, /Apply proposal/);
+});
+
+test('workflow editor builder workspace guards canvas actions and returns without losing the draft', () => {
+  const hf = loadDesignRuntime();
+  let snapshot = hf.editorController.reset('builder-conversation');
+  const draftName = snapshot.draft.name;
+  assert.equal(snapshot.draft.workspace, true);
+  assert.equal(snapshot.canSave, false);
+  assert.equal(snapshot.canDiscard, false);
+  assert.equal(snapshot.canRun, false);
+  snapshot = hf.editorController.setField('title', 'Builder edit retained');
+  assert.equal(snapshot.draft.orchestrator.title, 'Builder edit retained');
+  snapshot = hf.editorController.returnToCanvas();
+  assert.equal(snapshot.draft.workspace, false);
+  assert.equal(snapshot.draft.name, draftName);
+  assert.equal(snapshot.draft.orchestrator.title, 'Builder edit retained', 'returning to canvas should retain unsaved edits');
+  assert.equal(snapshot.canSave, true);
+  assert.equal(snapshot.canRun, false, 'a retained edit should continue to block Run until saved');
+
+  snapshot = hf.editorController.reset('proposal-ready');
+  assert.equal(snapshot.canApplyProposal, true);
+  assert.equal(snapshot.canSave, false);
+  const nodeCount = snapshot.draft.nodes.length;
+  snapshot = hf.editorController.returnToCanvas();
+  assert.equal(snapshot.draft.workspace, false);
+  assert.equal(snapshot.draft.nodes.length, nodeCount, 'returning to canvas should retain the proposal draft topology');
+  assert.equal(snapshot.canApplyProposal, false);
+});
+
+test('workflow editor controller keeps typed inspector edits and clean false defaults stable', () => {
+  const hf = loadDesignRuntime();
+  let snapshot = hf.editorController.reset('node');
+  assert.equal(snapshot.selected.kind, 'node');
+  snapshot = hf.editorController.setField('optional', true);
+  assert.equal(snapshot.draft.fieldValues['node:implementation'].optional, true);
+  assert.equal(snapshot.draft.fieldValues['node:implementation'].optional, true);
+  snapshot = hf.editorController.setField('optional', false);
+  assert.equal(snapshot.draft.fieldValues['node:implementation'].optional, false);
+  assert.equal(snapshot.dirty, false, 'reverting optional to its baseline should clear dirty state');
+  snapshot = hf.editorController.setField('maxAttempts', 5);
+  assert.equal(snapshot.draft.fieldValues['node:implementation'].maxAttempts, 5);
+  snapshot = hf.editorController.setField('maxAttempts', '3');
+  assert.equal(snapshot.draft.fieldValues['node:implementation'].maxAttempts, 3);
+  assert.equal(snapshot.dirty, false, 'numeric string matching the baseline should remain clean');
+  snapshot = hf.editorController.select('orchestrator', 'orchestrator');
+  snapshot = hf.editorController.setField('maxParallel', 5);
+  assert.equal(snapshot.draft.orchestrator.maxParallel, 5);
+  snapshot = hf.editorController.setField('maxParallel', '4');
+  assert.equal(snapshot.draft.orchestrator.maxParallel, 4);
+
+  snapshot = hf.editorController.reset('connection');
+  assert.equal(snapshot.dirty, false);
+  snapshot = hf.editorController.setField('defaultPath', false);
+  assert.equal(snapshot.draft.fieldValues['connection:review-implementation'].defaultPath, false);
+  assert.equal(snapshot.dirty, false, 'writing the existing false default must not create a dirty draft');
+});
+
+test('workflow editor controller exposes field maps for every seeded selection kind', () => {
+  const hf = loadDesignRuntime();
+  for (const [route, kind] of [['node', 'node'], ['connection', 'connection'], ['branch', 'parallel'], ['child-reference', 'child-reference'], ['missing-reference', 'missing-reference'], ['on-demand', 'on-demand']]) {
+    const initial = hf.editorController.reset(route);
+    const selected = initial.selected;
+    const snapshot = hf.editorController.select(kind, selected.id);
+    assert.equal(snapshot.selected.kind, kind, `${route} selection kind should be retained`);
+    const canonicalKind = kind === 'missing-reference' ? 'child-reference' : kind;
+    assert.ok(snapshot.draft.fieldValues[`${canonicalKind}:${selected.id}`], `${route} should have initialized fields for selected item`);
+    const withFallback = hf.editorController.setField('fallbackCount', 1);
+    assert.equal(withFallback.draft.fieldValues[`${canonicalKind}:${selected.id}`].fallbackCount, 1);
+  }
+});
+
+test('workflow editor controller guards additions, proposal snapshots, and paired parallel deletion', () => {
+  const hf = loadDesignRuntime();
+  hf.editorController.reset('saved');
+  for (const kind of ['planning', 'implementation', 'review', 'task', 'workflow', 'start', 'end', 'parallel']) {
+    const snapshot = hf.editorController.addNode(kind);
+    const selected = snapshot.selected;
+    const keyKind = selected.kind === 'parallel' ? 'parallel' : selected.kind === 'node' ? 'node' : selected.kind;
+    assert.ok(snapshot.draft.fieldValues[`${keyKind}:${selected.id}`], `${kind} addition should initialize inspector fields`);
+    const fallback = hf.editorController.addFallback();
+    assert.equal(fallback.draft.fieldValues[`${keyKind}:${selected.id}`].fallbackCount, 1, `${kind} fallback should target selected fields`);
+  }
+
+  const proposal = hf.editorController.reset('proposal-ready');
+  assert.equal(proposal.canApplyProposal, true);
+  const stale = hf.editorController.setField('title', 'Edited while proposal was running');
+  assert.equal(stale.canApplyProposal, false);
+  const before = stale.draft.nodes.length;
+  const rejected = hf.editorController.applyProposal();
+  assert.equal(rejected.draft.nodes.length, before, 'stale proposal must not overwrite current edits');
+  const fresh = hf.editorController.reset('proposal-ready');
+  assert.equal(fresh.canApplyProposal, true);
+  const applied = hf.editorController.applyProposal();
+  assert.equal(applied.draft.nodes.some(node => node.id === 'reliability-check'), true);
+
+  let parallel = hf.editorController.reset('saved');
+  parallel = hf.editorController.addNode('parallel');
+  const firstPair = parallel.selected.id;
+  parallel = hf.editorController.addNode('parallel');
+  const secondPair = parallel.selected.id;
+  assert.equal(parallel.draft.nodes.filter(node => node.type.startsWith('parallel_')).length, 4);
+  parallel = hf.editorController.select('parallel', firstPair);
+  parallel = hf.editorController.removeSelected();
+  assert.equal(parallel.draft.nodes.some(node => node.id === firstPair), false);
+  assert.equal(parallel.draft.nodes.some(node => node.id === secondPair), true, 'deleting one group must preserve the other pair');
+  assert.equal(parallel.draft.nodes.filter(node => node.type.startsWith('parallel_')).length, 2);
+});
+
+test('workflow editor controller preserves numeric schema when a limit is cleared and restored', () => {
+  const hf = loadDesignRuntime();
+  hf.editorController.reset('saved');
+  let snapshot = hf.editorController.select('orchestrator', 'orchestrator');
+  assert.equal(snapshot.draft.orchestrator.maxParallel, 4);
+  snapshot = hf.editorController.setField('maxParallel', '');
+  assert.equal(snapshot.draft.orchestrator.maxParallel, '');
+  snapshot = hf.editorController.setField('maxParallel', '4');
+  assert.equal(snapshot.draft.orchestrator.maxParallel, 4);
+  assert.equal(typeof snapshot.draft.orchestrator.maxParallel, 'number');
+  assert.equal(snapshot.dirty, false, 'restoring a cleared numeric limit should return to the baseline');
+});
+
+test('workflow editor controller keeps generated node identities unique after delete and re-add', () => {
+  const hf = loadDesignRuntime();
+  hf.editorController.reset('saved');
+  const first = hf.editorController.addNode('task');
+  const firstID = first.selected.id;
+  const second = hf.editorController.addNode('task');
+  const secondID = second.selected.id;
+  assert.notEqual(firstID, secondID);
+  hf.editorController.select('node', firstID);
+  const afterDelete = hf.editorController.removeSelected();
+  assert.equal(afterDelete.draft.nodes.some(node => node.id === firstID), false);
+  assert.equal(afterDelete.draft.nodes.some(node => node.id === secondID), true);
+  const readded = hf.editorController.addNode('task');
+  const readdedID = readded.selected.id;
+  assert.notEqual(readdedID, firstID, 'a re-added task must not reuse a deleted identity');
+  assert.notEqual(readdedID, secondID, 'a re-added task must not collide with a surviving identity');
+  assert.equal(new Set(readded.draft.nodes.map(node => node.id)).size, readded.draft.nodes.length);
+});
+
+test('workflow editor controller keeps on-demand identities unique after delete and re-add', () => {
+  const hf = loadDesignRuntime();
+  hf.editorController.reset('saved');
+  assert.equal(typeof hf.editorController.addOnDemand, 'function');
+  const first = hf.editorController.addOnDemand();
+  const firstID = first.selected.id;
+  const second = hf.editorController.addOnDemand();
+  const secondID = second.selected.id;
+  assert.notEqual(firstID, secondID);
+  hf.editorController.select('on-demand', firstID);
+  const afterDelete = hf.editorController.removeSelected();
+  assert.equal(afterDelete.draft.standaloneNodes.some(node => node.id === firstID), false);
+  const readded = hf.editorController.addOnDemand();
+  const readdedID = readded.selected.id;
+  assert.notEqual(readdedID, firstID);
+  assert.notEqual(readdedID, secondID);
+  assert.equal(new Set(readded.draft.standaloneNodes.map(node => node.id)).size, readded.draft.standaloneNodes.length);
 });
