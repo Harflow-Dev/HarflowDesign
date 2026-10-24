@@ -12,7 +12,7 @@
   <header class="catalog-bar">
     <a class="catalog-home" href="../index.html">Harflow interface reference</a>
     <span class="catalog-label">Exploratory proposal · Preferences</span>
-    <span class="status-badge">Not approved</span>
+    <span class="status-badge">Sidebar placement approved · 2026-10-24</span>
   </header>
   <main>
     <section class="intro">
@@ -52,14 +52,6 @@
       <div class="app-window">
         <header class="window-header">
           <div class="window-title"><span class="app-mark">H</span><span>Harflow</span></div>
-          <div class="header-appearance">
-            <span class="header-appearance-label" id="appearance-label">Appearance</span>
-            <div class="segmented" role="group" aria-labelledby="appearance-label">
-              <button type="button" data-appearance="light" aria-pressed="false">Light</button>
-              <button type="button" data-appearance="dark" aria-pressed="false">Dark</button>
-              <button type="button" data-appearance="system" aria-pressed="true">System</button>
-            </div>
-          </div>
           <div class="header-actions">
             <button class="quiet-button">New session</button><button class="primary-button">Run workflow</button>
           </div>
@@ -70,7 +62,20 @@
             <div class="side-row selected"><span class="backend-dot claude"></span><span><b>Clarify usage ranking</b><small>claude · Running</small></span></div>
             <div class="side-row"><span class="backend-dot codex"></span><span><b>Review preferences</b><small>codex · Completed</small></span></div>
             <div class="side-row"><span class="backend-dot opencode"></span><span><b>Improve workflow</b><small>opencode · Yesterday</small></span></div>
-            <div class="sidebar-bottom"><button class="quiet-button">Settings</button></div>
+            <div class="sidebar-bottom">
+              <div class="sidebar-connection"><span class="connection-dot"></span><span>Connected</span></div>
+              <div class="sidebar-footer-main">
+                <div class="sidebar-appearance">
+                  <span class="sidebar-appearance-label" id="appearance-label">Appearance</span>
+                  <div class="segmented" role="group" aria-labelledby="appearance-label">
+                    <button type="button" data-appearance="light" aria-pressed="false">Light</button>
+                    <button type="button" data-appearance="dark" aria-pressed="false">Dark</button>
+                    <button type="button" data-appearance="system" aria-pressed="true">System</button>
+                  </div>
+                </div>
+                <button class="settings-icon" aria-label="Settings" title="Settings">⚙</button>
+              </div>
+            </div>
           </aside>
           <section class="detail" aria-label="Selected task detail">
             <div class="detail-toolbar"><div><span class="live-dot"></span><span class="backend-tag claude-tag">Claude</span><b>Clarify usage ranking</b></div><div class="detail-actions"><button aria-label="Copy task details">Copy</button><button aria-label="More task actions">•••</button></div></div>
@@ -117,7 +122,7 @@
     <footer class="source-note">
       <b>Source basis</b>
       <span>HarflowMac <code>079281e72da37145f0de4c7d901a5a1864fc6800</code>: <code>macos/HfFeatures/MainWindowFeature/Sources/MainWindowFeature/Coordinator/MainWindowNavigationView.swift</code>, <code>.../NewSession/NewSessionView.swift</code>, and <code>.../Workflow/WorkflowAgentEditor.swift</code>.</span>
-      <span>Browser approximations: window chrome, sheet, menus, split view, and system appearance; fixture persistence is local to this page and has no native effect.</span>
+      <span>Browser approximations: window chrome, sheet, menus, split view, Settings gear, and system appearance; fixture persistence is local to this page and has no native effect.</span>
     </footer>
   </main>
 </body>
