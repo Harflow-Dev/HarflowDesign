@@ -12,10 +12,10 @@ Open `http://localhost:8080`. No dependencies, build, account, engine, or siblin
 
 - `styles/tokens.css`: exact appearance-aware RGB values from HfUI.
 - `styles/specimens.css`: shared specimen layouts and components.
-- `styles/tasks.css`, `workflows.css`, `dialogs.css`: screen-specific layouts.
+- `styles/tasks.css`, `task-activity.css`, `workflows.css`, `dialogs.css`: screen-specific layouts.
 - `styles/catalog.css`: reference website navigation and chrome.
 - `scripts/registry.js`: screen families, states, and pinned source links.
-- `scripts/tasks.js`, `workflows.js`, `dialogs.js`: editable screen specimens.
+- `scripts/tasks.js`, `task-activity.js`, `workflows.js`, `dialogs.js`: editable screen specimens.
 - `scripts/catalog.js`: local navigation and mock interactions.
 - `docs/screen-inventory.md`: coverage, limitations, and source evidence.
 

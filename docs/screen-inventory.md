@@ -6,7 +6,7 @@ Baseline: HarflowMac [`7fbed912`](https://github.com/Harflow-Dev/HarflowMac/tree
 |---|---|---|---|
 | Foundations | `default`, `components`, `native-reference` | [Swift source](https://github.com/Harflow-Dev/HarflowMac/blob/7fbed912b61094f2ee427a7d9be76a026767a61e/macos/HfFoundation/HfUI/Sources/HfUI/Style/Palette.swift) | Native foundation reference available |
 | Sessions & sidebar | `populated`, `loading`, `empty`, `no-results`, `backend-empty`, `list-error`, `install-retry`, `degraded-catalog`, `older-history-error` | [Swift source](https://github.com/Harflow-Dev/HarflowMac/blob/7fbed912b61094f2ee427a7d9be76a026767a61e/macos/HfFeatures/MainWindowFeature/Sources/MainWindowFeature/Coordinator/MainWindowNavigationView.swift) | Native sidebar fixture compared; host materials approximated |
-| Task activity | `running`, `completed`, `failed`, `timed-out`, `cancelled`, `taken-over`, `spawned`, `missing`, `deferred`, `no-live`, `no-session` | [Swift source](https://github.com/Harflow-Dev/HarflowMac/blob/7fbed912b61094f2ee427a7d9be76a026767a61e/macos/HfFeatures/MainWindowFeature/Sources/MainWindowFeature/TaskDetail/TaskDetailView.swift) | Native task-content fixture compared; host toolbar approximated |
+| Task activity | `running`, `completed`, `failed`, `timed-out`, `cancelled`, `taken-over`, `spawned`, `missing`, `deferred`, `no-live`, `no-session` | [Swift source](https://github.com/Harflow-Dev/HarflowMac/blob/7fbed912b61094f2ee427a7d9be76a026767a61e/macos/HfFeatures/MainWindowFeature/Sources/MainWindowFeature/TaskDetail/TaskDetailView.swift) | Rich native running, completed, failed, and running-takeover fixtures compared; host toolbar approximated |
 | Task summary | `completed`, `loading`, `empty`, `paged`, `error`, `unsupported`, `metadata-only` | [Swift source](https://github.com/Harflow-Dev/HarflowMac/blob/7fbed912b61094f2ee427a7d9be76a026767a61e/macos/HfFeatures/MainWindowFeature/Sources/MainWindowFeature/TaskDetail/TaskDetailView.swift) | Source-derived; native screen comparison pending |
 | Approval requests | `monitor-pending`, `inspected`, `submitting`, `caller-owned`, `history`, `approved`, `denied`, `expired`, `error`, `pagination` | [Swift source](https://github.com/Harflow-Dev/HarflowMac/blob/7fbed912b61094f2ee427a7d9be76a026767a61e/macos/HfFeatures/MainWindowFeature/Sources/MainWindowFeature/TaskDetail/TaskDetailView.swift) | Source-derived; native screen comparison pending |
 | Raw events | `populated`, `empty`, `unknown-event` | [Swift source](https://github.com/Harflow-Dev/HarflowMac/blob/7fbed912b61094f2ee427a7d9be76a026767a61e/macos/HfFeatures/MainWindowFeature/Sources/MainWindowFeature/TaskDetail/Component/RawEventsSheetView.swift) | Source-derived; native screen comparison pending |
@@ -38,6 +38,11 @@ These images are reference evidence; edit the HTML/CSS specimens to change the d
 | sidebar | [Light](../assets/references/screens/sidebar-light.png) | [Dark](../assets/references/screens/sidebar-dark.png) |
 | sidebar, populated workflows | [Light](../assets/references/screens/sidebar-populated-light.png) | [Dark](../assets/references/screens/sidebar-populated-dark.png) |
 | task-detail | [Light](../assets/references/screens/task-detail-light.png) | [Dark](../assets/references/screens/task-detail-dark.png) |
+| task activity, start of feed | [Light](../assets/references/screens/task-activity-top-light.png) | [Dark](../assets/references/screens/task-activity-top-dark.png) |
+| task activity, running | [Light](../assets/references/screens/task-activity-running-light.png) | [Dark](../assets/references/screens/task-activity-running-dark.png) |
+| task activity, completed | [Light](../assets/references/screens/task-activity-completed-light.png) | [Dark](../assets/references/screens/task-activity-completed-dark.png) |
+| task activity, failed | [Light](../assets/references/screens/task-activity-failed-light.png) | [Dark](../assets/references/screens/task-activity-failed-dark.png) |
+| task activity, taken-over | [Light](../assets/references/screens/task-activity-taken-over-light.png) | [Dark](../assets/references/screens/task-activity-taken-over-dark.png) |
 | parallel | [Light](../assets/references/screens/parallel-light.png) | [Dark](../assets/references/screens/parallel-dark.png) |
 | workflow-editor | [Light](../assets/references/screens/workflow-editor-light.png) | [Dark](../assets/references/screens/workflow-editor-dark.png) |
 | workflow-run | [Light](../assets/references/screens/workflow-run-light.png) | [Dark](../assets/references/screens/workflow-run-dark.png) |
@@ -66,6 +71,8 @@ The catalog supports screen/state/appearance deep links, navigation search, load
 ## Verification status
 
 JavaScript syntax and local asset/source path checks run during authoring. Browser route/interaction checks are recorded separately by the integrating agent. Representative native fixture comparisons cover the surfaces identified in the table. Unlisted variants are source-derived and have not received individual native image comparisons. Complete live-window fidelity, platform material rendering, and accessibility parity remain outstanding.
+
+Task activity uses a dedicated renderer so shared Parallel and workflow activity fixtures remain independent. Native references use production preview activity rows at 926 × 696 points (2×); the taken-over reference is a running task with locked messages. The native window toolbar is outside these content captures. Its controls are represented in the catalog’s simulated titlebar; browser glass, host chrome, and text rasterization remain approximations. Existing example task names differ from the source capture fixture names. Preview rows in settled native captures retain their supplied completion marker; failed, timed-out, and cancelled catalog markers follow the source status mapping. The browser scrollbar thumb is visual; wheel and keyboard scrolling use the actual overflow region.
 
 ## Fixture behavior guards
 

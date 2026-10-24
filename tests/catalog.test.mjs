@@ -7,7 +7,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const scripts = ['tokens.js', 'registry.js', 'components.js', 'tasks.js', 'workflows.js', 'dialogs.js', 'foundations.js'];
+const scripts = ['tokens.js', 'registry.js', 'components.js', 'tasks.js', 'task-activity.js', 'workflows.js', 'dialogs.js', 'foundations.js'];
 
 function loadDesignRuntime() {
   const document = { querySelector: () => ({ textContent: '', classList: { add() {} } }) };
@@ -91,7 +91,7 @@ test('escaping protects hostile mock form values and approval labels', () => {
   assert.doesNotMatch(hf.field('Repository', hostile), /<(?:img|script)\b|onerror="/);
   assert.doesNotMatch(hf.chip(hostile), /<(?:img|script)\b|onerror="/);
   const catalog = fs.readFileSync(path.join(root, 'scripts/catalog.js'), 'utf8');
-  assert.match(catalog, /insertAdjacentHTML\('beforeend',`<div class="prompt">\$\{HF\.escape\(el\.value\)\}/);
+  assert.match(catalog, /ta-user-message.*HF\.escape\(text\)/);
   assert.match(catalog, /insertAdjacentHTML\('beforeend',`<div class="settings-row"><code>\$\{HF\.escape\(input\.value\)\}/);
 });
 
@@ -167,9 +167,124 @@ test('renderer HTML carries state-specific disabled guards and recovery conditio
   assert.doesNotMatch(answered, /data-action="recover:resume"[^>]*disabled/);
 
   const takenOver = hf.renderTasks('task-detail', 'taken-over');
-  assert.match(takenOver, /driving this session in the terminal/);
-  assert.match(takenOver, /aria-label="Follow-up message"[^>]*disabled/);
-  assert.match(takenOver, /<button disabled>Send<\/button>/);
+  assert.match(takenOver, /Messages are off/);
+  assert.match(takenOver, /took this task over in Terminal/);
+  assert.match(takenOver, /data-kind="send"[^>]*disabled/);
+  assert.doesNotMatch(takenOver, /driving this session in the terminal/);
+});
+
+test('task message eligibility follows native running and terminal rules', () => {
+  const hf = loadDesignRuntime();
+  const eligible = (values) => hf.taskMessageEligibility({ text: '  Follow up  ', ...values });
+
+  assert.equal(eligible({ status: 'running', liveInput: true }).canSend, true);
+  assert.equal(eligible({ status: 'running', liveInput: true }).canContinue, false);
+  assert.equal(eligible({ status: 'running', liveInput: true }).action, 'Send');
+  assert.equal(eligible({ status: 'running', liveInput: true, takenOver: true }).enabled, false);
+  assert.equal(eligible({ status: 'running', liveInput: false }).enabled, false);
+  assert.equal(eligible({ status: 'running', liveInput: true, busy: true }).enabled, false);
+  assert.equal(eligible({ status: 'completed', sessionID: 'session-1' }).canSend, false);
+  assert.equal(eligible({ status: 'completed', sessionID: 'session-1' }).canContinue, true);
+  assert.equal(eligible({ status: 'completed', sessionID: 'session-1' }).action, 'Continue');
+  assert.equal(eligible({ status: 'failed', sessionID: null }).enabled, false);
+  assert.equal(eligible({ status: 'completed', sessionID: 'session-1', takenOver: true }).action, 'Continue');
+  assert.equal(hf.taskMessageEligibility({ status: 'completed', sessionID: 'session-1', text: '   ' }).enabled, false);
+});
+
+test('task activity timeline preserves identity, escaping, groups, and terminal markers', () => {
+  const hf = loadDesignRuntime();
+  const task = {
+    id: 'task_activity_fixture',
+    title: 'Persistence review',
+    backend: 'codex',
+    prompt: '</textarea><script>alert(1)</script>',
+    status: 'running',
+  };
+  const running = hf.taskTimeline(task, 'running');
+  assert.match(running, /data-status="running"/);
+  assert.match(running, /ta-tool-group/);
+  assert.match(running, /Running swift test/);
+  assert.doesNotMatch(running, /<script>alert/);
+  assert.doesNotMatch(running, /Task completed|Task failed/);
+
+  const surface = hf.taskActivitySurface(task, 'running');
+  assert.match(surface, /<strong>Codex<\/strong>/);
+  assert.match(surface, /Persistence review/);
+
+  const completed = hf.taskTimeline({ ...task, status: 'completed' }, 'completed');
+  assert.match(completed, /data-status="completed"/);
+  assert.match(completed, /Finished/);
+  assert.match(completed, /ta-finished/);
+  assert.doesNotMatch(completed, /Running swift test/);
+
+  const failed = hf.taskTimeline({ ...task, status: 'failed' }, 'failed');
+  assert.match(failed, /Failed · exit 1/);
+  assert.match(failed, /ta-finished failed/);
+});
+
+test('task activity surface renders native composer states without leaking generic activity', () => {
+  const hf = loadDesignRuntime();
+  const task = { id: 'task_fixture_01', title: 'Review session persistence', backend: 'claude', status: 'running' };
+  const running = hf.taskActivitySurface(task, 'running');
+  assert.match(running, /id="task-message"/);
+  assert.match(running, /aria-label="Message this task"/);
+  assert.match(running, /data-kind="send"/);
+  assert.match(running, /id="task-activity-scroll"/);
+
+  const noLive = hf.taskActivitySurface(task, 'no-live');
+  assert.match(noLive, /Messages are off/);
+  assert.doesNotMatch(noLive, /id="task-message"/);
+  assert.match(noLive, /data-kind="send"[^>]*disabled/);
+
+  const noSession = hf.taskActivitySurface({ ...task, status: 'completed', sessionID: null }, 'no-session');
+  assert.match(noSession, /id="task-message"[^>]*disabled/);
+  assert.match(noSession, /placeholder="This task has no session to continue\."/);
+  assert.match(noSession, /data-kind="continue"[^>]*disabled/);
+  assert.doesNotMatch(noSession, /ta-lock-field/);
+
+  const missing = hf.taskActivitySurface(task, 'missing');
+  assert.match(missing, /Task unavailable/);
+  assert.doesNotMatch(missing, /ta-composer/);
+});
+
+test('task activity routes use the selected task status instead of the catalog state label', () => {
+  const hf = loadDesignRuntime();
+  const selected = { ...hf.fixtures[1], status: 'completed', sessionID: 'session-selected' };
+
+  hf.currentTask = selected;
+  const selectedRoute = hf.renderTasks('tasks', 'populated');
+  assert.match(selectedRoute, /data-status="completed"/);
+  assert.match(selectedRoute, /Finished/);
+  assert.match(selectedRoute, /Refine workflow validation/);
+
+  hf.currentTask = null;
+  const defaultRoute = hf.renderTasks('tasks', 'populated');
+  assert.match(defaultRoute, /data-status="running"/);
+  assert.match(defaultRoute, /Review session persistence/);
+  assert.doesNotMatch(defaultRoute, /data-status="populated"/);
+});
+
+test('session recovery states preserve their original warning and retry chrome', () => {
+  const hf = loadDesignRuntime();
+  const selected = { ...hf.fixtures[1], status: 'completed', sessionID: 'session-selected' };
+  hf.currentTask = selected;
+
+  const installRetry = hf.renderTasks('tasks', 'install-retry');
+  assert.match(installRetry, /Managed runtime could not be prepared\./);
+  assert.match(installRetry, /Try again/);
+  assert.match(installRetry, /data-action="feedback:Runtime retry requested"/);
+  assert.match(installRetry, /data-status="completed"/);
+
+  const degradedCatalog = hf.renderTasks('tasks', 'degraded-catalog');
+  assert.match(degradedCatalog, /Agent catalog unavailable\./);
+  assert.match(degradedCatalog, /Showing known agents\./);
+  assert.doesNotMatch(degradedCatalog, /Runtime retry requested/);
+  assert.match(degradedCatalog, /data-status="completed"/);
+
+  const olderHistory = hf.renderTasks('tasks', 'older-history-error');
+  assert.match(olderHistory, /Older history unavailable\./);
+  assert.match(olderHistory, /data-action="feedback:Older history retry requested"/);
+  assert.match(olderHistory, /data-status="completed"/);
 });
 
 test('workflow fixtures keep graph, attempt, and sidebar activity projections aligned', () => {
