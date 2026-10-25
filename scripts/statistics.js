@@ -37,15 +37,16 @@
       { name: 'Run suite', role: 'Test', h: 'opencode', model: 'qwen3-coder', t: 0.35, k: 0.2 }] }
   ];
   const TASKS = [
-    { name: 'Add idempotency keys to refund endpoint', h: 'claude', hn: 'Claude', repo: 'billing-api', min: 161, tok: 380, turns: 4 },
-    { name: 'Migrate analytics events to the new schema', h: 'opencode', hn: 'Opencode', repo: 'mobile', min: 112, tok: 510, turns: 3 },
-    { name: 'Fix flaky checkout total rounding test', h: 'codex', hn: 'Codex', repo: 'web', min: 78, tok: 120, turns: 2 },
-    { name: 'Review the retry policy for webhook delivery', h: 'vibe', hn: 'Vibe', repo: 'billing-api', min: 58, tok: 210, turns: 3 },
-    { name: 'Draft the Q4 release notes', h: 'claude', hn: 'Claude', repo: 'web', min: 44, tok: 90, turns: 2 },
-    { name: 'Check refund rounding rules in the ledger module', h: 'codex', hn: 'Codex', repo: 'billing-api', min: 31, tok: 70, turns: 1 },
-    { name: 'Bump the payments SDK', h: 'antigravity', hn: 'Antigravity', repo: 'mobile', min: 22, tok: 150, turns: 2 }
+    { name: 'Add idempotency keys to refund endpoint', h: 'claude', repo: 'billing-api', min: 161, tok: 380, turns: 4 },
+    { name: 'Migrate analytics events to the new schema', h: 'opencode', repo: 'mobile', min: 112, tok: 510, turns: 3 },
+    { name: 'Fix flaky checkout total rounding test', h: 'codex', repo: 'web', min: 78, tok: 120, turns: 2 },
+    { name: 'Review the retry policy for webhook delivery', h: 'vibe', repo: 'billing-api', min: 58, tok: 210, turns: 3 },
+    { name: 'Draft the Q4 release notes', h: 'claude', repo: 'web', min: 44, tok: 90, turns: 2 },
+    { name: 'Check refund rounding rules in the ledger module', h: 'codex', repo: 'billing-api', min: 31, tok: 70, turns: 1 },
+    { name: 'Bump the payments SDK', h: 'antigravity', repo: 'mobile', min: 22, tok: 150, turns: 2 }
   ];
-  const HN = { claude: 'Claude', codex: 'Codex', vibe: 'Vibe', opencode: 'Opencode', antigravity: 'Antigravity' };
+  // HF.harnessName is defined by a later script, so it is resolved at render time.
+  const HN = h => HF.harnessName(h);
   const ROLE_ICON = { Planning: 'clipboard', Implementation: 'hammer', Review: 'bubble-check', Test: 'terminal' };
   const REPOS = ['billing-api', 'web', 'mobile'];
   const TASK_TOTAL = { min: 680, tok: 1900, count: 41 };
@@ -84,7 +85,7 @@
     return { shown, total, children: runs.map(r => ({ failed: r.failed, status: r.failed ? 'Failed' : 'Done', when: r.when, meta: r.repo + ' · ' + w.nodes.length + ' nodes', pct: +(r[key] / max * 100).toFixed(1), value: fmt(r[key]), other: fmtOther(r[otherKey]) })) };
   };
 
-  const taskTurns = (t, usage, fmt, fmtOther) => {
+  const taskTurns = (t, usage, range, fmt, fmtOther) => {
     const seed = hash(t.name), ws = [], wk = [];
     let sw = 0, sk = 0;
     for (let i = 0; i < t.turns; i++) {
@@ -92,9 +93,9 @@
       ws.push(a); wk.push(b); sw += a; sk += b;
     }
     const key = usage ? 'tok' : 'min', otherKey = usage ? 'min' : 'tok';
-    const turns = ws.map((a, i) => ({ min: a / sw * t.min, tok: wk[i] / sk * t.tok }));
+    const f = FACTOR[range], turns = ws.map((a, i) => ({ min: a / sw * t.min * f, tok: wk[i] / sk * t.tok * f }));
     const max = Math.max(...turns.map(x => x[key]));
-    const day = seed % 20, start = 540 + (seed % 300);
+    const day = seed % range, start = 540 + (seed % 300);
     return turns.map((x, i) => ({ failed: false, status: 'Done', when: stamp(day, start + i * 47), meta: 'Turn ' + (i + 1) + ' · ' + (i === 0 ? 'Initial prompt' : 'Follow-up message'), pct: +(x[key] / max * 100).toFixed(1), value: fmt(x[key]), other: fmtOther(x[otherKey]) }));
   };
 
@@ -132,12 +133,12 @@
     const maxVal = items.length ? items[0].val : 1;
     const rows = items.map((it, idx) => {
       const x = it.x, id = (isWf ? 'w:' : 't:') + it.index, open = !!o.open[id], runs = isWf ? Math.max(1, Math.round(x.runs * f)) : 0;
-      const row = { id, index: it.index, rank: idx + 1, name: x.name, isWorkflow: isWf, harness: isWf ? '' : x.h, meta: isWf ? runs + ' runs · ' + fmtTime(x.min / x.runs) + ' avg · ' + x.model : x.hn + ' · ' + x.repo + ' · ' + plural(x.turns, 'turn'), pct: +(it.val / maxVal * 100).toFixed(1), value: fmt(it.val), other: fmtOther(it.oth), open, children: [], subTitle: '', subFooter: '', hasMore: false, moreLabel: '', runs };
+      const row = { id, index: it.index, rank: idx + 1, name: x.name, isWorkflow: isWf, harness: isWf ? '' : x.h, meta: isWf ? runs + ' runs · ' + fmtTime(x.min / x.runs) + ' avg · ' + x.model : HN(x.h) + ' · ' + x.repo + ' · ' + plural(x.turns, 'turn'), pct: +(it.val / maxVal * 100).toFixed(1), value: fmt(it.val), other: fmtOther(it.oth), open, children: [], subTitle: '', subFooter: '', hasMore: false, moreLabel: '', runs };
       if (open && isWf) {
         const wr = workflowRuns(x, range, usage, fmt, fmtOther);
         Object.assign(row, { children: wr.children, subTitle: 'Workflow runs, ' + (usage ? 'most tokens first' : 'longest first'), subFooter: 'Showing ' + wr.shown + ' of ' + wr.total + ' runs', hasMore: wr.total > wr.shown, moreLabel: 'Show all ' + wr.total + ' runs' });
       } else if (open) {
-        Object.assign(row, { children: taskTurns(x, usage, fmt, fmtOther), subTitle: 'Agent turns, in order', subFooter: plural(x.turns, 'turn') + ' · ' + fmt(it.val) + ' in total' });
+        Object.assign(row, { children: taskTurns(x, usage, range, fmt, fmtOther), subTitle: 'Agent turns, in order', subFooter: plural(x.turns, 'turn') + ' · ' + fmt(it.val) + ' in total' });
       }
       return row;
     });
@@ -151,7 +152,7 @@
     const nodePage = {
       index: wfIndex, name: wf.name, runs: nRuns, executions: nodes.map(n => ({ name: n.n.name, execs: n.execs })), runsBreakdown: (nRuns - failed) + ' done · ' + failed + ' failed',
       elapsed: fmtTime(wf.min * f), summed: fmtTime(summed), tokens: fmtTok(tokAll), title: 'Nodes by ' + (usage ? 'usage' : 'execution time'),
-      nodes: nodes.map((n, idx) => ({ rank: idx + 1, name: n.n.name, role: n.n.role, icon: ROLE_ICON[n.n.role], harness: n.n.h, execs: n.execs, shareValue: n[key] / totalKey * 100, meta: n.n.role + ' · ' + HN[n.n.h] + ' · ' + n.n.model + ' · ' + n.execs + ' executions · ' + fmtTime(n.min / n.execs) + ' avg', pct: +(n[key] / nMax * 100).toFixed(1), share: Math.round(n[key] / totalKey * 100) + '%', value: fmt(n[key]), other: fmtOther(n[otherKey]) })),
+      nodes: nodes.map((n, idx) => ({ rank: idx + 1, name: n.n.name, role: n.n.role, icon: ROLE_ICON[n.n.role], harness: n.n.h, execs: n.execs, shareValue: n[key] / totalKey * 100, meta: n.n.role + ' · ' + HN(n.n.h) + ' · ' + n.n.model + ' · ' + n.execs + ' executions · ' + fmtTime(n.min / n.execs) + ' avg', pct: +(n[key] / nMax * 100).toFixed(1), share: Math.round(n[key] / totalKey * 100) + '%', value: fmt(n[key]), other: fmtOther(n[otherKey]) })),
       footer: wf.nodes.length + ' nodes · share is of the ' + (usage ? 'workflow’s total usage' : 'summed execution time')
     };
 
@@ -255,10 +256,10 @@
       else if (name === 'stat-measure') { current.measure = value === 'usage' ? 'usage' : 'time'; rerender(self); HF.feedback(`${current.measure === 'usage' ? 'Usage' : 'Total time'} measure selected`); }
       else if (name === 'stat-list') { current.list = value === 'tasks' ? 'tasks' : 'workflows'; rerender(self); HF.feedback(`${current.list === 'tasks' ? 'Tasks' : 'Workflows'} ranking selected`); }
       else if (name === 'stat-toggle') { if (current.open[value]) delete current.open[value]; else current.open[value] = true; rerender(self); }
-      else if (name === 'stat-nodes') { current.workflow = WORKFLOWS[Number(value)]?.name || current.workflow; current.screen = 'nodes'; rerender('[data-action="stat-back"]'); q('#statistics-content').scrollTop = 0; syncRoute(); }
+      else if (name === 'stat-nodes') { current.workflow = WORKFLOWS[Number(value)]?.name || current.workflow; current.screen = 'nodes'; q('#statistics-content').scrollTop = 0; rerender('[data-action="stat-back"]'); syncRoute(); }
       else if (name === 'stat-back') {
         const index = Math.max(0, WORKFLOWS.findIndex(w => w.name === current.workflow));
-        current.screen = 'overview'; current.list = 'workflows'; rerender(`[data-action="stat-nodes:${index}"]`, `[data-action="stat-toggle:w:${index}"]`); q('#statistics-content').scrollTop = 0; syncRoute();
+        current.screen = 'overview'; q('#statistics-content').scrollTop = 0; rerender(`[data-action="stat-nodes:${index}"]`, `[data-action="stat-toggle:w:${index}"]`); syncRoute();
       }
       else if (name === 'stat-filter') HF.feedback(`${value} filter · mock only · figures unchanged`);
       else if (name === 'stat-more-runs') HF.feedback('Full run list · mock only · not designed');
