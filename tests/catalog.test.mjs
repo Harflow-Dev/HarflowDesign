@@ -2122,40 +2122,267 @@ test('Council run activity is one feed that names agents, rounds, questions, ver
   assert.doesNotMatch(hf.renderRun('running'), /wfr-council|wr-select:council/);
 });
 
-test('statistics is a whole-proposal family with no native source and honest figures', () => {
+const statTime = text => { let m = 0; const h = /(\d+) h/.exec(text), n = /(\d+) min/.exec(text); if (h) m += 60 * Number(h[1]); if (n) m += Number(n[1]); return m; };
+const statTokens = text => { const m = /([\d.]+) (M|k)? ?tokens/.exec(text); return m ? Number(m[1]) * (m[2] === 'M' ? 1000 : 1) : 0; };
+const statRoute = (hf, state) => { hf.resetStatistics(); hf.route = { theme: 'light', screen: 'statistics', state }; };
+const statText = html => html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ');
+
+test('statistics is an exploratory whole-proposal family with no native source', () => {
   const hf = loadDesignRuntime();
   const family = hf.screens.find(screen => screen.id === 'statistics');
-  assert.deepEqual(Array.from(family.states), ['overview', 'empty']);
+  assert.deepEqual(Array.from(family.states), ['overview', 'nodes']);
   assert.equal(family.source, undefined);
   assert.deepEqual(Array.from(family.proposal.tickets), ['#9']);
-  for (const state of family.states) assert.equal(hf.specimenStatus('statistics', state).kind, 'exploratory');
-  assert.match(hf.specimenStatus('statistics', 'overview').caption, /^Exploratory · ticket #9 · Not approved/);
-  assert.match(fs.readFileSync(path.join(root, 'scripts/catalog.js'), 'utf8'), /No native source/);
-  hf.resetStatistics();
-  hf.route = { theme: 'light', screen: 'statistics', state: 'overview' };
-  const html = hf.renderStatistics('overview');
-  for (const text of ['Statistics', 'Runs', 'Elapsed run time', 'Wall clock from start to finish, added over runs', 'Summed execution time', 'All nodes added together', 'Cost as reported by harness', 'Averages exclude 6 running or incomplete runs.', 'Token and cost totals cover 112 of 148 runs', 'Requested opus · effective opus', 'Unknown repository', 'Cache: Unavailable', 'aria-label="Time range"']) assert.ok(html.includes(text), text);
-  assert.match(html, /stat-tile unavailable"><span class="stat-label">Cost<\/span><strong class="stat-value">Unavailable</);
-  assert.doesNotMatch(html, /\$\s?0|Cost[^<]*>0</, 'missing figures are Unavailable, never 0');
-  assert.match(html, /data-action="route:statistics\/overview" aria-current="page"/, 'sidebar entry');
-  assert.doesNotMatch(html, /task-row active/, 'no task row is selected beside the Statistics entry');
-  for (const days of [7, 30, 90]) {
-    const range = hf.statisticsRanges[days];
-    assert.equal(range.done + range.failed + range.incomplete, range.runs, `${days}-day status breakdown adds up`);
-    assert.ok(range.coverage <= range.runs);
-    assert.match(hf.statisticsBody('overview', days), new RegExp(`Averages exclude ${range.incomplete} running or incomplete runs\\.`));
+  for (const state of family.states) {
+    assert.equal(hf.specimenStatus('statistics', state).kind, 'exploratory');
+    assert.match(hf.specimenStatus('statistics', state).caption, /^Exploratory · ticket #9 · Not approved/);
   }
-  const empty = hf.renderStatistics('empty');
-  assert.match(empty, /No statistics yet/);
-  assert.match(empty, /Run a workflow or a task and its history appears here\./);
-  assert.doesNotMatch(empty, /stat-tile|stat-rows/);
+  assert.match(fs.readFileSync(path.join(root, 'scripts/catalog.js'), 'utf8'), /No native source/);
+});
+
+test('statistics shows no cost anywhere at any range or measure', () => {
+  const hf = loadDesignRuntime();
+  for (const screen of ['overview', 'nodes']) for (const range of [7, 30, 90]) for (const measure of ['time', 'usage']) for (const list of ['workflows', 'tasks']) {
+    const open = { 'w:0': true, 't:0': true, 'w:5': true };
+    const html = hf.statisticsBody(screen, { range, measure, list, open });
+    assert.doesNotMatch(html, /Cost|cost|\$/, `${screen}/${range}/${measure}/${list}`);
+  }
+  for (const state of ['overview', 'nodes']) {
+    statRoute(hf, state);
+    assert.doesNotMatch(hf.renderStatistics(state), /Cost|\$/);
+  }
+});
+
+test('statistics measure toggle switches chart label, caption, list title and column heads', () => {
+  const hf = loadDesignRuntime();
+  const time = hf.statisticsModel({ measure: 'time' }), usage = hf.statisticsModel({ measure: 'usage' });
+  assert.equal(time.chart.label, 'Total time');
+  assert.equal(usage.chart.label, 'Usage');
+  assert.notEqual(time.chart.caption, usage.chart.caption);
+  assert.equal(time.list.title, 'Workflows by total time');
+  assert.equal(usage.list.title, 'Workflows by usage');
+  assert.equal(hf.statisticsModel({ measure: 'usage', list: 'tasks' }).list.title, 'Tasks by usage');
+  assert.deepEqual([time.list.valueHead, time.list.otherHead], ['Total time', 'Usage']);
+  assert.deepEqual([usage.list.valueHead, usage.list.otherHead], ['Usage', 'Total time']);
+  const html = hf.statisticsBody('overview', { measure: 'usage' });
+  assert.match(html, /<span class="stat-caption">Usage<\/span>/);
+  assert.match(html, /<h3>Workflows by usage<\/h3><span class="stat-colhead">Usage<\/span><span class="stat-colhead">Total time<\/span>/);
+  assert.match(hf.statisticsBody('overview', { measure: 'time' }), /<h3>Workflows by total time<\/h3><span class="stat-colhead">Total time<\/span><span class="stat-colhead">Usage<\/span>/);
+  assert.match(hf.statisticsBody('nodes', { measure: 'usage' }), /Nodes by usage/);
+  assert.match(hf.statisticsBody('nodes', { measure: 'time' }), /Nodes by execution time/);
+});
+
+test('statistics coverage banner appears only in Usage and its figures are consistent', () => {
+  const hf = loadDesignRuntime();
+  for (const range of [7, 30, 90]) {
+    assert.doesNotMatch(hf.statisticsBody('overview', { range, measure: 'time' }), /Usage covers|did not report tokens/);
+    assert.doesNotMatch(hf.statisticsBody('nodes', { range, measure: 'usage' }), /Usage covers/);
+    const html = hf.statisticsBody('overview', { range, measure: 'usage' });
+    const m = hf.statisticsModel({ range, measure: 'usage' }), cov = m.coverage;
+    assert.ok(html.includes(`Usage covers ${cov.wfRuns} of ${cov.wfRunsTotal} workflow runs and ${cov.tasks} of ${cov.tasksTotal} tasks.`));
+    assert.match(html, /left out, not counted as 0/);
+    assert.ok(cov.wfRuns <= cov.wfRunsTotal && cov.tasks <= cov.tasksTotal, `${range} X<=Y, A<=B`);
+    const displayed = m.list.rows.reduce((sum, row) => sum + Number(/^(\d+) runs/.exec(row.meta)[1]), 0);
+    assert.equal(cov.wfRunsTotal, displayed, `${range} Y equals the sum of per-workflow runs`);
+  }
+});
+
+test('statistics chart has one bar and one hidden table row per day, and stacked totals match the legend', () => {
+  const hf = loadDesignRuntime();
+  for (const measure of ['time', 'usage']) for (const range of [7, 30, 90]) {
+    const html = hf.statisticsBody('overview', { range, measure });
+    const m = hf.statisticsModel({ range, measure });
+    assert.equal(m.chart.bars.length, range);
+    assert.equal((html.match(/class="stat-bar"/g) || []).length, range);
+    const tbody = html.match(/<tbody>(.*?)<\/tbody>/)[1];
+    assert.equal((tbody.match(/<tr>/g) || []).length, range, `${measure}/${range} table rows`);
+    assert.match(html, /<table class="visually-hidden">/);
+    const parse = measure === 'usage' ? statTokens : statTime;
+    const sum = key => m.chart.bars.reduce((a, b) => a + parse(b[key]), 0);
+    const tol = (range + 1) * (measure === 'usage' ? 0.5 : 0.5) + (measure === 'usage' ? 50 : 0.5);
+    assert.ok(Math.abs(sum('wf') - parse(m.chart.wfTotal)) <= tol, `${measure}/${range} workflow stack`);
+    assert.ok(Math.abs(sum('tk') - parse(m.chart.tkTotal)) <= tol, `${measure}/${range} task stack`);
+    assert.ok(Math.abs(parse(m.chart.wfTotal) + parse(m.chart.tkTotal) - parse(m.chart.total)) <= (measure === 'usage' ? 100 : 1.5), `${measure}/${range} headline`);
+    assert.match(html, new RegExp(`Workflow runs <b>${m.chart.wfTotal}</b>`));
+    assert.match(html, new RegExp(`Tasks <b>${m.chart.tkTotal}</b>`));
+  }
+});
+
+test('statistics workflow rows expand to at most eight runs with an honest footer', () => {
+  const hf = loadDesignRuntime();
+  const rowFor = (m, name) => m.list.rows.find(row => row.name === name);
+  for (const range of [7, 30, 90]) {
+    const m = hf.statisticsModel({ range, open: { 'w:0': true } });
+    const row = rowFor(m, 'Implement and review');
+    assert.ok(row.open);
+    assert.ok(row.children.length <= 8);
+    const total = Number(/^(\d+) runs/.exec(row.meta)[1]);
+    assert.equal(row.subFooter, `Showing ${Math.min(8, total)} of ${total} runs`);
+    const html = hf.statisticsBody('overview', { range, open: { 'w:0': true } });
+    assert.ok(html.includes(row.subFooter));
+    assert.ok(html.includes(`Show all ${total} runs`));
+    assert.match(html, /View node breakdown/);
+  }
+  const sweepId = rowFor(hf.statisticsModel({ range: 7 }), 'Test coverage sweep').id;
+  const small = hf.statisticsModel({ range: 7, open: { [sweepId]: true } });
+  const sweep = rowFor(small, 'Test coverage sweep');
+  assert.equal(sweep.subFooter, 'Showing 2 of 2 runs');
+  assert.equal(sweep.children.length, 2);
+  const html = hf.statisticsBody('overview', { range: 7, open: { [sweepId]: true } });
+  assert.ok(html.includes('Showing 2 of 2 runs'));
+  assert.doesNotMatch(html, /Show all \d+ runs/);
+  const closed = hf.statisticsBody('overview', {});
+  assert.doesNotMatch(closed, /Showing \d+ of|stat-substack/);
+});
+
+test('statistics task rows expand to their turns', () => {
+  const hf = loadDesignRuntime();
+  const m = hf.statisticsModel({ list: 'tasks', open: { 't:0': true, 't:5': true } });
+  const first = m.list.rows.find(row => row.id === 't:0'), single = m.list.rows.find(row => row.id === 't:5');
+  assert.equal(first.children.length, 4);
+  assert.equal(single.children.length, 1);
+  assert.match(first.meta, /4 turns/);
+  assert.match(single.meta, /1 turn$/);
+  assert.match(first.subFooter, /^4 turns · /);
+  assert.equal(first.hasMore, false);
+  const html = hf.statisticsBody('overview', { list: 'tasks', open: { 't:0': true } });
+  assert.match(html, /Turn 1 · Initial prompt/);
+  assert.match(html, /Turn 4 · Follow-up message/);
+  assert.doesNotMatch(html, /Turn 5/);
+  assert.doesNotMatch(html, /View node breakdown/);
+});
+
+test('statistics node page shares add to 100 and a retried node executes fewer times than the run count', () => {
+  const hf = loadDesignRuntime();
+  for (const measure of ['time', 'usage']) for (const range of [7, 30, 90]) {
+    const p = hf.statisticsModel({ range, measure, screen: 'nodes' }).nodePage;
+    const sum = p.nodes.reduce((a, n) => a + n.shareValue, 0);
+    assert.ok(Math.abs(sum - 100) < 1e-6, `${measure}/${range} exact shares`);
+    const shown = p.nodes.reduce((a, n) => a + Number(n.share.replace('%', '')), 0);
+    assert.ok(Math.abs(shown - 100) <= p.nodes.length * 0.5, `${measure}/${range} rounded shares`);
+    const fix = p.nodes.find(n => n.name === 'Fix review findings');
+    assert.ok(fix.execs < p.runs, `${measure}/${range} fix executions < runs`);
+    assert.ok(p.nodes.every(n => n.execs >= 1));
+    assert.deepEqual(p.nodes.map(n => n.rank), p.nodes.map((_, i) => i + 1));
+  }
+  const html = hf.statisticsBody('nodes', { range: 7 });
+  assert.match(html, /Back to Statistics/);
+  assert.match(html, /Summed execution time/);
+  assert.match(html, /Parallel nodes run at the same time/);
+  const other = hf.statisticsModel({ screen: 'nodes', workflow: 'Council review' }).nodePage;
+  assert.equal(other.name, 'Council review');
+  assert.equal(hf.statisticsModel({ screen: 'nodes', workflow: 'Missing' }).nodePage.index, 0);
+});
+
+test('statistics sidebar entry follows the range and is the only active entry', () => {
+  const hf = loadDesignRuntime();
+  for (const state of ['overview', 'nodes']) {
+    statRoute(hf, state);
+    const html = hf.renderStatistics(state);
+    assert.match(html, /data-action="route:statistics\/overview" aria-current="page"/);
+    assert.doesNotMatch(html, /task-row active/);
+    assert.match(html, /<strong>Statistics<\/strong><small>Last 30 days<\/small>/);
+  }
+});
+
+test('statistics controls expose pressed, expanded and controlled-region semantics', () => {
+  const hf = loadDesignRuntime();
+  for (const screen of ['overview', 'nodes']) for (const range of [7, 30, 90]) for (const measure of ['time', 'usage']) {
+    const html = hf.statisticsBody(screen, { range, measure });
+    const groups = html.match(/<div class="stat-seg[^"]*" role="group" aria-label="[^"]+">.*?<\/div>/g);
+    assert.equal(groups.length, screen === 'overview' ? 3 : 2);
+    for (const group of groups) {
+      const pressed = group.match(/aria-pressed="(true|false)"/g);
+      assert.ok(pressed.length >= 2);
+      assert.equal(pressed.filter(p => p.includes('true')).length, 1, 'exactly one pressed per group');
+    }
+    assert.ok(html.includes(`data-action="stat-range:${range}" aria-pressed="true"`));
+    assert.ok(html.includes(`data-action="stat-measure:${measure}" aria-pressed="true"`));
+  }
+  for (const list of ['workflows', 'tasks']) {
+    const open = list === 'workflows' ? { 'w:0': true, 'w:1': true, 'w:5': true } : { 't:0': true, 't:2': true };
+    const html = hf.statisticsBody('overview', { list, open });
+    assert.ok(html.includes(`data-action="stat-list:${list}" aria-pressed="true"`));
+    const rows = html.match(/<button type="button" class="stat-row" [^>]*>/g);
+    assert.equal(rows.length, hf.statisticsModel({ list }).list.rows.length);
+    assert.equal(rows.filter(r => r.includes('aria-expanded="true"')).length, Object.keys(open).length);
+    assert.equal(rows.filter(r => r.includes('aria-expanded="false"')).length, rows.length - Object.keys(open).length);
+    const controls = rows.map(r => /aria-controls="([^"]+)"/.exec(r)?.[1]).filter(Boolean);
+    assert.equal(controls.length, Object.keys(open).length);
+    assert.equal(new Set(controls).size, controls.length, 'aria-controls ids unique');
+    for (const id of controls) assert.equal((html.match(new RegExp(`id="${id}"`, 'g')) || []).length, 1, `${id} resolves once`);
+    assert.equal(controls.length, new Set(html.match(/ id="[^"]+"/g)).size, 'no stray duplicate ids');
+  }
+});
+
+test('statistics open rows persist across list, measure and range changes', () => {
+  const hf = loadDesignRuntime();
+  const open = { 'w:0': true, 't:1': true };
+  const expandedIds = opts => Array.from(hf.statisticsModel({ open, ...opts }).list.rows.filter(row => row.open).map(row => row.id));
+  assert.deepEqual(expandedIds({}), ['w:0']);
+  assert.deepEqual(expandedIds({ measure: 'usage' }), ['w:0']);
+  assert.deepEqual(expandedIds({ range: 7 }), ['w:0']);
+  assert.deepEqual(expandedIds({ list: 'tasks' }), ['t:1']);
+  assert.deepEqual(expandedIds({ list: 'workflows', range: 90, measure: 'usage' }), ['w:0']);
+});
+
+test('statistics page state resets to 30 days, Total time and Workflows', () => {
+  const hf = loadDesignRuntime();
+  const m = hf.statisticsModel();
+  assert.equal(m.range, 30);
+  assert.equal(m.measure, 'time');
+  assert.equal(m.listKind, 'workflows');
+  assert.equal(m.rangeLabel, 'Last 30 days');
+  assert.ok(m.list.rows.every(row => !row.open));
+  hf.route = { theme: 'light', screen: 'statistics', state: 'overview' };
+  hf.resetStatistics();
+  const html = hf.renderStatistics('overview');
+  assert.ok(html.includes('data-action="stat-range:30" aria-pressed="true"'));
+  assert.ok(html.includes('data-action="stat-measure:time" aria-pressed="true"'));
+  assert.ok(html.includes('data-action="stat-list:workflows" aria-pressed="true"'));
+  assert.doesNotMatch(html, /aria-expanded="true"/);
+  assert.match(hf.statisticsBody('overview', { range: 7 }), /Last 7 days · All repositories/);
+});
+
+test('statistics rendering is deterministic across loads and unknown ranges fall back to 30 days', () => {
+  const render = hf => ['overview', 'nodes'].flatMap(state => [7, 30, 90].flatMap(range => ['time', 'usage'].map(measure => hf.statisticsBody(state, { range, measure, open: { 'w:0': true, 'w:5': true } }))));
+  const first = render(loadDesignRuntime()), second = render(loadDesignRuntime());
+  assert.deepEqual(first, second);
+  const hf = loadDesignRuntime();
+  assert.equal(hf.statisticsModel({ range: 14 }).range, 30);
+  assert.equal(hf.statisticsModel({ measure: 'bogus' }).measure, 'time');
+});
+
+test('statistics output is independent of the process time zone', () => {
+  const script = [
+    "const fs=require('fs'),path=require('path'),vm=require('vm');",
+    'const root=process.argv[1],files=JSON.parse(process.argv[2]);',
+    "const context=vm.createContext({window:{},document:{querySelector:()=>null,querySelectorAll:()=>[],addEventListener(){}},setTimeout,clearTimeout});context.window=context;",
+    "for(const f of files)vm.runInContext(fs.readFileSync(path.join(root,'scripts',f),'utf8'),context,{filename:f});",
+    "const hf=context.HF;hf.route={theme:'light',screen:'statistics',state:'overview'};",
+    'const out=[];',
+    "for(const s of ['overview','nodes'])for(const r of [7,30,90])for(const m of ['time','usage'])out.push(hf.statisticsBody(s,{range:r,measure:m,open:{'w:0':true,'t:0':true}}));",
+    "for(const s of ['overview','nodes']){hf.resetStatistics();out.push(hf.renderStatistics(s));}",
+    'process.stdout.write(JSON.stringify(out));'
+  ].join('\n');
+  const outputs = ['UTC', 'Australia/Sydney', 'America/Los_Angeles'].map(TZ => {
+    const result = spawnSync(process.execPath, ['-e', script, root, JSON.stringify(scripts)], { env: { ...process.env, TZ }, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+    assert.equal(result.status, 0, result.stderr);
+    return result.stdout;
+  });
+  assert.ok(outputs[0].length > 10000);
+  assert.equal(outputs[1], outputs[0], 'Australia/Sydney matches UTC');
+  assert.equal(outputs[2], outputs[0], 'America/Los_Angeles matches UTC');
+});
+
+test('statistics markup does not leak into other families', () => {
+  const hf = loadDesignRuntime();
   for (const other of hf.screens) {
     if (other.id === 'statistics') continue;
     hf.route = { theme: 'light', screen: other.id, state: other.states[0] };
     assert.doesNotMatch(renderers[other.id](hf, other.states[0]), /stat-entry|stat-seg|statistics-content/, `${other.id} renders statistics markup`);
   }
 });
-
 test('council limits are validated, preserved, and block Run', () => {
   const hf = loadDesignRuntime();
   hf.route = { theme: 'light', screen: 'workflow-editor', state: 'council-config' };
@@ -2183,16 +2410,6 @@ test('council limits are validated, preserved, and block Run', () => {
   hf.editorController.setField('outputSchema', 'conclusion, rationale');
   assert.deepEqual(Array.from(hf.councilValidation(hf.editorController.snapshot().draft.fieldValues['council:council'])), []);
   hf.editorController.reset('saved');
-});
-
-test('statistics token tile follows the range and the per-workflow list has headers', () => {
-  const hf = loadDesignRuntime();
-  const tokens = days => hf.statisticsBody('overview', days).match(/Tokens<\/span><strong class="stat-value">([^<]+)</)[1];
-  assert.equal(new Set([7, 30, 90].map(tokens)).size, 3);
-  const html = hf.statisticsBody('overview', 30);
-  assert.match(html, /stat-head"><span>Workflow<\/span><span>Runs<\/span><span>Status<\/span><span>Total<\/span><span>Average<\/span><span>Model<\/span>/);
-  assert.match(html, /Standalone tasks<small>Unknown repository<\/small>/);
-  assert.match(html, /<span>Status unavailable<\/span>/);
 });
 
 test('council run and statistics markup appear only in their own states', () => {
