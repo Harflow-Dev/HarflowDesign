@@ -25,7 +25,7 @@
 .approval-description,.approval-context { margin:0; color:var(--secondaryText); }
 .approval-command { display:grid; gap:3px; }
 .approval-command > span { color:var(--secondaryText); font-size:11px; }
-.approval-detail pre { max-width:100%; overflow-wrap:anywhere; margin:0; padding:0; color:var(--primaryText); font:12px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace; white-space:pre-wrap; user-select:text; }
+.approval-detail pre { max-width:100%; overflow-wrap:anywhere; margin:0; padding:6px 8px; border-radius:6px; color:var(--primaryText); font:12px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace; white-space:pre-wrap; user-select:text; }
 .approval-inputs { display:grid; gap:5px; margin:0; }
 .approval-inputs > div { display:grid; grid-template-columns:minmax(90px,auto) 1fr; gap:8px; }
 .approval-inputs dt { color:var(--secondaryText); overflow-wrap:anywhere; }
