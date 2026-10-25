@@ -126,6 +126,7 @@ HF.approvalFocusTarget=(root,focus)=>{
   return root.querySelector('.approval-inline');
 };
 HF.refreshApprovalPresentation=()=>{
+  if(HF.route?.screen==='workflow-run'){HF.refreshRunApprovals?.();return}
   const page=document.querySelector('.ta-page');
   if(!page?.querySelector||!HF.taskDetailContext?.task?.approvalFixture)return;
   const slot=page.querySelector('.ta-approval-slot'),hintSlot=page.querySelector('.approval-hint-slot'),active=document.activeElement;

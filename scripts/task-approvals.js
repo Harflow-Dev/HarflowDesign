@@ -44,6 +44,16 @@ const scenario=state=>({
  'monitor-pending':{requests:[request()],total:1},inspected:{requests:[request()],total:1,selectedID:'approval_01',detail:request(),current:true},submitting:{requests:[request()],total:1,selectedID:'approval_01',detail:request(),current:true,submitting:true},
  'caller-owned':{requests:[callerRequest()],total:1,selectedID:'approval_01',detail:callerRequest(),current:true,futureMacResponseCapability:true},'caller-owned-legacy':{requests:[callerRequest()],total:1,selectedID:'approval_01',detail:callerRequest(),current:true,futureMacResponseCapability:false},history:{requests:history(),total:17,selectedID:'approval_01',detail:history()[0],current:true},pagination:{requests:history().slice(0,5),total:17,cursor:'page-2'},approved:{requests:[request({disposition:'approved',delivery:'delivered',decision:'approve'})],total:1,selectedID:'approval_01',detail:request({disposition:'approved',delivery:'delivered',decision:'approve'})},denied:{requests:[request({disposition:'denied',delivery:'delivered',decision:'reject'})],total:1,selectedID:'approval_01',detail:request({disposition:'denied',delivery:'delivered',decision:'reject'})},expired:{requests:[request({deadline:now()-1000})],total:1,selectedID:'approval_01',detail:request({deadline:now()-1000}),current:true},error:{requests:[],total:0,error:'Approval metadata unavailable.'}
 })[state]||extra(state)||{requests:[request()],total:1,futureMacResponseCapability:false};
+const runStep=(n,node,task,tool,input,o={})=>request({id:`approval_0${n}`,task_id:`task_0${n}`,digest:`sha256:fixture-run-0${n}`,ownership:'caller',workflow_node_name:node,task_title:task,tool_name:tool,action:{tool_name:tool,input},created_at:1792818000+n*10,...o});
+const runPush=(o={})=>runStep(1,'Implement','Implement persistence checks','Bash',{command:'git push origin feature/persistence-checks',description:'Publish the branch for review'},{reason:'The tests pass and the branch is ready to publish for review.',...o});
+const runWrite=(o={})=>runStep(2,'Review','Review persistence changes','Write',{file_path:'Sources/Persistence/Store.swift',content:swiftSource},o);
+const runSel=(list,more={})=>({byRun:true,taskID:'run',requests:list,total:list.length,selectedID:list[0].id,detail:list[0],current:true,futureMacResponseCapability:true,...more});
+const runScenario=state=>({
+ 'run-approval-pending':runSel([runPush()]),
+ 'run-approval-multiple':runSel([runPush(),runWrite()],{separate:true,total:32,more:true,cursor:'page-2'}),
+ 'run-approval-settled':{byRun:true,taskID:'run',requests:[runPush({disposition:'approved',decision:'approve',decided_by:'caller',responder:'monitor',delivery:'sent',execution_outcome:'succeeded'}),runWrite({disposition:'expired'})],total:2,futureMacResponseCapability:true},
+ 'run-approval-legacy':runSel([runPush()],{futureMacResponseCapability:false})
+})[state];
 let model=scenario('monitor-pending'),generation=0;
 const esc=HF.escape;
 const displayValue=value=>value===null?'No value':value===''?'Empty text':Array.isArray(value)?value.length?'': 'Empty list':typeof value==='object'?Object.keys(value).length?'':'Empty object':typeof value==='boolean'?value?'Yes':'No':String(value);
@@ -96,12 +106,13 @@ const actionView=d=>{
  const description=topDescription?`<p class="approval-description">${esc(topDescription)}</p>`:'';
  const reason=typeof d.reason==='string'&&d.reason.trim()?`<div class="approval-reason"><span>Agent's stated reason</span><p>${esc(clip(d.reason.trim(),400))}</p></div>`:'';
  const step=typeof d.workflow_node_name==='string'&&d.workflow_node_name?`<p class="approval-context">Workflow step: ${esc(d.workflow_node_name)}</p>`:'';
+ const agentTask=typeof d.task_title==='string'&&d.task_title?`<p class="approval-context">Agent task: ${esc(d.task_title)}</p>`:'';
  const location=cwd?`<p class="approval-context">In ${esc(cwd)}</p>`:'';
  const file=path!==''?`<p class="approval-context">Path: ${esc(path)}</p>`:'';
  const values=Object.entries(input).filter(([key])=>!consumed.has(key)).flatMap(([key,value])=>inputRows(value,key));
  shown+=values.length;
  const total=Object.values(input).reduce((n,v)=>n+leaves(v),0);
- return {title,reason,covered:shown===total,content:`<div class="approval-action"><strong>${esc(title)}</strong>${description}${step}${location}${file}${blocks}${rowsHTML(values)}</div>`};
+ return {title,reason,covered:shown===total,content:`<div class="approval-action"><strong>${esc(title)}</strong>${description}${step}${agentTask}${location}${file}${blocks}${rowsHTML(values)}</div>`};
 };
 const known={ownership:['monitor','caller'],disposition:['pending','approved','denied','expired','invalidated'],delivery:['pending','reserved','sending','sent','delivered','delivery_unknown','failed'],execution_outcome:['not_observed','succeeded','failed']};
 const knownRequest=r=>!!r&&Object.entries(known).every(([k,v])=>r[k]===undefined||v.includes(r[k]));
@@ -140,20 +151,22 @@ const guidance=r=>{
  return null;
 };
 const disabled=()=>model.loading||model.submitting;
+const inScope=(r,m=model)=>!!m.byRun||r.task_id===m.taskID;
 const identityMatches=(a,b)=>!!a&&!!b&&a.id===b.id&&a.digest===b.digest&&a.revision===b.revision&&a.task_id===b.task_id;
 const isPending=r=>r?.disposition==='pending'&&r.delivery==='pending';
 const complete=r=>!!(r?.complete&&r.id&&r.task_id&&r.digest&&Number.isInteger(r.revision)&&r.action?.input&&typeof r.action.input==='object'&&!Array.isArray(r.action.input));
 const canOwnResponse=(listed,detail,owner)=>!!(listed&&detail&&listed.ownership===detail.ownership&&(detail.ownership==='monitor'||detail.ownership==='caller'&&owner?.futureMacResponseCapability===true&&owner?.undecidable!==true));
-const canInspect=r=>!!(r&&r.id&&r.task_id&&r.task_id===model.taskID&&r.digest&&Number.isInteger(r.revision)&&!disabled());
+const canInspect=r=>!!(r&&r.id&&r.task_id&&inScope(r)&&r.digest&&Number.isInteger(r.revision)&&!disabled());
 const refreshKeepsInspection=(detail,listed,success=true)=>!!(success&&identityMatches(detail,listed)&&isPending(listed));
 const pendingCount=()=>model.requests.filter(isPending).length;
 const pendingRows=()=>model.requests.filter(isPending).sort((a,b)=>(a.created_at-b.created_at)||a.id.localeCompare(b.id));
 const notify=()=>HF.refreshApprovalPresentation?.();
-const canRespond=()=>{const r=model.detail,listed=model.requests.find(x=>x.id===model.selectedID);return !!(model.current&&r?.id!==model.uncertain&&r?.id!==model.lost&&!model.undecidable&&knownRequest(r)&&complete(r)&&actionView(r).covered&&r.task_id===model.taskID&&identityMatches(listed,r)&&canOwnResponse(listed,r,model)&&isPending(r)&&isPending(listed)&&r.deadline>now()&&listed.deadline>now()&&!disabled())};
+const canRespond=()=>{const r=model.detail,listed=model.requests.find(x=>x.id===model.selectedID);return !!(model.current&&r?.id!==model.uncertain&&r?.id!==model.lost&&!model.undecidable&&knownRequest(r)&&complete(r)&&actionView(r).covered&&inScope(r)&&identityMatches(listed,r)&&canOwnResponse(listed,r,model)&&isPending(r)&&isPending(listed)&&r.deadline>now()&&listed.deadline>now()&&!disabled())};
 const clone=value=>JSON.parse(JSON.stringify(value));
 const controller=HF.approvalController={
  get state(){return model},
  reset(state){generation++;model={taskID:'abc12345',futureMacResponseCapability:false,...scenario(state)}},
+ resetRun(state){const next=runScenario(state);generation++;model=next?{...next}:{taskID:null,requests:[],total:0,futureMacResponseCapability:false}},
  deactivate(){generation++;model={taskID:null,requests:[],total:0,futureMacResponseCapability:false}},
  identityMatches,canInspect,refreshKeepsInspection,canRespond,pendingCount,isPending,
  inspect(id,suppliedDetail){
@@ -189,7 +202,7 @@ const controller=HF.approvalController={
   return ()=>{
    if(settled||generation!==token||model!==owner)return false;settled=true;
    const listed=owner.requests.find(r=>r.id===detail.id),currentDetail=owner.detail;
-   if(!owner.submitting||owner.selectedID!==detail.id||!complete(detail)||!identityMatches(currentDetail,detail)||!isPending(currentDetail)||!identityMatches(listed,detail)||!canOwnResponse(listed,detail,owner)||!isPending(listed)||listed.task_id!==owner.taskID||detail.deadline<=now()||listed.deadline<=now()){
+   if(!owner.submitting||owner.selectedID!==detail.id||!complete(detail)||!identityMatches(currentDetail,detail)||!isPending(currentDetail)||!identityMatches(listed,detail)||!canOwnResponse(listed,detail,owner)||!isPending(listed)||!inScope(listed,owner)||detail.deadline<=now()||listed.deadline<=now()){
     owner.submitting=false;owner.error='The request is no longer current and was not changed.';notify();return false;
    }
    const result={...detail,disposition:decision==='approve'?'approved':'denied',delivery:'delivered',execution_outcome:'not_observed',decision};
@@ -200,15 +213,14 @@ const controller=HF.approvalController={
  respond(decision){const settle=this.beginResponse(decision);if(!settle)return false;setTimeout(settle,350);return true}
 };
 controller.reset('monitor-pending');
-HF.approvalPanel=()=>{
- const task=HF.taskDetailContext?.task||HF.currentTask;if(!task?.approvalFixture)return '';
+const panelHTML=()=>{
  const visible=model.total>0||!!model.error||!!model.loading;if(!visible)return '';
  if(model.loading)return `<div class="approval-card approval-inline" tabindex="-1" aria-label="Caller approvals"><header><strong>Caller approvals</strong><button type="button" data-action="approval-refresh" disabled>Refresh</button></header><p class="approval-metadata" role="status">Loading approval requests…</p></div>`;
  const rows=model.requests.slice().sort((a,b)=>{const pri=x=>x.delivery==='delivery_unknown'?1:(x.disposition==='pending'||['reserved','sending'].includes(x.delivery)?0:2);return pri(a)-pri(b)||(a.created_at-b.created_at)||a.id.localeCompare(b.id)});
  const item=r=>{const d=model.detail;const chosen=model.selectedID===r.id&&!!d;const view=chosen?d:r;const action=chosen?actionView(d):null;const g=chosen?guidance(d):null;const prov=provenance(view);
   const controls=!chosen||g?.hide?'':canOwnResponse(r,d,model)?`<div class="approval-buttons"><button type="button" data-action="approval-decision:approve" ${canRespond()?'':'disabled'}>Approve once</button><button type="button" data-action="approval-decision:reject" ${canRespond()?'':'disabled'}>Reject</button></div>${d.ownership==='caller'?'<p class="approval-readonly">Respond here or through the owning client.</p>':''}`:d.ownership==='caller'&&model.futureMacResponseCapability===true?'<p class="approval-readonly">Respond here or through the owning client.</p>':'<p class="approval-readonly">This engine does not support Mac responses. Respond through the owning caller’s MCP or CLI.</p>';
   const details=chosen?`<div class="approval-detail"><div class="approval-action-focus" tabindex="0" aria-label="Requested action">${action.content}</div>${action.reason}<div class="approval-metadata">Status: ${esc(statusLabel(d))}${prov?` · ${esc(prov)}`:''}</div>${g?`<p class="approval-note ${g.tone}" role="status">${esc(g.text)}</p>`:''}${controls}</div>`:'';
-  return `<div class="approval-request" tabindex="-1"><button type="button" class="approval-inspect" data-action="approval-inspect:${esc(r.id)}" ${disabled()?'':'aria-label="Inspect '+esc((chosen&&action?action.title:r.tool_name)+' action')+'"'} ${disabled()?'disabled':''}>${chosen&&action?esc(action.title):'Review '+esc(r.tool_name)+' action'}</button><div class="approval-metadata">${esc(statusLabel(view))}${prov?` · ${esc(prov)}`:''}${view.decided_by==='harflow'&&view.system_reason?` · ${esc(view.system_reason)}`:''}${view.workflow_node_name?` · Workflow step: ${esc(view.workflow_node_name)}`:''}</div>${details}</div>`};
+  return `<div class="approval-request" tabindex="-1"><button type="button" class="approval-inspect" data-action="approval-inspect:${esc(r.id)}" ${disabled()?'':'aria-label="Inspect '+esc((chosen&&action?action.title:r.tool_name)+' action')+'"'} ${disabled()?'disabled':''}>${chosen&&action?esc(action.title):'Review '+esc(r.tool_name)+' action'}</button><div class="approval-metadata">${esc(statusLabel(view))}${prov?` · ${esc(prov)}`:''}${view.decided_by==='harflow'&&view.system_reason?` · ${esc(view.system_reason)}`:''}${view.workflow_node_name?` · Workflow step: ${esc(view.workflow_node_name)}`:''}${view.task_title?` · Agent task: ${esc(view.task_title)}`:''}</div>${details}</div>`};
  const refresh=`<button type="button" data-action="approval-refresh" ${disabled()?'disabled':''}>Refresh</button>`;
  const notices=`${model.error?`<p class="approval-error" role="status">${esc(model.error)}</p>`:''}${model.notice?`<p class="approval-notice" role="status">${esc(model.notice)}</p>`:''}`;
  if(model.separate){
@@ -217,6 +229,11 @@ HF.approvalPanel=()=>{
  }
  return `<div class="approval-card approval-inline" tabindex="-1" aria-label="Caller approvals"><header><strong>Caller approvals (${model.total})</strong>${refresh}</header>${rows.map(item).join('')}${model.cursor?`<button class="approval-more" type="button" data-action="approval-page" ${disabled()?'disabled':''}>Load more requests</button>`:''}${notices}</div>`;
 };
+HF.approvalPanel=()=>{
+ const task=HF.taskDetailContext?.task||HF.currentTask;if(!task?.approvalFixture)return '';
+ return panelHTML();
+};
+HF.approvalRunPanel=()=>model.byRun?panelHTML():'';
 HF.approvalTail=()=>{
  if(model.stopped)return '<div class="ta-finished cancelled" role="status"><span>Task stopped</span></div>';
  const pending=pendingRows();

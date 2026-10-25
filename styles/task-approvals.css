@@ -57,3 +57,25 @@
 .approval-change { display:grid; gap:4px; padding-top:4px; border-top:1px solid var(--hairline); }
 .approval-change > .approval-context { overflow-wrap:anywhere; }
 .approval-change > .approval-context strong { color:var(--primaryText); font-weight:600; }
+
+/* Caller approvals in the 288-point workflow run sidebar */
+.wfr-approvals { display:grid; gap:8px; margin:0 0 14px; min-width:0; }
+.wfr-approvals .approval-inline { width:100%; min-width:0; box-sizing:border-box; padding:10px; }
+.wfr-approvals .approval-inline + .approval-inline { margin-top:0; }
+.wfr-approvals .approval-card button { min-height:0; height:auto; padding:0; border:0; border-radius:0; background:transparent; color:var(--primaryText); font-family:inherit; font-size:12px; font-weight:400; line-height:16px; }
+.wfr-approvals .approval-card button:hover { background:transparent; }
+.wfr-approvals .approval-card > header { flex-wrap:wrap; }
+.wfr-approvals .approval-card > header button { color:var(--secondaryText); }
+.wfr-approvals .approval-inspect { max-width:100%; overflow-wrap:anywhere; text-align:left; }
+.wfr-approvals .approval-metadata,.wfr-approvals .approval-readonly,.wfr-approvals .approval-note,.wfr-approvals .approval-context { overflow-wrap:anywhere; }
+.wfr-approvals .approval-inputs > div { grid-template-columns:1fr; gap:1px; }
+.wfr-approvals .approval-detail pre.approval-scroll { max-height:140px; white-space:pre-wrap; }
+.wfr-approvals .approval-detail pre { white-space:pre-wrap; overflow:auto; max-height:140px; }
+.wfr-approvals .approval-action-focus { min-width:0; }
+.wfr-approvals .approval-card .approval-buttons button { min-height:32px; padding:6px 12px; border:1px solid var(--accentFill); border-radius:var(--radius-row); background:var(--accentFill); color:var(--onAccent); font-weight:600; }
+.wfr-approvals .approval-card .approval-buttons button:last-child { border-color:var(--dangerFG); background:transparent; color:var(--dangerFG); }
+.wfr-approvals .approval-card .approval-buttons button:disabled { opacity:.42; }
+.wfr-approvals .approval-card button:focus-visible,.wfr-approvals .approval-action-focus:focus-visible { outline:2px solid var(--accentLink); outline-offset:2px; }
+.wfr-approvals p,.wfr-approvals dl,.wfr-approvals dd { margin:0; }
+.wfr-approvals .approval-inline { border:1px solid var(--hairline); }
+.wfr-approvals .approval-reason > p { max-height:96px; }

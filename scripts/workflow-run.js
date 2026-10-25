@@ -7,7 +7,9 @@
   const isSetupRun = state => (HF.setupRunStates || []).includes(state);
   const isCouncil = state => (HF.councilRunStates || ['council']).includes(state);
   const investigationCall = () => ({ id: 'workflow-investigation-call-1', title: 'Inspect session recovery', backend: 'codex', status: 'completed', result: 'The session state is persisted correctly.' });
-  const newState = route => ({ route: route.state, mode: route.state === 'parallel' ? 'parallel' : 'graph', selection: isCouncil(route.state) ? 'council' : route.state === 'teardown-pending' ? 'end' : ['setup-running', 'setup-failed'].includes(route.state) ? 'start' : selectedRoutes.has(route.state) ? (route.state.startsWith('on-demand') ? 'on-demand' : 'implementation') : null, nodeType: 'implementation', attempt: route.state === 'attempts' ? 2 : 1, recoveryOpen: route.state === 'attention' || route.state === 'settling', recoveryBusy: route.state === 'settling', requiresAnswer: false, exhaustedRetries: route.state === 'attention', canSkipOptionalReview: route.state === 'attention', extraAttempts: 0, recoveryInstructions: '', expanded: false, showReason: false, goalEditing: false, goal: 'Ship a reliable workflow run with clear activity and recovery.', goalDraft: 'Ship a reliable workflow run with clear activity and recovery.', goalDraftInitialized: false, deciding: ['running', 'starting'].includes(route.state), lastReason: route.state === 'running' ? 'The previous node completed successfully. The orchestrator is evaluating the next assignment.' : '', runReason: route.state === 'attention' ? 'Implementation reached its attempt limit.' : '', recoveryQuestion: '', diagnostics: [], selectedActivation: false, zoom: 1, disclosures: { request: false, goal: false, technical: false }, feedScroll: {}, canvasScroll: 0, canvasScrollLeft: 0, parallelScroll: 0, parallelLaneScrollLeft: 0, sidebarScroll: 0, focusTarget: null, commandOpen: false, teardown: 'pending' });
+  const baseState = state => /^run-approval-/.test(state) ? 'running' : state;
+  const newStateFor = route => ({ route: route.state, mode: route.state === 'parallel' ? 'parallel' : 'graph', selection: isCouncil(route.state) ? 'council' : route.state === 'teardown-pending' ? 'end' : ['setup-running', 'setup-failed'].includes(route.state) ? 'start' : selectedRoutes.has(route.state) ? (route.state.startsWith('on-demand') ? 'on-demand' : 'implementation') : null, nodeType: 'implementation', attempt: route.state === 'attempts' ? 2 : 1, recoveryOpen: route.state === 'attention' || route.state === 'settling', recoveryBusy: route.state === 'settling', requiresAnswer: false, exhaustedRetries: route.state === 'attention', canSkipOptionalReview: route.state === 'attention', extraAttempts: 0, recoveryInstructions: '', expanded: false, showReason: false, goalEditing: false, goal: 'Ship a reliable workflow run with clear activity and recovery.', goalDraft: 'Ship a reliable workflow run with clear activity and recovery.', goalDraftInitialized: false, deciding: ['running', 'starting'].includes(route.state), lastReason: route.state === 'running' ? 'The previous node completed successfully. The orchestrator is evaluating the next assignment.' : '', runReason: route.state === 'attention' ? 'Implementation reached its attempt limit.' : '', recoveryQuestion: '', diagnostics: [], selectedActivation: false, zoom: 1, disclosures: { request: false, goal: false, technical: false }, feedScroll: {}, canvasScroll: 0, canvasScrollLeft: 0, parallelScroll: 0, parallelLaneScrollLeft: 0, sidebarScroll: 0, focusTarget: null, commandOpen: false, teardown: 'pending' });
+  const newState = source => ({ ...newStateFor({ ...source, state: baseState(source.state) }), approvalRoute: /^run-approval-/.test(source.state) ? source.state : '' });
   const getState = () => {
     const route = HF.route || { state: 'running' };
     if (!states.has(route.state)) states.set(route.state, newState(route));
@@ -85,7 +87,8 @@
     const parentOwned = ['parent-owned', 'child-workflow'].includes(state);
     const canReviseGoal = ['running', 'paused', 'attention'].includes(state) && !current.recoveryBusy;
     const goal = current.goalEditing ? `<label class="wfr-goal-editor">Revised workflow goal<textarea id="wfr-goal-draft">${esc(current.goalDraft)}</textarea></label><div class="wfr-goal-actions">${button('Cancel', 'wr-goal-cancel', 'quiet')}<button data-action="wr-goal-save" ${current.recoveryBusy || !current.goalDraft.trim() ? 'disabled' : ''}>Save goal</button></div>` : `<p>${esc(current.goal)}</p>${canReviseGoal ? button('Revise goal…', 'wr-goal-edit', 'quiet') : '<p class="wf-help">'+(parentOwned ? 'The owning workflow controls goal revisions.' : 'Goal revisions are unavailable for this run state.')+'</p>'}`;
-    return `<div class="wfr-sidebar-default"><details class="wfr-accordion" data-disclosure="request" ${current.disclosures.request ? 'open' : ''}><summary>${parentOwned ? 'Assignment for this child' : 'Original request'}</summary><p>Improve session reliability while preserving recovery behavior.</p></details><details class="wfr-accordion" data-disclosure="goal" ${current.disclosures.goal ? 'open' : ''}><summary>Goal · revision 0</summary>${goal}<details class="wfr-accordion wfr-history"><summary>Revision history</summary><p>Revision 0</p><p>Ship a reliable workflow run with clear activity and recovery.</p></details></details><details class="wf-plan" open><summary><strong>Plan · ${completed} of 2 completed</strong><div class="wf-progress"><span style="width:${completed * 50}%"></span></div></summary><ol><li>${icon('plan-completed', 'wf-plan-done')}<div><strong>Add regression coverage</strong><p class="wf-help">Orchestrator confirmed the successful test result.</p></div></li><li>${icon(state === 'completed' ? 'plan-completed' : 'plan-pending', state === 'completed' ? 'wf-plan-done' : 'wf-plan-pending')}<div><strong>Implement the change</strong></div></li></ol></details><details class="wfr-accordion" data-disclosure="technical" ${current.disclosures.technical ? 'open' : ''}><summary>Technical plan</summary><p>Inspect current behavior, preserve task identity, implement the change, and verify recovery.</p></details></div>`;
+    const approvals = current.approvalRoute ? HF.approvalRunPanel?.() || '' : '';
+    return `<div class="wfr-sidebar-default">${approvals ? `<section class="wfr-approvals" aria-label="Caller approvals">${approvals}</section>` : ''}<details class="wfr-accordion" data-disclosure="request" ${current.disclosures.request ? 'open' : ''}><summary>${parentOwned ? 'Assignment for this child' : 'Original request'}</summary><p>Improve session reliability while preserving recovery behavior.</p></details><details class="wfr-accordion" data-disclosure="goal" ${current.disclosures.goal ? 'open' : ''}><summary>Goal · revision 0</summary>${goal}<details class="wfr-accordion wfr-history"><summary>Revision history</summary><p>Revision 0</p><p>Ship a reliable workflow run with clear activity and recovery.</p></details></details><details class="wf-plan" open><summary><strong>Plan · ${completed} of 2 completed</strong><div class="wf-progress"><span style="width:${completed * 50}%"></span></div></summary><ol><li>${icon('plan-completed', 'wf-plan-done')}<div><strong>Add regression coverage</strong><p class="wf-help">Orchestrator confirmed the successful test result.</p></div></li><li>${icon(state === 'completed' ? 'plan-completed' : 'plan-pending', state === 'completed' ? 'wf-plan-done' : 'wf-plan-pending')}<div><strong>Implement the change</strong></div></li></ol></details><details class="wfr-accordion" data-disclosure="technical" ${current.disclosures.technical ? 'open' : ''}><summary>Technical plan</summary><p>Inspect current behavior, preserve task identity, implement the change, and verify recovery.</p></details></div>`;
   }
   const statusBadge = (value, elapsed = '') => `<span class="wfr-badge ${value.toLowerCase().replace(/\s+/g, '-')}">${['Running', 'Starting'].includes(value) ? '<span class="wfr-spinner" aria-hidden="true"></span>' : ''}${value}${elapsed ? `<span class="wfr-badge-elapsed">${elapsed}</span>` : ''}</span>`;
   const setupElapsed = { 'setup-running': '00:07', 'setup-failed': '00:03', 'teardown-pending': '21:04' };
@@ -157,7 +160,7 @@
     return `<footer class="wfr-summary ${expanded ? 'expanded' : ''}" id="run-summary"><div class="wfr-summary-head"><strong>Summary</strong><span ${hiddenPreview ? 'style="visibility:hidden" aria-hidden="true"' : ''}>${esc(preview)}</span><span class="spacer"></span>${showLatest}${button(icon(expanded ? 'chevron-down' : 'chevron-up')+`<span class="wf-sr-only">${expanded ? 'Collapse' : 'Expand'} summary</span>`, 'wr-summary', 'quiet')}</div>${expanded ? `<div class="wfr-summary-details">${decision ? `<div class="wfr-decision-line" ${hiddenDecision ? 'style="visibility:hidden" aria-hidden="true"' : ''}>${esc(decision)}${current.lastReason && !current.deciding ? button('Show more','wr-reason','link') : ''}</div>` : ''}${reason}${diagnostics}</div>` : ''}</footer>`;
   }
   HF.renderRun = state => {
-    const current = getState(); current.route = state;
+    const current = getState(); state = baseState(state); current.route = state;
     const noView = state === 'loading' || state === 'error';
     const selected = current.mode === 'graph' && current.selection;
     const setupControls = { 'setup-running': button('Cancel run', 'wr-cancel', 'wf-cancel'), 'setup-failed': button('Run again', 'wr-run-again', 'wfr-run-again primary'), 'teardown-pending': button('Run again', 'wr-run-again', 'wfr-run-again glass') }[state];
@@ -190,6 +193,7 @@
     const key = route?.screen === 'workflow-run' ? `${route.state}/${route.theme}` : '';
     if (key !== lastRouteKey) { states.clear(); clearTimeout(teardownTimer); teardownGeneration += 1; }
     lastRouteKey = key;
+    if (route?.screen === 'workflow-run') HF.approvalController?.resetRun(route.state);
     if (key && !states.has(route.state)) states.set(route.state, newState(route));
   };
   HF.afterWorkflowRunRender = () => {
@@ -226,6 +230,20 @@
     const restore = getState().focusTarget;
     if (restore) { stage.querySelector(`[data-action="${CSS.escape(restore)}"]`)?.focus({ preventScroll: true }); getState().focusTarget = null; }
   }
+  HF.refreshRunApprovals = () => { if (HF.approvalController?.state.byRun) renderCurrent(); };
+  document.addEventListener('click', event => {
+    const target = event.target.closest?.('#run-sidebar [data-action^="approval-"]');
+    const controller = HF.approvalController;
+    if (!target || target.disabled || HF.route?.screen !== 'workflow-run' || !controller?.state.byRun) return;
+    event.preventDefault(); event.stopImmediatePropagation();
+    const [action, value] = target.dataset.action.split(':');
+    getState().focusTarget = target.dataset.action;
+    if (action === 'approval-inspect') controller.inspect(value);
+    else if (action === 'approval-refresh') controller.refresh();
+    else if (action === 'approval-page') controller.loadMore();
+    else if (action === 'approval-decision') controller.respond(value);
+    renderCurrent();
+  }, true);
   function runHandler(event) {
     const target = event.target.closest('[data-action^="wr-"], .parallel-lane [data-action^="parallel-"]');
     if (!target || !target.isConnected || HF.route?.screen !== 'workflow-run') return;

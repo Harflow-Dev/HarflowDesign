@@ -1865,6 +1865,7 @@ test('compact workflow-run sidebar proposal (#15) covers every state that can di
     const status = hf.specimenStatus('workflow-run', state);
     if (state.startsWith('council')) { assert.equal(status.kind, 'exploratory'); assert.deepEqual(Array.from(status.tickets), ['#17', '#15']); display.pop(); continue; }
     if (['setup-running', 'setup-failed', 'teardown-pending'].includes(state)) { assert.equal(status.kind, 'exploratory'); assert.deepEqual(Array.from(status.tickets), ['#21', 'HarflowMCP#41']); if (canShowCompact) display.pop(); continue; }
+    if (state.startsWith('run-approval-')) { assert.equal(status.kind, 'exploratory'); assert.deepEqual(Array.from(status.tickets), ['#13', '#14']); if (canShowCompact) display.pop(); continue; }
     assert.equal(status.kind === 'contains-exploratory', canShowCompact, `workflow-run/${state} #15 element metadata`);
     if (canShowCompact) assert.deepEqual(Array.from(status.tickets), ['#15']);
   }
@@ -4678,4 +4679,36 @@ test('uncertainty and ownership loss follow the submitted request, not the selec
   assert.equal(hf.approvalController.beginResponse('reject'), null);
   hf.approvalController.refresh({ requests: hf.approvalController.state.requests, total: 1 });
   assert.equal(hf.approvalController.canRespond(), false);
+});
+
+test('run sidebar approval states render caller approvals above the request and goal', () => {
+  const hf = loadDesignRuntime();
+  const family = hf.screens.find(f => f.id === 'workflow-run');
+  const render = state => { hf.route = { screen: 'workflow-run', state, theme: 'light' }; hf.resetWorkflowRun(hf.route); return hf.renderRun(state); };
+  const sidebar = html => /<aside class="wfr-run-sidebar"[\s\S]*?<\/aside>/.exec(html)[0];
+  const text = html => html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
+  for (const state of ['run-approval-pending', 'run-approval-multiple', 'run-approval-settled', 'run-approval-legacy']) {
+    assert.ok(family.states.includes(state));
+    assert.equal(hf.specimenStatus('workflow-run', state).kind, 'exploratory');
+  }
+  const pending = sidebar(render('run-approval-pending'));
+  assert.ok(pending.indexOf('wfr-approvals') < pending.indexOf('Original request'), 'approvals precede the request');
+  assert.match(text(pending), /Workflow step: Implement/);
+  assert.match(text(pending), /Agent task: Implement persistence checks/);
+  assert.match(pending, /data-action="approval-decision:approve"/);
+  assert.doesNotMatch(text(pending), /task_0|approval_0|sha256/);
+  const multiple = text(sidebar(render('run-approval-multiple')));
+  assert.match(multiple, /Approval request 1 of 2\+/);
+  assert.match(multiple, /Workflow step: Review/);
+  assert.match(multiple, /More requests are pending/);
+  assert.equal(hf.approvalController.inspect('approval_02'), true, 'run-scoped requests from other tasks can be inspected');
+  assert.match(text(hf.approvalRunPanel()), /Sources\/Persistence\/Store\.swift/);
+  assert.equal(hf.approvalController.canRespond(), true);
+  const settled = text(sidebar(render('run-approval-settled')));
+  assert.match(settled, /Answered from Monitor/);
+  assert.match(settled, /expired/);
+  const legacy = sidebar(render('run-approval-legacy'));
+  assert.match(text(legacy), /does not support Mac responses/);
+  assert.doesNotMatch(legacy, /approval-decision/);
+  assert.doesNotMatch(sidebar(render('running')), /wfr-approvals/);
 });
