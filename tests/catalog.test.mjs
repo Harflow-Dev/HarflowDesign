@@ -3520,12 +3520,21 @@ test('the setup-review sheet gates Run on review and a Repository edit asks agai
   // Catalog hook: disabled until reviewed, other states unaffected, busy stays disabled in the catalog expression.
   assert.equal(hf.launchRunDisabled('setup-review'), true);
   for (const state of ['launch', 'busy', 'validation', 'library']) assert.equal(!!hf.launchRunDisabled(state), false, state);
-  assert.match(fs.readFileSync(path.join(root, 'scripts/catalog.js'), 'utf8'), /x\.disabled=state==='busy'\|\|!!HF\.launchRunDisabled\?\.\(state\)/);
+  // Run the catalog render's own disable step (extracted from catalog.js, which needs the full page to load) against stub buttons.
+  const statement = /document\.querySelectorAll\('\[data-action="launch-workflow"\]'\)\.forEach\([^;]*\);/.exec(fs.readFileSync(path.join(root, 'scripts/catalog.js'), 'utf8'))?.[0];
+  assert.ok(statement, 'the catalog disable step exists');
+  const catalogDisabled = state => { const button = { disabled: null }; new Function('document', 'HF', 'state', statement)({ querySelectorAll: selector => selector === '[data-action="launch-workflow"]' ? [button] : [] }, hf, state); return button.disabled; };
+  assert.equal(catalogDisabled('setup-review'), true, 'unreviewed');
+  assert.equal(catalogDisabled('launch'), false);
+  assert.equal(catalogDisabled('busy'), true, 'busy stays disabled');
+  assert.equal(catalogDisabled('validation'), false);
   const fire = (type, target) => hf.__dispatchDesignEvent({ type, target, preventDefault() {}, stopImmediatePropagation() {} });
   const reviewed = checked => ({ checked, closest: () => null, matches: selector => selector === '[data-su-reviewed]' });
   fire('change', reviewed(true));
   assert.equal(hf.launchRunDisabled('setup-review'), false);
   assert.equal(run.disabled, false, 'Run is enabled once reviewed');
+  assert.equal(catalogDisabled('setup-review'), false, 'the catalog step enables Run once reviewed');
+  assert.equal(catalogDisabled('busy'), true);
   assert.match(hf.renderLaunch('setup-review'), /data-su-reviewed checked>/);
   assert.match(hf.renderLaunch('setup-review'), /data-action="launch-workflow" >Run/);
   fire('change', reviewed(false));
@@ -3556,41 +3565,55 @@ test('the setup-review sheet gates Run on review and a Repository edit asks agai
 });
 
 test('setup-review keeps the review across an appearance change', () => {
-  const hf = loadDesignRuntime({ captureEvents: true, querySelectorOverride: () => ({}) });
+  const run = { disabled: true }, box = { checked: false };
+  const hf = loadDesignRuntime({ captureEvents: true, querySelectorOverride: selector => ({ '[data-action="launch-workflow"]': run, '[data-su-reviewed]': box })[selector] });
   hf.route = { theme: 'light', screen: 'workflow-launch', state: 'setup-review' };
   hf.resetLaunchProposals();
   hf.__dispatchDesignEvent({ type: 'change', target: { checked: true, closest: () => null, matches: s => s === '[data-su-reviewed]' }, preventDefault() {}, stopImmediatePropagation() {} });
-  hf.route = { theme: 'dark', screen: 'workflow-launch', state: 'setup-review' };
-  assert.equal(hf.launchRunDisabled('setup-review'), false, 'an appearance change does not reset the review');
+  assert.equal(hf.launchRunDisabled('setup-review'), false);
+  // Drive the real appearance controller; it publishes the theme without re-rendering the page.
+  const root = { dataset: {} }, writes = [];
+  const controller = hf.createAppearanceController({ storage: { getItem: () => null, setItem: (key, value) => writes.push([key, value]) }, matchMedia: () => ({ matches: false, addEventListener() {} }), document: { documentElement: root, querySelectorAll: () => [], querySelector: () => null }, location: { hash: '#workflow-launch/setup-review/system' }, history: { replaceState() {} } });
+  controller.setPreview('dark');
+  assert.equal(root.dataset.theme, 'dark');
+  controller.setPreference('light');
+  assert.equal(hf.appearance, controller);
+  assert.equal(hf.launchRunDisabled('setup-review'), false, 'the review survives the appearance change');
+  assert.equal(run.disabled, false);
   assert.match(hf.renderLaunch('setup-review'), /data-su-reviewed checked>/);
+  assert.match(hf.renderLaunch('setup-review'), /data-action="launch-workflow" >Run/);
 });
 
 test('setup and teardown commands are escaped in the editor and the sheet', () => {
   const hf = loadDesignRuntime({ captureEvents: true, querySelectorOverride: () => undefined });
   const nasty = 'echo "<b>x</b> & done" > "$HARFLOW_WORKSPACE/a<b>.txt"';
-  hf.setupFixture.commands.newFolder = nasty;
-  hf.setupFixture.commands.worktree = nasty;
-  hf.setupFixture.commands.teardown = nasty;
-  setupRoute(hf, 'start-new-folder');
-  const editorHtml = hf.renderEditor('start-new-folder');
-  assert.ok(editorHtml.includes('echo &quot;&lt;b&gt;x&lt;/b&gt; &amp; done&quot;'), 'editor textarea is escaped');
-  assert.doesNotMatch(editorHtml, /<b>x<\/b>/);
-  const editor = setupRoute(hf, 'end-teardown');
-  editor.patchFields('end:end', { teardownCommand: nasty }, true);
-  const endHtml = hf.renderEditor('end-teardown');
-  assert.ok(endHtml.includes('&lt;b&gt;x&lt;/b&gt; &amp; done&quot;'));
-  assert.doesNotMatch(endHtml, /<b>x<\/b>/);
-  hf.route = { theme: 'light', screen: 'workflow-launch', state: 'setup-review' };
-  hf.resetLaunchProposals();
-  const sheet = hf.renderLaunch('setup-review');
-  assert.ok(sheet.includes('echo &quot;&lt;b&gt;x&lt;/b&gt; &amp; done&quot;'), 'sheet commands are escaped');
-  assert.doesNotMatch(sheet, /<b>x<\/b>/);
-  assert.equal((sheet.match(/&lt;b&gt;x&lt;\/b&gt;/g) || []).length, 2, 'setup and teardown');
-  // The Repository value is escaped too.
-  hf.__dispatchDesignEvent({ type: 'input', target: { value: '~/a"<&', closest: () => null, matches: s => s === '[data-su-repo]' }, preventDefault() {}, stopImmediatePropagation() {} });
-  const after = hf.renderLaunch('setup-review');
-  assert.ok(after.includes('value="~/a&quot;&lt;&amp;"'));
-  assert.ok(after.includes('data-su-launch-dir>~/a&quot;&lt;&amp;<'));
+  const saved = { ...hf.setupFixture.commands };
+  try {
+    Object.assign(hf.setupFixture.commands, { worktree: nasty, teardown: nasty, newFolder: nasty });
+    const escaped = 'echo &quot;&lt;b&gt;x&lt;/b&gt; &amp; done&quot;';
+    for (const route of hf.setupRoutes) {
+      setupRoute(hf, route);
+      const html = hf.renderEditor(route);
+      assert.ok(html.includes(escaped), `${route} editor textarea is escaped`);
+      assert.doesNotMatch(html, /<b>x<\/b>/, route);
+    }
+    hf.route = { theme: 'light', screen: 'workflow-launch', state: 'setup-review' };
+    hf.resetLaunchProposals();
+    const sheet = hf.renderLaunch('setup-review');
+    assert.ok(sheet.includes(escaped), 'sheet commands are escaped');
+    assert.doesNotMatch(sheet, /<b>x<\/b>/);
+    assert.equal((sheet.match(/&lt;b&gt;x&lt;\/b&gt;/g) || []).length, 2, 'setup and teardown');
+    // The Repository value is escaped too.
+    hf.__dispatchDesignEvent({ type: 'input', target: { value: '~/a"<&', closest: () => null, matches: s => s === '[data-su-repo]' }, preventDefault() {}, stopImmediatePropagation() {} });
+    const after = hf.renderLaunch('setup-review');
+    assert.ok(after.includes('value="~/a&quot;&lt;&amp;"'));
+    assert.ok(after.includes('data-su-launch-dir>~/a&quot;&lt;&amp;<'));
+  } finally {
+    Object.assign(hf.setupFixture.commands, saved);
+  }
+  assert.equal(hf.setupFixture.commands.worktree, saved.worktree, 'the fixture is restored');
+  setupRoute(hf, 'start-setup');
+  assert.doesNotMatch(hf.renderEditor('start-setup'), /&lt;b&gt;/);
 });
 
 test('council editor markup and run markup stay inside their own states', () => {
