@@ -7,3 +7,4 @@
 
 /* Catalog-level status label for exploratory specimens; it sits outside the native app surface. */
 .exploratory-kicker{width:fit-content;max-width:100%;margin:0 0 10px;padding:6px 10px;border:1px solid #d4d9e3;border-left:3px solid #8a5a00;border-radius:6px;background:#fff;color:#4a4f5e;font-size:12px;line-height:1.4}
+.nav-group{margin:0 0 10px}.nav-group ul{list-style:none;margin:0;padding:0}.nav-group-title{margin:12px 11px 4px;color:#8a91a0;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase}

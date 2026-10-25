@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add an exploratory Harflow web family (HarflowWeb#1, HarflowWeb#2): the workflow Triggers tab, a trigger editor with a local draft, the Incoming delivery log with filters and an inspector, and a failed run with Run again. The catalog groups families under macOS and Harflow web, sets the eyebrow per platform, and accepts HarflowWeb ticket references.
+
 - Add exploratory setup and teardown run states (`setup-running`, `setup-failed`, `teardown-pending`) with a run pane for the setup or teardown command, output and Command disclosure, a mock Run teardown, and Run again.
 
 - Add exploratory workflow setup and teardown proposals: Setup and Teardown commands on the Start and End inspectors (`start-setup`, `start-new-folder`, `end-teardown`) and a Run sheet command review (`workflow-launch/setup-review`) that keeps Run disabled until the commands are reviewed, shown without a native source.
