@@ -19,6 +19,7 @@ This glossary governs user-facing design copy. The terminology was requested dur
 | MCP client | Application connecting to Harflow through MCP. |
 | Access level | Requested read/write/publish scope. Describe actual enforced permissions separately. |
 | Activity | Event stream shown to users. |
+| Council member | Agent taking part in a Council node. Council role labels are Facilitator, Member (a required agent), Optional (its vote and failure never block the outcome), and System (messages from the Council itself). Harness stays secondary text and is never the speaker. |
 | Harflow | Application/product name. Historical source paths may retain older names where needed for accurate provenance. |
 
 ## Applying the glossary

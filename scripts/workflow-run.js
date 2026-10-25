@@ -3,15 +3,16 @@
   const esc = value => HF.escape(String(value ?? ''));
   const button = HF.button;
   const selectedRoutes = new Set(['selected-node', 'attempts', 'on-demand-not-called', 'on-demand-calls', 'child-session', 'child-workflow', 'missing-task']);
-  const terminal = new Set(['completed', 'cancelled']);
+  const terminal = new Set(['completed', 'cancelled', 'council-failed']);
+  const isCouncil = state => (HF.councilRunStates || ['council']).includes(state);
   const investigationCall = () => ({ id: 'workflow-investigation-call-1', title: 'Inspect session recovery', backend: 'codex', status: 'completed', result: 'The session state is persisted correctly.' });
-  const newState = route => ({ route: route.state, mode: route.state === 'parallel' ? 'parallel' : 'graph', selection: route.state === 'council' ? 'council' : selectedRoutes.has(route.state) ? (route.state.startsWith('on-demand') ? 'on-demand' : 'implementation') : null, nodeType: 'implementation', attempt: route.state === 'attempts' ? 2 : 1, recoveryOpen: route.state === 'attention' || route.state === 'settling', recoveryBusy: route.state === 'settling', requiresAnswer: false, exhaustedRetries: route.state === 'attention', canSkipOptionalReview: route.state === 'attention', extraAttempts: 0, recoveryInstructions: '', expanded: false, showReason: false, goalEditing: false, goal: 'Ship a reliable workflow run with clear activity and recovery.', goalDraft: 'Ship a reliable workflow run with clear activity and recovery.', goalDraftInitialized: false, deciding: ['running', 'starting'].includes(route.state), lastReason: route.state === 'running' ? 'The previous node completed successfully. The orchestrator is evaluating the next assignment.' : '', runReason: route.state === 'attention' ? 'Implementation reached its attempt limit.' : '', recoveryQuestion: '', diagnostics: [], selectedActivation: false, zoom: 1, disclosures: { request: false, goal: false, technical: false }, feedScroll: {}, canvasScroll: 0, canvasScrollLeft: 0, parallelScroll: 0, parallelLaneScrollLeft: 0, sidebarScroll: 0, focusTarget: null });
+  const newState = route => ({ route: route.state, mode: route.state === 'parallel' ? 'parallel' : 'graph', selection: isCouncil(route.state) ? 'council' : selectedRoutes.has(route.state) ? (route.state.startsWith('on-demand') ? 'on-demand' : 'implementation') : null, nodeType: 'implementation', attempt: route.state === 'attempts' ? 2 : 1, recoveryOpen: route.state === 'attention' || route.state === 'settling', recoveryBusy: route.state === 'settling', requiresAnswer: false, exhaustedRetries: route.state === 'attention', canSkipOptionalReview: route.state === 'attention', extraAttempts: 0, recoveryInstructions: '', expanded: false, showReason: false, goalEditing: false, goal: 'Ship a reliable workflow run with clear activity and recovery.', goalDraft: 'Ship a reliable workflow run with clear activity and recovery.', goalDraftInitialized: false, deciding: ['running', 'starting'].includes(route.state), lastReason: route.state === 'running' ? 'The previous node completed successfully. The orchestrator is evaluating the next assignment.' : '', runReason: route.state === 'attention' ? 'Implementation reached its attempt limit.' : '', recoveryQuestion: '', diagnostics: [], selectedActivation: false, zoom: 1, disclosures: { request: false, goal: false, technical: false }, feedScroll: {}, canvasScroll: 0, canvasScrollLeft: 0, parallelScroll: 0, parallelLaneScrollLeft: 0, sidebarScroll: 0, focusTarget: null });
   const getState = () => {
     const route = HF.route || { state: 'running' };
     if (!states.has(route.state)) states.set(route.state, newState(route));
     return states.get(route.state);
   };
-  const status = state => ({ running: 'Running', starting: 'Starting', paused: 'Paused', attention: 'Needs attention', settling: 'Cancelling', completed: 'Completed', cancelled: 'Cancelled', error: 'Unavailable', loading: 'Loading', 'parent-owned': 'Parent controlled' })[state] || 'Running';
+  const status = state => ({ running: 'Running', starting: 'Starting', paused: 'Paused', attention: 'Needs attention', settling: 'Cancelling', completed: 'Completed', cancelled: 'Cancelled', 'council-failed': 'Failed', error: 'Unavailable', loading: 'Loading', 'parent-owned': 'Parent controlled' })[state] || 'Running';
   const runTitle = 'Session reliability';
   const icon = (type, extra = '') => `<span class="wf-symbol ${extra}" style="--wf-symbol:url(../assets/symbols/${type}.png)" aria-hidden="true"></span>`;
   const nodeDefinitions = [
@@ -21,18 +22,19 @@
     { type: 'review', name: 'Review', x: 650, backend: 'Codex', status: 'Pending' },
     { type: 'end', name: 'End', x: 900, width: 72, status: 'Pending' }
   ];
-  const councilDefinitions = [
+  // Downstream of the Council node: Review runs next once the council reaches consensus, otherwise it waits.
+  const councilDefinitions = state => [
     { type: 'start', name: 'Start', x: 28, width: 72, status: 'Completed' },
     { type: 'planning', name: 'Plan', x: 150, backend: 'Codex', status: 'Completed' },
-    { type: 'council', name: 'Council', x: 400, status: 'Running' },
-    { type: 'review', name: 'Review', x: 650, backend: 'Codex', status: 'Pending' },
+    { type: 'council', name: 'Council', x: 400, status: HF.councilRunSummary(state).status },
+    { type: 'review', name: 'Review', x: 650, backend: 'Codex', status: state === 'council-consensus' ? 'Running' : 'Pending' },
     { type: 'end', name: 'End', x: 900, width: 72, status: 'Pending' }
   ];
   function graph(state) {
     const current = getState();
-    const council = state === 'council';
-    const nodes = (council ? councilDefinitions : nodeDefinitions).map(node => {
-      if (council) return councilNode(node, current.mode === 'graph' && current.selection === node.type);
+    const council = isCouncil(state);
+    const nodes = (council ? councilDefinitions(state) : nodeDefinitions).map(node => {
+      if (council) return councilNode(node, current.mode === 'graph' && current.selection === node.type, state);
       const isSelected = current.mode === 'graph' && current.selection === node.type;
       const isAttempt = node.attempt && ['attempts', 'selected-node', 'running'].includes(state);
       const recordStatus = node.backend ? resolveTask(node.type, current.attempt).status : state === 'completed' ? 'completed' : state === 'cancelled' ? 'cancelled' : node.status.toLowerCase();
@@ -46,11 +48,13 @@
     const connector = council ? `<svg class="wf-connectors" viewBox="0 0 1050 160" aria-hidden="true">${edge([{x:100,y:46},{x:150,y:46}])}${edge([{x:350,y:46},{x:400,y:46}])}${edge([{x:600,y:46},{x:650,y:46}])}${edge([{x:850,y:46},{x:900,y:46}])}</svg>` : `<svg class="wf-connectors" viewBox="0 0 1050 160" aria-hidden="true">${edge([{x:100,y:46},{x:150,y:46}])}${edge([{x:350,y:46},{x:400,y:46}])}${edge([{x:600,y:46},{x:650,y:46}])}${edge([{x:850,y:46},{x:900,y:46}])}${edge([{x:850,y:46},{x:870,y:46},{x:870,y:-18},{x:380,y:-18},{x:380,y:46},{x:400,y:46}], true)}</svg>`;
     return `<div class="wf-canvas wf-run-canvas" id="workflow-canvas"><div class="wf-graph-inner graph-inner" id="graph-inner" data-zoom="${current.zoom}" style="transform:scale(${current.zoom})">${connector}<div class="wf-graph-row">${nodes}</div></div><div class="wf-graph-controls"><button data-action="wr-zoom:out" aria-label="Zoom out">−</button><button data-action="wr-zoom:reset" aria-label="Reset zoom">${Math.round(current.zoom * 100)}%</button><button data-action="wr-zoom:in" aria-label="Zoom in">+</button></div></div>`;
   }
-  // Council run node (#17, exploratory): members, round, and phase or outcome.
-  function councilNode(node, selected) {
-    if (node.type === 'council') return `<button type="button" class="node ${selected ? 'selected' : ''} wf-running-node" data-action="wr-select:council" style="left:${node.x}px" aria-label="Select Council"><span class="wf-node-icon wfr-council-icon" aria-hidden="true">${HF.councilGlyph}</span><strong>Council</strong><small>${esc(HF.councilRunSummary.line)}</small><small>${esc(HF.councilRunSummary.phase)}</small><span class="wfr-node-spinner wfr-spinner" aria-hidden="true"></span></button>`;
-    const completed = node.status === 'Completed';
-    return `<button type="button" class="node ${node.width ? 'wf-terminal' : ''} ${selected ? 'selected' : ''} ${completed ? 'wf-completed-node' : ''}" data-action="wr-select:${node.type}" style="left:${node.x}px;${node.width ? `width:${node.width}px` : ''}" aria-label="Select ${node.name}"><span class="wf-node-icon" aria-hidden="true">${icon(node.width && completed ? 'checkmark' : node.type)}</span><strong>${node.name}</strong>${node.backend ? `<span class="wf-backend"><i class="wf-dot codex"></i>${node.backend}</span><small>${node.status}</small>` : ''}</button>`;
+  // Council run node (#17, exploratory): members, round, and phase or outcome. Only a running node shows a spinner.
+  function councilNode(node, selected, state) {
+    const active = node.status === 'Running' && !node.width, failed = node.status === 'Failed', completed = node.status === 'Completed';
+    const classes = `node ${node.type === 'council' ? 'wfr-council-node' : ''} ${node.width ? 'wf-terminal' : ''} ${selected ? 'selected' : ''} ${active ? 'wf-running-node' : ''} ${completed ? 'wf-completed-node' : ''} ${failed ? 'wf-failed-node' : ''}`;
+    const spinner = active ? '<span class="wfr-node-spinner wfr-spinner" aria-hidden="true"></span>' : '';
+    if (node.type === 'council') { const summary = HF.councilRunSummary(state); return `<button type="button" class="${classes}" data-action="wr-select:council" style="left:${node.x}px" aria-label="Select Council"><span class="wf-node-icon wfr-council-icon" aria-hidden="true">${HF.councilGlyph}</span><strong>Council</strong><small>${esc(summary.line)}</small><small>${esc(summary.phase)}</small>${spinner}</button>`; }
+    return `<button type="button" class="${classes}" data-action="wr-select:${node.type}" style="left:${node.x}px;${node.width ? `width:${node.width}px` : ''}" aria-label="Select ${node.name}"><span class="wf-node-icon" aria-hidden="true">${icon(node.width && completed ? 'checkmark' : node.type)}</span><strong>${node.name}</strong>${node.backend ? `<span class="wf-backend"><i class="wf-dot codex"></i>${node.backend}</span><small>${node.status}</small>` : ''}${spinner}</button>`;
   }
   function standalone(state) {
     const current = getState();
@@ -122,7 +126,7 @@
     const current = getState();
     const expanded = current.expanded;
     const decision = current.deciding ? 'Orchestrator is choosing the next node…' : current.lastReason || current.runReason || (state === 'starting' ? 'Waiting for the first node' : '');
-    const preview = current.runReason || status(state).toLowerCase();
+    const preview = current.runReason || (state === 'council-failed' ? 'Failed' : status(state).toLowerCase());
     const question = current.recoveryOpen ? current.recoveryQuestion.trim() : '';
     const hiddenPreview = question && preview.trim() === question;
     const hiddenDecision = !current.deciding && !current.lastReason && question && decision.trim() === question;
@@ -139,10 +143,10 @@
     const activeMode = current.mode;
     const loadingOverlay = `<div class="wfr-loading-canvas wfr-graph-loading" aria-label="Loading workflow run"><div class="wfr-loading-graph">${[true, false, false, true].map((compact, index) => `${index ? '<i class="wfr-loading-connector"></i>' : ''}<div class="wfr-loading-node ${compact ? 'compact' : ''}"><i></i>${compact ? '' : '<i></i>'}</div>`).join('')}</div></div>`;
     const left = state === 'error' ? `<div class="wfr-error-state">${icon('attention')}<h2>Workflow could not be loaded</h2></div>` : state === 'loading' ? loadingOverlay : activeMode === 'parallel' ? `<div class="wfr-parallel">${parallelColumns()}</div>` : `<div class="wfr-run-left">${standalone(state)}${graph(state)}</div>`;
-    const sidebar = state === 'error' ? '' : selected ? (['start', 'end', 'orchestrator'].includes(current.selection) ? plan(state) : current.selection === 'council' && state === 'council' ? HF.councilActivity() : state === 'child-workflow' ? childWorkflow() : current.selection === 'on-demand' ? onDemand(state.startsWith('on-demand') ? state : 'on-demand-not-called') : activity(taskFixture(current.nodeType, current.attempt))) : state === 'loading' ? `<div class="wfr-inspector-loading"><i class="wfr-loading-heading"></i>${[0,1,2].map(() => '<div class="wfr-loading-row"><i></i><div><i></i><i></i></div></div>').join('')}</div>` : plan(state);
+    const sidebar = state === 'error' ? '' : selected ? (['start', 'end', 'orchestrator'].includes(current.selection) ? plan(state) : current.selection === 'council' && isCouncil(state) ? HF.councilActivity(state) : state === 'child-workflow' ? childWorkflow() : current.selection === 'on-demand' ? onDemand(state.startsWith('on-demand') ? state : 'on-demand-not-called') : activity(taskFixture(current.nodeType, current.attempt))) : state === 'loading' ? `<div class="wfr-inspector-loading"><i class="wfr-loading-heading"></i>${[0,1,2].map(() => '<div class="wfr-loading-row"><i></i><div><i></i><i></i></div></div>').join('')}</div>` : plan(state);
     const attention = state === 'attention' ? button(`${icon('attention')} Needs attention`, 'wr-open-recovery', 'wfr-attention') : '';
     const wideSelection = Boolean(selected && !['start', 'end', 'orchestrator'].includes(current.selection));
-    return HF.app(`<header class="wfr-toolbar ${state === 'loading' ? 'wfr-loading-header' : ''}"><div class="wfr-title"><strong>${runTitle}</strong>${statusBadge(status(state === 'error' ? 'running' : state))}<small>Run started 9:02 · HarflowMac</small></div><span class="spacer"></span>${attention}<span class="wfr-view-label">View</span><div class="wfr-view-picker" role="group" aria-label="View">${noView ? '<button class="selected" disabled>Graph</button><button disabled>Parallel</button>' : button('Graph','wr-mode:graph',activeMode==='graph'?'selected':'')+(state==='council'?'<button type="button" disabled>Parallel</button>':button('Parallel','wr-mode:parallel',activeMode==='parallel'?'selected':''))}</div>${controls}</header><div class="wfr-run-layout ${wideSelection ? 'has-selection' : ''} ${activeMode === 'parallel' ? 'parallel-mode' : ''} ${state === 'error' ? 'error-state' : ''}" data-mode="${activeMode}"><main class="wfr-run-main" id="run-main">${left}</main>${state === 'error' ? '' : `<aside class="wfr-run-sidebar" id="run-sidebar" tabindex="-1">${sidebar}</aside>`}${current.recoveryOpen ? recovery(state) : ''}</div>${summary(state)}`, 'workflow-specimen wfr-specimen', 'Workflow run');
+    return HF.app(`<header class="wfr-toolbar ${state === 'loading' ? 'wfr-loading-header' : ''}"><div class="wfr-title"><strong>${runTitle}</strong>${statusBadge(status(state === 'error' ? 'running' : state))}<small>Run started 9:02 · HarflowMac</small></div><span class="spacer"></span>${attention}<span class="wfr-view-label">View</span><div class="wfr-view-picker" role="group" aria-label="View">${noView ? '<button class="selected" disabled>Graph</button><button disabled>Parallel</button>' : button('Graph','wr-mode:graph',activeMode==='graph'?'selected':'')+(isCouncil(state)?'<button type="button" disabled>Parallel</button>':button('Parallel','wr-mode:parallel',activeMode==='parallel'?'selected':''))}</div>${controls}</header><div class="wfr-run-layout ${wideSelection ? 'has-selection' : ''} ${activeMode === 'parallel' ? 'parallel-mode' : ''} ${state === 'error' ? 'error-state' : ''}" data-mode="${activeMode}"><main class="wfr-run-main" id="run-main">${left}</main>${state === 'error' ? '' : `<aside class="wfr-run-sidebar" id="run-sidebar" tabindex="-1">${sidebar}</aside>`}${current.recoveryOpen ? recovery(state) : ''}</div>${summary(state)}`, 'workflow-specimen wfr-specimen', 'Workflow run');
   };
   let lastRouteKey = '';
   HF.workflowRunController = {
@@ -232,7 +236,6 @@
       case 'wr-goal-edit': if (!current.goalEditing) current.goalDraft = current.goal; current.goalEditing = true; current.focusTarget = 'wr-goal-cancel'; break;
       case 'wr-goal-cancel': current.goalEditing = false; current.focusTarget = 'wr-goal-edit'; break;
       case 'wr-goal-save': if (target.disabled) return; HF.feedback('Mock goal revision requested · current goal unchanged'); return;
-      case 'wr-council-jump': { const outcome = document.querySelector('#council-outcome'); if (outcome) { outcome.scrollIntoView({ block: 'center' }); outcome.focus({ preventScroll: true }); } return; }
       case 'wr-open-child': HF.feedback('Child workflow selected · mock only'); return;
       case 'wr-cancel': if (HF.route.state === 'parent-owned') return; HF.feedback('Mock cancellation requested · run state unchanged'); return;
       case 'wr-pause': case 'wr-resume': HF.feedback('Mock run action recorded · run state unchanged'); return;

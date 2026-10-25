@@ -3,10 +3,16 @@
 .wfr-council-head { display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-bottom: 1px solid var(--hairline); }
 .wfr-council-head strong { font-size: 14px; }
 .app .wfr-council-head button.quiet { width: 28px; height: 28px; padding: 0; border: 0; background: transparent; font-size: 18px; }
-.app .wfr-council-head button.link { border: 0; background: transparent; color: var(--accentLink); font-size: 12px; }
-.wfr-council-head button:focus-visible, .wfr-council-feed:focus-visible, .council-outcome:focus-visible { outline: 2px solid var(--accentLink); outline-offset: 2px; }
+.wfr-council-head .council-phase { color: var(--secondaryText); font-size: 12px; font-variant-numeric: tabular-nums; }
+.wfr-council-head .spacer { flex: 1; }
+.wfr-council-head button:focus-visible, .wfr-council-feed:focus-visible { outline: 2px solid var(--accentLink); outline-offset: 2px; }
 .wfr-council-feed { flex: 1 1 auto; min-height: 0; overflow: auto; padding: 12px 16px 20px; }
-.council-members { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 0 0 6px; color: var(--secondaryText); font-size: 11px; }
+.council-roster { display: flex; flex-wrap: wrap; gap: 4px 14px; padding: 8px 16px; border-bottom: 1px solid var(--hairline); font-size: 12px; }
+.council-roster-item { display: inline-flex; align-items: center; gap: 6px; color: var(--secondaryText); }
+.council-roster-item strong { color: var(--primaryText); font-weight: 600; }
+.council-roster .backend-dot, .council-speaker .backend-dot, .council-harness .backend-dot { margin-top: 0; }
+.backend-dot.antigravity { background: var(--dotAntigravity); }
+.council-left { padding: 1px 7px; border-radius: 6px; background: var(--warningBG); color: var(--warningFG); font-size: 11px; font-weight: 600; }
 .council-round { display: flex; align-items: center; gap: 10px; margin: 14px 0 10px; color: var(--tertiaryText); font-size: 11px; }
 .council-round::before, .council-round::after { content: ""; flex: 1; height: 1px; background: var(--hairline); }
 .council-turn { margin: 0 0 12px; font-size: 13px; line-height: 1.45; }
@@ -14,22 +20,34 @@
 .council-speaker { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
 .council-speaker strong { font-size: 13px; font-weight: 650; }
 .council-role { padding: 1px 7px; border-radius: 6px; background: var(--pillFill); color: var(--secondaryText); font-size: 11px; }
+.council-time { margin-left: auto; color: var(--tertiaryText); font-size: 11px; font-variant-numeric: tabular-nums; }
 .council-harness { display: inline-flex; align-items: center; gap: 5px; color: var(--secondaryText); font-size: 12px; }
 .council-candidate { margin: 6px 0; padding: 8px 10px; border: 1px solid var(--hairline); border-radius: 8px; background: var(--cardFill); }
 .council-candidate-head { display: flex; align-items: center; gap: 8px; font-size: 12px; }
 .council-candidate p { margin: 4px 0 0; }
-.council-question { margin: 6px 0; padding: 8px 10px; border-left: 3px solid var(--accentLink); background: var(--cardFill); border-radius: 0 8px 8px 0; font-size: 12px; }
-.council-question-head { display: flex; justify-content: space-between; gap: 8px; color: var(--secondaryText); }
-.council-question p { margin: 4px 0 0; }
+.council-ref { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; margin: 4px 0; color: var(--secondaryText); font-size: 12px; }
+.council-ref strong { color: var(--primaryText); font-weight: 600; }
+.council-turn p.council-note, .council-outcome p.council-note { margin: 4px 0; color: var(--secondaryText); font-size: 12px; }
 .council-votes { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 10px; }
 .council-chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; background: var(--pillFill); color: var(--secondaryText); }
 .council-chip.accept { background: var(--doneBG); color: var(--doneGreen); }
 .council-chip.object { background: var(--dangerBG); color: var(--dangerFG); }
 .council-chip.reset { background: var(--warningBG); color: var(--warningFG); }
 .council-chip.disposition.answered { background: var(--doneBG); color: var(--doneGreen); }
+.council-chip.disposition.withdrawn { background: var(--pillFill); color: var(--secondaryText); }
 .council-chip.disposition.pending, .council-chip.disposition.unresolved { background: var(--warningBG); color: var(--warningFG); }
-.council-outcome { margin-top: 12px; padding: 12px 14px; border: 1.5px solid var(--doneGreen); border-radius: 10px; background: var(--cardFill); font-size: 12px; line-height: 1.5; }
-.council-outcome h3 { margin: 0 0 6px; font-size: 13px; color: var(--doneGreen); }
+.council-outcome { margin: 6px 0 0; padding: 10px 12px; border: 1px solid var(--hairline); border-radius: 10px; background: var(--cardFill); font-size: 12px; line-height: 1.45; }
 .council-outcome p { margin: 3px 0; }
+.council-outcome-title { font-size: 12px; font-weight: 600; }
+.council-turn p.council-outcome-body { color: var(--primaryText); font-size: 13px; }
+.council-outcome.consensus { border-color: var(--doneGreen); }
+.council-outcome.consensus .council-outcome-title { color: var(--doneGreen); }
+.council-outcome.warn .council-outcome-title { color: var(--warningFG); }
+.council-outcome.failed { border-color: var(--failedRed); }
+.council-outcome.failed .council-outcome-title { color: var(--dangerFG); }
 .wfr-council-icon { display: grid; place-items: center; color: var(--secondaryText); }
 .wfr-council-icon svg { width: 20px; height: 20px; }
+.wfr-specimen .wf-graph-row .node.wf-failed-node { border: 2px solid var(--failedRed); box-shadow: none; }
+.wfr-specimen .wf-graph-row .node.wfr-council-node { top: -10px; height: 112px; min-height: 112px; justify-content: flex-start; gap: 3px; }
+.wfr-specimen .wf-graph-row .node.wfr-council-node strong { margin-bottom: 4px; }
+.wfr-specimen .wf-graph-row .node.wfr-council-node small { line-height: 15px; }

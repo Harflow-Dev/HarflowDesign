@@ -2,7 +2,8 @@
   // Exploratory workflow editor proposals: rename (#4), standalone reorder (#1), Council node (#17), and the
   // readiness report (HarflowMCP#18). Pure helpers and markup builders; the editor controller owns state.
   const esc = value => HF.escape(value == null ? '' : String(value));
-  HF.editorProposalRoutes = ['rename', 'rename-collision', 'standalone-reorder', 'council-config', 'readiness'];
+  HF.editorProposalRoutes = ['rename', 'rename-collision', 'standalone-reorder', 'council-config', 'council-name-errors', 'council-too-few', 'readiness'];
+  HF.councilEditorRoutes = ['council-config', 'council-name-errors', 'council-too-few'];
 
   // ---- #4 Rename ----------------------------------------------------------------------------------------
   HF.otherWorkflowNames = current => HF.sidebarWorkflows.map(workflow => workflow.name).filter(name => name !== current);
@@ -34,36 +35,83 @@
   };
 
   // ---- #17 Council node ---------------------------------------------------------------------------------
-  HF.councilLimits = { minMembers: 2, maxMembers: 5 };
-  HF.councilLimitSpecs = [['maxRounds', 'Max rounds', 1, 20], ['questionLimit', 'Question limit', 0, 20], ['followUpLimit', 'Follow-up limit', 0, 20], ['timeBudgetMinutes', 'Time budget (minutes)', 1, 1440], ['tokenBudget', 'Token budget', 1, 10000000]];
-  HF.councilMembers = fields => Array.from({ length: Number(fields.memberCount) || 0 }, (_, index) => ({
-    number: index + 1,
-    backend: fields[`member${index + 1}Backend`] || 'codex',
-    model: fields[`member${index + 1}Model`] || '',
-    perspective: fields[`member${index + 1}Perspective`] || ''
-  }));
+  // Members are a list keyed by stable ids; the facilitator is a member id. A council needs at least two
+  // required members; optional members never count toward that minimum and never block the outcome.
+  HF.councilMinRequired = 2;
+  // Read-only engine defaults; the editor does not expose them as controls.
+  HF.councilEngineLimits = [['Max rounds', '5'], ['Question limit', '3'], ['Follow-up limit', '2'], ['Time budget', '15 min']];
+  HF.councilHarnesses = ['claude', 'codex', 'opencode', 'vibe', 'antigravity'];
+  HF.councilEfforts = [['', 'Default'], ['low', 'Low'], ['medium', 'Medium'], ['high', 'High']];
+  HF.councilSeedQuestion = 'How should refund retries work when the payment provider times out? Context: billing-api refund endpoint; idempotency keys already landed.';
+  HF.councilSeedMembers = () => [
+    { id: 'm1', name: 'Architect', harness: 'claude', model: 'Opus', effort: 'high', instructions: 'You are the architect. Argue as the architect: draft each candidate as a complete retry policy, keep the ledger consistent and prefer the smallest change that resolves every objection.', optional: false },
+    { id: 'm2', name: 'Frontend', harness: 'codex', model: '', effort: 'medium', instructions: 'You are a frontend engineer. Argue as frontend: what the refund screen shows while retries run, loading and error states, and the copy for failures. Object with a concrete reason and the change that resolves it.', optional: false },
+    { id: 'm3', name: 'QA', harness: 'vibe', model: '', effort: '', instructions: 'You are QA. Argue as QA: edge cases, duplicate refunds, provider-side retries and how each behaviour is tested.', optional: true }
+  ];
+  HF.councilNewMember = id => ({ id, name: '', harness: 'claude', model: '', effort: '', instructions: '', optional: false });
+  HF.councilTakesEffort = harness => harness !== 'vibe';
+  HF.councilEffortLabel = effort => (HF.councilEfforts.find(([value]) => value === (effort || '')) || HF.councilEfforts[0])[1];
   HF.harnessName = backend => ({ claude: 'Claude', codex: 'Codex', opencode: 'OpenCode', vibe: 'Vibe', antigravity: 'Antigravity' })[backend] || String(backend);
-  // Invalid edits are reported and preserved; nothing is dropped silently.
-  HF.councilValidation = fields => {
-    const errors = [];
-    const count = Number(fields.memberCount) || 0;
-    if (count < HF.councilLimits.minMembers) errors.push(`A council needs at least ${HF.councilLimits.minMembers} members. It has ${count}.`);
-    const facilitator = Number(fields.facilitator);
-    if (!Number.isInteger(facilitator) || facilitator < 1 || facilitator > count) errors.push('Choose a facilitator from the members.');
-    if (!String(fields.question ?? '').trim()) errors.push('Enter the question and context for the council.');
-    // Bounds are placeholders for the values the engine supports.
-    for (const [key, label, min, max] of HF.councilLimitSpecs) {
-      const value = fields[key];
-      if (value === '' || value == null) continue;
-      if (!Number.isInteger(Number(value)) || Number(value) < min || Number(value) > max) errors.push(`${label} must be a whole number from ${min} to ${max}.`);
-    }
-    if (fields.structuredOutput === true && !String(fields.outputSchema ?? '').trim()) errors.push('Describe the structured output fields or turn structured output off.');
-    return errors;
+  HF.councilErrors = {
+    question: 'Enter the question and context for the council.',
+    blankName: 'Name this member. The name labels its messages in Activity.',
+    duplicateName: name => `Another member is named ${name}. Names must be unique so every message is attributable.`,
+    tooFew: `A council needs at least ${HF.councilMinRequired} required members`
   };
+  // The effective facilitator is derived on read: the stored id if it names a required member, otherwise the
+  // first required member, otherwise none. Reading never changes the draft; the editor persists the derived id
+  // inside the actions that change eligibility (HF.councilNormalizeFacilitator).
+  HF.councilEffectiveFacilitator = fields => {
+    const required = (fields.members || []).filter(member => !member.optional);
+    return (required.find(member => member.id === fields.facilitator) || required[0] || {}).id || '';
+  };
+  HF.councilNormalizeFacilitator = fields => { fields.facilitator = HF.councilEffectiveFacilitator(fields); return fields; };
+  // One view model for the inspector, validation, and the node summary so they cannot disagree.
+  HF.councilModel = fields => {
+    const members = Array.isArray(fields.members) ? fields.members : [];
+    const key = value => String(value ?? '').trim().toLocaleLowerCase();
+    const counts = {};
+    for (const member of members) if (key(member.name)) counts[key(member.name)] = (counts[key(member.name)] || 0) + 1;
+    const facilitatorId = HF.councilEffectiveFacilitator(fields);
+    const rows = members.map((member, index) => {
+      const name = String(member.name ?? '').trim();
+      const error = !name ? HF.councilErrors.blankName : counts[key(name)] > 1 ? HF.councilErrors.duplicateName(name) : '';
+      const title = name || `Member ${index + 1}`;
+      const takesEffort = HF.councilTakesEffort(member.harness);
+      const instructions = String(member.instructions ?? '').trim();
+      const isFacilitator = member.id === facilitatorId;
+      return {
+        id: member.id, member, index, name, title, unnamed: !name, error, takesEffort, isFacilitator, optional: !!member.optional,
+        harnessLabel: HF.harnessName(member.harness), modelLabel: member.model || 'Default', effortLabel: HF.councilEffortLabel(member.effort),
+        summary: `${HF.harnessName(member.harness)} · ${member.model || 'Default'}${takesEffort ? ` · ${HF.councilEffortLabel(member.effort)}` : ''}`,
+        excerpt: error ? { kind: 'error', text: error } : instructions ? { kind: 'text', text: instructions } : { kind: 'none', text: 'No instructions' },
+        optionalHelp: isFacilitator ? 'The facilitator is always required.' : member.optional ? 'Joins the discussion; its vote and its failure do not block the outcome.' : 'Required: its acceptance is needed for consensus.'
+      };
+    });
+    const requiredCount = rows.filter(row => !row.optional).length;
+    const optionalCount = rows.length - requiredCount;
+    const tooFew = requiredCount < HF.councilMinRequired;
+    const questionError = String(fields.question ?? '').trim() ? '' : HF.councilErrors.question;
+    const errors = [];
+    if (questionError) errors.push(questionError);
+    for (const row of rows) if (row.error) errors.push(row.error);
+    if (tooFew) errors.push(HF.councilErrors.tooFew);
+    return {
+      rows, requiredCount, optionalCount, tooFew, questionError, errors, facilitatorId,
+      facilitator: rows.find(row => row.id === facilitatorId) || null,
+      heading: `Members (${rows.length}${optionalCount ? ` · ${optionalCount} optional` : ''})`,
+      tooFewDetail: `${rows.length >= 2 ? 'Optional members do not count. Clear Optional on a member or add one.' : 'Add a member to run this node.'} Your edits are kept.`
+    };
+  };
+  // Invalid edits are reported and preserved; nothing is dropped silently.
+  HF.councilValidation = fields => HF.councilModel(fields).errors;
+  // Two lines on the editor canvas node: member names, then the required and optional counts.
   HF.councilNodeSummary = fields => {
-    const count = Number(fields.memberCount) || 0;
-    const rounds = fields.maxRounds === '' || fields.maxRounds == null ? 'engine default rounds' : `max ${fields.maxRounds} rounds`;
-    return `${count} ${count === 1 ? 'member' : 'members'} · ${rounds}`;
+    const model = HF.councilModel(fields);
+    return {
+      members: model.rows.map(row => row.title).join(', '),
+      meta: model.errors.length ? 'Fix the configuration to run' : `${model.requiredCount} required${model.optionalCount ? ` · ${model.optionalCount} optional` : ''} · max 5 rounds`
+    };
   };
   HF.councilGlyph = '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="5.5" cy="5.6" r="2.1" fill="none" stroke="currentColor" stroke-width="1.3"/><circle cx="11" cy="6.4" r="1.7" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M1.8 13c.2-2.3 1.7-3.5 3.7-3.5s3.5 1.2 3.7 3.5M9.6 9.9c.5-.3 1-.4 1.5-.4 1.6 0 2.8 1 3 3" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>';
 

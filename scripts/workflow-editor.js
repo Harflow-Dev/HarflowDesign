@@ -14,9 +14,10 @@
     { id: 'review-implementation', source: 'review', target: 'implementation', condition: 'The review finds concrete changes needed. Implement the review feedback, then request another review.', isBackward: true }
   ];
   const isRename = route => route === 'rename' || route === 'rename-collision';
+  const isCouncilRoute = route => (HF.councilEditorRoutes || ['council-config']).includes(route);
   const clone = value => JSON.parse(JSON.stringify(value));
   const esc = value => HF.escape(String(value ?? ''));
-  const state = { route: '', draft: null, baseline: null, selected: null, selectedByUser: false, zoom: 100, modal: null, builderMessage: '', mockTask: false, proposal: false, reorder: null, readiness: null };
+  const state = { route: '', councilUi: {}, draft: null, baseline: null, selected: null, selectedByUser: false, zoom: 100, modal: null, builderMessage: '', mockTask: false, proposal: false, reorder: null, readiness: null };
   const canonical = value => Array.isArray(value) ? value.map(canonical) : value && typeof value === 'object' ? Object.fromEntries(Object.keys(value).sort().map(key => [key, canonical(value[key])])) : value;
   const deepEqual = (a, b) => JSON.stringify(canonical(a)) === JSON.stringify(canonical(b));
   const fieldKind = kind => kind === 'missing-reference' ? 'child-reference' : kind === 'parallel-group' ? 'parallel' : kind;
@@ -38,8 +39,9 @@
     if (HF.editorProposalRoutes?.includes(route)) draft.revision = 3;
     if (isRename(route) && HF.pendingRenameName) draft.name = HF.pendingRenameName;
     if (route === 'standalone-reorder') draft.standaloneNodes = [{ id: 'rollback-guide', title: 'Rollback guide', type: 'on-demand', backend: 'Codex' }, { id: 'smoke-test', title: 'Smoke test', type: 'on-demand', backend: 'Codex' }];
-    if (route === 'council-config') {
-      draft.nodes = [starterNodes[0], starterNodes[1], { id: 'council', title: 'Council', type: 'council', role: 'council', x: 440, y: 100, width: 200, height: 92 }, { ...starterNodes[4], x: 690 }].map(clone);
+    if (isCouncilRoute(route)) {
+      // The Council node is wider and taller than the other nodes so its member names and counts stay readable.
+      draft.nodes = [starterNodes[0], starterNodes[1], { id: 'council', title: 'Council', type: 'council', role: 'council', x: 440, y: 100, width: 240, height: 108 }, { ...starterNodes[4], x: 730 }].map(clone);
       draft.edges = [{ id: 'start-planning', source: 'start', target: 'planning', condition: '' }, { id: 'planning-council', source: 'planning', target: 'council', condition: '' }, { id: 'council-end', source: 'council', target: 'end', condition: '' }];
       draft.selected = { kind: 'council', id: 'council' };
     }
@@ -51,7 +53,7 @@
       else if (route === 'child-reference' || route === 'missing-reference') draft.selected = { kind: route === 'missing-reference' ? 'missing-reference' : 'child-reference', id: 'workflow-step' };
       else if (route === 'branch' || route === 'parallel-group') draft.selected = { kind: 'parallel', id: 'parallel-start' };
       else draft.selected = { kind: 'node', id: route === 'child-reference' || route === 'missing-reference' ? 'workflow-step' : 'implementation' };
-    } else if (route !== 'council-config') draft.selected = { kind: 'orchestrator', id: 'orchestrator' };
+    } else if (!isCouncilRoute(route)) draft.selected = { kind: 'orchestrator', id: 'orchestrator' };
     return draft;
   }
 
@@ -63,7 +65,9 @@
     state.allocatedIDs = new Set([...state.draft.nodes, ...state.draft.edges, ...(state.draft.standaloneNodes || [])].map(entity => entity.id));
     initializeFieldMaps(state.draft);
     state.baseline = clone(state.draft);
+    state.councilUi = {};
     if (route === 'dirty' || isRename(route)) { state.draft.fieldValues['node:implementation'].instructions += ' Add regression evidence before completion.'; state.draft.nodes.find(n => n.id === 'implementation').instructions = state.draft.fieldValues['node:implementation'].instructions; }
+    if (route === 'council-name-errors' || route === 'council-too-few') applyCouncilRoute(route);
     state.selected = clone(state.draft.selected);
     state.selectedByUser = false;
     state.zoom = 100;
@@ -83,7 +87,7 @@
   const editableDraft = () => { const { loading, readError, conflict, validation, busy, selectedRun, workspace, selected, ...draft } = state.draft || {}; return draft; };
   const editableBaseline = () => { const { loading, readError, conflict, validation, busy, selectedRun, workspace, selected, ...draft } = state.baseline || {}; return draft; };
   const blocked = () => !state.draft || state.draft.loading || state.draft.readError || state.draft.conflict || state.draft.busy || state.draft.selectedRun;
-  const canSave = () => isDirty() && !blocked() && !state.draft.workspace;
+  const canSave = () => isDirty() && !blocked() && !state.draft.workspace && !councilProblem();
   const canDiscard = () => isDirty() && !state.draft.workspace && !state.draft.loading && !state.draft.readError && !state.draft.busy && !state.draft.selectedRun;
   const councilProblem = () => { for (const node of state.draft?.nodes || []) if (node.type === 'council') { const errors = HF.councilValidation(state.draft.fieldValues?.[`council:${node.id}`] || {}); if (errors.length) return `${node.title || 'Council'}: ${errors[0]}`; } return ''; };
   const canRun = () => !isDirty() && !blocked() && !state.draft.workspace && !state.draft.validation && !councilProblem();
@@ -101,7 +105,7 @@
           ${d.readError ? '' : standalone()}
           <section class="editor-canvas-shell"><div class="editor-canvas" tabindex="0" aria-label="Workflow graph canvas">${unavailable ? (d.loading ? `<div class="editor-loading" aria-label="Loading workflow"><span></span><span></span><span></span></div>` : `<div class="editor-unavailable"><span class="editor-glyph warning"></span><strong>Workflow could not be loaded</strong><button data-editor-action="refresh">Refresh workflow</button></div>`) : graph()}</div>
           <div class="editor-canvas-controls"><button data-editor-action="zoom-out" aria-label="Zoom out">−</button><button data-editor-action="zoom-reset">${state.zoom}%</button><button data-editor-action="zoom-in" aria-label="Zoom in">+</button></div>
-          <div class="editor-tray"><strong>Add</strong><button data-editor-action="add:planning"><span class="editor-glyph planning"></span>Planning</button><button data-editor-action="add:implementation"><span class="editor-glyph implementation"></span>Implementation</button><button data-editor-action="add:review"><span class="editor-glyph review"></span>Review</button><button data-editor-action="add:task"><span class="editor-glyph task"></span>Task</button><button data-editor-action="add:workflow"><span class="editor-glyph workflow"></span>Run workflow</button>${route === 'council-config' ? `<button data-editor-action="add:council"><span class="editor-council-tray-glyph" aria-hidden="true">${HF.councilGlyph}</span>Council</button>` : ''}<i></i><button data-editor-action="add:start" ${d.nodes.some(n => n.type === 'start') ? 'disabled' : ''}>Start</button><button data-editor-action="add:parallel">Parallel group</button><button data-editor-action="add:end" ${d.nodes.some(n => n.type === 'end') ? 'disabled' : ''}>End</button></div>
+          <div class="editor-tray"><strong>Add</strong><button data-editor-action="add:planning"><span class="editor-glyph planning"></span>Planning</button><button data-editor-action="add:implementation"><span class="editor-glyph implementation"></span>Implementation</button><button data-editor-action="add:review"><span class="editor-glyph review"></span>Review</button><button data-editor-action="add:task"><span class="editor-glyph task"></span>Task</button><button data-editor-action="add:workflow"><span class="editor-glyph workflow"></span>Run workflow</button>${isCouncilRoute(route) ? `<button data-editor-action="add:council"><span class="editor-council-tray-glyph" aria-hidden="true">${HF.councilGlyph}</span>Council</button>` : ''}<i></i><button data-editor-action="add:start" ${d.nodes.some(n => n.type === 'start') ? 'disabled' : ''}>Start</button><button data-editor-action="add:parallel">Parallel group</button><button data-editor-action="add:end" ${d.nodes.some(n => n.type === 'end') ? 'disabled' : ''}>End</button></div>
           ${d.readError ? '' : bottomStatus()}
           </section></main>${unavailable ? '' : inspector()}</div>
         ${isBuilder ? builderWorkspace(route) : ''}
@@ -133,7 +137,7 @@
     const selected = state.selected?.id === n.id;
     const terminal = ['start', 'end', 'parallel_start', 'parallel_end'].includes(n.type);
     const title = n.title || n.name || n.type;
-    return `<button class="editor-node ${terminal ? 'terminal' : ''} ${selected ? 'selected' : ''}" data-editor-select="node:${esc(n.id)}" data-node-id="${esc(n.id)}" style="left:${n.x}px;top:${n.y}px;width:${n.width || (terminal ? 72 : 200)}px;height:${n.height || (terminal ? 72 : 92)}px" aria-label="Select ${esc(title)}" ${terminal ? '' : 'draggable="true"'}>${terminal ? `<span class="editor-terminal-icon ${n.type}"></span><strong>${esc(title)}</strong>` : `<span class="editor-node-title"><span class="editor-node-icon ${glyphClass(n.role || n.type)}">${n.type === 'council' ? HF.councilGlyph : ''}</span><strong>${esc(title)}</strong></span>${n.type === 'council' ? `<small>${esc(HF.councilNodeSummary(state.draft.fieldValues?.[`council:${n.id}`] || HF.editorInspectorDefaults('council', n.id)))}</small>` : n.type === 'agent' ? `<span class="editor-backend"><i></i>${esc(({codex:'Codex',claude:'Claude',opencode:'OpenCode',vibe:'Vibe',antigravity:'Antigravity'})[state.draft.fieldValues?.[`node:${n.id}`]?.backend] || n.backend || 'Codex')}</span>` : `<small>${esc(nodeSubtitle(n))}</small>`}`}${n.type !== 'start' ? `<span class="editor-port input" aria-hidden="true"></span>` : ''}${n.type !== 'end' ? `<span class="editor-port output" aria-hidden="true"></span>` : ''}</button>`;
+    return `<button class="editor-node ${terminal ? 'terminal' : ''} ${selected ? 'selected' : ''}" data-editor-select="node:${esc(n.id)}" data-node-id="${esc(n.id)}" style="left:${n.x}px;top:${n.y}px;width:${n.width || (terminal ? 72 : 200)}px;height:${n.height || (terminal ? 72 : 92)}px" aria-label="Select ${esc(title)}" ${terminal ? '' : 'draggable="true"'}>${terminal ? `<span class="editor-terminal-icon ${n.type}"></span><strong>${esc(title)}</strong>` : `<span class="editor-node-title"><span class="editor-node-icon ${glyphClass(n.role || n.type)}">${n.type === 'council' ? HF.councilGlyph : ''}</span><strong>${esc(title)}</strong></span>${n.type === 'council' ? councilNodeLines(n) : n.type === 'agent' ? `<span class="editor-backend"><i></i>${esc(({codex:'Codex',claude:'Claude',opencode:'OpenCode',vibe:'Vibe',antigravity:'Antigravity'})[state.draft.fieldValues?.[`node:${n.id}`]?.backend] || n.backend || 'Codex')}</span>` : `<small>${esc(nodeSubtitle(n))}</small>`}`}${n.type !== 'start' ? `<span class="editor-port input" aria-hidden="true"></span>` : ''}${n.type !== 'end' ? `<span class="editor-port output" aria-hidden="true"></span>` : ''}</button>`;
   }
   function glyphClass(role) { return ({ council: 'council', planning: 'planning', implementation: 'implementation', review: 'review', task: 'task', workflow: 'workflow', parallel_start: 'parallel', parallel_end: 'parallel' })[role] || 'task'; }
   function nodeSubtitle(n) { return n.type === 'workflow' ? n.workflowName || 'Select workflow' : n.type === 'parallel_start' ? `Parallel · ${n.groupLabel || 'Group'}` : n.type; }
@@ -169,6 +173,7 @@
       const fields = { ...HF.editorInspectorDefaults(kind, selected.id) };
       const saved = kind === 'orchestrator' ? state.draft.orchestrator : state.draft.fieldValues?.[`${fieldKind(kind)}:${selected.id}`];
       Object.assign(fields, saved || {});
+      if (kind === 'council') fields.councilOpen = councilUi(selected.id).open;
       return HF.renderEditorInspector(kind, fields);
     }
     return '<aside class="editor-inspector"><h2>Orchestrator</h2><p>Every workflow has one. It cannot be removed.</p><p>Inspector fields are loading.</p></aside>';
@@ -274,24 +279,114 @@
     if (state.selected.kind === 'on-demand') state.draft.standaloneNodes = (state.draft.standaloneNodes || []).filter(n => n.id !== state.selected.id);
     const entityIds = new Set([...state.draft.nodes, ...state.draft.edges, ...(state.draft.standaloneNodes || [])].map(item => item.id));
     for (const key of Object.keys(state.draft.fieldValues)) if (!entityIds.has(key.slice(key.indexOf(':')+1))) delete state.draft.fieldValues[key];
+    for (const key of Object.keys(state.councilUi)) if (!entityIds.has(key)) delete state.councilUi[key];
     state.selected = { kind:'orchestrator', id:'orchestrator' }; refresh();
   }
   function councilFields() { const selected = state.selected; return selected?.kind === 'council' ? state.draft.fieldValues?.[`council:${selected.id}`] : null; }
+  // Accordion state and the member id counter are UI state, not draft content: expanding or collapsing a card
+  // never marks the draft dirty, and ids stay unique across Discard.
+  function councilUi(nodeId = state.selected?.id) {
+    if (!state.councilUi[nodeId]) {
+      const members = state.draft?.fieldValues?.[`council:${nodeId}`]?.members || [];
+      state.councilUi[nodeId] = { open: members[0]?.id ?? null, nextId: Math.max(0, ...members.map(member => Number(String(member.id).replace(/\D/g, '')) || 0)) + 1 };
+    }
+    return state.councilUi[nodeId];
+  }
+  function applyCouncilRoute(route) {
+    const fields = state.draft.fieldValues['council:council'], ui = councilUi('council');
+    if (route === 'council-too-few') { for (const member of fields.members) if (member.id !== 'm1') member.optional = true; ui.open = null; return; }
+    // Name errors: the second required member and the optional one share a name, and a new member is blank.
+    fields.members[1].name = 'QA'; fields.members[2].optional = false;
+    const id = `m${ui.nextId++}`;
+    fields.members.push(HF.councilNewMember(id)); ui.open = id;
+  }
+  function councilNodeLines(node) {
+    const summary = HF.councilNodeSummary(state.draft.fieldValues?.[`council:${node.id}`] || HF.editorInspectorDefaults('council', node.id));
+    return `<small class="editor-council-node-line" data-council-members>${esc(summary.members)}</small><small class="editor-council-node-line is-meta" data-council-meta>${esc(summary.meta)}</small>`;
+  }
+  function focusCouncil(selector) { if (typeof document !== 'undefined') document.querySelector(`.editor-app ${selector}`)?.focus(); }
+  const councilToggleSelector = id => `[data-action="editor-council-toggle:${id}"]`;
   function addCouncilMember() {
     const fields = councilFields(); if (!fields || blocked()) return;
-    const count = Number(fields.memberCount) || 0; if (count >= HF.councilLimits.maxMembers) return;
-    fields.memberCount = count + 1; fields[`member${count + 1}Backend`] = 'codex'; fields[`member${count + 1}Model`] = ''; fields[`member${count + 1}Perspective`] = '';
-    refresh(); document.querySelector(`[data-editor-field="member${count + 1}Backend"]`)?.focus();
+    const ui = councilUi(), id = `m${ui.nextId++}`;
+    fields.members = [...fields.members, HF.councilNewMember(id)];
+    HF.councilNormalizeFacilitator(fields); ui.open = id;
+    refresh(); focusCouncil(`#council-name-${id}`);
   }
-  function removeCouncilMember(index) {
+  function removeCouncilMember(id) {
     const fields = councilFields(); if (!fields || blocked()) return;
-    const count = Number(fields.memberCount) || 0; if (index < 1 || index > count) return;
-    for (let position = index; position < count; position++) for (const part of ['Backend', 'Model', 'Perspective']) fields[`member${position}${part}`] = fields[`member${position + 1}${part}`];
-    for (const part of ['Backend', 'Model', 'Perspective']) delete fields[`member${count}${part}`];
-    const facilitator = Number(fields.facilitator);
-    fields.facilitator = facilitator === index ? '' : facilitator > index ? String(facilitator - 1) : fields.facilitator;
-    fields.memberCount = count - 1;
-    refresh(); (document.querySelector(`[data-action="editor-remove-member:${Math.min(index, count - 1)}"]`) || document.querySelector('[data-action="editor-add-member"]'))?.focus();
+    const index = fields.members.findIndex(member => member.id === id); if (index < 0) return;
+    fields.members = fields.members.filter(member => member.id !== id);
+    HF.councilNormalizeFacilitator(fields);
+    const ui = councilUi(); if (ui.open === id) ui.open = null;
+    refresh();
+    const neighbour = fields.members[index] || fields.members[index - 1];
+    focusCouncil(neighbour ? councilToggleSelector(neighbour.id) : '[data-action="editor-council-add"]');
+  }
+  function toggleCouncilMember(id) {
+    const fields = councilFields(); if (!fields || !fields.members.some(member => member.id === id)) return;
+    const ui = councilUi(); ui.open = ui.open === id ? null : id;
+    refresh(); focusCouncil(councilToggleSelector(id));
+  }
+  function cycleCouncilEffort(id) {
+    const fields = councilFields(), member = fields?.members.find(item => item.id === id); if (!member || blocked() || !HF.councilTakesEffort(member.harness)) return;
+    const levels = HF.councilEfforts.map(([value]) => value);
+    member.effort = levels[(levels.indexOf(member.effort || '') + 1) % levels.length];
+    refresh(); focusCouncil(`[data-action="editor-council-effort:${id}"]`);
+  }
+  // Structural edits (harness, Optional, facilitator) re-render and restore focus to the same control.
+  function setCouncilMember(id, field, value) {
+    const fields = councilFields(); if (!fields || blocked()) return;
+    if (field === 'facilitator') {
+      if (!fields.members.some(member => member.id === value && !member.optional)) return;
+      fields.facilitator = value; HF.councilNormalizeFacilitator(fields);
+      refresh(); focusCouncil('[data-council-field="facilitator"]'); return;
+    }
+    const member = fields.members.find(item => item.id === id); if (!member) return;
+    if (field === 'harness') {
+      if (!HF.councilHarnesses.includes(value)) return;
+      member.harness = value; if (!HF.councilTakesEffort(value)) member.effort = '';
+    } else if (field === 'optional') {
+      if (member.id === HF.councilEffectiveFacilitator(fields)) return;
+      member.optional = !!value; HF.councilNormalizeFacilitator(fields);
+    } else return;
+    refresh(); focusCouncil(`[data-council-member="${id}"][data-council-field="${field}"]`);
+  }
+  // Text edits update the draft and the visible copy in place so focus and caret stay where they are.
+  function editCouncilText(id, field, value) {
+    const fields = councilFields(); if (!fields || blocked()) return;
+    if (field === 'question') fields.question = value;
+    else { const member = fields.members.find(item => item.id === id); if (!member || !['name', 'instructions'].includes(field)) return; member[field] = value; }
+    syncCouncilInPlace(fields);
+  }
+  function setCouncilError(element, text) { if (!element) return; element.hidden = !text; if (element.lastElementChild) element.lastElementChild.textContent = text; }
+  function syncCouncilInPlace(fields) {
+    updateButtons();
+    if (typeof document === 'undefined') return;
+    const root = document.querySelector('.editor-app'); if (!root) return;
+    const model = HF.councilModel(fields);
+    const question = root.querySelector('#council-question');
+    setCouncilError(root.querySelector('#council-question-error'), model.questionError);
+    if (question) { question.setAttribute('aria-invalid', model.questionError ? 'true' : 'false'); if (model.questionError) question.setAttribute('aria-describedby', 'council-question-error'); else question.removeAttribute('aria-describedby'); }
+    const cards = [...root.querySelectorAll('[data-council-card]')];
+    for (const row of model.rows) {
+      const card = cards.find(element => element.dataset.councilCard === row.id); if (!card) continue;
+      card.querySelectorAll('[data-council-title]').forEach(element => { element.textContent = row.title; element.classList.toggle('is-unnamed', row.unnamed); });
+      const aria = HF.councilAria(row);
+      card.querySelectorAll('[data-council-aria]').forEach(element => element.setAttribute('aria-label', aria[element.dataset.councilAria]));
+      const excerpt = card.querySelector('[data-council-excerpt]');
+      if (excerpt) { excerpt.textContent = row.excerpt.text; excerpt.className = `editor-council-excerpt is-${row.excerpt.kind}`; }
+      const name = card.querySelector('input[data-council-field="name"]');
+      if (name) {
+        name.setAttribute('aria-invalid', row.error ? 'true' : 'false');
+        if (row.error) name.setAttribute('aria-describedby', `council-name-error-${row.id}`); else name.removeAttribute('aria-describedby');
+        setCouncilError(card.querySelector('[data-council-error]'), row.error);
+      }
+    }
+    root.querySelectorAll('select[data-council-field="facilitator"] option').forEach(element => { const row = model.rows.find(item => item.id === element.value); if (row) element.textContent = `${row.title} · ${row.harnessLabel}`; });
+    const summary = HF.councilNodeSummary(fields), node = root.querySelector(`.editor-node[data-node-id="${state.selected.id}"]`);
+    if (node) { const members = node.querySelector('[data-council-members]'), meta = node.querySelector('[data-council-meta]'); if (members) members.textContent = summary.members; if (meta) meta.textContent = summary.meta; }
+    const status = root.querySelector('.editor-validation'); if (status) status.outerHTML = bottomStatus();
   }
   function runReadiness() { state.readiness = { open: true, signature: signature(), revision: state.draft.revision, at: '14:52' }; refresh(); document.querySelector('[data-editor-action="close-readiness"]')?.focus(); }
   function openReadiness() { if (!state.readiness) return runReadiness(); state.readiness.open = true; refresh(); document.querySelector('[data-editor-action="close-readiness"]')?.focus(); }
@@ -372,8 +467,11 @@
       case 'inspect-readiness': if (state.route === 'readiness') { if (state.readiness?.open) runReadiness(); else openReadiness(); } break;
       case 'close-readiness': closeReadiness(); break;
       case 'resolve-issue': HF.feedback(`Resolve issue for ${value} · mock only · no change made`); break;
-      case 'editor-add-member': addCouncilMember(); break;
-      case 'editor-remove-member': removeCouncilMember(Number(value)); break;
+      case 'editor-council-add': addCouncilMember(); break;
+      case 'editor-council-remove': removeCouncilMember(value); break;
+      case 'editor-council-toggle': toggleCouncilMember(value); break;
+      case 'editor-council-effort': cycleCouncilEffort(value); break;
+      case 'editor-council-model': HF.feedback('Model choices are unavailable in the browser preview · mock only'); break;
       case 'duplicate': HF.feedback('Mock workflow duplicate created'); break; case 'delete': HF.feedback('Mock workflow deletion requested'); break;
       case 'editor-delete': removeSelected(); break;
       case 'editor-select-partner': { const node=state.draft.nodes.find(n=>n.id===state.selected.id), partner=state.draft.nodes.find(n=>n.id===node?.partnerId); if(partner)select('parallel',partner.id); break; }
@@ -389,6 +487,8 @@
     }
   }, true);
   document.addEventListener('input', event => { const app=event.target.closest('.editor-app'); if(!app)return; if(event.target.id==='editor-rename-input'&&state.modal?.mode==='rename'){ state.modal.value=event.target.value; const result=HF.workflowNameValidation(state.modal.value,state.draft.name),invalid=result.kind==='empty'||result.kind==='collision',error=app.querySelector('#editor-rename-error'); error.innerHTML=invalid?`<span class="editor-rename-glyph" aria-hidden="true">⚠</span><span>${esc(result.message)}</span>`:''; if(invalid)event.target.setAttribute('aria-invalid','true'); else event.target.removeAttribute('aria-invalid'); app.querySelector('[data-editor-action="submit-modal"]').disabled=!result.valid; return; } if(event.target.matches('[data-editor-field]')) updateField(event.target); if(event.target.id==='editor-builder-input') state.builderMessage=event.target.value; updateSubmitEligibility(app); }, true);
+  document.addEventListener('input', event => { const control=event.target.closest?.('[data-council-field]'); if(!control||!control.closest('.editor-app'))return; if(['question','name','instructions'].includes(control.dataset.councilField)) editCouncilText(control.dataset.councilMember, control.dataset.councilField, control.value); }, true);
+  document.addEventListener('change', event => { const control=event.target.closest?.('[data-council-field]'); if(!control||!control.closest('.editor-app'))return; const field=control.dataset.councilField; if(field==='optional') setCouncilMember(control.dataset.councilMember, field, control.checked); else if(field==='harness'||field==='facilitator') setCouncilMember(control.dataset.councilMember, field, control.value); }, true);
   document.addEventListener('change', event => { const app=event.target.closest('.editor-app'); if(!app)return; if(event.target.matches('[data-editor-field]')) { updateField(event.target); refresh(); } if(event.target.dataset.modalField==='override') app.querySelector('.editor-override-fields').hidden=!event.target.checked; updateSubmitEligibility(app); }, true);
   document.addEventListener('keydown', event => {
     const app=event.target.closest('.editor-app'); if(!app)return;
@@ -460,7 +560,12 @@
   }
   HF.editorController = {
     reset(route='saved') { HF.resetWorkflowEditor('workflow-editor',route); return this.snapshot(); },
-    snapshot() { return { draft: clone(state.draft), baseline: clone(state.baseline), selected: clone(state.selected), canApplyProposal: canApplyProposal(), zoom: state.zoom, dirty: isDirty(), canSave: canSave(), canDiscard: canDiscard(), canRun: canRun() }; },
+    councilAdd() { addCouncilMember(); return this.snapshot(); },
+    councilRemove(id) { removeCouncilMember(id); return this.snapshot(); },
+    councilToggle(id) { toggleCouncilMember(id); return this.snapshot(); },
+    councilCycleEffort(id) { cycleCouncilEffort(id); return this.snapshot(); },
+    councilSet(id, field, value) { if (['name', 'instructions', 'question'].includes(field)) editCouncilText(id, field, value); else setCouncilMember(id, field, value); return this.snapshot(); },
+    snapshot() { return { draft: clone(state.draft), baseline: clone(state.baseline), selected: clone(state.selected), councilUi: clone(state.councilUi), canApplyProposal: canApplyProposal(), zoom: state.zoom, dirty: isDirty(), canSave: canSave(), canDiscard: canDiscard(), canRun: canRun() }; },
     select(kind,id) { select(kind,id); return this.snapshot(); },
     setField(key,value) { updateField({dataset:{editorField:key},type:typeof value==='boolean'?'checkbox':'text',checked:value,value}); return this.snapshot(); },
     addNode(kind) { makeNode(kind); return this.snapshot(); },

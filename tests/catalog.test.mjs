@@ -1860,7 +1860,7 @@ test('compact workflow-run sidebar proposal (#15) covers every state that can di
     const canShowCompact = html.includes('wfr-sidebar-default') || html.includes('has-selection');
     if (canShowCompact) display.push(state);
     const status = hf.specimenStatus('workflow-run', state);
-    if (state === 'council') { assert.equal(status.kind, 'exploratory'); assert.deepEqual(Array.from(status.tickets), ['#17', '#15']); display.pop(); continue; }
+    if (state.startsWith('council')) { assert.equal(status.kind, 'exploratory'); assert.deepEqual(Array.from(status.tickets), ['#17', '#15']); display.pop(); continue; }
     assert.equal(status.kind === 'contains-exploratory', canShowCompact, `workflow-run/${state} #15 element metadata`);
     if (canShowCompact) assert.deepEqual(Array.from(status.tickets), ['#15']);
   }
@@ -2504,7 +2504,7 @@ test('council limits are validated, preserved, and block Run', () => {
 
 test('council run and statistics markup appear only in their own states', () => {
   const hf = loadDesignRuntime();
-  const council = /wfr-council|council-turn|wr-select:council|wr-council-jump/;
+  const council = /wfr-council|council-turn|wr-select:council/;
   const statistics = /stat-entry|stat-seg|statistics-content|stat-tile|stat-page/;
   for (const family of hf.screens) {
     for (const state of family.states) {
@@ -2512,7 +2512,7 @@ test('council run and statistics markup appear only in their own states', () => 
       if (family.id === 'workflow-run') hf.resetWorkflowRun(hf.route);
       if (family.id === 'workflow-editor') hf.editorController.reset(state);
       const html = renderers[family.id](hf, state);
-      assert.equal(council.test(html), family.id === 'workflow-run' && state === 'council', `${family.id}/${state} council markup`);
+      assert.equal(council.test(html), family.id === 'workflow-run' && state.startsWith('council'), `${family.id}/${state} council markup`);
       assert.equal(statistics.test(html), family.id === 'statistics', `${family.id}/${state} statistics markup`);
     }
   }

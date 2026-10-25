@@ -45,6 +45,61 @@
     ['write_in_repo', 'Write in repository'], ['publish', 'Publish'], ['unrestricted', 'Unrestricted']
   ];
 
+  // ---- Council configuration (#17, exploratory) -------------------------------------------------------------
+  const councilIcon = {
+    down: '<svg viewBox="0 0 10 10" aria-hidden="true"><path d="M1.8 3.6 5 6.8 8.2 3.6"/></svg>',
+    right: '<svg viewBox="0 0 10 10" aria-hidden="true"><path d="M3.6 1.8 6.8 5 3.6 8.2"/></svg>',
+    minus: '<svg viewBox="0 0 10 10" aria-hidden="true"><path d="M1.5 5H8.5"/></svg>',
+    plus: '<svg viewBox="0 0 10 10" aria-hidden="true"><path d="M5 1.5V8.5M1.5 5H8.5"/></svg>',
+    updown: '<svg class="editor-council-updown" viewBox="0 0 10 12" aria-hidden="true"><path d="M2 4.6 5 1.8 8 4.6M2 7.4 5 10.2 8 7.4"/></svg>',
+    warn: '<svg class="is-solid" viewBox="0 0 14 14" aria-hidden="true"><path fill-rule="evenodd" d="M7 1.2 13 12Q13.3 12.5 12.7 12.5H1.3Q.7 12.5 1 12ZM6.3 5.2H7.7V8.4H6.3ZM7 9.4a.8.8 0 1 0 .001 0Z"/></svg>'
+  };
+  const harnessChoices = () => HF.councilHarnesses.map(id => [id, HF.harnessName(id)]);
+  const councilError = (id, text) => `<span class="editor-council-error" id="${id}" data-council-error ${text ? '' : 'hidden'}>${councilIcon.warn}<span>${escape(text)}</span></span>`;
+  // Accessible names that embed the member title; the editor patches them in place while a name is typed.
+  HF.councilAria = row => ({
+    collapse: `Collapse ${row.title}`, edit: `Edit ${row.title}`, remove: `Remove ${row.title}`,
+    harness: `Harness for ${row.title}`, model: `Model for ${row.title}: ${row.modelLabel}`, effort: `Effort for ${row.title}: ${row.effortLabel}`
+  });
+  const councilChips = row => `${row.isFacilitator ? '<span class="editor-council-chip">Facilitator</span>' : ''}${row.optional ? '<span class="editor-council-chip">Optional</span>' : ''}`;
+  const councilOpenCard = row => {
+    const id = escape(row.id), aria = HF.councilAria(row), invalid = !!row.error;
+    const effort = row.takesEffort
+      ? `<button type="button" class="editor-council-popup" data-action="editor-council-effort:${id}" data-council-aria="effort" aria-label="${escape(aria.effort)}"><span>${escape(row.effortLabel)}</span>${councilIcon.updown}</button>`
+      : '';
+    return `<div class="editor-council-card is-open" data-council-card="${id}">
+      <div class="editor-council-card-head"><button type="button" class="editor-council-icon" data-action="editor-council-toggle:${id}" data-council-aria="collapse" aria-expanded="true" aria-label="${escape(aria.collapse)}">${councilIcon.down}</button><span class="editor-council-title${row.unnamed ? ' is-unnamed' : ''}" data-council-title>${escape(row.title)}</span>${councilChips(row)}<button type="button" class="editor-council-icon" data-action="editor-council-remove:${id}" data-council-aria="remove" aria-label="${escape(aria.remove)}">${councilIcon.minus}</button></div>
+      <div class="editor-council-name"><label for="council-name-${id}">Name</label><input id="council-name-${id}" type="text" data-council-member="${id}" data-council-field="name" value="${escape(row.member.name)}" placeholder="For example, QA" autocomplete="off" aria-invalid="${invalid ? 'true' : 'false'}" ${invalid ? `aria-describedby="council-name-error-${id}"` : ''}>${councilError(`council-name-error-${id}`, row.error)}</div>
+      <div class="editor-council-controls"><label class="editor-council-popup"><span class="backend-dot ${escape(row.member.harness)}" aria-hidden="true"></span><select data-council-member="${id}" data-council-field="harness" data-council-aria="harness" aria-label="${escape(aria.harness)}">${option(row.member.harness, harnessChoices())}</select>${councilIcon.updown}</label><button type="button" class="editor-council-popup" data-action="editor-council-model:${id}" data-council-aria="model" aria-label="${escape(aria.model)}"><span>${escape(row.modelLabel)}</span>${councilIcon.updown}</button>${effort}</div>
+      ${row.takesEffort ? '' : '<p class="editor-council-hint">Vibe does not take a reasoning effort.</p>'}
+      <div class="editor-council-field"><label for="council-instructions-${id}">Instructions</label><textarea id="council-instructions-${id}" rows="4" data-council-member="${id}" data-council-field="instructions" placeholder="For example: You are QA. Argue as QA: edge cases, regressions and how each change is tested.">${escape(row.member.instructions)}</textarea><p class="editor-council-hint">Sent only to this member, after the shared question.</p></div>
+      <div class="editor-council-field"><label class="editor-council-optional${row.isFacilitator ? ' is-disabled' : ''}" for="council-optional-${id}"><input id="council-optional-${id}" type="checkbox" data-council-member="${id}" data-council-field="optional" ${row.optional ? 'checked' : ''} ${row.isFacilitator ? 'disabled' : ''}><span>Optional member</span></label><p class="editor-council-hint is-indented">${escape(row.optionalHelp)}</p></div>
+    </div>`;
+  };
+  const councilClosedCard = row => {
+    const id = escape(row.id), aria = HF.councilAria(row);
+    return `<button type="button" class="editor-council-card editor-council-disclose" data-council-card="${id}" data-action="editor-council-toggle:${id}" data-council-aria="edit" aria-expanded="false" aria-label="${escape(aria.edit)}"><span class="editor-council-disclose-icon">${councilIcon.right}</span><span class="editor-council-disclose-body"><span class="editor-council-line"><span class="editor-council-title${row.unnamed ? ' is-unnamed' : ''}" data-council-title>${escape(row.title)}</span>${councilChips(row)}<span class="editor-council-spacer"></span><span class="editor-council-harness"><span class="backend-dot ${escape(row.member.harness)}" aria-hidden="true"></span>${escape(row.summary)}</span></span><span class="editor-council-excerpt is-${row.excerpt.kind}" data-council-excerpt>${escape(row.excerpt.text)}</span></span></button>`;
+  };
+  const council = f => {
+    const model = HF.councilModel(f), open = f.councilOpen;
+    const options = model.rows.filter(row => !row.optional).map(row => [row.id, `${row.title} · ${row.harnessLabel}`]);
+    const facilitator = model.facilitator;
+    const facilitatorSelect = options.length
+      ? `<select data-council-field="facilitator" aria-label="Facilitator">${option(model.facilitatorId, options)}</select>`
+      : `<select data-council-field="facilitator" aria-label="Facilitator" disabled><option>${model.rows.length ? 'No required members' : 'No members'}</option></select>`;
+    const banner = model.tooFew ? `<div class="editor-council-banner" role="alert">${councilIcon.warn}<div><strong>${escape(HF.councilErrors.tooFew)}</strong><span>${escape(model.tooFewDetail)}</span></div></div>` : '';
+    const limits = HF.councilEngineLimits.map(([label, value]) => `<div><dt>${escape(label)}</dt><dd>${escape(value)}</dd></div>`).join('');
+    return `<div class="editor-council" data-council-root>
+      <div class="editor-council-field"><label for="council-question">Question and context</label><textarea id="council-question" rows="3" data-council-field="question" aria-invalid="${model.questionError ? 'true' : 'false'}" ${model.questionError ? 'aria-describedby="council-question-error"' : ''}>${escape(value(f, 'question'))}</textarea>${councilError('council-question-error', model.questionError)}</div>
+      <div class="editor-council-group"><h3 data-council-heading>${escape(model.heading)}</h3>${help('Each member gets the shared question plus its own instructions. Its name labels its messages in Activity.')}</div>
+      <div class="editor-council-list">${model.rows.map(row => row.id === open ? councilOpenCard(row) : councilClosedCard(row)).join('')}</div>
+      <button type="button" class="editor-inspector-secondary editor-council-add" data-action="editor-council-add">${councilIcon.plus}Add member</button>
+      ${banner}
+      <div class="editor-council-group"><h3>Facilitator</h3><label class="editor-council-popup editor-council-facilitator${options.length ? '' : ' is-disabled'}">${facilitator ? `<span class="backend-dot ${escape(facilitator.member.harness)}" aria-hidden="true"></span>` : ''}${facilitatorSelect}${councilIcon.updown}</label>${help('The facilitator drafts candidates. Every required member must explicitly accept the exact candidate version before the council reaches consensus. Optional members can question and object, but their vote and their failure do not block the outcome.')}</div>
+      <div class="editor-council-group"><h3>Limits</h3><dl class="editor-council-limits">${limits}</dl></div>
+    </div>`;
+  };
+
   HF.editorInspectorDefaults = (kind, id) => {
     const base = { id: id || '', title: '', instructions: '', backend: 'codex', model: '', effort: '', callerApprovals: false, callerApprovalSupported: false, fallbackCount: 0 };
     if (kind === 'orchestrator') return { ...base, title: 'Orchestrator', instructions: '', maxDecisionAttempts: 3, maxInspections: 20, maxOnDemandCalls: 5, maxParallel: 4, maxTransitions: 100, modelDisabled: true };
@@ -53,7 +108,7 @@
     if (kind === 'child-reference' || kind === 'missing-reference') return { id: id || 'workflow', title: 'Run workflow', instructions: '', workflowId: '', workflowName: '', orchestratorMode: 'child', childSessionPolicy: 'agent_decides', showsChildSessionPolicy: true, timeLimitEnabled: false, timeLimitSeconds: 900, maxAttempts: 3, optional: false, availableWorkflows: '', accessRequirements: 'Select a saved workflow to validate its full dependency tree.', isMissing: kind === 'missing-reference' };
     if (kind === 'parallel' || kind === 'parallel-group') return { id: id || 'parallel-end', title: 'Parallel end', groupLabel: '', branchCount: 0, boundaryType: id === 'parallel-start' ? 'parallel_start' : 'parallel_end', branchSelection: 'all', selectionGuidance: '', hasPartner: false };
     if (kind === 'start' || kind === 'end') return { id: id || kind, title: kind === 'start' ? 'Start' : 'End' };
-    if (kind === 'council') return { id: id || 'council', title: 'Council', question: 'Which retry policy should the checkout service adopt, and what must be verified before it ships?', memberCount: 3, member1Backend: 'claude', member1Model: '', member1Perspective: 'Safety reviewer', member2Backend: 'codex', member2Model: '', member2Perspective: 'Performance', member3Backend: 'vibe', member3Model: '', member3Perspective: '', facilitator: '1', maxRounds: 5, questionLimit: '', followUpLimit: '', timeBudgetMinutes: '', tokenBudget: '', structuredOutput: false, outputSchema: '', routing: 'default' };
+    if (kind === 'council') return { id: id || 'council', title: 'Council', question: HF.councilSeedQuestion, members: HF.councilSeedMembers(), facilitator: 'm1' };
 
     const role = id === 'planning' ? 'planning' : id === 'review' ? 'review' : id === 'task' ? 'task' : 'implementation';
     const instructions = {
@@ -93,11 +148,7 @@
       body = `${input(f, 'groupLabel', 'Group name')}${`<p class="editor-inspector-branch-count">${escape(value(f, 'branchCount', '0'))} ${value(f, 'branchCount', '0') === '1' ? 'branch' : 'branches'}</p>`}${start ? `${select(f, 'branchSelection', 'Branch selection', [['all', 'All branches'], ['orchestrator', 'Orchestrator selects']])}${section('Selection guidance (optional)', textarea(f, 'selectionGuidance', 'Selection guidance', { rows: 3 }))}${help('Select applicable branch entries before dispatch. Optional nodes still follow their normal failure rules.')}` : ''}${checked(f, 'hasPartner') ? `<button type="button" class="editor-inspector-secondary" data-action="editor-select-partner">Select ${start ? 'Parallel end' : 'Parallel start'}</button>` : help('Missing matching parallel boundary. Repair the pair before saving.')}${help(start ? 'Branch membership is fixed for each invocation. Re-entering the group may make a new selection.' : 'Waits for every selected branch to resolve before the orchestrator chooses the next node.')}${deleteButton(kind, 'Delete boundary')}`;
     } else if (kind === 'council') {
       title = 'Council';
-      const members = HF.councilMembers(f), errors = HF.councilLimits && HF.councilValidation(f);
-      const harnessEntries = [['claude', 'Claude'], ['codex', 'Codex'], ['opencode', 'OpenCode'], ['vibe', 'Vibe'], ['antigravity', 'Antigravity']];
-      const memberRows = members.map(member => `<div class="editor-council-member" role="group" aria-label="Member ${member.number}"><div class="editor-council-member-head"><strong>Member ${member.number}</strong><button type="button" class="editor-inspector-secondary editor-council-remove" data-action="editor-remove-member:${member.number}" aria-label="Remove member ${member.number}">Remove</button></div>${select(f, `member${member.number}Backend`, 'Harness', harnessEntries, { inline: true }).replace('aria-label="Harness"', `aria-label="Member ${member.number} harness"`)}${select(f, `member${member.number}Model`, 'Model', [['', 'Default']], { inline: true, disabled: true }).replace('aria-label="Model"', `aria-label="Member ${member.number} model"`)}${input(f, `member${member.number}Perspective`, 'Perspective (optional)', { hideLabel: true, placeholder: 'Perspective (optional)' }).replace('aria-label="Perspective (optional)"', `aria-label="Member ${member.number} perspective (optional)"`)}</div>`).join('');
-      const facilitatorEntries = members.map(member => [String(member.number), `Member ${member.number} · ${HF.harnessName(member.backend)}`]);
-      body = `${errors.length ? `<div class="editor-council-errors" role="alert">${errors.map(message => `<p><span aria-hidden="true">⚠</span> ${escape(message)}</p>`).join('')}</div>` : ''}${textarea(f, 'question', 'Question and context', { rows: 4 })}${heading(`Members (${members.length})`)}${memberRows}<button type="button" class="editor-inspector-secondary" data-action="editor-add-member" ${members.length >= HF.councilLimits.maxMembers ? 'disabled' : ''}>Add member</button>${help(`A council has ${HF.councilLimits.minMembers} to ${HF.councilLimits.maxMembers} members. Members on the same model are valid.`)}${heading('Facilitator')}${select(f, 'facilitator', 'Facilitator', facilitatorEntries.length ? facilitatorEntries : [['', 'No members']], { hideLabel: true })}${help('The facilitator drafts candidates. Every member must explicitly accept the exact candidate version before the council reaches consensus.')}${heading('Limits')}${group(HF.councilLimitSpecs.map(([key, label, min, max]) => input(f, key, label, { type: 'number', min, max, placeholder: key === 'timeBudgetMinutes' || key === 'tokenBudget' ? 'None' : 'Default' })).join(''))}${help('Limits are validated against the engine. The council only deliberates: it makes no repository changes.')}${heading('Structured output')}${toggle(f, 'structuredOutput', 'Return structured output')}${checked(f, 'structuredOutput') ? textarea(f, 'outputSchema', 'Output fields', { rows: 3 }) + help('Describe the fields the council returns, such as conclusion and rationale.') : ''}${heading('Routing')}${select(f, 'routing', 'Routing', [['default', 'Default path'], ['outcome', 'Route by outcome']], { hideLabel: true })}${help(value(f, 'routing') === 'outcome' ? 'Outgoing connections are chosen by their conditions, for example consensus or no consensus.' : 'The council continues along the default outgoing connection.')}`;
+      body = council(f);
     } else if (kind === 'start' || kind === 'end') {
       title = kind === 'start' ? 'Start' : 'End';
       body = help(`${title} has no settings.`);

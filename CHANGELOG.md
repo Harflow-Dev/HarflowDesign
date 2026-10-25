@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Revise the exploratory Council configuration and run activity to the new canvas design: named members with instructions as accordion cards, optional members that never block consensus, read-only limits, name and required-count validation, a labelled feed with a members roster, and consensus, member-left, and failed outcome states; editable limits, structured output, routing, and the Go to outcome link are removed.
+
 - Revise the exploratory Statistics family to the new design: the Total time or Usage measure, a daily stacked chart, ranked workflow and task lists with run and turn drill-down, and a node breakdown page replace the totals tiles, cost, and empty state; dates are fixed and UTC-based.
 
 - Validate every Council limit, add structured output and routing controls, open Rename with the clicked workflow's name, and tighten proposal accessibility, emblem tinting, and Statistics fixtures.

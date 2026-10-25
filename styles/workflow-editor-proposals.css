@@ -38,11 +38,72 @@
 .editor-node-icon.council svg { width: 15px; height: 15px; }
 .editor-council-tray-glyph { display: inline-grid; place-items: center; width: 16px; height: 16px; }
 .editor-council-tray-glyph svg { width: 14px; height: 14px; }
-.editor-council-errors { margin: 0 0 12px; padding: 8px 10px; border: 1px solid var(--failedRed); border-radius: 8px; background: var(--dangerBG); color: var(--dangerFG); font-size: 12px; line-height: 1.4; }
-.editor-council-errors p { margin: 2px 0; }
-.editor-council-member { margin: 0 0 12px; padding: 8px 0 0; border-top: 1px solid var(--hairline); }
-.editor-council-member-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; font-size: 12px; }
-.editor-council-remove { padding: 2px 8px; }
+.editor-app .editor-node .editor-council-node-line { display: block; max-width: 100%; overflow: hidden; margin: 0; color: var(--secondaryText); font-size: 12px; line-height: 16px; text-overflow: ellipsis; white-space: nowrap; }
+.editor-app .editor-node .editor-council-node-line.is-meta { color: var(--tertiaryText); font-size: 11px; line-height: 14px; }
+.editor-app .editor-node:has(.editor-council-node-line) { gap: 4px; }
+.editor-app .editor-node:has(.editor-council-node-line) .editor-node-title { margin-bottom: 2px; }
+/* Council configuration inspector (#17). Stays at the native 288-point inspector width; controls wrap. */
+.workflow-specimen .editor-council { display: flex; flex-direction: column; align-items: stretch; gap: 12px; min-width: 0; }
+.workflow-specimen .editor-council svg { flex: none; width: 10px; height: 10px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.workflow-specimen .editor-council svg.is-solid { width: 12px; height: 12px; fill: currentColor; stroke: none; }
+.workflow-specimen .editor-council svg.editor-council-updown { width: 9px; height: 11px; stroke-width: 1.3; color: var(--secondaryText); }
+.workflow-specimen .editor-council-group { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+.workflow-specimen .editor-council-group > .editor-inspector-help { align-self: stretch; }
+.workflow-specimen .editor-council-field { display: flex; flex-direction: column; align-items: stretch; gap: 4px; min-width: 0; }
+.workflow-specimen .editor-council-field > label:not(.editor-council-optional), .workflow-specimen .editor-council-name > label { color: var(--secondaryText); font-size: 11px; font-weight: 600; line-height: 14px; }
+.workflow-specimen .editor-council textarea, .workflow-specimen .editor-council input[type="text"] { box-sizing: border-box; width: 100%; min-width: 0; border: 1px solid var(--cardBorder); border-radius: 8px; background: var(--cardFill); color: var(--primaryText); font: inherit; }
+.workflow-specimen .editor-council textarea { min-height: 64px; padding: 6px 8px; resize: vertical; line-height: 1.25; }
+.workflow-specimen .editor-council input[type="text"] { min-height: 28px; padding: 4px 8px; }
+.workflow-specimen .editor-council [aria-invalid="true"] { border-color: var(--failedRed); }
+.workflow-specimen .editor-council textarea:focus-visible, .workflow-specimen .editor-council input:focus-visible, .workflow-specimen .editor-council select:focus-visible, .workflow-specimen .editor-council button:focus-visible { outline: 2px solid var(--accentLink); outline-offset: 1px; }
+.workflow-specimen .editor-council-error { display: flex; align-items: flex-start; gap: 4px; color: var(--dangerFG); font-size: 12px; line-height: 15px; }
+.workflow-specimen .editor-council-error[hidden] { display: none; }
+.workflow-specimen .editor-council-error svg { margin-top: 1px; }
+.workflow-specimen .editor-council-list { display: flex; flex-direction: column; align-items: stretch; gap: 8px; }
+.workflow-specimen .editor-council-card { box-sizing: border-box; display: flex; flex-direction: column; align-items: stretch; gap: 8px; padding: 10px; border-radius: 8px; background: var(--composerFill); box-shadow: 0 0 0 .75px var(--cardBorder); min-width: 0; }
+.workflow-specimen .editor-council-card.is-open { box-shadow: 0 0 0 .75px var(--accentLink), inset 0 0 0 .75px var(--accentLink); }
+.workflow-specimen .editor-council-card-head { display: flex; align-items: center; gap: 4px; margin: -4px -4px 0 -6px; min-width: 0; }
+.workflow-specimen .editor-council-title { flex: 1 1 auto; min-width: 0; overflow: hidden; color: var(--primaryText); font-size: 13px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.workflow-specimen .editor-council-card-head .editor-council-title { font-size: 12px; }
+.workflow-specimen .editor-council-title.is-unnamed { color: var(--dangerFG); }
+.workflow-specimen .editor-council-chip { flex: none; padding: 1px 7px; border-radius: 6px; background: var(--pillFill); color: var(--secondaryText); font-size: 11px; line-height: 14px; }
+.workflow-specimen .editor-council-icon { flex: none; display: inline-grid; place-items: center; width: 24px; height: 24px; padding: 0; border: 0; border-radius: 6px; background: transparent; color: var(--secondaryText); cursor: pointer; }
+.workflow-specimen .editor-council-icon:hover { background: var(--neutralFill); }
+.workflow-specimen .editor-council-name { display: flex; flex-direction: column; gap: 4px; }
+.workflow-specimen .editor-council-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.workflow-specimen .editor-council-popup { position: relative; display: inline-flex; align-items: center; gap: 6px; max-width: 100%; min-height: 26px; padding: 3px 8px; border: 0; border-radius: 8px; background: var(--neutralFill); color: var(--primaryText); font: inherit; font-size: 12px; cursor: pointer; }
+.workflow-specimen .editor-council-popup select { min-width: 0; padding: 0 2px 0 0; border: 0; border-radius: 0; background: transparent; color: inherit; font: inherit; appearance: none; -webkit-appearance: none; cursor: pointer; }
+.workflow-specimen .editor-council-popup select:disabled { color: var(--tertiaryText); cursor: default; }
+.workflow-specimen .editor-council-popup:focus-within { outline: 2px solid var(--accentLink); outline-offset: 1px; }
+.workflow-specimen .editor-council-popup select:focus-visible { outline: 0; }
+.workflow-specimen .editor-council-popup.is-disabled { opacity: .65; }
+.workflow-specimen .editor-council-hint { margin: 0; color: var(--tertiaryText); font-size: 11px; line-height: 14px; }
+.workflow-specimen .editor-council-hint.is-indented { padding-left: 22px; }
+.workflow-specimen .editor-council-optional { display: flex; align-items: center; gap: 8px; color: var(--primaryText); font-size: 13px; }
+.workflow-specimen .editor-council-optional input { flex: none; width: 14px; height: 14px; margin: 0; accent-color: var(--accentFill); }
+.workflow-specimen .editor-council-optional.is-disabled { color: var(--secondaryText); }
+.workflow-specimen .editor-council-disclose { flex-direction: row; align-items: flex-start; gap: 2px; width: 100%; border: 0; color: var(--primaryText); font: inherit; text-align: left; cursor: pointer; }
+.workflow-specimen .editor-council-disclose-icon { display: inline-flex; flex: none; align-items: center; justify-content: center; width: 14px; height: 16px; color: var(--secondaryText); }
+.workflow-specimen .editor-council-disclose-body { display: flex; flex: 1; flex-direction: column; gap: 3px; min-width: 0; }
+.workflow-specimen .editor-council-line { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; min-width: 0; }
+.workflow-specimen .editor-council-line .editor-council-title { flex: 0 1 auto; }
+.workflow-specimen .editor-council-spacer { flex: 1 1 0; min-width: 0; }
+.workflow-specimen .editor-council-harness { display: inline-flex; flex: none; align-items: center; gap: 5px; max-width: 100%; color: var(--secondaryText); font-size: 12px; }
+.workflow-specimen .editor-council-excerpt { display: block; overflow: hidden; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.workflow-specimen .editor-council-excerpt.is-text { color: var(--secondaryText); }
+.workflow-specimen .editor-council-excerpt.is-none { color: var(--tertiaryText); }
+.workflow-specimen .editor-council-excerpt.is-error { color: var(--dangerFG); }
+.workflow-specimen .editor-council-add { display: inline-flex; align-items: center; gap: 6px; }
+.workflow-specimen .editor-council-banner { display: flex; align-items: flex-start; gap: 8px; padding: 10px; border-radius: 8px; background: var(--dangerBG); color: var(--dangerFG); font-size: 13px; line-height: 16px; }
+.workflow-specimen .editor-council-banner svg { margin-top: 1px; width: 14px; height: 14px; }
+.workflow-specimen .editor-council-banner div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.workflow-specimen .editor-council-banner strong { font-weight: 600; }
+.workflow-specimen .editor-council-banner span { color: var(--secondaryText); font-size: 12px; line-height: 15px; }
+.workflow-specimen .editor-council-limits { display: flex; flex-direction: column; align-self: stretch; margin: 0; overflow: hidden; border-radius: 10px; background: var(--neutralFill); }
+.workflow-specimen .editor-council-limits > div { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 32px; padding: 3px 12px; font-size: 13px; }
+.workflow-specimen .editor-council-limits > div + div { border-top: 1px solid var(--hairline); }
+.workflow-specimen .editor-council-limits dt, .workflow-specimen .editor-council-limits dd { margin: 0; }
+.workflow-specimen .editor-council-limits dd { font-variant-numeric: tabular-nums; }
 
 /* Readiness report */
 .editor-readiness { box-sizing: border-box; width: 340px; flex: none; overflow: auto; border-left: 1px solid var(--ed-line); background: var(--ed-panel); }
@@ -70,3 +131,5 @@
 .editor-readiness-badge.verify { background: var(--warningBG, var(--pillFill)); color: var(--warningFG); }
 .editor-app .editor-readiness-finding button { margin-top: 8px; padding: 3px 10px; font-size: 12px; }
 @media (prefers-reduced-motion: reduce) { .editor-reorder-preview { transition: none; } }
+.workflow-specimen .editor-council .backend-dot { margin-top: 0; }
+.workflow-specimen .editor-council .backend-dot.antigravity { background: var(--dotAntigravity); }
