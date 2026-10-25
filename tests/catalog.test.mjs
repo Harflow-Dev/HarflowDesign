@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const scripts = ['tokens.js', 'registry.js', 'appearance.js', 'components.js', 'tasks.js', 'task-activity.js', 'parallel.js', 'task-approvals.js', 'task-summary.js', 'workflows.js', 'workflow-connectors.js', 'workflow-editor-proposals.js', 'workflow-editor-inspector.js', 'workflow-editor.js', 'council-activity.js', 'workflow-run.js', 'dialogs.js', 'workflow-launch-proposals.js', 'state-recovery.js', 'sidebar-setup.js', 'sidebar-proposals.js', 'statistics.js', 'foundations.js'];
 
-function loadDesignRuntime({ captureEvents = false, querySelectorOverride, querySelectorAllOverride } = {}) {
+function loadDesignRuntime({ captureEvents = false, querySelectorOverride, querySelectorAllOverride, history } = {}) {
   const announcement = { textContent: '', classList: { add() {}, remove() {} } };
   const listeners = new Map();
   const document = {
@@ -30,6 +30,7 @@ function loadDesignRuntime({ captureEvents = false, querySelectorOverride, query
     document,
     setTimeout,
     clearTimeout,
+    ...(history ? { history } : {}),
   });
   context.window = context;
   for (const file of scripts) {
@@ -2123,7 +2124,7 @@ test('Council run activity is one feed that names agents, rounds, questions, ver
 });
 
 const statTime = text => { let m = 0; const h = /(\d+) h/.exec(text), n = /(\d+) min/.exec(text); if (h) m += 60 * Number(h[1]); if (n) m += Number(n[1]); return m; };
-const statTokens = text => { const m = /([\d.]+) (M|k)? ?tokens/.exec(text); return m ? Number(m[1]) * (m[2] === 'M' ? 1000 : 1) : 0; };
+const statTokens = text => { const m = /([\d.]+) (M|k)? ?tokens/.exec(text); return m ? Number(m[1]) * (m[2] === 'M' ? 1000 : m[2] === 'k' ? 1 : 0.001) : 0; };
 const statRoute = (hf, state) => { hf.resetStatistics(); hf.route = { theme: 'light', screen: 'statistics', state }; };
 const statText = html => html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ');
 
@@ -2315,33 +2316,122 @@ test('statistics controls expose pressed, expanded and controlled-region semanti
   }
 });
 
-test('statistics open rows persist across list, measure and range changes', () => {
-  const hf = loadDesignRuntime();
-  const open = { 'w:0': true, 't:1': true };
-  const expandedIds = opts => Array.from(hf.statisticsModel({ open, ...opts }).list.rows.filter(row => row.open).map(row => row.id));
-  assert.deepEqual(expandedIds({}), ['w:0']);
-  assert.deepEqual(expandedIds({ measure: 'usage' }), ['w:0']);
-  assert.deepEqual(expandedIds({ range: 7 }), ['w:0']);
-  assert.deepEqual(expandedIds({ list: 'tasks' }), ['t:1']);
-  assert.deepEqual(expandedIds({ list: 'workflows', range: 90, measure: 'usage' }), ['w:0']);
-});
-
-test('statistics page state resets to 30 days, Total time and Workflows', () => {
-  const hf = loadDesignRuntime();
-  const m = hf.statisticsModel();
-  assert.equal(m.range, 30);
-  assert.equal(m.measure, 'time');
-  assert.equal(m.listKind, 'workflows');
-  assert.equal(m.rangeLabel, 'Last 30 days');
-  assert.ok(m.list.rows.every(row => !row.open));
+function statisticsInteractive() {
+  const announcement = { textContent: '', classList: { add() {}, remove() {} } };
+  const content = { innerHTML: '', scrollTop: 5, querySelector: () => null };
+  const entry = { textContent: 'Last 30 days' };
+  const picker = { value: 'overview' };
+  const caption = { textContent: '' };
+  const replaced = [];
+  const elements = { '#announcement': announcement, '#statistics-content': content, '.stat-entry small': entry, '#state-picker': picker, '#specimen-caption': caption };
+  const hf = loadDesignRuntime({ captureEvents: true, querySelectorOverride: selector => elements[selector], history: { state: null, replaceState: (_s, _t, hash) => replaced.push(hash) } });
   hf.route = { theme: 'light', screen: 'statistics', state: 'overview' };
+  hf.resetStatistics();
+  const click = action => {
+    const target = { dataset: { action }, disabled: false };
+    hf.__dispatchDesignEvent({ type: 'click', target: { closest: selector => (selector.includes('data-action^="stat-"') ? target : null) }, preventDefault() {}, stopImmediatePropagation() {} });
+  };
+  return { hf, content, entry, picker, caption, replaced, click, mode: () => hf.appearance?.themeMode || 'system' };
+}
+
+test('statistics interactions keep range, measure and open rows across lists and the node round trip', () => {
+  const { hf, content, entry, picker, caption, replaced, click, mode } = statisticsInteractive();
+  click('stat-range:7');
+  assert.equal(entry.textContent, 'Last 7 days');
+  assert.match(content.innerHTML, /Last 7 days · All repositories/);
+  click('stat-measure:usage');
+  click('stat-toggle:w:0');
+  assert.match(content.innerHTML, /aria-expanded="true"/);
+  click('stat-list:tasks');
+  assert.match(content.innerHTML, /Tasks by usage/);
+  assert.doesNotMatch(content.innerHTML, /aria-expanded="true"/, 'workflow row is not in the task list');
+  click('stat-toggle:t:1');
+  click('stat-list:workflows');
+  assert.match(content.innerHTML, /Workflows by usage/);
+  assert.match(content.innerHTML, /data-action="stat-toggle:w:0" aria-expanded="true"/, 'workflow row still open');
+  click('stat-list:tasks');
+  assert.match(content.innerHTML, /data-action="stat-toggle:t:1" aria-expanded="true"/, 'task row still open');
+  click('stat-list:workflows');
+
+  click('stat-nodes:0');
+  assert.deepEqual(Array.from(replaced), [`#statistics/nodes/${mode()}`]);
+  assert.equal(picker.value, 'nodes');
+  assert.equal(hf.route.state, 'nodes');
+  assert.equal(caption.textContent, hf.specimenStatus('statistics', 'nodes').caption);
+  assert.match(content.innerHTML, /Back to Statistics/);
+  assert.match(content.innerHTML, /Nodes by usage/);
+  assert.match(content.innerHTML, /Node breakdown · 22 runs · Last 7 days/);
+  assert.equal(content.scrollTop, 0);
+  assert.equal(entry.textContent, 'Last 7 days');
+
+  click('stat-back');
+  assert.deepEqual(Array.from(replaced), [`#statistics/nodes/${mode()}`, `#statistics/overview/${mode()}`]);
+  assert.equal(picker.value, 'overview');
+  assert.equal(hf.route.state, 'overview');
+  assert.match(content.innerHTML, /Workflows by usage/);
+  assert.match(content.innerHTML, /Last 7 days · All repositories/);
+  assert.match(content.innerHTML, /data-action="stat-toggle:w:0" aria-expanded="true"/, 'open row survives the round trip');
+  click('stat-list:tasks');
+  assert.match(content.innerHTML, /data-action="stat-toggle:t:1" aria-expanded="true"/, 'task row survives the round trip');
+  click('stat-toggle:t:1');
+  assert.doesNotMatch(content.innerHTML, /aria-expanded="true"/, 'toggling closes the row');
+
   hf.resetStatistics();
   const html = hf.renderStatistics('overview');
   assert.ok(html.includes('data-action="stat-range:30" aria-pressed="true"'));
   assert.ok(html.includes('data-action="stat-measure:time" aria-pressed="true"'));
   assert.ok(html.includes('data-action="stat-list:workflows" aria-pressed="true"'));
-  assert.doesNotMatch(html, /aria-expanded="true"/);
-  assert.match(hf.statisticsBody('overview', { range: 7 }), /Last 7 days · All repositories/);
+  assert.doesNotMatch(html, /aria-expanded="true"/, 'reset closes the rows left open');
+  assert.match(html, /<small>Last 30 days<\/small>/);
+});
+
+test('statistics clicks are ignored outside the statistics route and reset can start on the node page', () => {
+  const { hf, content, click } = statisticsInteractive();
+  hf.route = { theme: 'light', screen: 'tasks', state: 'populated' };
+  click('stat-range:7');
+  assert.equal(content.innerHTML, '');
+  hf.route = { theme: 'light', screen: 'statistics', state: 'nodes' };
+  hf.resetStatistics();
+  assert.match(hf.renderStatistics('nodes'), /Back to Statistics/);
+  assert.match(hf.renderStatistics('nodes'), /<small>Last 30 days<\/small>/);
+});
+
+test('statistics task turns sum to the row value and fall inside the range window', () => {
+  const hf = loadDesignRuntime();
+  const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const end = Date.UTC(2026, 9, 25), day = 86400000;
+  const open = Object.fromEntries([0, 1, 2, 3, 4, 5, 6].map(i => [`t:${i}`, true]));
+  for (const range of [7, 30, 90]) for (const measure of ['time', 'usage']) {
+    const rows = hf.statisticsModel({ range, measure, list: 'tasks', open }).list.rows;
+    assert.equal(rows.length, 7);
+    const parse = measure === 'usage' ? statTokens : statTime;
+    for (const row of rows) {
+      assert.ok(row.children.length >= 1);
+      const sum = row.children.reduce((a, c) => a + parse(c.value), 0);
+      const tol = row.children.length * 0.5 + (measure === 'usage' ? 50 : 0.5);
+      assert.ok(Math.abs(sum - parse(row.value)) <= tol, `${row.name} ${range}/${measure}: ${sum} vs ${row.value}`);
+      for (const child of row.children) {
+        const [, mon, d] = /^([A-Z][a-z]{2}) (\d+), \d\d:\d\d$/.exec(child.when);
+        const ts = Date.UTC(2026, MON.indexOf(mon), Number(d));
+        assert.ok(ts <= end && ts > end - range * day, `${row.name} ${range}: ${child.when} within window`);
+      }
+    }
+  }
+  const turns = range => hf.statisticsModel({ range, list: 'tasks', open: { 't:0': true } }).list.rows.find(r => r.id === 't:0').children.map(c => c.value).join();
+  assert.equal(new Set([7, 30, 90].map(turns)).size, 3, 'turn values scale with the range');
+});
+
+test('statistics shows harness names from HF.harnessName', () => {
+  const hf = loadDesignRuntime();
+  assert.equal(hf.harnessName('opencode'), 'OpenCode');
+  const tasks = hf.statisticsBody('overview', { list: 'tasks' });
+  assert.match(tasks, /OpenCode · mobile/);
+  assert.doesNotMatch(tasks, /Opencode/);
+  for (const name of ['Claude', 'Codex', 'Vibe', 'Antigravity']) assert.ok(tasks.includes(name + ' · '), name);
+  const nodes = hf.statisticsBody('nodes', {});
+  assert.match(nodes, /Test · OpenCode · qwen3-coder/);
+  assert.doesNotMatch(nodes, /Opencode/);
+  assert.doesNotMatch(hf.renderStatistics('nodes'), /Opencode/);
 });
 
 test('statistics rendering is deterministic across loads and unknown ranges fall back to 30 days', () => {
