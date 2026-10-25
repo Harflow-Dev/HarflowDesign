@@ -4423,7 +4423,7 @@ test('council run and statistics markup appear only in their own states', () => 
   }
 });
 
-const approvalStates = ['delivering', 'delivered', 'executed-succeeded', 'executed-failed', 'delivery-unknown', 'decision-lost', 'result-unknown', 'expiry-override', 'system-rejected', 'invalidated', 'incomplete', 'capability-lost', 'undecidable', 'multiple-pending', 'multiple-bounded', 'loading', 'action-bash', 'action-write', 'action-edit', 'action-codex-command', 'action-codex-filechange', 'action-generic', 'answered-from-monitor', 'source-attribution'];
+const approvalStates = ['delivering', 'delivered', 'executed-succeeded', 'executed-failed', 'delivery-unknown', 'decision-lost', 'result-unknown', 'expiry-override', 'system-rejected', 'invalidated', 'incomplete', 'capability-lost', 'undecidable', 'multiple-pending', 'multiple-bounded', 'loading', 'action-bash', 'action-write', 'action-edit', 'action-codex-command', 'action-codex-filechange', 'action-generic', 'answered-from-monitor', 'source-attribution', 'accepted', 'not-delivered', 'cancelled', 'ownership-lost', 'unknown-values'];
 const approvalText = (html) => html.replace(/<[^>]+>/g, ' ').replace(/&#39;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/\s+/g, ' ');
 
 test('exploratory approval states are registered, reachable, listed in the inventory and render without raw JSON or ids', () => {
@@ -4455,12 +4455,12 @@ test('delivery and outcome states keep approval distinct from successful executi
   assert.match(text('executed-succeeded'), /The action ran and succeeded\./);
   assert.match(text('executed-failed'), /The action ran and failed\. Approval does not mean the action succeeded\./);
   assert.match(text('delivery-unknown'), /Harflow will not retry this decision\./);
-  assert.match(text('expiry-override'), /Harflow rejected the request, so the action was not run\./);
+  assert.match(text('expiry-override'), /The deadline passed before the approval could be delivered\. Harflow sent a rejection instead, so the action was not run\./);
   const system = text('system-rejected');
   assert.match(system, /rejected by Harflow/);
   hf.renderTasks('approvals', 'system-rejected');
-  assert.ok(hf.approvalController.inspect('approval_01'));
-  assert.match(approvalText(hf.approvalPanel()), /Rejected by Harflow: Protected path\./);
+  assert.match(approvalText(hf.approvalPanel()), /Request too large to review/, 'row metadata carries the system reason');
+  assert.match(approvalText(hf.approvalPanel()), /Rejected by Harflow: Protected path, agents cannot change \.git\/config\. The action was not run\./);
   assert.match(text('invalidated'), /Decision not applied\./);
   assert.equal(hf.approvalController.canRespond(), false);
 });
@@ -4469,7 +4469,7 @@ test('refusal, capability and incomplete states disable approval with an explana
   const hf = loadDesignRuntime();
   const text = (state) => { hf.renderTasks('approvals', state); return approvalText(hf.approvalPanel()); };
   assert.match(text('decision-lost'), /The request is no longer current and was not changed\./);
-  assert.match(text('result-unknown'), /Result unknown — refreshed; not resubmitted\./);
+  assert.match(text('result-unknown'), /The result could not be confirmed\. Harflow refreshed this request and did not send your answer again\./);
   assert.equal(hf.approvalController.canRespond(), false);
   assert.match(text('incomplete'), /Approval is disabled because the full action is not available to review\./);
   assert.match(hf.approvalPanel(), /data-action="approval-decision:approve" disabled/);
@@ -4492,9 +4492,12 @@ test('multiple pending requests render separate cards, a counted hint and bounde
   assert.match(approvalText(hf.approvalHint()), /3 pending requests · View in Activity/);
   assert.doesNotMatch(approvalText(hf.approvalPanel()), /More requests are pending than shown/);
   hf.renderTasks('approvals', 'multiple-bounded');
-  assert.match(approvalText(hf.approvalPanel()), /More requests are pending than shown here\. Open Activity to review them\./);
+  assert.match(approvalText(hf.approvalPanel()), /More requests are pending than shown here\. Refresh or load more to see them\./);
+  assert.match(hf.approvalPanel(), /data-action="approval-page"/);
   assert.match(approvalText(hf.approvalHint()), /3\+ pending requests/);
+  assert.match(hf.approvalPanel(), /role="group" tabindex="-1" aria-label="Approval request 1 of 3"/);
   hf.renderTasks('approvals', 'source-attribution');
+  assert.match(approvalText(hf.approvalPanel()), /Workflow step: Implement/, 'visible without inspection');
   assert.match(approvalText(hf.approvalTail()), /Waiting for approval: Write · Sources\/Persistence\/Store\.swift/);
   hf.renderTasks('approvals', 'monitor-pending');
   assert.equal(approvalText(hf.approvalTail()).trim(), 'Waiting for approval: Bash · git push origin main');
@@ -4534,4 +4537,121 @@ test('settled cards state their provenance and bound the agent reason', () => {
   assert.ok(reason.endsWith('…'));
   hf.renderTasks('approvals', 'approved');
   assert.doesNotMatch(approvalText(hf.approvalPanel()), /Answered (from|by)/);
+});
+
+test('invalidation copy depends on delivery, and accepted, delivering and failed delivery are distinct', () => {
+  const hf = loadDesignRuntime();
+  const text = (state) => { hf.renderTasks('approvals', state); return approvalText(hf.approvalPanel()); };
+  assert.match(text('invalidated'), /The task stopped or its owner is gone, so the answer was not delivered\./);
+  const cancelled = text('cancelled');
+  assert.match(cancelled, /Decision not applied\. Delivery could not be confirmed; Harflow will not retry\./);
+  assert.doesNotMatch(cancelled, /was not delivered/);
+  assert.match(cancelled, /invalidated · delivery unknown/);
+  hf.approvalController.state.detail = { ...hf.approvalController.state.detail, delivery: 'sent' };
+  assert.doesNotMatch(approvalText(hf.approvalPanel()), /was not delivered|will not retry/);
+  assert.match(text('ownership-lost'), /Decision not applied\. The owner of this request is gone\./);
+  assert.equal(hf.approvalController.canRespond(), false);
+  assert.match(text('accepted'), /Decision accepted\. Waiting to deliver to the agent\./);
+  assert.match(text('accepted'), /approved · accepted/);
+  assert.match(text('delivering'), /approved · delivering/);
+  assert.match(text('not-delivered'), /Not delivered\. The action was not run\./);
+  assert.match(text('expiry-override'), /rejection delivered/, 'delivery state stays visible');
+});
+
+test('unknown ownership, state, delivery and reason values display as unknown and are never actionable', () => {
+  const hf = loadDesignRuntime();
+  hf.renderTasks('approvals', 'unknown-values');
+  const text = approvalText(hf.approvalPanel());
+  assert.match(text, /unknown/);
+  assert.match(text, /does not recognize/);
+  assert.doesNotMatch(hf.approvalPanel(), /data-action="approval-decision:/);
+  assert.equal(hf.approvalController.canRespond(), false);
+  for (const field of ['ownership', 'disposition', 'delivery', 'execution_outcome']) {
+    hf.renderTasks('approvals', 'inspected');
+    const model = hf.approvalController.state;
+    assert.equal(hf.approvalController.canRespond(), true);
+    model.detail = { ...model.detail, [field]: 'future-value' };
+    model.requests = model.requests.map((r) => ({ ...r, [field]: 'future-value' }));
+    assert.equal(hf.approvalController.canRespond(), false, field);
+  }
+});
+
+test('uncertain submissions stay read-only across inspection and refresh', () => {
+  const hf = loadDesignRuntime();
+  hf.renderTasks('approvals', 'result-unknown');
+  const model = hf.approvalController.state;
+  assert.equal(hf.approvalController.canRespond(), false);
+  assert.ok(hf.approvalController.inspect('approval_01'));
+  assert.equal(model.current, true);
+  assert.equal(hf.approvalController.canRespond(), false, 'inspection does not re-enable approval');
+  assert.match(approvalText(hf.approvalPanel()), /did not send your answer again/);
+  assert.ok(hf.approvalController.refresh({ requests: model.requests, total: 1 }));
+  assert.equal(hf.approvalController.canRespond(), false, 'refresh does not re-enable approval');
+  assert.equal(hf.approvalController.beginResponse('approve'), null);
+  assert.match(approvalText(hf.approvalPanel()), /did not send your answer again/);
+  hf.approvalController.refresh({ requests: model.requests.map((r) => ({ ...r, disposition: 'approved', delivery: 'sent' })), total: 1 });
+  assert.equal(model.uncertain, false, 'reconciliation clears uncertainty once the request settled');
+});
+
+test('approval is gated on renderer coverage of the whole action', () => {
+  const hf = loadDesignRuntime();
+  hf.renderTasks('approvals', 'action-codex-filechange');
+  const model = hf.approvalController.state;
+  const mutate = (change) => {
+    hf.renderTasks('approvals', 'inspected');
+    const m = hf.approvalController.state;
+    m.requests[0] = { ...m.requests[0], tool_name: 'fileChange', action: { tool_name: 'fileChange', input: { changes: [change] } } };
+    m.detail = m.requests[0];
+    return m;
+  };
+  mutate({ path: 'a.swift', kind: 'update', diff: '+x' });
+  assert.equal(hf.approvalController.canRespond(), true, 'fully rendered change is approvable');
+  mutate({ path: 'a.swift', kind: { type: 'update', futureFlag: true }, diff: '+x' });
+  assert.match(approvalText(hf.approvalPanel()), /kind · futureFlag/);
+  assert.equal(hf.approvalController.canRespond(), true, 'extra nested keys are rendered through the generic renderer');
+  mutate({ path: 'a.swift', kind: 'update', diff: { hunks: 3 }, extra: [1, 2] });
+  const typed = approvalText(hf.approvalPanel());
+  assert.match(typed, /diff · hunks 3/);
+  assert.match(typed, /extra 1 1/);
+  mutate({ path: 'a.swift', kind: 42, diff: null });
+  assert.match(approvalText(hf.approvalPanel()), /kind 42/);
+  assert.match(approvalText(hf.approvalPanel()), /diff No value/);
+  assert.ok(model, 'model reference kept');
+  hf.renderTasks('approvals', 'action-write');
+  const write = hf.approvalController.state;
+  write.detail = { ...write.detail, action: { tool_name: 'Write', input: { file_path: 'a', content: 'b', mode: 420 } } };
+  assert.match(approvalText(hf.approvalPanel()), /mode 420/);
+});
+
+test('known routine Codex metadata is hidden while unknown inputs stay visible', () => {
+  const hf = loadDesignRuntime();
+  for (const state of ['action-codex-command', 'action-codex-filechange']) {
+    hf.renderTasks('approvals', state);
+    assert.doesNotMatch(approvalText(hf.approvalPanel()), /threadId|turnId|itemId|startedAtMs|thr_01|item_0/, state);
+    assert.equal(hf.approvalController.canRespond(), true, `${state} stays approvable with hidden routine metadata`);
+  }
+  const model = hf.approvalController.state;
+  model.detail = { ...model.detail, action: { tool_name: 'fileChange', input: { threadId: 't', changes: [{ path: 'a', kind: 'add', diff: '+' }], approvalPolicy: 'never' } } };
+  const html = approvalText(hf.approvalPanel());
+  assert.match(html, /approvalPolicy never/);
+  assert.doesNotMatch(html, /threadId/);
+});
+
+test('the agent reason sits outside the requested action region', () => {
+  const hf = loadDesignRuntime();
+  hf.renderTasks('approvals', 'answered-from-monitor');
+  const html = hf.approvalPanel();
+  const focus = /<div class="approval-action-focus"[\s\S]*?<\/div><\/div>/.exec(html)[0];
+  assert.doesNotMatch(focus, /stated reason/);
+  assert.ok(html.indexOf('approval-reason') > html.indexOf(focus));
+});
+
+test('approved baseline approval states render exactly as at 506d7d2', () => {
+  const hf = loadDesignRuntime();
+  const baseline = { 'monitor-pending': 'b7dbe3fb078717e0', inspected: '155a72e5d4b1c388', submitting: 'd9371378636a317b', 'caller-owned': 'b7497dc96eba492e', 'caller-owned-legacy': '1a0f19a607b08fca', history: '6a49ef458b608e44', pagination: '7bbe61a3f4601722', approved: 'f27836a4b4910320', denied: '92b0cca01e0c4790', expired: '8332b53be6107cfe', error: '1dd6a3893861702f' };
+  for (const [state, expected] of Object.entries(baseline)) {
+    const page = hf.renderTasks('approvals', state);
+    const digest = createHash('sha256').update([page, hf.approvalPanel(), hf.approvalTail(), hf.approvalHint()].join('\n--\n')).digest('hex').slice(0, 16);
+    assert.equal(digest, expected, `${state} markup is unchanged`);
+  }
 });
