@@ -166,3 +166,10 @@
 .web-app button.web-btn.primary:hover { background: var(--accentFill); filter: brightness(1.05); }
 .web-condition { flex-wrap: wrap; row-gap: 6px; padding-top: 6px; padding-bottom: 6px; }
 .web-app .web-condition input.web-code-input { flex: 1 1 130px; min-width: 110px; }
+/* The run graph stacks vertically when the run pane leaves too little width for one row (1000 points). */
+.web-run-main { container-type: inline-size; }
+@container (max-width: 640px) {
+  .web-graph { flex-direction: column; align-items: stretch; overflow-y: auto; }
+  .web-edge { flex: 0 0 16px; width: 1.5px; height: 16px; align-self: center; }
+  .web-node.terminal { align-self: center; }
+}

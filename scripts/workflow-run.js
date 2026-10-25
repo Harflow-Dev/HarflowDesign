@@ -258,7 +258,7 @@
       case 'wr-open-log': HF.feedback('Full log is mock only'); return;
       case 'wr-run-again': HF.feedback('Mock run again requested · no run started'); return;
       case 'wr-open-end': current.mode = 'graph'; current.selection = 'end'; current.focusTarget = 'wr-deselect'; break;
-      case 'wr-run-teardown': if (current.teardown !== 'pending') return; current.teardown = 'running'; current.focusTarget = 'wr-deselect'; HF.feedback('Mock teardown started'); renderCurrent(); setTimeout(() => { if (HF.route?.screen === 'workflow-run' && HF.route.state === 'teardown-pending' && getState().teardown === 'running') { getState().teardown = 'completed'; renderCurrent(); HF.feedback('Mock teardown completed · the run outcome stays Completed'); } }, 800); return;
+      case 'wr-run-teardown': if (current.teardown !== 'pending') return; current.teardown = 'running'; current.focusTarget = 'wr-deselect'; HF.feedback('Mock teardown started'); renderCurrent(); setTimeout(() => { if (HF.route?.screen === 'workflow-run' && HF.route.state === 'teardown-pending' && getState().teardown === 'running') { getState().teardown = 'completed'; getState().focusTarget = 'wr-deselect'; renderCurrent(); HF.feedback('Mock teardown completed · the run outcome stays Completed'); } }, 800); return;
       case 'wr-open-recovery': current.recoveryOpen = true; current.focusTarget = 'wr-close-recovery'; break;
       case 'wr-close-recovery': current.recoveryOpen = false; current.focusTarget = 'wr-open-recovery'; break;
       case 'wr-recovery-submit': case 'wr-recovery-retry': case 'wr-recovery-skip': if (target.disabled) return; HF.feedback('Mock recovery request recorded · no run state changed'); return;
