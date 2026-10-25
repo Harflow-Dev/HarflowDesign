@@ -44,3 +44,16 @@
 .ta-approval-waiting { color:var(--warningFG); }
 
 .ta-approval-slot { display:contents; }
+
+/* Exploratory states: bounded code blocks, status guidance, file changes, and stacked requests. */
+.approval-inline + .approval-inline { margin-top:8px; }
+.approval-detail pre.approval-scroll { max-height:200px; overflow:auto; padding:6px 8px; border-radius:6px; background:var(--hairline); }
+.approval-detail pre.approval-scroll:focus-visible { outline:2px solid var(--accentLink); outline-offset:2px; }
+.approval-note { margin:0; color:var(--secondaryText); font-size:11px; line-height:14px; }
+.approval-note.warn { color:var(--warningFG); }
+.approval-reason { display:grid; gap:2px; }
+.approval-reason > span { color:var(--secondaryText); font-size:11px; }
+.approval-reason > p { margin:0; max-height:72px; overflow:auto; color:var(--primaryText); overflow-wrap:anywhere; }
+.approval-change { display:grid; gap:4px; padding-top:4px; border-top:1px solid var(--hairline); }
+.approval-change > .approval-context { overflow-wrap:anywhere; }
+.approval-change > .approval-context strong { color:var(--primaryText); font-weight:600; }

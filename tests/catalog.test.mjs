@@ -4422,3 +4422,116 @@ test('council run and statistics markup appear only in their own states', () => 
     }
   }
 });
+
+const approvalStates = ['delivering', 'delivered', 'executed-succeeded', 'executed-failed', 'delivery-unknown', 'decision-lost', 'result-unknown', 'expiry-override', 'system-rejected', 'invalidated', 'incomplete', 'capability-lost', 'undecidable', 'multiple-pending', 'multiple-bounded', 'loading', 'action-bash', 'action-write', 'action-edit', 'action-codex-command', 'action-codex-filechange', 'action-generic', 'answered-from-monitor', 'source-attribution'];
+const approvalText = (html) => html.replace(/<[^>]+>/g, ' ').replace(/&#39;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/\s+/g, ' ');
+
+test('exploratory approval states are registered, reachable, listed in the inventory and render without raw JSON or ids', () => {
+  const hf = loadDesignRuntime();
+  const family = hf.screens.find((screen) => screen.id === 'approvals');
+  const inventory = fs.readFileSync(path.join(root, 'docs/screen-inventory.md'), 'utf8');
+  for (const state of approvalStates) {
+    assert.ok(family.states.includes(state), `${state} is registered`);
+    assert.ok(inventory.includes(`approvals/${state}\``), `${state} is in the inventory`);
+    assert.equal(hf.specimenStatus('approvals', state).kind, 'exploratory', state);
+    for (const theme of ['light', 'dark']) {
+      hf.route = { theme, screen: 'approvals', state };
+      const html = hf.renderTasks('approvals', state);
+      assert.ok(html.length > 0, `${state} renders in ${theme}`);
+      const panel = hf.approvalPanel();
+      assert.ok(panel.length > 0, `${state} has an approval panel`);
+      assert.doesNotMatch(approvalText(panel), /approval_0\d|sha256:|\{"|"tool_name"|task_id/, `${state} exposes no raw JSON or routine ids`);
+    }
+  }
+  assert.match(inventory, /Exploratory, pending approval/);
+});
+
+test('delivery and outcome states keep approval distinct from successful execution', () => {
+  const hf = loadDesignRuntime();
+  const text = (state) => { hf.renderTasks('approvals', state); return approvalText(hf.approvalPanel()); };
+  assert.match(text('delivering'), /Decision accepted\. Delivering to the agent\./);
+  assert.doesNotMatch(text('delivering'), /Approve once/);
+  assert.match(text('delivered'), /Whether the action ran has not been observed\. Approval does not mean the action succeeded\./);
+  assert.match(text('executed-succeeded'), /The action ran and succeeded\./);
+  assert.match(text('executed-failed'), /The action ran and failed\. Approval does not mean the action succeeded\./);
+  assert.match(text('delivery-unknown'), /Harflow will not retry this decision\./);
+  assert.match(text('expiry-override'), /Harflow rejected the request, so the action was not run\./);
+  const system = text('system-rejected');
+  assert.match(system, /rejected by Harflow/);
+  hf.renderTasks('approvals', 'system-rejected');
+  assert.ok(hf.approvalController.inspect('approval_01'));
+  assert.match(approvalText(hf.approvalPanel()), /Rejected by Harflow: Protected path\./);
+  assert.match(text('invalidated'), /Decision not applied\./);
+  assert.equal(hf.approvalController.canRespond(), false);
+});
+
+test('refusal, capability and incomplete states disable approval with an explanation', () => {
+  const hf = loadDesignRuntime();
+  const text = (state) => { hf.renderTasks('approvals', state); return approvalText(hf.approvalPanel()); };
+  assert.match(text('decision-lost'), /The request is no longer current and was not changed\./);
+  assert.match(text('result-unknown'), /Result unknown — refreshed; not resubmitted\./);
+  assert.equal(hf.approvalController.canRespond(), false);
+  assert.match(text('incomplete'), /Approval is disabled because the full action is not available to review\./);
+  assert.match(hf.approvalPanel(), /data-action="approval-decision:approve" disabled/);
+  assert.equal(hf.approvalController.canRespond(), false);
+  const lost = text('capability-lost');
+  assert.match(lost, /This engine does not support Mac responses\./);
+  assert.match(lost, /became unavailable after inspection/);
+  assert.doesNotMatch(hf.approvalPanel(), /data-action="approval-decision:/);
+  assert.match(text('undecidable'), /could not confirm this Mac is not running inside an agent task/);
+  assert.doesNotMatch(hf.approvalPanel(), /data-action="approval-decision:/);
+  assert.equal(hf.approvalController.canRespond(), false);
+  assert.match(text('loading'), /Loading approval requests/);
+});
+
+test('multiple pending requests render separate cards, a counted hint and bounded guidance', () => {
+  const hf = loadDesignRuntime();
+  hf.renderTasks('approvals', 'multiple-pending');
+  assert.equal((hf.approvalPanel().match(/class="approval-card approval-inline"/g) || []).length, 3);
+  assert.match(approvalText(hf.approvalTail()), /Waiting for approval: Bash · git push origin main · 2 more/);
+  assert.match(approvalText(hf.approvalHint()), /3 pending requests · View in Activity/);
+  assert.doesNotMatch(approvalText(hf.approvalPanel()), /More requests are pending than shown/);
+  hf.renderTasks('approvals', 'multiple-bounded');
+  assert.match(approvalText(hf.approvalPanel()), /More requests are pending than shown here\. Open Activity to review them\./);
+  assert.match(approvalText(hf.approvalHint()), /3\+ pending requests/);
+  hf.renderTasks('approvals', 'source-attribution');
+  assert.match(approvalText(hf.approvalTail()), /Waiting for approval: Write · Sources\/Persistence\/Store\.swift/);
+  hf.renderTasks('approvals', 'monitor-pending');
+  assert.equal(approvalText(hf.approvalTail()).trim(), 'Waiting for approval: Bash · git push origin main');
+});
+
+test('readable action renderers show every authorization-relevant value', () => {
+  const hf = loadDesignRuntime();
+  const text = (state) => { hf.renderTasks('approvals', state); return approvalText(hf.approvalPanel()); };
+  const bash = text('action-bash');
+  for (const part of ['Run command', 'swift test --filter PersistenceTests', 'Run the persistence tests', 'In /Users/example/repo', 'timeout', '120000']) assert.ok(bash.includes(part), `bash: ${part}`);
+  const write = text('action-write');
+  for (const part of ['Write file', 'Path: Sources/Persistence/Store.swift', 'import Foundation', 'let value39 = "39"']) assert.ok(write.includes(part), `write: ${part}`);
+  assert.match(hf.approvalPanel(), /class="approval-scroll"/);
+  const edit = text('action-edit');
+  for (const part of ['Edit file', 'Replace this text', 'let limit = 10', 'With this text', 'let retries = 3', 'replace_all', 'No']) assert.ok(edit.includes(part), `edit: ${part}`);
+  const codex = text('action-codex-command');
+  for (const part of ['swift test --filter PersistenceTests', 'In /Users/example/repo', 'timeout_ms', 'sandbox · mode', 'workspace-write', 'sandbox · network']) assert.ok(codex.includes(part), `codex command: ${part}`);
+  const files = text('action-codex-filechange');
+  for (const part of ['Change files', 'Update Sources/Store.swift', 'Add Sources/Cache.swift', 'Delete Sources/Legacy.swift', 'Update Sources/Old.swift → Sources/Renamed.swift', '+let limit = 25', '-final class Legacy {}']) assert.ok(files.includes(part), `file change: ${part}`);
+  const generic = text('action-generic');
+  for (const part of ['mcp__tracker__update_issue', 'Leading space kept', 'labels 1', 'bug', 'labels 2', 'Empty text', 'assignee', 'No value', 'estimate', '3', 'archived', 'metadata', 'Empty object', 'options · notify', 'options · fields 2', 'owner', 'unknown_future_key', 'kept as is']) assert.ok(generic.includes(part), `generic: ${part}`);
+  assert.match(hf.approvalPanel(), /<dd>  Leading space kept <\/dd>/);
+});
+
+test('settled cards state their provenance and bound the agent reason', () => {
+  const hf = loadDesignRuntime();
+  hf.renderTasks('approvals', 'answered-from-monitor');
+  const answered = approvalText(hf.approvalPanel());
+  assert.match(answered, /Answered from Monitor/);
+  assert.match(answered, /Answered by the owning caller/);
+  assert.match(answered, /Agent's stated reason/);
+  assert.doesNotMatch(answered, /by you/i);
+  const state = hf.approvalController.state;
+  state.detail = { ...state.detail, reason: 'x'.repeat(900) };
+  const reason = /approval-reason"><span>[^<]*<\/span><p>([^<]*)<\/p>/.exec(hf.approvalPanel())[1];
+  assert.equal(reason.length, 400);
+  assert.ok(reason.endsWith('…'));
+  hf.renderTasks('approvals', 'approved');
+  assert.doesNotMatch(approvalText(hf.approvalPanel()), /Answered (from|by)/);
+});
