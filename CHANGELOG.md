@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Revise the exploratory Statistics family to the new design: the Total time or Usage measure, a daily stacked chart, ranked workflow and task lists with run and turn drill-down, and a node breakdown page replace the totals tiles, cost, and empty state; dates are fixed and UTC-based.
+
 - Validate every Council limit, add structured output and routing controls, open Rename with the clicked workflow's name, and tighten proposal accessibility, emblem tinting, and Statistics fixtures.
 
 - Add an exploratory Statistics family with overview and empty states and a sidebar entry, shown without a native source link.

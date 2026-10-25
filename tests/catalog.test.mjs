@@ -2152,7 +2152,7 @@ test('statistics is a whole-proposal family with no native source and honest fig
   for (const other of hf.screens) {
     if (other.id === 'statistics') continue;
     hf.route = { theme: 'light', screen: other.id, state: other.states[0] };
-    assert.doesNotMatch(renderers[other.id](hf, other.states[0]), /stat-entry|stat-range|statistics-content/, `${other.id} renders statistics markup`);
+    assert.doesNotMatch(renderers[other.id](hf, other.states[0]), /stat-entry|stat-seg|statistics-content/, `${other.id} renders statistics markup`);
   }
 });
 
@@ -2198,7 +2198,7 @@ test('statistics token tile follows the range and the per-workflow list has head
 test('council run and statistics markup appear only in their own states', () => {
   const hf = loadDesignRuntime();
   const council = /wfr-council|council-turn|wr-select:council|wr-council-jump/;
-  const statistics = /stat-entry|stat-range|statistics-content|stat-tile/;
+  const statistics = /stat-entry|stat-seg|statistics-content|stat-tile|stat-page/;
   for (const family of hf.screens) {
     for (const state of family.states) {
       hf.route = { theme: 'light', screen: family.id, state };
