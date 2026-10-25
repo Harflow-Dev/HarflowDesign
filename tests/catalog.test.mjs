@@ -3265,7 +3265,7 @@ test('start-setup, start-new-folder and end-teardown render their own copy and s
   assert.match(html, /data-setup-inspector="start"/);
   assert.match(html, /<h2>Start<\/h2>/);
   const plain = html.replace(/&#39;/g, "'");
-  for (const text of ['Runs once before the first node and decides where every node works.', 'Run a setup command', 'Off: nodes run in the launch folder. On: the command creates a folder at', '$HARFLOW_WORKSPACE', 'Setup command', 'Variables (6)', "Runs with Harflow's own access", "Harness permissions don't apply to this command. You review it each time the workflow runs."]) assert.ok(plain.includes(text), text);
+  for (const text of ['Runs once before the first node and decides where every node works.', 'Run a setup command', 'Off: nodes run in the launch folder. On: the command creates a folder at', '$HARFLOW_WORKSPACE', 'Setup command', 'Variables (6)', "Runs with Harflow's own access", "Harness permissions don't apply to this command. You review it each time you start the workflow yourself."]) assert.ok(plain.includes(text), text);
   assert.match(html, /<input type="checkbox" data-setup-field="setupEnabled" checked>/);
   assert.match(html, /git -C &quot;\$HARFLOW_LAUNCH_DIR&quot; fetch origin/);
   assert.match(html, /aria-valuenow="5"[^>]*aria-valuetext="5 minutes"/);
