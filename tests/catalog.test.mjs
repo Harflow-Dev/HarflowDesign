@@ -4,12 +4,13 @@ import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
 import { spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const scripts = ['tokens.js', 'registry.js', 'appearance.js', 'components.js', 'tasks.js', 'task-activity.js', 'parallel.js', 'task-approvals.js', 'task-summary.js', 'workflows.js', 'workflow-connectors.js', 'workflow-editor-proposals.js', 'workflow-editor-inspector.js', 'workflow-editor.js', 'council-activity.js', 'workflow-run.js', 'dialogs.js', 'workflow-launch-proposals.js', 'state-recovery.js', 'sidebar-setup.js', 'sidebar-proposals.js', 'statistics.js', 'web.js', 'foundations.js'];
 
-function loadDesignRuntime({ captureEvents = false, querySelectorOverride, querySelectorAllOverride, history } = {}) {
+function loadDesignRuntime({ captureEvents = false, querySelectorOverride, querySelectorAllOverride, history, timers } = {}) {
   const announcement = { textContent: '', classList: { add() {}, remove() {} } };
   const listeners = new Map();
   const document = {
@@ -28,8 +29,8 @@ function loadDesignRuntime({ captureEvents = false, querySelectorOverride, query
   const context = vm.createContext({
     window: {},
     document,
-    setTimeout,
-    clearTimeout,
+    setTimeout: timers?.setTimeout ?? setTimeout,
+    clearTimeout: timers?.clearTimeout ?? clearTimeout,
     CSS: { escape: value => String(value) },
     ...(history ? { history } : {}),
   });
@@ -3632,12 +3633,12 @@ const focusResolver = (getHtml, focused) => selector => {
   if (!found || /\sdisabled(?=[\s>=])/.test(found)) return undefined;
   return { focus: () => focused.push(selector) };
 };
-const setupRunHarness = () => {
+const setupRunHarness = ({ timers } = {}) => {
   const focused = [];
   const resolve = focusResolver(() => stage.innerHTML, focused);
   const stage = { innerHTML: '', querySelector: selector => /^\[data-action="[^"]+"\]$/.test(selector) ? resolve(selector) : null };
   const announcement = { textContent: '', classList: { add() {}, remove() {} } };
-  const hf = loadDesignRuntime({ captureEvents: true, querySelectorOverride: selector => selector === '#stage' ? stage : selector === '#announcement' ? announcement : undefined });
+  const hf = loadDesignRuntime({ captureEvents: true, timers, querySelectorOverride: selector => selector === '#stage' ? stage : selector === '#announcement' ? announcement : undefined });
   const start = state => { hf.route = { theme: 'light', screen: 'workflow-run', state: 'running' }; hf.resetWorkflowRun(hf.route); hf.route = { theme: 'light', screen: 'workflow-run', state }; hf.resetWorkflowRun(hf.route); return hf.renderRun(state); };
   const click = action => { const target = { dataset: { action }, isConnected: true, closest: selector => selector.startsWith('[data-action^="wr-"') ? target : null }; hf.__dispatchDesignEvent({ type: 'click', target, preventDefault() {}, stopImmediatePropagation() {} }); return stage.innerHTML; };
   return { hf, stage, announcement, start, click, focused };
@@ -4272,6 +4273,105 @@ test('the run-failed graph stacks inside a container when the run pane is narrow
   const hf = loadDesignRuntime();
   const html = hf.renderWeb('run-failed');
   assert.match(html, /<div class="web-run-main">[\s\S]*<div class="web-graph" role="group" aria-label="Workflow graph">/, 'the graph sits inside the container element');
+});
+
+test('the teardown mock timer is generation-guarded and cleared by a route change', () => {
+  const scheduled = [], cleared = [];
+  let nextId = 1;
+  // The toast timer also uses setTimeout; the teardown mock is the 800 ms one.
+  const mock = () => scheduled.filter(timer => timer.delay === 800);
+  const timers = { setTimeout: (callback, delay) => { const id = nextId++; scheduled.push({ id, callback, delay }); return id; }, clearTimeout: id => { cleared.push(id); } };
+  const { hf, announcement, start, click } = setupRunHarness({ timers });
+  start('teardown-pending');
+  click('wr-run-teardown');
+  assert.equal(mock().length, 1);
+  assert.match(hf.renderRun('teardown-pending'), /data-teardown="running"/);
+  // Leaving the route clears the pending timer; entering again starts from Pending.
+  hf.route = { theme: 'light', screen: 'workflow-run', state: 'running' };
+  hf.resetWorkflowRun(hf.route);
+  assert.ok(cleared.includes(mock()[0].id), 'the route change cleared the first timer');
+  start('teardown-pending');
+  assert.match(hf.renderRun('teardown-pending'), /data-teardown="pending"/);
+  click('wr-run-teardown');
+  assert.equal(mock().length, 2, 'the second run scheduled its own timer');
+  assert.match(hf.renderRun('teardown-pending'), /data-teardown="running"/);
+  // A stale first callback must not complete the second run.
+  mock()[0].callback();
+  assert.match(hf.renderRun('teardown-pending'), /data-teardown="running"/, 'the second run stays Running after the stale callback');
+  assert.notEqual(announcement.textContent, 'Mock teardown completed · the run outcome stays Completed');
+  mock()[1].callback();
+  assert.match(hf.renderRun('teardown-pending'), /data-teardown="completed"/, 'its own callback completes it');
+  assert.equal(announcement.textContent, 'Mock teardown completed · the run outcome stays Completed');
+  // A callback that fires after leaving the route does nothing.
+  hf.route = { theme: 'light', screen: 'workflow-run', state: 'running' };
+  hf.resetWorkflowRun(hf.route);
+  start('teardown-pending');
+  click('wr-run-teardown');
+  const late = mock().at(-1);
+  hf.route = { theme: 'light', screen: 'workflow-run', state: 'setup-running' };
+  hf.resetWorkflowRun(hf.route);
+  late.callback();
+  announcement.textContent = '';
+  assert.match(hf.renderRun('setup-running'), /data-setup-run="setup-running"/);
+  assert.notEqual(announcement.textContent, 'Mock teardown completed · the run outcome stays Completed');
+});
+
+test('setup run fallback panes never claim work that did not happen', () => {
+  const { hf, start, click } = setupRunHarness();
+  const copy = {
+    'setup-running': ['Plan', 'Nothing has started yet. The plan appears once setup finishes.', 'Orchestrator: Waiting for setup'],
+    'setup-failed': ['Plan', 'Nothing started. The run never reached its first node.', 'Orchestrator: Never started'],
+    'teardown-pending': ['Plan · all nodes completed', "All nodes done. The run's outcome is Completed.", 'Orchestrator: Finished']
+  };
+  const banned = /1 of 2 completed|Orchestrator confirmed|Plan · \d of \d/;
+  const check = (state, html, path) => {
+    const pane = /<div class="wfr-setup wfr-setup-summary" data-setup-fallback="([^"]+)">([\s\S]*?)<\/div>/.exec(html);
+    assert.ok(pane, `${state} ${path}: the fallback pane renders`);
+    assert.equal(pane[1], state);
+    const text = runText(pane[2]).replace(/^\||\|$/g, '').split('|');
+    assert.deepEqual(text.slice(0, 3), copy[state], `${state} ${path} copy`);
+    if (state === 'teardown-pending') assert.equal(text[3], 'Teardown pending: Harflow stopped before it finished. Select End to run it.', `${state} ${path} note`);
+    else assert.equal(text.length, 3);
+    assert.doesNotMatch(html, banned, `${state} ${path}`);
+    assert.doesNotMatch(html, /data-setup-run=/, `${state} ${path} is not the command pane`);
+  };
+  for (const state of hf.setupRunStates) {
+    start(state);
+    check(state, click('wr-deselect'), 'deselected');
+    start(state);
+    check(state, click('wr-select:orchestrator'), 'orchestrator');
+  }
+  start('teardown-pending');
+  check('teardown-pending', click('wr-mode:parallel'), 'parallel mode');
+  // The fallback follows the teardown mock.
+  assert.match(hf.setupRunFallback('teardown-pending', 'running'), /Teardown is running\./);
+  assert.match(hf.setupRunFallback('teardown-pending', 'completed'), /Teardown completed\./);
+  assert.doesNotMatch(hf.setupRunFallback('setup-failed'), /Teardown/);
+});
+
+test('the inventory keeps the run-failed header name and the web header renders it', () => {
+  const inventory = fs.readFileSync(path.join(root, 'docs/screen-inventory.md'), 'utf8');
+  assert.ok(inventory.includes('sidebar task titles and the run\'s Task input read "Fix #2481"'));
+  assert.ok(inventory.includes('the run-failed header keeps the workflow name "Fix assigned bug" as on the canvas'));
+  const hf = loadDesignRuntime();
+  const header = /<header class="web-header"><div class="web-title"><h2>([\s\S]*?)<\/h2>/.exec(hf.renderWeb('run-failed'))[1];
+  assert.match(header, /^Fix assigned bug /);
+  assert.doesNotMatch(header, /Fix #2481/);
+  assert.match(webText(hf.renderWeb('run-failed')), /Fix #2481/, 'task titles still read Fix #2481');
+});
+
+test('every asset cache key in index.html is the first 12 hex characters of the file SHA-256', () => {
+  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  const references = [...html.matchAll(/(?:href|src)="([^"?]+)\?v=([0-9a-f]+)"/g)];
+  assert.ok(references.length >= 40, 'index.html references versioned assets');
+  const stale = [];
+  for (const [, file, key] of references) {
+    const digest = createHash('sha256').update(fs.readFileSync(path.join(root, file))).digest('hex').slice(0, 12);
+    if (digest !== key) stale.push(`${file}: ${key} should be ${digest}`);
+  }
+  assert.deepEqual(stale, []);
+  assert.equal((html.match(/\?v=/g) || []).length, references.length, 'every ?v= reference was checked');
+  assert.ok(references.some(([, file]) => file === 'scripts/appearance.js'));
 });
 
 test('web and setup-run markup stay inside their own states', () => {
