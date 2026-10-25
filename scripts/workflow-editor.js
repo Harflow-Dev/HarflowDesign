@@ -41,7 +41,7 @@
     if (route === 'standalone-reorder') draft.standaloneNodes = [{ id: 'rollback-guide', title: 'Rollback guide', type: 'on-demand', backend: 'Codex' }, { id: 'smoke-test', title: 'Smoke test', type: 'on-demand', backend: 'Codex' }];
     if (isCouncilRoute(route)) {
       // The Council node is wider and taller than the other nodes so its member names and counts stay readable.
-      draft.nodes = [starterNodes[0], starterNodes[1], { id: 'council', title: 'Council', type: 'council', role: 'council', x: 440, y: 100, width: 240, height: 108 }, { ...starterNodes[4], x: 730 }].map(clone);
+      draft.nodes = [starterNodes[0], starterNodes[1], { id: 'council', title: 'Council', type: 'council', role: 'council', x: 440, y: 100, width: HF.councilNodeSize.width, height: HF.councilNodeSize.height }, { ...starterNodes[4], x: 730 }].map(clone);
       draft.edges = [{ id: 'start-planning', source: 'start', target: 'planning', condition: '' }, { id: 'planning-council', source: 'planning', target: 'council', condition: '' }, { id: 'council-end', source: 'council', target: 'end', condition: '' }];
       draft.selected = { kind: 'council', id: 'council' };
     }
@@ -263,6 +263,7 @@
     const regular = !['start', 'end'].includes(kind), number = state.draft.nodes.length + 1;
     const id = allocateEntityID(kind, kind === 'parallel' ? ['-start', '-end'] : []);
     const n = { id, title: ({council:'Council',planning:'Plan',implementation:'Implementation',review:'Review',task:'Task',workflow:'Run workflow',start:'Start',end:'End',parallel:'Parallel group'})[kind] || kind, type: kind === 'parallel' ? 'parallel_start' : kind === 'workflow' ? 'workflow' : kind === 'council' ? 'council' : ['start','end'].includes(kind) ? kind : 'agent', role: kind, x: 250 + (number % 3) * 230, y: 220 + Math.floor(number / 3) * 130, width: regular ? 200 : 72, height: regular ? 92 : 72, backend: 'Codex' };
+    if (kind === 'council') { n.width = HF.councilNodeSize.width; n.height = HF.councilNodeSize.height; }
     if (kind === 'parallel') state.draft.nodes.push({ ...n, id: `${id}-start`, type: 'parallel_start', title: 'Parallel group', width:72,height:72,groupLabel:'Group',groupId:id,partnerId:`${id}-end` }, { ...n, id:`${id}-end`, type:'parallel_end', title:'Parallel group end', x:n.x+290,width:72,height:72,groupLabel:'Group',groupId:id,partnerId:`${id}-start` });
     else state.draft.nodes.push(n);
     if (kind === 'start' || kind === 'end') state.draft.nodes.sort((a,b) => a.x-b.x);
@@ -271,7 +272,7 @@
     refresh();
   }
   function save() { if (!canSave()) return; state.baseline = clone(state.draft); state.draft.revision += 1; state.baseline.revision = state.draft.revision; HF.feedback('Mock workflow saved'); refresh(); }
-  function discard() { if (!canDiscard()) return; const revision = state.baseline.revision; state.draft = clone(state.baseline); state.draft.revision = revision; state.selected = clone(state.draft.selected || {kind:'orchestrator',id:'orchestrator'}); HF.feedback('Mock workflow changes discarded'); refresh(); }
+  function discard() { if (!canDiscard()) return; const revision = state.baseline.revision; state.draft = clone(state.baseline); state.draft.revision = revision; state.selected = clone(state.draft.selected || {kind:'orchestrator',id:'orchestrator'}); for (const [key, ui] of Object.entries(state.councilUi)) { const members = state.draft.fieldValues?.[`council:${key}`]?.members; if (members && !members.some(member => member.id === ui.open)) ui.open = members[0]?.id ?? null; } HF.feedback('Mock workflow changes discarded'); refresh(); }
   function removeSelected() {
     if (!state.selected || blocked()) return;
     if (['node','council','child-reference','missing-reference','parallel'].includes(state.selected.kind)) { const id = state.selected.id; const removeIds = state.selected.kind === 'parallel' ? state.draft.nodes.filter(n=>n.id === id || n.id === state.draft.nodes.find(node => node.id === id)?.partnerId).map(n=>n.id) : [id]; state.draft.nodes = state.draft.nodes.filter(n => !removeIds.includes(n.id)); state.draft.edges = state.draft.edges.filter(e => !removeIds.includes(e.source) && !removeIds.includes(e.target)); }
@@ -345,12 +346,15 @@
     const member = fields.members.find(item => item.id === id); if (!member) return;
     if (field === 'harness') {
       if (!HF.councilHarnesses.includes(value)) return;
-      member.harness = value; if (!HF.councilTakesEffort(value)) member.effort = '';
+      member.harness = value; member.model = ''; if (!HF.councilTakesEffort(value)) member.effort = '';
     } else if (field === 'optional') {
       if (member.id === HF.councilEffectiveFacilitator(fields)) return;
       member.optional = !!value; HF.councilNormalizeFacilitator(fields);
     } else return;
-    refresh(); focusCouncil(`[data-council-member="${id}"][data-council-field="${field}"]`);
+    refresh();
+    // The control may now be disabled (a member that became the facilitator): fall back to its card.
+    const target = typeof document === 'undefined' ? null : document.querySelector(`.editor-app [data-council-member="${id}"][data-council-field="${field}"]`);
+    focusCouncil(target && !target.disabled ? `[data-council-member="${id}"][data-council-field="${field}"]` : (document.querySelector(`.editor-app #council-name-${id}`) ? `#council-name-${id}` : councilToggleSelector(id)));
   }
   // Text edits update the draft and the visible copy in place so focus and caret stay where they are.
   function editCouncilText(id, field, value) {

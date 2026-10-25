@@ -80,6 +80,8 @@
     if (type === 'implementation' && state.route === 'paused') taskStatus = 'paused';
     if (type === 'implementation' && state.route === 'attempts' && attempt === 1) taskStatus = 'failed';
     if (type === 'review' && state.route === 'parallel') taskStatus = 'completed';
+    // Council states follow the Council timeline: Plan is done, and Review runs once the council reaches consensus.
+    if (isCouncil(state.route)) taskStatus = type === 'planning' ? 'completed' : type === 'review' && state.route === 'council-consensus' ? 'running' : 'pending';
     const backend = type === 'implementation' ? 'claude' : 'codex';
     return { ...fixture, status: taskStatus, backend, sessionID: fixture.id, activityFixture: 'native-eight-steps' };
   };
@@ -139,7 +141,7 @@
     const current = getState(); current.route = state;
     const noView = state === 'loading' || state === 'error';
     const selected = current.mode === 'graph' && current.selection;
-    const controls = state === 'error' ? '<button class="wf-capsule" disabled>Pause</button><button class="wf-cancel" disabled>Cancel run</button>' : state === 'parent-owned' ? button('Open root to cancel', 'wr-parent', 'wf-capsule') : ['running', 'starting'].includes(state) ? `${button('Pause', 'wr-pause', 'wf-capsule')}${button('Cancel run', 'wr-cancel', 'wf-cancel')}` : state === 'paused' ? `${button('Resume', 'wr-resume', 'wf-capsule')}${button('Cancel run', 'wr-cancel', 'wf-cancel')}` : terminal.has(state) || noView ? '' : button('Cancel run', 'wr-cancel', 'wf-cancel');
+    const controls = state === 'error' ? '<button class="wf-capsule" disabled>Pause</button><button class="wf-cancel" disabled>Cancel run</button>' : state === 'parent-owned' ? button('Open root to cancel', 'wr-parent', 'wf-capsule') : ['running', 'starting'].includes(state) || (isCouncil(state) && !terminal.has(state)) ? `${button('Pause', 'wr-pause', 'wf-capsule')}${button('Cancel run', 'wr-cancel', 'wf-cancel')}` : state === 'paused' ? `${button('Resume', 'wr-resume', 'wf-capsule')}${button('Cancel run', 'wr-cancel', 'wf-cancel')}` : terminal.has(state) || noView ? '' : button('Cancel run', 'wr-cancel', 'wf-cancel');
     const activeMode = current.mode;
     const loadingOverlay = `<div class="wfr-loading-canvas wfr-graph-loading" aria-label="Loading workflow run"><div class="wfr-loading-graph">${[true, false, false, true].map((compact, index) => `${index ? '<i class="wfr-loading-connector"></i>' : ''}<div class="wfr-loading-node ${compact ? 'compact' : ''}"><i></i>${compact ? '' : '<i></i>'}</div>`).join('')}</div></div>`;
     const left = state === 'error' ? `<div class="wfr-error-state">${icon('attention')}<h2>Workflow could not be loaded</h2></div>` : state === 'loading' ? loadingOverlay : activeMode === 'parallel' ? `<div class="wfr-parallel">${parallelColumns()}</div>` : `<div class="wfr-run-left">${standalone(state)}${graph(state)}</div>`;

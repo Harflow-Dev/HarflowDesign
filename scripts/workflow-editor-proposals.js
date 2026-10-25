@@ -38,6 +38,7 @@
   // Members are a list keyed by stable ids; the facilitator is a member id. A council needs at least two
   // required members; optional members never count toward that minimum and never block the outcome.
   HF.councilMinRequired = 2;
+  HF.councilNodeSize = { width: 240, height: 108 };
   // Read-only engine defaults; the editor does not expose them as controls.
   HF.councilEngineLimits = [['Max rounds', '5'], ['Question limit', '3'], ['Follow-up limit', '2'], ['Time budget', '15 min']];
   HF.councilHarnesses = ['claude', 'codex', 'opencode', 'vibe', 'antigravity'];
