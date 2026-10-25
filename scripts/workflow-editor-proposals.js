@@ -255,6 +255,16 @@
     const action = teardown === 'pending' ? `<div class="wfr-setup-action"><button type="button" class="primary" data-action="wr-run-teardown">Run teardown</button><span class="wfr-setup-note">Runs it once, with the launch folder this run recorded.</span></div>` : '';
     return `<div class="wfr-setup" data-setup-run="${state}" data-teardown="${teardown}">${runHead('End › Teardown', label, tone, '')}<p class="wfr-setup-note">${esc(description)}</p><h4>Output</h4>${runPre(lines)}${action}${runCommand('wfr-setup-command', open, HF.setupFixture.commands.teardown)}${runFooter()}</div>`;
   };
+  // Pane shown when Start or End is deselected or the Orchestrator is selected: it must not claim work that never ran.
+  HF.setupRunFallback = (state, teardown = 'pending') => {
+    const body = {
+      'setup-running': ['Plan', 'Nothing has started yet. The plan appears once setup finishes.', 'Orchestrator: Waiting for setup'],
+      'setup-failed': ['Plan', 'Nothing started. The run never reached its first node.', 'Orchestrator: Never started'],
+      'teardown-pending': ['Plan · all nodes completed', 'All nodes done. The run\'s outcome is Completed.', 'Orchestrator: Finished']
+    }[state];
+    const note = state === 'teardown-pending' ? `<p class="wfr-setup-notice" role="status">${teardown === 'completed' ? 'Teardown completed.' : teardown === 'running' ? 'Teardown is running.' : 'Teardown pending: Harflow stopped before it finished. Select End to run it.'}</p>` : '';
+    return `<div class="wfr-setup wfr-setup-summary" data-setup-fallback="${state}"><h4>${esc(body[0])}</h4><p class="wfr-setup-note">${esc(body[1])}</p><p class="wfr-setup-note">${esc(body[2])}</p>${note}</div>`;
+  };
   HF.setupRunNotStarted = name => `<div class="wfr-setup wfr-setup-idle"><header class="wfr-setup-head"><strong>${esc(name)}</strong><span class="wfr-setup-status pending">Not started</span><span class="spacer"></span><button type="button" class="quiet" data-action="wr-deselect" aria-label="Close selected activity">×</button></header><p class="wfr-setup-note">No agent runs until setup finishes, so there is no activity yet.</p></div>`;
 
   // ---- HarflowMCP#18 Readiness report -------------------------------------------------------------------
