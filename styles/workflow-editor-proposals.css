@@ -85,15 +85,19 @@
 .workflow-specimen .editor-council-disclose { flex-direction: row; align-items: flex-start; gap: 2px; width: 100%; border: 0; color: var(--primaryText); font: inherit; text-align: left; cursor: pointer; }
 .workflow-specimen .editor-council-disclose-icon { display: inline-flex; flex: none; align-items: center; justify-content: center; width: 14px; height: 16px; color: var(--secondaryText); }
 .workflow-specimen .editor-council-disclose-body { display: flex; flex: 1; flex-direction: column; gap: 3px; min-width: 0; }
-.workflow-specimen .editor-council-line { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; min-width: 0; }
-.workflow-specimen .editor-council-line .editor-council-title { flex: 0 1 auto; }
+.workflow-specimen .editor-council-line { display: flex; flex-wrap: nowrap; align-items: center; gap: 6px; min-width: 0; }
+.workflow-specimen .editor-council-line .editor-council-title { flex: 0 1 auto; min-width: 3ch; flex-shrink: .01; }
 .workflow-specimen .editor-council-spacer { flex: 1 1 0; min-width: 0; }
-.workflow-specimen .editor-council-harness { display: inline-flex; flex: none; align-items: center; gap: 5px; max-width: 100%; color: var(--secondaryText); font-size: 12px; }
+.workflow-specimen .editor-council-line .editor-council-chip { flex: none; }
+.workflow-specimen .editor-council-harness { display: inline-flex; flex: 0 100 auto; align-items: center; gap: 5px; min-width: 0; color: var(--secondaryText); font-size: 12px; }
+.workflow-specimen .editor-council-harness .backend-dot { flex: none; }
+.workflow-specimen .editor-council-harness-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .workflow-specimen .editor-council-excerpt { display: block; overflow: hidden; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
 .workflow-specimen .editor-council-excerpt.is-text { color: var(--secondaryText); }
 .workflow-specimen .editor-council-excerpt.is-none { color: var(--tertiaryText); }
 .workflow-specimen .editor-council-excerpt.is-error { color: var(--dangerFG); }
-.workflow-specimen .editor-council-add { display: inline-flex; align-items: center; gap: 6px; }
+.workflow-specimen .editor-council-add { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px 4px 10px; border-radius: 9999px; font-size: 13px; }
+.workflow-specimen .editor-council-add:hover { background: var(--pillFill); }
 .workflow-specimen .editor-council-banner { display: flex; align-items: flex-start; gap: 8px; padding: 10px; border-radius: 8px; background: var(--dangerBG); color: var(--dangerFG); font-size: 13px; line-height: 16px; }
 .workflow-specimen .editor-council-banner svg { margin-top: 1px; width: 14px; height: 14px; }
 .workflow-specimen .editor-council-banner div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
