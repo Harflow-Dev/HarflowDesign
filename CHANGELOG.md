@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add exploratory setup and teardown run states (`setup-running`, `setup-failed`, `teardown-pending`) with a run pane for the setup or teardown command, output and Command disclosure, a mock Run teardown, and Run again.
+
 - Add exploratory workflow setup and teardown proposals: Setup and Teardown commands on the Start and End inspectors (`start-setup`, `start-new-folder`, `end-teardown`) and a Run sheet command review (`workflow-launch/setup-review`) that keeps Run disabled until the commands are reviewed, shown without a native source.
 
 - Show the Harflow app icon beside the catalog title and as the browser tab icon, using PNGs exported from HarflowMac `macos/Harflow/Resources/AppIcon.icns`.

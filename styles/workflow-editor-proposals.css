@@ -174,3 +174,37 @@
 .workflow-specimen .editor-setup-banner strong { font-size: 12px; font-weight: 600; }
 .workflow-specimen .editor-setup-banner span { color: var(--secondaryText); font-size: 11px; line-height: 14px; }
 .workflow-specimen .editor-setup-notice { margin: 0; padding: 8px 10px; border-radius: 8px; background: var(--warningBG); color: var(--warningFG); font-size: 11px; line-height: 14px; }
+
+/* Setup and teardown run states (#21, HarflowMCP#41). */
+.wfr-specimen .wf-graph-row .node.wf-attention-node { border: 2px solid var(--warningFG); box-shadow: none; }
+.wfr-badge .wfr-badge-elapsed { margin-left: 4px; font-weight: 500; font-variant-numeric: tabular-nums; opacity: .85; }
+.wfr-badge.starting { color: var(--runningFG); background: var(--runningBG); }
+.wfr-toolbar .wfr-run-again { border: 0; border-radius: 8px; padding: 9px 18px; font-weight: 600; }
+.wfr-toolbar .wfr-run-again.primary { background: var(--accentFill); color: var(--onAccent); }
+.wfr-toolbar .wfr-run-again.glass { background: var(--neutralFill); color: var(--primaryText); }
+.wfr-setup { display: flex; flex-direction: column; align-items: stretch; gap: 10px; padding: 14px 16px 20px; font-size: 13px; line-height: 1.4; }
+.wfr-setup h4 { margin: 4px 0 0; color: var(--tertiaryText); font-size: 11px; font-weight: 600; }
+.wfr-setup-head { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.wfr-setup-head strong { font-size: 14px; }
+.wfr-setup-head .spacer { flex: 1; }
+.wfr-setup-head button.quiet { width: 28px; height: 28px; padding: 0; border: 0; background: transparent; font-size: 18px; }
+.wfr-setup-status { display: inline-flex; align-items: center; gap: 5px; padding: 1px 8px; border-radius: 6px; background: var(--pillFill); color: var(--secondaryText); font-size: 11px; font-weight: 600; }
+.wfr-setup-status.running { background: var(--runningBG); color: var(--runningFG); }
+.wfr-setup-status.failed { background: var(--dangerBG); color: var(--dangerFG); }
+.wfr-setup-status.completed { background: var(--doneBG); color: var(--doneGreen); }
+.wfr-setup-status .wfr-spinner { width: 10px; height: 10px; border-width: 2px; }
+.wfr-setup-elapsed { color: var(--tertiaryText); font-size: 11px; font-variant-numeric: tabular-nums; }
+.wfr-setup-note, .wfr-setup-workspace { margin: 0; color: var(--secondaryText); font-size: 12px; }
+.wfr-setup-notice { margin: 0; padding: 8px 10px; border-radius: 8px; background: var(--warningBG); color: var(--warningFG); font-size: 12px; }
+.wfr-setup-output, .wfr-setup-code { margin: 0; padding: 8px 10px; border: 1px solid var(--hairline); border-radius: 8px; background: var(--codeFill); color: var(--primaryText); font: 11px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; white-space: pre-wrap; word-break: break-all; }
+.wfr-setup-code[hidden] { display: none; }
+.wfr-setup-mono { font: 11px ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--primaryText); }
+.wfr-setup-disc, .wfr-setup-link { display: inline-flex; align-self: flex-start; align-items: center; gap: 6px; padding: 2px 0; border: 0; background: transparent; font: inherit; font-size: 12px; cursor: pointer; }
+.wfr-setup-disc { color: var(--secondaryText); }
+.wfr-setup-link { color: var(--accentLink); }
+.wfr-setup-disc svg { width: 9px; height: 9px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.wfr-setup-command { display: flex; flex-direction: column; gap: 6px; }
+.wfr-setup-action { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.wfr-setup-skipped { display: flex; flex-direction: column; gap: 6px; padding-top: 10px; border-top: 1px solid var(--hairline); }
+.wfr-setup-skipped h4 { display: flex; align-items: center; gap: 8px; }
+.wfr-setup button:focus-visible, .wfr-setup-output:focus-visible { outline: 2px solid var(--accentLink); outline-offset: 2px; }

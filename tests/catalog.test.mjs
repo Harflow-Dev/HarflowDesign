@@ -1862,6 +1862,7 @@ test('compact workflow-run sidebar proposal (#15) covers every state that can di
     if (canShowCompact) display.push(state);
     const status = hf.specimenStatus('workflow-run', state);
     if (state.startsWith('council')) { assert.equal(status.kind, 'exploratory'); assert.deepEqual(Array.from(status.tickets), ['#17', '#15']); display.pop(); continue; }
+    if (['setup-running', 'setup-failed', 'teardown-pending'].includes(state)) { assert.equal(status.kind, 'exploratory'); assert.deepEqual(Array.from(status.tickets), ['#21', 'HarflowMCP#41']); if (canShowCompact) display.pop(); continue; }
     assert.equal(status.kind === 'contains-exploratory', canShowCompact, `workflow-run/${state} #15 element metadata`);
     if (canShowCompact) assert.deepEqual(Array.from(status.tickets), ['#15']);
   }

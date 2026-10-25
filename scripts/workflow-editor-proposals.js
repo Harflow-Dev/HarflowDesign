@@ -227,6 +227,36 @@
     }, true);
   }
 
+  // ---- #21 / HarflowMCP#41 Setup and teardown run states ------------------------------------------------------
+  // Exploratory run panes for a setup that is running or failed and a teardown that is pending. Markup only; the
+  // workflow-run module owns the header, graph, toolbar, summary and the mock transitions.
+  HF.setupRunStates = ['setup-running', 'setup-failed', 'teardown-pending'];
+  HF.setupRunWorkspace = '~/Harflow/Workspaces/01JB7K2M';
+  HF.setupRunSummary = {
+    'setup-running': 'Preparing the workspace',
+    'setup-failed': 'Setup failed before the first node: invalid reference origin/release-9.',
+    'teardown-pending': 'All nodes done. Teardown pending: Harflow stopped before it finished.',
+    'teardown-completed': 'All nodes done. Teardown completed.'
+  };
+  const runPre = lines => `<pre class="wfr-setup-output" tabindex="0" aria-label="Output">${lines.map(esc).join('\n')}</pre>`;
+  const runCommand = (id, open, text) => `<div class="wfr-setup-command"><button type="button" class="wfr-setup-disc" data-action="wr-command" aria-expanded="${open ? 'true' : 'false'}" aria-controls="${id}"><svg viewBox="0 0 10 10" aria-hidden="true"><path d="${open ? 'M1.8 3.6 5 6.8 8.2 3.6' : 'M3.6 1.8 6.8 5 3.6 8.2'}"/></svg><span>Command</span></button><pre id="${id}" class="wfr-setup-code" ${open ? '' : 'hidden'}>${open ? esc(text) : ''}</pre></div>`;
+  const runFooter = () => `<p class="wfr-setup-workspace">Workspace: <span class="wfr-setup-mono">${esc(HF.setupRunWorkspace)}</span></p><button type="button" class="wfr-setup-link" data-action="wr-open-log">Open full log</button>`;
+  const runHead = (crumb, label, tone, elapsed) => `<header class="wfr-setup-head"><strong>${esc(crumb)}</strong><span class="wfr-setup-status ${tone}">${tone === 'running' ? '<span class="wfr-spinner" aria-hidden="true"></span>' : ''}${esc(label)}</span>${elapsed ? `<span class="wfr-setup-elapsed">${esc(elapsed)}</span>` : ''}<span class="spacer"></span><button type="button" class="quiet" data-action="wr-deselect" aria-label="Close selected activity">×</button></header>`;
+  // pane(state, { commandOpen, teardown }) with teardown one of pending, running, completed.
+  HF.setupRunPane = (state, ui = {}) => {
+    const open = !!ui.commandOpen;
+    if (state === 'setup-running') return `<div class="wfr-setup" data-setup-run="${state}">${runHead('Start › Setup', 'Running', 'running', '00:07')}<p class="wfr-setup-note">No agent starts until setup finishes. Timeout 5 min.</p><h4>Output</h4>${runPre(['From github.com:Harflow-Dev/HarflowMac', '* branch            main       -> FETCH_HEAD', "Preparing worktree (new branch 'harflow/01JB7K2M')", 'Updating files:  64% (812/1268)'])}<p class="wfr-setup-note is-live" role="status">Running the setup command</p>${runCommand('wfr-setup-command', open, HF.setupFixture.commands.worktree)}${runFooter()}</div>`;
+    if (state === 'setup-failed') return `<div class="wfr-setup" data-setup-run="${state}">${runHead('Start › Setup', 'Failed', 'failed', 'exit 128')}<p class="wfr-setup-notice" role="status">The run never started work: no agent ran and there is nothing to recover. Fix the cause, then Run again.</p><h4>Output</h4>${runPre(['From github.com:Harflow-Dev/HarflowMac', 'fatal: invalid reference: origin/release-9'])}<p class="wfr-setup-note">HARFLOW_INPUT_BASE was release-9, from the run's inputs.</p>${runCommand('wfr-setup-command', open, HF.setupFixture.commands.worktree)}${runFooter()}<section class="wfr-setup-skipped"><h4>Teardown <span class="wfr-setup-status skipped">Skipped</span></h4><p class="wfr-setup-note">Set to run only when the run succeeds, so anything setup left behind stays for you to inspect.</p></section></div>`;
+    const teardown = ui.teardown || 'pending';
+    const label = { pending: 'Pending', running: 'Running', completed: 'Completed' }[teardown];
+    const tone = { pending: 'pending', running: 'running', completed: 'completed' }[teardown];
+    const lines = teardown === 'completed' ? [`Removing worktree '${HF.setupRunWorkspace}'`, 'Worktree removed'] : [`Removing worktree '${HF.setupRunWorkspace}'`, ...(teardown === 'running' ? [] : ['[output ends here]'])];
+    const description = teardown === 'pending' ? "Harflow stopped while teardown was running, so it may not have finished. The run's outcome stays Completed. Nothing runs again until you choose to." : teardown === 'running' ? "Running teardown once. The run's outcome stays Completed." : "Teardown finished. The run's outcome stays Completed.";
+    const action = teardown === 'pending' ? `<div class="wfr-setup-action"><button type="button" class="primary" data-action="wr-run-teardown">Run teardown</button><span class="wfr-setup-note">Runs it once, with the launch folder this run recorded.</span></div>` : '';
+    return `<div class="wfr-setup" data-setup-run="${state}" data-teardown="${teardown}">${runHead('End › Teardown', label, tone, '')}<p class="wfr-setup-note">${esc(description)}</p><h4>Output</h4>${runPre(lines)}${action}${runCommand('wfr-setup-command', open, HF.setupFixture.commands.teardown)}${runFooter()}</div>`;
+  };
+  HF.setupRunNotStarted = name => `<div class="wfr-setup wfr-setup-idle"><header class="wfr-setup-head"><strong>${esc(name)}</strong><span class="wfr-setup-status pending">Not started</span><span class="spacer"></span><button type="button" class="quiet" data-action="wr-deselect" aria-label="Close selected activity">×</button></header><p class="wfr-setup-note">No agent runs until setup finishes, so there is no activity yet.</p></div>`;
+
   // ---- HarflowMCP#18 Readiness report -------------------------------------------------------------------
   HF.readinessStatus = { ready: 'Ready for the checks performed', blocked: 'Blocked', verify: 'Needs verification' };
   HF.readinessFindings = [
