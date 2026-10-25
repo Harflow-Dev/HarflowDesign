@@ -81,10 +81,10 @@
 .wfr-approvals .approval-reason > p { max-height:96px; }
 
 /* Requests waiting for a decision use the warning tokens; settled rows stay neutral. */
-.approval-card.approval-pending { background:var(--warningBG); border:1px solid var(--warningFG); border-left-width:4px; }
+.approval-card.approval-pending { background:var(--warningBG); border:1px solid var(--warningFG); }
 .approval-card.approval-pending > header strong { color:var(--warningFG); }
 .approval-card.approval-pending > header strong::before,.approval-hint strong::before { content:''; display:inline-block; width:8px; height:8px; margin-right:6px; border-radius:50%; background:var(--warningFG); vertical-align:baseline; }
-.approval-hint { background:var(--warningBG); border-color:var(--warningFG); border-left-width:4px; }
+.approval-hint { background:var(--warningBG); border-color:var(--warningFG); }
 .approval-hint strong { color:var(--warningFG); }
 .approval-hint span { color:var(--primaryText); }
 .approval-card.approval-pending .approval-detail pre.approval-scroll,.approval-card.approval-pending .approval-detail pre { background:var(--composerFill); }
