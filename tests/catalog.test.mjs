@@ -4199,6 +4199,9 @@ test('teardown completion moves focus to the close button and the command disclo
   assert.deepEqual(focused, ['[data-action="wr-command"]', '[data-action="wr-command"]']);
 });
 
+// Attribute-presence helpers: markup is matched by what an element has, not by the order its attributes are written.
+const htmlTags = html => Array.from(html.matchAll(/<([a-z][a-z0-9]*)\b([^>]*)>/g), match => ({ tag: match[1], attrs: Object.fromEntries(Array.from(match[2].matchAll(/([\w-]+)(?:="([^"]*)")?/g), attr => [attr[1], attr[2] ?? true])) }));
+const webEl = (html, want, tag) => htmlTags(html).find(el => (!tag || el.tag === tag) && Object.entries(want).every(([key, value]) => key === 'class' ? String(el.attrs.class || '').split(/\s+/).includes(value) : value === true ? el.attrs[key] !== undefined : el.attrs[key] === value));
 const webSidebar = html => /<aside class="web-sidebar"[\s\S]*?<\/aside>/.exec(html)[0];
 const webSidebarRows = html => {
   const sections = webSidebar(html).split(/<h2 class="web-side-heading">/).slice(1).map(part => ({ name: part.slice(0, part.indexOf('</h2>')), body: part }));
@@ -4234,11 +4237,13 @@ test('web sidebar current-page markers and workflow rows', () => {
   assert.deepEqual(current(hf.renderWeb('trigger-editor')), ['Fix assigned bug']);
   assert.deepEqual(current(hf.renderWeb('incoming')), ['Incoming'], 'Incoming is current only on the incoming state');
   assert.deepEqual(current(hf.renderWeb('run-failed')), [], 'no item is current on run-failed');
-  for (const state of ['triggers', 'trigger-editor', 'run-failed']) assert.doesNotMatch(webSidebar(hf.renderWeb(state)), /web-side-item is-selected" data-action="route:web\/incoming"/, state);
+  for (const state of ['triggers', 'trigger-editor', 'run-failed']) assert.ok(!String(webEl(webSidebar(hf.renderWeb(state)), { 'data-action': 'route:web/incoming' }).attrs.class).includes('is-selected'), state);
   for (const state of hf.webStates) {
     const html = webSidebar(hf.renderWeb(state));
     assert.match(html, /data-action="route:web\/incoming"/);
-    assert.match(html, /<button type="button" class="web-side-item(?: is-selected)?" data-action="route:web\/triggers"(?: aria-current="page")?><span class="web-side-glyph"><svg[\s\S]*?<\/svg><\/span><span class="web-fill">Fix assigned bug<\/span>/, `${state} Fix assigned bug routes to the triggers state`);
+    const workflow = webEl(html, { 'data-action': 'route:web/triggers' }, 'button');
+    assert.ok(workflow && workflow.attrs.class.includes('web-side-item'), `${state} Fix assigned bug routes to the triggers state`);
+    assert.match(/data-action="route:web\/triggers"[\s\S]*?<\/button>/.exec(html)[0], /web-fill[^>]*>Fix assigned bug</);
     assert.equal((html.match(/data-action="route:web\/triggers"/g) || []).length, 1);
     assert.match(html, /<span class="web-count" aria-label="1 rejected">1<\/span>/);
   }
@@ -4246,42 +4251,70 @@ test('web sidebar current-page markers and workflow rows', () => {
   assert.deepEqual(workflows('triggers'), [['route:web/triggers', 'Fix assigned bug'], ['web-mock:Address review comments', 'Address review comments'], ['web-mock:Implement and review', 'Implement and review']]);
   assert.deepEqual(workflows('incoming').map(([action]) => action), ['route:web/triggers', 'web-mock:Address review comments', 'web-mock:Draft release notes']);
   assert.deepEqual(workflows('run-failed').map(([, label]) => label), ['Fix assigned bug', 'Address review comments']);
-  assert.match(webSidebar(hf.renderWeb('triggers')), /<span class="web-side-glyph"><svg[^>]*><path d="M1\.8 8\.2 3\.6 2\.6/, 'Incoming has the inbox glyph');
+  assert.match(/data-action="route:web\/incoming"[\s\S]*?<\/button>/.exec(webSidebar(hf.renderWeb('triggers')))[0], /<svg[\s\S]*?M1\.8 8\.2 3\.6 2\.6/, 'Incoming has the inbox glyph');
 });
 
 test('web sidebar controls, labels and the disabled search field', () => {
   const { hf } = webHarness();
   const html = webSidebar(hf.renderWeb('triggers'));
-  assert.match(html, /<button type="button" class="web-new-session" data-action="web-mock:New session" aria-label="New session, Command N">/);
-  assert.match(html, /<kbd aria-hidden="true">⌘N<\/kbd>/);
-  assert.match(html, /<input type="search" disabled placeholder="Search loaded history" aria-label="Search loaded history">/);
-  assert.doesNotMatch(html, /<input[^>]*\sid=/, 'the search field has no id');
-  assert.match(html, /<button type="button" class="web-filter" data-action="web-mock:Harness filter is not designed on the web" aria-label="Filter tasks by harness, All harnesses">/);
-  assert.equal((html.match(/class="web-filter-dots"[\s\S]*?<\/span><\/span>/)[0].match(/backend-dot (\w+)/g) || []).join('|'), 'backend-dot claude|backend-dot codex|backend-dot opencode');
-  assert.match(html, /<div class="web-side-heading-row"><h2 class="web-side-heading">Workflows<\/h2><button type="button" class="web-side-add" data-action="web-mock:New workflow" aria-label="New workflow">/);
-  assert.match(html, /<button type="button" class="web-gear" data-action="web-mock:Settings" aria-label="Settings"><img src="assets\/symbols\/gearshape-16pt-2x\.png" alt=""><\/button>/);
-  assert.match(html, /<div class="web-sidebar-foot"><div class="appearance-control" role="group" aria-label="Appearance">/);
-  assert.match(html, /<nav class="web-sidebar-list" aria-label="Workflows and runs">/);
-  assert.equal((html.match(/<h2 class="web-side-heading">/g) || []).length, 4, 'Workflows, Running, Queued, Today');
-  assert.match(html, /<div class="web-sidebar-foot">[\s\S]*<\/aside>$/, 'the footer closes the sidebar');
-  // Status marks and glyphs are decorative.
-  assert.ok((html.match(/<span class="task-status \w+" aria-hidden="true">/g) || []).length === 3);
-  assert.ok((html.match(/<svg[^>]*aria-hidden="true"/g) || []).length >= 8);
+  const newSession = webEl(html, { class: 'web-new-session' }, 'button');
+  assert.equal(newSession.attrs['data-action'], 'web-mock:New session');
+  assert.equal(newSession.attrs['aria-label'], 'New session, Command N');
+  assert.match(html, /<kbd[^>]*aria-hidden="true"[^>]*>⌘N<\/kbd>/);
+  const search = webEl(html, { type: 'search' }, 'input');
+  assert.ok(search.attrs.disabled !== undefined, 'the search field is disabled');
+  assert.equal(search.attrs['aria-label'], 'Search loaded history');
+  assert.equal(search.attrs.placeholder, 'Search loaded history');
+  assert.equal(search.attrs.id, undefined, 'the search field has no id');
+  assert.doesNotMatch(html, /<input[^>]*\sid=/);
+  const filter = webEl(html, { class: 'web-filter' }, 'button');
+  assert.equal(filter.attrs['data-action'], 'web-mock:Harness filter is not designed on the web');
+  assert.equal(filter.attrs['aria-label'], 'Filter tasks by harness, All harnesses');
+  assert.deepEqual(Array.from(/class="web-filter-dots"[\s\S]*?<\/span><\/span>/.exec(html)[0].matchAll(/backend-dot (\w+)/g), match => match[1]), ['claude', 'codex', 'opencode']);
+  const add = webEl(html, { class: 'web-side-add' }, 'button');
+  assert.equal(add.attrs['data-action'], 'web-mock:New workflow');
+  assert.equal(add.attrs['aria-label'], 'New workflow');
+  assert.match(html, /web-side-heading-row[^>]*>\s*<h2[^>]*>Workflows<\/h2>/);
+  const gear = webEl(html, { class: 'web-gear' }, 'button');
+  assert.equal(gear.attrs['data-action'], 'web-mock:Settings');
+  assert.equal(gear.attrs['aria-label'], 'Settings');
+  assert.match(/class="web-gear"[\s\S]*?<\/button>/.exec(html)[0], /<img[^>]*src="assets\/symbols\/gearshape-16pt-2x\.png"[^>]*alt=""/);
+  const group = webEl(html, { class: 'appearance-control' });
+  assert.equal(group.attrs.role, 'group');
+  assert.equal(group.attrs['aria-label'], 'Appearance');
+  assert.ok(html.indexOf('appearance-control') > html.indexOf('web-sidebar-foot'), 'the appearance control sits in the footer');
+  assert.equal(webEl(html, { class: 'web-sidebar-list' }, 'nav').attrs['aria-label'], 'Workflows and runs');
+  assert.equal((html.match(/<h2[^>]*class="web-side-heading"[^>]*>/g) || []).length, 4, 'Workflows, Running, Queued, Today');
+  assert.ok(html.lastIndexOf('web-sidebar-foot') > html.lastIndexOf('web-task-row'), 'the footer follows the list');
+  const marks = htmlTags(html).filter(el => String(el.attrs.class || '').split(/\s+/).includes('task-status'));
+  assert.equal(marks.length, 3);
+  assert.ok(marks.every(el => el.attrs['aria-hidden'] === 'true'));
+  assert.ok(htmlTags(html).filter(el => el.tag === 'svg').every(el => el.attrs['aria-hidden'] === 'true'), 'every glyph is aria-hidden');
 });
 
 test('web title bar has the Hide sidebar button, the Harflow emblem and Connected, and no traffic lights', () => {
   const { hf } = webHarness();
   for (const state of hf.webStates) {
     const html = hf.renderWeb(state);
-    assert.doesNotMatch(html, /window-dots|class="titlebar"/, `${state} has no macOS traffic lights`);
-    assert.match(html, /<div class="web-titlebar web-titlebar-side"><button type="button" class="web-tbtn" data-action="web-mock:Hide sidebar" aria-label="Hide sidebar">/);
-    const bar = /<div class="web-titlebar web-titlebar-detail">[\s\S]*?<\/div>/.exec(html)[0];
-    assert.match(bar, /<span class="web-brand" role="group" aria-label="Harflow">/);
-    assert.match(bar, /<span class="window-emblem" aria-hidden="true"><img src="assets\/branding\/menubarTemplate\.png" srcset="assets\/branding\/menubarTemplate@2x\.png 2x" alt="" width="20" height="20"><\/span>/, 'the emblem keeps its img for the file:// fallback');
-    assert.match(bar, /<span class="web-brand-name">Harflow<\/span>/);
+    assert.doesNotMatch(html, /window-dots/, `${state} has no macOS traffic lights`);
+    assert.equal(webEl(html, { class: 'titlebar' }), undefined);
+    assert.ok(webEl(html, { class: 'web-titlebar-side' }), `${state} sidebar-side title row`);
+    const hide = webEl(html, { 'data-action': 'web-mock:Hide sidebar' }, 'button');
+    assert.equal(hide.attrs['aria-label'], 'Hide sidebar');
+    assert.ok(html.indexOf('web-titlebar-side') < html.indexOf('</aside>'), 'Hide sidebar lives in the sidebar');
+    assert.ok(html.indexOf('web-titlebar-detail') > html.indexOf('</aside>'), `${state} the brand bar sits in the detail pane`);
+    const bar = html.slice(html.indexOf('web-titlebar-detail'));
+    const brand = webEl(bar, { class: 'web-brand' });
+    assert.equal(brand.attrs.role, 'group');
+    assert.equal(brand.attrs['aria-label'], 'Harflow');
+    assert.equal(webEl(bar, { class: 'window-emblem' }).attrs['aria-hidden'], 'true');
+    const img = webEl(bar, { src: 'assets/branding/menubarTemplate.png' }, 'img');
+    assert.ok(img, 'the emblem keeps its img for the file:// fallback');
+    assert.equal(img.attrs.alt, '');
+    assert.ok(img.attrs.srcset.includes('menubarTemplate@2x.png 2x'));
+    assert.match(bar, /class="web-brand-name"[^>]*>Harflow</);
     assert.ok(bar.includes(hf.connectionIndicator('web', 'connected')), 'the Connected indicator');
     assert.match(hf.connectionIndicator('web', 'connected'), /Connected/, 'the indicator names its state');
-    assert.ok(html.indexOf('web-titlebar-detail') > html.indexOf('</aside>'), `${state} the brand bar sits in the detail pane`);
   }
 });
 
@@ -4340,6 +4373,74 @@ test('every web sidebar and title bar mock control shows a toast and never navig
   assert.match(webSidebar(hf.renderWeb('triggers')), /data-action="route:web\/incoming"/);
 });
 
+test('the web sidebar is a fixed 272 px column and long titles truncate', () => {
+  // No layout engine is available, so the sizing and truncation rules are checked as CSS text.
+  const css = fs.readFileSync(path.join(root, 'styles/web.css'), 'utf8');
+  const rule = selector => css.split('\n').find(line => line.startsWith(`${selector} {`)) || '';
+  const sidebar = rule('.web-sidebar');
+  assert.match(sidebar, /\bwidth: 272px\b/);
+  assert.match(sidebar, /\bmin-width: 0\b/);
+  assert.match(sidebar, /\bmax-width: 272px\b/);
+  assert.match(sidebar, /flex: 0 0 272px/);
+  for (const selector of ['.web-task-text strong', '.web-side-item .web-fill']) {
+    const declaration = rule(selector);
+    assert.match(declaration, /overflow: hidden/, selector);
+    assert.match(declaration, /text-overflow: ellipsis/, selector);
+    assert.match(declaration, /white-space: nowrap/, selector);
+  }
+  assert.match(rule('.web-task-text'), /min-width: 0/, 'the text column can shrink below its content');
+});
+
+test('clicking the web Incoming item runs the catalog route handler into the web incoming state', () => {
+  const { hf } = webHarness();
+  const action = webEl(webSidebar(hf.renderWeb('triggers')), { 'data-action': 'route:web/incoming' }, 'button').attrs['data-action'];
+  // route: actions are handled by one case in catalog.js, which cannot be loaded here; that case is extracted and run.
+  const source = fs.readFileSync(path.join(root, 'scripts/catalog.js'), 'utf8');
+  const routeCase = /case'route':(\{[^}]*\})/.exec(source)?.[1];
+  assert.ok(routeCase, 'the catalog route case exists');
+  const calls = [];
+  const [name, ...tail] = action.split(':');
+  new Function('HF', 'action', 'value', `switch(action){case'route':${routeCase}}`)({ navigate: (...args) => calls.push(args) }, name, tail.join(':'));
+  assert.deepEqual(calls, [['web', 'incoming']]);
+  assert.ok(hf.screens.find(screen => screen.id === 'web').states.includes('incoming'));
+  assert.equal(hf.specimenStatus('web', 'incoming').kind, 'exploratory');
+});
+
+test('an appearance click in the web specimen changes the preference and keeps the web state', () => {
+  const { hf, click, field, route } = webHarness();
+  const writes = [];
+  hf.createAppearanceController({ storage: { getItem: () => null, setItem: (key, value) => writes.push([key, value]) }, matchMedia: () => ({ matches: false, addEventListener() {} }), document: { documentElement: { dataset: {} }, querySelectorAll: () => [], querySelector: () => null }, location: { hash: '#web/incoming/system' }, history: { replaceState() {} } });
+  route('incoming');
+  click('web-filter:started');
+  click('web-select:d5');
+  route('trigger-editor');
+  field('input', 'task', { value: 'edited' });
+  const before = JSON.stringify(hf.webState());
+  const light = webEl(hf.renderWeb('trigger-editor'), { 'data-appearance-preference': 'light' }, 'button');
+  assert.ok(light, 'the web footer has the Light button');
+  // The catalog click listener begins with the appearance branch; that branch is extracted and run with a real click target.
+  const source = fs.readFileSync(path.join(root, 'scripts/catalog.js'), 'utf8');
+  const branch = /const appearanceButton=e\.target\.closest\('\[data-appearance-preference\]'\);if\(appearanceButton\)\{[^}]*\}/.exec(source)?.[0];
+  assert.ok(branch, 'the appearance branch exists');
+  const target = { dataset: { appearancePreference: light.attrs['data-appearance-preference'] }, closest: selector => selector === '[data-appearance-preference]' ? target : null };
+  new Function('HF', 'e', branch)(hf, { target });
+  assert.equal(hf.appearance.preference, 'light');
+  assert.deepEqual(writes.at(-1), ['harflow.appearance', 'light']);
+  assert.equal(JSON.stringify(hf.webState()), before, 'filter, selection and the editor draft are unchanged');
+  assert.equal(hf.webState().dirty, true);
+  assert.equal(webEl(hf.renderWeb('trigger-editor'), { 'data-appearance-preference': 'light' }, 'button').attrs['aria-pressed'], 'true');
+});
+
+test('the inventory describes the web search as static and keeps the Today sentence once', () => {
+  const inventory = fs.readFileSync(path.join(root, 'docs/screen-inventory.md'), 'utf8');
+  const row = inventory.split('\n').find(line => line.startsWith('| `web/triggers`'));
+  assert.ok(row, 'the web row exists');
+  assert.ok(row.includes('a static disabled search field'));
+  assert.ok(row.includes('the search field is static and disabled with no toast'));
+  assert.doesNotMatch(row, /search[^;.]{0,40}(?:shows?|with) a toast/i);
+  assert.equal(inventory.split('the editor sidebar drops the Today group as drawn').length - 1, 1);
+});
+
 test('web delivery fixtures: the Rejected workflow, Open the run, and Reveal semantics', () => {
   const { hf, click, route } = webHarness();
   route('incoming');
@@ -4358,12 +4459,14 @@ test('web delivery fixtures: the Rejected workflow, Open the run, and Reveal sem
   // Reveal keeps its label while aria-pressed carries the state.
   route('trigger-editor');
   let html = hf.renderWeb('trigger-editor');
-  assert.match(html, /<button type="button" class="web-btn plain" data-action="web-reveal" aria-pressed="false">Reveal<\/button>/);
+  assert.equal(webEl(html, { 'data-action': 'web-reveal' }, 'button').attrs['aria-pressed'], 'false');
+  assert.match(/data-action="web-reveal"[^>]*>([^<]*)</.exec(html)[1], /^Reveal$/);
   html = click('web-reveal');
-  assert.match(html, /<button type="button" class="web-btn plain" data-action="web-reveal" aria-pressed="true">Reveal<\/button>/);
+  assert.equal(webEl(html, { 'data-action': 'web-reveal' }, 'button').attrs['aria-pressed'], 'true');
+  assert.match(/data-action="web-reveal"[^>]*>([^<]*)</.exec(html)[1], /^Reveal$/);
   assert.doesNotMatch(html, />Hide</);
   html = click('web-reveal');
-  assert.match(html, /data-action="web-reveal" aria-pressed="false">Reveal</);
+  assert.equal(webEl(html, { 'data-action': 'web-reveal' }, 'button').attrs['aria-pressed'], 'false');
 });
 
 test('the required actor condition survives a dispatched remove and the Not designed clause lists every ticket item', () => {
