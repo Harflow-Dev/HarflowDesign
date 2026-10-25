@@ -54,6 +54,7 @@
       else if (route === 'branch' || route === 'parallel-group') draft.selected = { kind: 'parallel', id: 'parallel-start' };
       else draft.selected = { kind: 'node', id: route === 'child-reference' || route === 'missing-reference' ? 'workflow-step' : 'implementation' };
     } else if (!isCouncilRoute(route)) draft.selected = { kind: 'orchestrator', id: 'orchestrator' };
+    if (HF.setupRoutes?.includes(route)) draft.selected = route === 'end-teardown' ? { kind: 'end', id: 'end' } : { kind: 'start', id: 'start' };
     return draft;
   }
 
@@ -80,6 +81,7 @@
     state.proposal = route === 'proposal-ready';
     state.proposalContext = state.proposal ? proposalSnapshot() : null;
     if (state.mockTask) state.draft.workspace = true;
+    HF.afterWorkflowEditorReset?.(route);
   };
   HF.afterWorkflowEditorRender = () => { if (typeof document !== 'undefined' && state.route) { drawEdges(); updateButtons(); if (state.reorder) positionReorderPreview(); if (state.modal?.mode === 'rename') document.querySelector('#editor-rename-input')?.focus(); } };
   const signature = () => JSON.stringify(canonical(editableDraft()));
@@ -137,7 +139,8 @@
     const selected = state.selected?.id === n.id;
     const terminal = ['start', 'end', 'parallel_start', 'parallel_end'].includes(n.type);
     const title = n.title || n.name || n.type;
-    return `<button class="editor-node ${terminal ? 'terminal' : ''} ${selected ? 'selected' : ''}" data-editor-select="node:${esc(n.id)}" data-node-id="${esc(n.id)}" style="left:${n.x}px;top:${n.y}px;width:${n.width || (terminal ? 72 : 200)}px;height:${n.height || (terminal ? 72 : 92)}px" aria-label="Select ${esc(title)}" ${terminal ? '' : 'draggable="true"'}>${terminal ? `<span class="editor-terminal-icon ${n.type}"></span><strong>${esc(title)}</strong>` : `<span class="editor-node-title"><span class="editor-node-icon ${glyphClass(n.role || n.type)}">${n.type === 'council' ? HF.councilGlyph : ''}</span><strong>${esc(title)}</strong></span>${n.type === 'council' ? councilNodeLines(n) : n.type === 'agent' ? `<span class="editor-backend"><i></i>${esc(({codex:'Codex',claude:'Claude',opencode:'OpenCode',vibe:'Vibe',antigravity:'Antigravity'})[state.draft.fieldValues?.[`node:${n.id}`]?.backend] || n.backend || 'Codex')}</span>` : `<small>${esc(nodeSubtitle(n))}</small>`}`}${n.type !== 'start' ? `<span class="editor-port input" aria-hidden="true"></span>` : ''}${n.type !== 'end' ? `<span class="editor-port output" aria-hidden="true"></span>` : ''}</button>`;
+    const setup = n.type === 'start' || n.type === 'end' ? HF.setupIndicator?.(n.type, state.draft.fieldValues?.[`${n.type}:${n.id}`]) : null;
+    return `<button class="editor-node ${terminal ? 'terminal' : ''} ${selected ? 'selected' : ''}" data-editor-select="node:${esc(n.id)}" data-node-id="${esc(n.id)}" style="left:${n.x}px;top:${n.y}px;width:${n.width || (terminal ? 72 : 200)}px;height:${n.height || (terminal ? 72 : 92)}px" aria-label="Select ${esc(title)}${setup ? esc(setup.label) : ''}" ${terminal ? '' : 'draggable="true"'}>${terminal ? `<span class="editor-terminal-icon ${n.type}"></span><strong>${esc(title)}</strong>${setup ? '<span class="editor-setup-dot" aria-hidden="true"></span>' : ''}` : `<span class="editor-node-title"><span class="editor-node-icon ${glyphClass(n.role || n.type)}">${n.type === 'council' ? HF.councilGlyph : ''}</span><strong>${esc(title)}</strong></span>${n.type === 'council' ? councilNodeLines(n) : n.type === 'agent' ? `<span class="editor-backend"><i></i>${esc(({codex:'Codex',claude:'Claude',opencode:'OpenCode',vibe:'Vibe',antigravity:'Antigravity'})[state.draft.fieldValues?.[`node:${n.id}`]?.backend] || n.backend || 'Codex')}</span>` : `<small>${esc(nodeSubtitle(n))}</small>`}`}${n.type !== 'start' ? `<span class="editor-port input" aria-hidden="true"></span>` : ''}${n.type !== 'end' ? `<span class="editor-port output" aria-hidden="true"></span>` : ''}</button>`;
   }
   function glyphClass(role) { return ({ council: 'council', planning: 'planning', implementation: 'implementation', review: 'review', task: 'task', workflow: 'workflow', parallel_start: 'parallel', parallel_end: 'parallel' })[role] || 'task'; }
   function nodeSubtitle(n) { return n.type === 'workflow' ? n.workflowName || 'Select workflow' : n.type === 'parallel_start' ? `Parallel · ${n.groupLabel || 'Group'}` : n.type; }
@@ -173,6 +176,7 @@
       const fields = { ...HF.editorInspectorDefaults(kind, selected.id) };
       const saved = kind === 'orchestrator' ? state.draft.orchestrator : state.draft.fieldValues?.[`${fieldKind(kind)}:${selected.id}`];
       Object.assign(fields, saved || {});
+      if ((kind === 'start' || kind === 'end') && HF.setupRoutes?.includes(state.route)) return HF.renderSetupInspector(kind, saved || {}, state.route, !!HF.setupUi().open[kind]);
       if (kind === 'council') fields.councilOpen = councilUi(selected.id).open;
       return HF.renderEditorInspector(kind, fields);
     }
@@ -564,6 +568,10 @@
   }
   HF.editorController = {
     reset(route='saved') { HF.resetWorkflowEditor('workflow-editor',route); return this.snapshot(); },
+    refresh() { refresh(); return this.snapshot(); },
+    // Proposal modules seed saved fields (both copies) and an unsaved edit (draft only), and patch fields in place.
+    proposalFields(baselineFields, draftFields = {}) { for (const [key, patch] of Object.entries(baselineFields)) { state.draft.fieldValues[key] = { ...state.draft.fieldValues[key], ...patch }; state.baseline.fieldValues[key] = { ...state.baseline.fieldValues[key], ...patch }; } for (const [key, patch] of Object.entries(draftFields)) state.draft.fieldValues[key] = { ...state.draft.fieldValues[key], ...patch }; return this.snapshot(); },
+    patchFields(key, patch, render = false) { if (!state.draft || blocked()) return this.snapshot(); state.draft.fieldValues[key] = { ...(state.draft.fieldValues[key] || {}), ...patch }; if (render) refresh(); else updateButtons(); return this.snapshot(); },
     councilAdd() { addCouncilMember(); return this.snapshot(); },
     councilRemove(id) { removeCouncilMember(id); return this.snapshot(); },
     councilToggle(id) { toggleCouncilMember(id); return this.snapshot(); },

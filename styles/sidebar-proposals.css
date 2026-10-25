@@ -57,3 +57,21 @@
 .launch-divider { height: 1px; margin: 4px 6px; background: var(--hairline); }
 .sheet.launch-chooser-sheet { height: auto; min-height: 0; }
 .launch-chooser:has(.launch-list:not([hidden])) { min-height: 140px; }
+
+/* Run sheet command review (#21, HarflowMCP#41): the sheet scrolls inside, the footer stays reachable. */
+.sheet.setup-review-sheet { display: flex; flex-direction: column; height: auto; max-height: 100%; min-height: 0; overflow: hidden; }
+.setup-review-sheet .su-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding-right: 4px; }
+.setup-review-sheet .su-footer { flex: none; align-items: center; margin-top: 12px; }
+.setup-review-sheet .su-footer-note { flex: 1; color: var(--secondaryText); }
+.setup-review-sheet .su-help { margin: -8px 0 12px; color: var(--secondaryText); overflow-wrap: anywhere; }
+.setup-review-sheet .su-mono, .setup-review-sheet .su-code { font: 11px ui-monospace, SFMono-Regular, Menlo, monospace; }
+.setup-review-sheet .su-review { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
+.setup-review-sheet .su-review-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.setup-review-sheet .su-review-head h4 { margin: 0; }
+.setup-review-sheet .su-pill { padding: 2px 8px; border-radius: 6px; background: var(--pillFill); color: var(--secondaryText); font-size: 11px; }
+.setup-review-sheet .su-command { display: flex; flex-direction: column; gap: 6px; }
+.setup-review-sheet .su-command-title { display: inline-flex; align-items: center; gap: 6px; color: var(--secondaryText); font-size: 11px; font-weight: 600; }
+.setup-review-sheet .su-code { margin: 0; padding: 8px 10px; border: 1px solid var(--hairline); border-radius: 8px; background: var(--codeFill); color: var(--primaryText); white-space: pre-wrap; word-break: break-all; }
+.setup-review-sheet .su-check { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.setup-review-sheet .su-check input { width: 14px; height: 14px; margin: 0; accent-color: var(--accentFill); }
+.setup-review-sheet .su-code:focus-visible, .setup-review-sheet .su-check input:focus-visible { outline: 2px solid var(--accentLink); outline-offset: 2px; }

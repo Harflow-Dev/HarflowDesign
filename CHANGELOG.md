@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add exploratory workflow setup and teardown proposals: Setup and Teardown commands on the Start and End inspectors (`start-setup`, `start-new-folder`, `end-teardown`) and a Run sheet command review (`workflow-launch/setup-review`) that keeps Run disabled until the commands are reviewed, shown without a native source.
+
 - Show the Harflow app icon beside the catalog title and as the browser tab icon, using PNGs exported from HarflowMac `macos/Harflow/Resources/AppIcon.icns`.
 
 - Add a Harnesses option to the exploratory Statistics ranked list, with executions and model count per harness and a model drill-down, and move the reference to canvas version 1792893875-1b6a.

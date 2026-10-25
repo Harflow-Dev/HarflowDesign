@@ -20,6 +20,9 @@ This glossary governs user-facing design copy. The terminology was requested dur
 | Access level | Requested read/write/publish scope. Describe actual enforced permissions separately. |
 | Activity | Event stream shown to users. |
 | Council member | Agent taking part in a Council node. Council role labels are Facilitator, Member (a required agent), Optional (its vote and failure never block the outcome), and System (messages from the Council itself). Harness stays secondary text and is never the speaker. |
+| Setup / Teardown (workflow) | Commands on a workflow's Start and End nodes. Setup runs once before the first node and may create the Workspace; Teardown runs once after the workflow run finishes. Distinct from runtime setup (`harflow-setup`, "Setup did not finish"), which installs the Runtime. Say "setup command" or "teardown command" when the context could be ambiguous. |
+| Launch folder | The folder chosen when a run starts, exposed to setup and teardown as `$HARFLOW_LAUNCH_DIR`. The Run sheet labels the field Repository. |
+| Workspace | The folder nodes run in, exposed as `$HARFLOW_WORKSPACE`. It is the launch folder unless a setup command creates another, under a configurable root (default `~/Harflow/Workspaces/<run id>`). |
 | Harflow | Application/product name. Historical source paths may retain older names where needed for accurate provenance. |
 
 ## Applying the glossary
