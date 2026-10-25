@@ -2087,8 +2087,8 @@ test('statistics is an exploratory whole-proposal family with no native source',
 
 test('statistics shows no cost anywhere at any range or measure', () => {
   const hf = loadDesignRuntime();
-  for (const screen of ['overview', 'nodes']) for (const range of [7, 30, 90]) for (const measure of ['time', 'usage']) for (const list of ['workflows', 'tasks']) {
-    const open = { 'w:0': true, 't:0': true, 'w:5': true };
+  for (const screen of ['overview', 'nodes']) for (const range of [7, 30, 90]) for (const measure of ['time', 'usage']) for (const list of ['workflows', 'tasks', 'harnesses']) {
+    const open = { 'w:0': true, 't:0': true, 'w:5': true, 'h:0': true, 'h:2': true };
     const html = hf.statisticsBody(screen, { range, measure, list, open });
     assert.doesNotMatch(html, /Cost|cost|\$/, `${screen}/${range}/${measure}/${list}`);
   }
@@ -2244,8 +2244,8 @@ test('statistics controls expose pressed, expanded and controlled-region semanti
     assert.ok(html.includes(`data-action="stat-range:${range}" aria-pressed="true"`));
     assert.ok(html.includes(`data-action="stat-measure:${measure}" aria-pressed="true"`));
   }
-  for (const list of ['workflows', 'tasks']) {
-    const open = list === 'workflows' ? { 'w:0': true, 'w:1': true, 'w:5': true } : { 't:0': true, 't:2': true };
+  for (const list of ['workflows', 'tasks', 'harnesses']) {
+    const open = list === 'workflows' ? { 'w:0': true, 'w:1': true, 'w:5': true } : list === 'tasks' ? { 't:0': true, 't:2': true } : { 'h:0': true, 'h:2': true };
     const html = hf.statisticsBody('overview', { list, open });
     assert.ok(html.includes(`data-action="stat-list:${list}" aria-pressed="true"`));
     const rows = html.match(/<button type="button" class="stat-row" [^>]*>/g);
@@ -2363,6 +2363,133 @@ test('statistics task turns sum to the row value and fall inside the range windo
   }
   const turns = range => hf.statisticsModel({ range, list: 'tasks', open: { 't:0': true } }).list.rows.find(r => r.id === 't:0').children.map(c => c.value).join();
   assert.equal(new Set([7, 30, 90].map(turns)).size, 3, 'turn values scale with the range');
+});
+
+test('statistics Harnesses list: rows, dots, totals and footer copy', () => {
+  const hf = loadDesignRuntime();
+  const open = { 'h:0': true, 'h:1': true, 'h:2': true, 'h:3': true, 'h:4': true };
+  for (const measure of ['time', 'usage']) for (const range of [7, 30, 90]) {
+    const m = hf.statisticsModel({ list: 'harnesses', measure, range, open });
+    assert.equal(m.listKind, 'harnesses');
+    assert.equal(m.list.title, `Harnesses by ${measure === 'usage' ? 'usage' : 'total time'}`);
+    assert.equal(m.list.footer, '5 harnesses · workflow nodes and tasks combined · select a row to see its models');
+    assert.equal(m.list.rows.length, 5);
+    assert.equal(m.list.rows[0].pct, 100);
+    // Fixture consistency only: harness totals equal the formatted chart grand total (workflows + TASK_TOTAL), not the
+    // seven listed tasks or the node fixtures. Compared through the formatted values, within display rounding.
+    const parse = measure === 'usage' ? statTokens : statTime;
+    const sum = m.list.rows.reduce((a, row) => a + parse(row.value), 0);
+    const tol = 5 * 0.5 + (measure === 'usage' ? 5 * 50 : 0.5);
+    assert.ok(Math.abs(sum - parse(m.chart.total)) <= tol, `${measure}/${range}: ${sum} vs ${m.chart.total}`);
+    for (const row of m.list.rows) {
+      assert.equal(row.kind, 'harness');
+      assert.match(row.id, /^h:\d$/);
+      assert.equal(row.hasMore, false);
+      const executions = row.children.reduce((a, c) => a + c.executions, 0);
+      assert.equal(executions, row.executions, `${row.name} executions add up exactly`);
+      assert.equal(row.children[0].pct, 100, `${row.name} top model bar`);
+      assert.ok(row.children.every((c, i, all) => i === 0 || parse(all[i - 1].value) >= parse(c.value) - 1e-9), 'models sorted by the measure');
+      const tolerance = measure === 'usage' ? (row.children.length + 1) * 50 : (row.children.length + 1) * 0.5;
+      assert.ok(Math.abs(row.children.reduce((a, c) => a + parse(c.value), 0) - parse(row.value)) <= tolerance, `${row.name} models sum to the row`);
+      assert.equal(row.meta, `${executions === 1 ? '1 execution' : executions + ' executions'} · ${row.children.length === 1 ? '1 model' : row.children.length + ' models'}`);
+      assert.equal(row.subFooter, `${row.children.length === 1 ? '1 model' : row.children.length + ' models'} · the model the harness reported, not the one requested`);
+      assert.equal(row.subTitle, measure === 'usage' ? 'Models, most tokens first' : 'Models, longest first');
+    }
+  }
+});
+
+test('statistics Harnesses list markup: kind-slot dot, names, plural model, no Show all or node button', () => {
+  const hf = loadDesignRuntime();
+  const open = { 'h:0': true, 'h:1': true, 'h:2': true, 'h:3': true, 'h:4': true };
+  const html = hf.statisticsBody('overview', { list: 'harnesses', open });
+  assert.ok(html.includes('data-action="stat-list:harnesses" aria-pressed="true"'));
+  assert.match(html, /<h3>Harnesses by total time<\/h3>/);
+  const rows = html.match(/<button type="button" class="stat-row"[\s\S]*?<\/button>/g);
+  assert.equal(rows.length, 5);
+  for (const row of rows) {
+    assert.match(row, /<span class="stat-kind"><span class="backend-dot [a-z]+" aria-hidden="true"><\/span><\/span>/, 'a dot in the kind slot');
+    assert.doesNotMatch(row, /<span class="stat-kind"><svg/, 'not the terminal or workflow glyph');
+    assert.equal((row.match(/backend-dot/g) || []).length, 1, 'no second dot in the meta line');
+  }
+  assert.match(html, /<strong>OpenCode<\/strong>/);
+  assert.doesNotMatch(html, /Opencode/);
+  assert.match(html, /<strong>Antigravity<\/strong>/);
+  assert.match(html, /1 execution|18 executions/);
+  assert.match(html, /· 1 model</);
+  assert.match(html, /· 3 models</);
+  assert.doesNotMatch(html, /Show all|stat-more-runs|stat-all-tasks|View node breakdown|stat-nodes:/);
+  assert.match(html, /<span class="stat-model">qwen3-coder<\/span>/);
+  assert.match(html, /Models, longest first/);
+  assert.match(html, /5 harnesses · workflow nodes and tasks combined/);
+  assert.doesNotMatch(html, /stat-status|stat-when/, 'model sub-rows have no status or time slot');
+  // Workflow and task rows keep the glyph in the kind slot.
+  assert.match(hf.statisticsBody('overview', {}), /<span class="stat-kind"><svg/);
+  // A single-execution model reads in the singular.
+  const singular = hf.statisticsModel({ list: 'harnesses', range: 7, open }).list.rows;
+  for (const row of singular) for (const child of row.children) assert.match(child.meta, /^\d+ executions? · /);
+  assert.equal(hf.statisticsModel({ list: 'bogus' }).listKind, 'workflows');
+});
+
+test('statistics Harnesses model averages and execution counts scale with the range', () => {
+  const hf = loadDesignRuntime();
+  const expected = { claude: { opus: [1600, 310], sonnet: [980, 260], haiku: [40, 22] }, codex: { 'gpt-5': [980, 190], 'gpt-5-mini': [230, 60] }, opencode: { 'qwen3-coder': [720, 140] }, vibe: { devstral: [410, 110] }, antigravity: { 'gemini-2.5-pro': [172, 18] } };
+  const names = ['Claude', 'Codex', 'OpenCode', 'Vibe', 'Antigravity'];
+  const factor = { 7: 0.23, 30: 1, 90: 2.9 };
+  const fmt = m => { m = Math.round(m); if (m < 1) return '< 1 min'; if (m < 60) return m + ' min'; const h = Math.floor(m / 60), r = m % 60; return r ? h + ' h ' + r + ' min' : h + ' h'; };
+  const open = { 'h:0': true, 'h:1': true, 'h:2': true, 'h:3': true, 'h:4': true };
+  for (const measure of ['time', 'usage']) for (const range of [7, 30, 90]) {
+    const rows = hf.statisticsModel({ list: 'harnesses', measure, range, open }).list.rows;
+    for (const row of rows) {
+      const models = Object.entries(expected)[names.indexOf(row.name)][1];
+      assert.equal(row.children.length, Object.keys(models).length);
+      for (const child of row.children) {
+        const [min, ex] = models[child.model];
+        const executions = Math.max(1, Math.round(ex * factor[range]));
+        assert.equal(child.executions, executions, `${row.name}/${child.model} ${range}`);
+        assert.equal(child.meta, `${executions === 1 ? '1 execution' : executions + ' executions'} · ${fmt(min * factor[range] / executions)} avg`, `${row.name}/${child.model} ${measure}/${range} average is always time`);
+      }
+    }
+  }
+});
+
+test('statistics Harnesses open keys stay on the same harness as the order changes and survive navigation', () => {
+  const { hf, content, click } = statisticsInteractive();
+  const order = measure => Array.from(hf.statisticsModel({ list: 'harnesses', measure }).list.rows.map(row => row.name));
+  assert.deepEqual(order('time'), ['Claude', 'Codex', 'OpenCode', 'Vibe', 'Antigravity']);
+  assert.deepEqual(order('usage'), ['Claude', 'Codex', 'Vibe', 'OpenCode', 'Antigravity'], 'Vibe and OpenCode swap');
+  const openName = html => { const m = /aria-expanded="true"[\s\S]*?<strong>([^<]+)<\/strong>/.exec(html); return m && m[1]; };
+  click('stat-list:harnesses');
+  assert.match(content.innerHTML, /Harnesses by total time/);
+  assert.match(content.innerHTML, /data-action="stat-list:harnesses" aria-pressed="true"/);
+  click('stat-toggle:h:2');
+  assert.equal(openName(content.innerHTML), 'OpenCode');
+  assert.match(content.innerHTML, /data-action="stat-toggle:h:2" aria-expanded="true" aria-controls="stat-sub-h-2"/);
+  click('stat-measure:usage');
+  assert.deepEqual(Array.from(content.innerHTML.matchAll(/<span class="stat-rank">(\d)<\/span>[\s\S]*?<strong>([^<]+)<\/strong>/g), x => x[2]), order('usage'));
+  assert.equal(openName(content.innerHTML), 'OpenCode', 'the open row follows the harness, not the rank');
+  assert.match(content.innerHTML, /Models, most tokens first/);
+  click('stat-range:7');
+  assert.equal(openName(content.innerHTML), 'OpenCode');
+  click('stat-list:workflows');
+  assert.doesNotMatch(content.innerHTML, /aria-expanded="true"/);
+  click('stat-list:tasks');
+  click('stat-list:harnesses');
+  assert.equal(openName(content.innerHTML), 'OpenCode', 'survives list switches');
+  click('stat-list:workflows');
+  click('stat-toggle:w:0');
+  click('stat-nodes:0');
+  click('stat-back');
+  click('stat-list:harnesses');
+  assert.equal(openName(content.innerHTML), 'OpenCode', 'survives the node-page round trip');
+  assert.match(content.innerHTML, /Last 7 days/);
+  click('stat-toggle:h:2');
+  assert.doesNotMatch(content.innerHTML, /aria-expanded="true"/, 'toggle closes');
+  click('stat-toggle:h:3');
+  hf.resetStatistics();
+  const html = hf.renderStatistics('overview');
+  assert.doesNotMatch(html, /aria-expanded="true"/, 'reset clears the open harness rows');
+  assert.ok(html.includes('data-action="stat-list:workflows" aria-pressed="true"'));
+  assert.match(html, /<small>Last 30 days<\/small>/);
 });
 
 test('statistics shows harness names from HF.harnessName', () => {
