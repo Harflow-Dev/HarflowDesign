@@ -2041,7 +2041,7 @@ test('readiness report separates the three finding states, shows scope, and mark
 
 test('workflow editor proposal markup does not leak into other editor states', () => {
   const hf = loadDesignRuntime();
-  const marker = /editor-rename|editor-readiness|editor-council|editor-reorder-preview|editor-insertion-line|editor-standalone-slot|data-standalone-id|add:council|inspect-readiness|data-editor-action="rename"/;
+  const marker = /editor-rename|editor-readiness|editor-council|editor-reorder-preview|editor-insertion-line|editor-standalone-slot|data-standalone-id|add:council|inspect-readiness|data-editor-action="rename"|data-setup-inspector|editor-setup-dot/;
   const family = hf.screens.find(screen => screen.id === 'workflow-editor');
   for (const state of family.states) {
     hf.route = { theme: 'light', screen: 'workflow-editor', state };
@@ -3207,6 +3207,390 @@ test('Council document input and change listeners edit the draft and gate Save',
   outside.closest = selector => selector === '[data-council-field]' ? outside : null;
   outside.value = 'Ignored'; fire('input', outside);
   assert.equal(councilFields(editor.snapshot()).members[0].name, 'Architect');
+});
+
+const setupRoute = (hf, route) => { hf.route = { theme: 'light', screen: 'workflow-editor', state: route }; hf.editorController.reset(route); return hf.editorController; };
+const setupFields = (editor, kind) => { const { id, title, ...fields } = JSON.parse(JSON.stringify(editor.snapshot().draft.fieldValues[`${kind}:${kind}`] || {})); return fields; };
+// A fake control that satisfies the document-level setup listeners.
+const setupHarness = () => {
+  const app = { querySelector: () => null, querySelectorAll: () => [] };
+  const hf = loadDesignRuntime({ captureEvents: true });
+  const control = props => { const el = { id: '', type: 'text', value: '', checked: false, disabled: false, dataset: {}, matches: selector => (props.matchSelectors || []).includes(selector), ...props, closest: selector => (props.closestSelectors || {})[selector] === undefined ? (selector === '.editor-app' ? app : null) : (props.closestSelectors[selector] ? el : null) }; return el; };
+  const fire = (type, target, extra = {}) => hf.__dispatchDesignEvent({ type, target, key: extra.key, preventDefault() {}, stopImmediatePropagation() {} });
+  const click = action => { const target = control({ dataset: { action }, closestSelectors: { '[data-action^="su-"]': true } }); fire('click', target); return target; };
+  const text = (field, value) => { const target = control({ dataset: { setupField: field }, value, matchSelectors: ['textarea'], closestSelectors: { 'textarea[data-setup-field]': true, '[data-setup-field]': true } }); fire('input', target); return target; };
+  const change = (field, props) => { const target = control({ dataset: { setupField: field }, closestSelectors: { '[data-setup-field]': true, 'textarea[data-setup-field]': false }, ...props }); fire('change', target); return target; };
+  const key = (name, field) => { const target = control({ dataset: { setupSpin: field }, closestSelectors: { '[data-setup-spin]': true } }); fire('keydown', target, { key: name }); };
+  return { hf, click, text, change, key, fire, control };
+};
+const setupTerminalLabel = (html, node) => (new RegExp(`data-node-id="${node}"[^>]*aria-label="([^"]*)"`).exec(html) || [])[1];
+
+test('setup and teardown proposal markup appears only in its four states', () => {
+  const hf = loadDesignRuntime();
+  const marker = /data-setup-inspector|editor-setup|data-setup-field|data-setup-spin|su-up:|su-vars:/;
+  const launch = /su-review|su-code|data-su-reviewed|data-su-repo|su-footer/;
+  for (const family of hf.screens) for (const state of family.states) {
+    hf.route = { theme: 'light', screen: family.id, state };
+    if (family.id === 'workflow-run') hf.resetWorkflowRun(hf.route);
+    if (family.id === 'workflow-editor') hf.editorController.reset(state);
+    const html = renderers[family.id](hf, state);
+    assert.equal(marker.test(html), family.id === 'workflow-editor' && hf.setupRoutes.includes(state), `${family.id}/${state} editor setup markup`);
+    assert.equal(launch.test(html), family.id === 'workflow-launch' && state === 'setup-review', `${family.id}/${state} sheet setup markup`);
+  }
+  hf.editorController.reset('saved');
+  assert.deepEqual(Array.from(hf.setupRoutes), ['start-setup', 'start-new-folder', 'end-teardown']);
+  for (const route of hf.setupRoutes) assert.ok(hf.editorProposalRoutes.includes(route));
+});
+
+test('setup and teardown states are registered with labels that pass isTicketRef', () => {
+  const hf = loadDesignRuntime();
+  for (const [family, state] of [['workflow-editor', 'start-setup'], ['workflow-editor', 'start-new-folder'], ['workflow-editor', 'end-teardown'], ['workflow-launch', 'setup-review']]) {
+    const status = hf.specimenStatus(family, state);
+    assert.equal(status.kind, 'exploratory', state);
+    assert.deepEqual(Array.from(status.tickets), ['#21', 'HarflowMCP#41']);
+    assert.ok(Array.from(status.tickets).every(ref => hf.isTicketRef(ref)));
+    assert.match(status.caption, /^Exploratory · .*#21.*HarflowMCP#41.* · Not approved/);
+  }
+  assert.ok(hf.screens.find(screen => screen.id === 'workflow-launch').states.includes('setup-review'));
+  assert.equal(hf.isTicketRef('HarflowMCP#41'), true);
+  assert.equal(hf.isTicketRef('41'), false);
+});
+
+test('start-setup, start-new-folder and end-teardown render their own copy and state', () => {
+  const hf = loadDesignRuntime();
+  let editor = setupRoute(hf, 'start-setup');
+  let html = hf.renderEditor('start-setup');
+  assert.match(html, /data-setup-inspector="start"/);
+  assert.match(html, /<h2>Start<\/h2>/);
+  const plain = html.replace(/&#39;/g, "'");
+  for (const text of ['Runs once before the first node and decides where every node works.', 'Run a setup command', 'Off: nodes run in the launch folder. On: the command creates a folder at', '$HARFLOW_WORKSPACE', 'Setup command', 'Variables (6)', "Runs with Harflow's own access", "Harness permissions don't apply to this command. You review it each time the workflow runs."]) assert.ok(plain.includes(text), text);
+  assert.match(html, /<input type="checkbox" data-setup-field="setupEnabled" checked>/);
+  assert.match(html, /git -C &quot;\$HARFLOW_LAUNCH_DIR&quot; fetch origin/);
+  assert.match(html, /aria-valuenow="5"[^>]*aria-valuetext="5 minutes"/);
+  assert.match(html, /is the folder chosen when the run starts\. Inputs arrive only as variables\. Harflow never inserts them into the command text\./);
+  assert.doesNotMatch(html, /Run when|Teardown/);
+  let snap = editor.snapshot();
+  assert.equal(snap.selected.kind, 'start');
+  assert.equal(snap.dirty, true, 'start-setup holds an unsaved edit over a saved baseline');
+  assert.notEqual(snap.baseline.fieldValues['start:start'].setupEnabled, true, 'the saved baseline has setup off');
+
+  editor = setupRoute(hf, 'start-new-folder');
+  html = hf.renderEditor('start-new-folder');
+  assert.match(html, /mkdir -p &quot;\$HARFLOW_WORKSPACE&quot;/);
+  assert.match(html, /cp -R ~\/templates\/ios-sample\/\. &quot;\$HARFLOW_WORKSPACE&quot;/);
+  assert.match(html, /aria-valuenow="1"[^>]*aria-valuetext="1 minute"/, 'singular minute');
+  assert.match(html, /Variables \(4\)/);
+  assert.match(html, /aria-expanded="false"/);
+  assert.doesNotMatch(html, /class="editor-setup-pill"/, 'collapsed: no pills');
+  assert.match(html, /<div id="su-variables" class="editor-setup-pills" hidden><\/div>/);
+  assert.equal(editor.snapshot().dirty, false);
+
+  editor = setupRoute(hf, 'end-teardown');
+  html = hf.renderEditor('end-teardown');
+  assert.match(html, /data-setup-inspector="end"/);
+  assert.match(html, /<h2>End<\/h2>/);
+  assert.match(html, /Runs once after the workflow run finishes\. Choose when below\./, 'S7 wording');
+  assert.doesNotMatch(html, /even when it fails or is cancelled/);
+  assert.match(html, /Adds <span class="editor-setup-mono">HARFLOW_RUN_OUTCOME<\/span>: completed, failed or cancelled\. The branch stays, so an open pull request keeps working\./, 'T1 wording');
+  assert.doesNotMatch(html, /succeeded or failed|succeeded,/);
+  assert.match(html, /Run a teardown command/);
+  assert.match(html, /<option value="success" selected>The run succeeds<\/option><option value="always" >Always<\/option>/);
+  assert.match(html, /If Harflow stops during teardown, the run shows &quot;Teardown pending&quot; until you run it from recovery\.|If Harflow stops during teardown, the run shows "Teardown pending" until you run it from recovery\./);
+  assert.match(html, /A failed teardown is recorded but never changes the run/);
+  assert.match(html, /git -C &quot;\$HARFLOW_LAUNCH_DIR&quot; worktree remove/);
+  assert.match(html, /Variables \(7\)/);
+  assert.equal(editor.snapshot().selected.kind, 'end');
+  assert.equal(editor.snapshot().dirty, false);
+});
+
+test('setup routes use the proposal revision and reset deterministically', () => {
+  const hf = loadDesignRuntime();
+  for (const route of hf.setupRoutes) assert.equal(setupRoute(hf, route).snapshot().draft.revision, 3, `${route} uses the proposal revision`);
+  assert.notEqual(setupRoute(hf, 'saved').snapshot().draft.revision, 3);
+  const first = hf.setupRoutes.map(route => { const editor = setupRoute(hf, route); return hf.renderEditor(route) + JSON.stringify(editor.snapshot().draft.fieldValues); });
+  const editor = setupRoute(hf, 'end-teardown');
+  editor.patchFields('end:end', { teardownTimeoutMinutes: 9, teardownCommand: 'x' }, true);
+  hf.setupToggleVariables('end');
+  const second = hf.setupRoutes.map(route => { const e = setupRoute(hf, route); return hf.renderEditor(route) + JSON.stringify(e.snapshot().draft.fieldValues); });
+  assert.deepEqual(second, first, 'a mutated session resets to the same output');
+  assert.deepEqual(JSON.parse(JSON.stringify(hf.setupUi())), { open: {} }, 'end-teardown starts with every disclosure closed');
+  assert.deepEqual(JSON.parse(JSON.stringify(setupRoute(hf, 'start-setup') && hf.setupUi())), { open: { start: true } });
+});
+
+test('setup and teardown fields bind through the document listeners and Discard restores them together', () => {
+  const { hf, text, change, click } = setupHarness();
+  let editor = setupRoute(hf, 'end-teardown');
+  hf.renderEditor('end-teardown');
+  const original = setupFields(editor, 'end');
+  assert.deepEqual(original, { teardownEnabled: true, teardownCommand: hf.setupFixture.commands.teardown, teardownTimeoutMinutes: 2, runWhen: 'success' });
+  text('teardownCommand', 'echo done');
+  assert.equal(setupFields(editor, 'end').teardownCommand, 'echo done');
+  assert.equal(editor.snapshot().dirty, true);
+  change('runWhen', { value: 'always', type: 'select-one' });
+  assert.equal(setupFields(editor, 'end').runWhen, 'always');
+  click('su-up:teardownTimeoutMinutes');
+  assert.equal(setupFields(editor, 'end').teardownTimeoutMinutes, 3);
+  change('teardownEnabled', { type: 'checkbox', checked: false });
+  assert.equal(setupFields(editor, 'end').teardownEnabled, false);
+  assert.equal(editor.snapshot().canSave, true);
+  assert.equal(editor.snapshot().canRun, false);
+  assert.equal(setupTerminalLabel(hf.renderEditor('end-teardown'), 'end'), 'Select End', 'the indicator goes away with the checkbox');
+  const snap = editor.discard();
+  assert.deepEqual(setupFields(editor, 'end'), original, 'checkbox, timeout, Run when and command are restored together');
+  assert.equal(snap.dirty, false);
+  assert.match(hf.renderEditor('end-teardown'), /data-setup-field="teardownEnabled" checked/);
+
+  // start-setup: the unsaved edit over the baseline is discarded as a whole.
+  editor = setupRoute(hf, 'start-setup');
+  hf.renderEditor('start-setup');
+  assert.equal(setupFields(editor, 'start').setupEnabled, true);
+  text('setupCommand', 'echo hi');
+  editor.discard();
+  const start = setupFields(editor, 'start');
+  assert.equal(start.setupEnabled === true, false);
+  assert.ok(!start.setupCommand);
+  assert.match(hf.renderEditor('start-setup'), /data-setup-field="setupEnabled" >/);
+});
+
+test('setup fields survive deleting another node and a disabled command keeps its values', () => {
+  const { hf, change } = setupHarness();
+  const editor = setupRoute(hf, 'end-teardown');
+  hf.renderEditor('end-teardown');
+  const before = setupFields(editor, 'end');
+  editor.select('node', 'planning');
+  editor.removeSelected();
+  assert.ok(!editor.snapshot().draft.nodes.some(node => node.id === 'planning'));
+  assert.deepEqual(setupFields(editor, 'end'), before, 'end fields survive');
+  const start = setupRoute(hf, 'start-setup');
+  const startBefore = setupFields(start, 'start');
+  start.select('node', 'planning');
+  start.removeSelected();
+  assert.deepEqual(setupFields(start, 'start'), startBefore, 'start fields survive');
+  // Unchecking disables the controls and keeps the values.
+  setupRoute(hf, 'end-teardown'); hf.renderEditor('end-teardown');
+  change('teardownEnabled', { type: 'checkbox', checked: false });
+  const html = hf.renderEditor('end-teardown');
+  assert.match(html, /<textarea[^>]*data-setup-field="teardownCommand"[^>]*disabled>git -C/);
+  assert.match(html, /<select data-setup-field="runWhen"[^>]*disabled>/);
+  assert.match(html, /data-action="su-up:teardownTimeoutMinutes"[^>]*disabled/);
+  assert.match(html, /data-action="su-down:teardownTimeoutMinutes"[^>]*disabled/);
+  assert.match(html, /role="spinbutton" tabindex="-1"[^>]*aria-valuenow="2"[^>]*aria-disabled="true"/);
+  const kept = setupFields(hf.editorController, 'end');
+  assert.equal(kept.teardownEnabled, false);
+  assert.equal(kept.teardownTimeoutMinutes, 2);
+  assert.equal(kept.teardownCommand, hf.setupFixture.commands.teardown);
+  assert.equal(kept.runWhen, 'success');
+  // Re-checking restores an enabled form with the same values.
+  change('teardownEnabled', { type: 'checkbox', checked: true });
+  assert.doesNotMatch(hf.renderEditor('end-teardown'), /data-setup-field="teardownCommand"[^>]*disabled/);
+});
+
+test('setup timeout is an accessible spinbutton with proposal bounds and clamping', () => {
+  const { hf, click, key } = setupHarness();
+  assert.deepEqual(JSON.parse(JSON.stringify(hf.setupBounds)), { start: { min: 1, max: 60 }, end: { min: 1, max: 30 } });
+  assert.equal(hf.setupClamp('start', 0), 1);
+  assert.equal(hf.setupClamp('start', 99), 60);
+  assert.equal(hf.setupClamp('end', 99), 30);
+  assert.equal(hf.setupClamp('end', -4), 1);
+  assert.equal(hf.setupClamp('start', 2.6), 3);
+  assert.equal(hf.setupClamp('start', 'abc'), 1);
+  assert.equal(hf.setupMinutesText(1), '1 minute');
+  assert.equal(hf.setupMinutesText(5), '5 minutes');
+  let editor = setupRoute(hf, 'start-setup');
+  let html = hf.renderEditor('start-setup');
+  assert.match(html, /role="spinbutton" tabindex="0" data-setup-spin="setupTimeoutMinutes" aria-labelledby="su-timeout-label" aria-valuenow="5" aria-valuemin="1" aria-valuemax="60" aria-valuetext="5 minutes"/);
+  assert.match(html, /id="su-timeout-label">Timeout</);
+  assert.match(html, /aria-label="Increase timeout"/);
+  assert.match(html, /aria-label="Decrease timeout"/);
+  key('End', 'setupTimeoutMinutes');
+  assert.equal(setupFields(editor, 'start').setupTimeoutMinutes, 60);
+  click('su-up:setupTimeoutMinutes');
+  assert.equal(setupFields(editor, 'start').setupTimeoutMinutes, 60, 'clamped at the maximum');
+  key('Home', 'setupTimeoutMinutes');
+  assert.equal(setupFields(editor, 'start').setupTimeoutMinutes, 1);
+  click('su-down:setupTimeoutMinutes');
+  assert.equal(setupFields(editor, 'start').setupTimeoutMinutes, 1, 'clamped at the minimum');
+  key('ArrowUp', 'setupTimeoutMinutes'); key('PageUp', 'setupTimeoutMinutes');
+  assert.equal(setupFields(editor, 'start').setupTimeoutMinutes, 7);
+  key('PageDown', 'setupTimeoutMinutes'); key('ArrowDown', 'setupTimeoutMinutes');
+  assert.equal(setupFields(editor, 'start').setupTimeoutMinutes, 1);
+  html = hf.renderEditor('start-setup');
+  assert.match(html, /aria-valuenow="1"[^>]*aria-valuetext="1 minute"/);
+  editor = setupRoute(hf, 'end-teardown');
+  hf.renderEditor('end-teardown');
+  key('End', 'teardownTimeoutMinutes');
+  assert.equal(setupFields(editor, 'end').teardownTimeoutMinutes, 30);
+  assert.match(hf.renderEditor('end-teardown'), /aria-valuemin="1" aria-valuemax="30"/);
+  click('su-up:teardownTimeoutMinutes');
+  assert.equal(setupFields(editor, 'end').teardownTimeoutMinutes, 30);
+  // A disabled form ignores the steppers.
+  editor.patchFields('end:end', { teardownEnabled: false }, true);
+  key('Home', 'teardownTimeoutMinutes');
+  assert.equal(setupFields(editor, 'end').teardownTimeoutMinutes, 30);
+});
+
+test('setup Variables disclosure toggles aria-expanded and counts without dirtying the draft', () => {
+  const { hf, click } = setupHarness();
+  const counts = { 'start-setup': ['start', 6], 'start-new-folder': ['start', 4], 'end-teardown': ['end', 7] };
+  for (const [route, [kind, count]] of Object.entries(counts)) {
+    const editor = setupRoute(hf, route);
+    const dirty = editor.snapshot().dirty, fieldsBefore = JSON.stringify(editor.snapshot().draft.fieldValues);
+    const names = hf.setupVariables(kind, route);
+    assert.equal(names.length, count, route);
+    assert.equal(new Set(names).size, count);
+    let html = hf.renderEditor(route);
+    const startsOpen = route === 'start-setup';
+    assert.ok(html.includes(`aria-expanded="${startsOpen}" aria-controls="su-variables"`), `${route} initial state`);
+    assert.equal((html.match(/class="editor-setup-pill"/g) || []).length, startsOpen ? count : 0);
+    assert.ok(html.includes(`Variables (${count})`));
+    click(`su-vars:${kind}`);
+    html = hf.renderEditor(route);
+    assert.ok(html.includes(`aria-expanded="${!startsOpen}" aria-controls="su-variables"`), `${route} toggled`);
+    assert.equal((html.match(/class="editor-setup-pill"/g) || []).length, startsOpen ? 0 : count);
+    assert.equal(editor.snapshot().dirty, dirty, `${route} toggling never dirties the draft`);
+    assert.equal(JSON.stringify(editor.snapshot().draft.fieldValues), fieldsBefore);
+    click(`su-vars:${kind}`);
+    assert.ok(hf.renderEditor(route).includes(`aria-expanded="${startsOpen}"`));
+  }
+  setupRoute(hf, 'end-teardown'); click('su-vars:end');
+  const open = hf.renderEditor('end-teardown');
+  for (const name of ['HARFLOW_LAUNCH_DIR', 'HARFLOW_WORKSPACE', 'HARFLOW_RUN_ID', 'HARFLOW_WORKFLOW_NAME', 'HARFLOW_INPUT_BASE', 'HARFLOW_INPUT_ISSUE', 'HARFLOW_RUN_OUTCOME']) assert.ok(open.includes(`<span class="editor-setup-pill">${name}</span>`), name);
+  setupRoute(hf, 'end-teardown');
+  assert.equal(hf.setupUi().open.end, undefined, 're-entry closes the disclosure');
+});
+
+test('Start and End nodes show a setup indicator exposed in their accessible name', () => {
+  const hf = loadDesignRuntime();
+  assert.deepEqual(JSON.parse(JSON.stringify(hf.setupIndicator('start', { setupEnabled: true }))), { label: ', setup command on' });
+  assert.deepEqual(JSON.parse(JSON.stringify(hf.setupIndicator('end', { teardownEnabled: true }))), { label: ', teardown command on' });
+  for (const [type, fields] of [['start', { setupEnabled: false }], ['start', {}], ['start', undefined], ['end', { teardownEnabled: false }], ['start', { teardownEnabled: true }], ['end', { setupEnabled: true }], ['agent', { setupEnabled: true }]]) assert.equal(hf.setupIndicator(type, fields), null, `${type} ${JSON.stringify(fields)}`);
+  setupRoute(hf, 'start-setup');
+  let html = hf.renderEditor('start-setup');
+  assert.equal(setupTerminalLabel(html, 'start'), 'Select Start, setup command on');
+  assert.equal(setupTerminalLabel(html, 'end'), 'Select End');
+  assert.equal((html.match(/editor-setup-dot/g) || []).length, 1);
+  setupRoute(hf, 'end-teardown');
+  html = hf.renderEditor('end-teardown');
+  assert.equal(setupTerminalLabel(html, 'end'), 'Select End, teardown command on');
+  assert.equal(setupTerminalLabel(html, 'start'), 'Select Start');
+  setupRoute(hf, 'start-new-folder');
+  assert.equal(setupTerminalLabel(hf.renderEditor('start-new-folder'), 'start'), 'Select Start, setup command on');
+  setupRoute(hf, 'saved');
+  html = hf.renderEditor('saved');
+  assert.doesNotMatch(html, /editor-setup-dot|command on/);
+  // Turning the command off removes the indicator.
+  const editor = setupRoute(hf, 'end-teardown');
+  editor.patchFields('end:end', { teardownEnabled: false }, true);
+  assert.equal(setupTerminalLabel(hf.renderEditor('end-teardown'), 'end'), 'Select End');
+});
+
+test('non-proposal Start and End inspectors keep their source-derived copy', () => {
+  const hf = loadDesignRuntime();
+  const editor = setupRoute(hf, 'saved');
+  editor.select('start', 'start');
+  let html = hf.renderEditor('saved');
+  assert.match(html, /Start has no settings\./);
+  assert.doesNotMatch(html, /data-setup-inspector|Run a setup command/);
+  editor.select('end', 'end');
+  html = hf.renderEditor('saved');
+  assert.match(html, /End has no settings\./);
+  assert.doesNotMatch(html, /data-setup-inspector|Run a teardown command/);
+});
+
+test('the setup-review sheet gates Run on review and a Repository edit asks again', () => {
+  const run = { disabled: true }, box = { checked: false }, caption = { textContent: '' };
+  const elements = { '[data-action="launch-workflow"]': run, '[data-su-reviewed]': box, '[data-su-launch-dir]': caption };
+  const hf = loadDesignRuntime({ captureEvents: true, querySelectorOverride: selector => elements[selector] });
+  hf.route = { theme: 'light', screen: 'workflow-launch', state: 'setup-review' };
+  hf.resetLaunchProposals();
+  const html = hf.renderLaunch('setup-review');
+  assert.match(html, /Run workflow/);
+  assert.match(html, /Development workflow · Revision 4/);
+  assert.match(html, /Fix APP-2481: crash when opening a listing with no photos/);
+  assert.match(html, /Commands this run will execute/);
+  assert.match(html, /Harflow&#39;s own access|Harflow's own access/);
+  assert.match(html, /Setup · before the first node · timeout 5 min/);
+  assert.match(html, /Teardown · when the run succeeds · timeout 2 min/);
+  assert.match(html, /Launch folder: <span class="su-mono" data-su-launch-dir>~\/repos\/app<\/span> · Workspace: <span class="su-mono">~\/Harflow\/Workspaces\/&lt;run id&gt;<\/span>/);
+  assert.match(html, /<input type="checkbox" id="su-reviewed" data-su-reviewed >/);
+  assert.match(html, /<button type="button" class="primary" data-action="launch-workflow" disabled>Run<\/button>/);
+  assert.match(html, /Run stays disabled until the commands are reviewed\. Changing them asks again\./);
+  assert.match(html, /Access level/);
+  assert.match(html, /Orchestrator/);
+  // Catalog hook: disabled until reviewed, other states unaffected, busy stays disabled in the catalog expression.
+  assert.equal(hf.launchRunDisabled('setup-review'), true);
+  for (const state of ['launch', 'busy', 'validation', 'library']) assert.equal(!!hf.launchRunDisabled(state), false, state);
+  assert.match(fs.readFileSync(path.join(root, 'scripts/catalog.js'), 'utf8'), /x\.disabled=state==='busy'\|\|!!HF\.launchRunDisabled\?\.\(state\)/);
+  const fire = (type, target) => hf.__dispatchDesignEvent({ type, target, preventDefault() {}, stopImmediatePropagation() {} });
+  const reviewed = checked => ({ checked, closest: () => null, matches: selector => selector === '[data-su-reviewed]' });
+  fire('change', reviewed(true));
+  assert.equal(hf.launchRunDisabled('setup-review'), false);
+  assert.equal(run.disabled, false, 'Run is enabled once reviewed');
+  assert.match(hf.renderLaunch('setup-review'), /data-su-reviewed checked>/);
+  assert.match(hf.renderLaunch('setup-review'), /data-action="launch-workflow" >Run/);
+  fire('change', reviewed(false));
+  assert.equal(hf.launchRunDisabled('setup-review'), true);
+  assert.equal(run.disabled, true, 'unchecking disables Run again');
+  // A Repository edit clears the review, disables Run and updates the Launch folder caption.
+  fire('change', reviewed(true)); box.checked = true;
+  fire('input', { value: '~/repos/other', closest: () => null, matches: selector => selector === '[data-su-repo]' });
+  assert.equal(hf.launchRunDisabled('setup-review'), true);
+  assert.equal(run.disabled, true);
+  assert.equal(box.checked, false, 'the review checkbox is cleared');
+  assert.equal(caption.textContent, '~/repos/other');
+  assert.match(hf.renderLaunch('setup-review'), /data-su-launch-dir>~\/repos\/other</);
+  assert.match(hf.renderLaunch('setup-review'), /id="launch-repo" data-su-repo value="~\/repos\/other"/);
+  // Events from other states are ignored.
+  fire('change', reviewed(true));
+  hf.route = { theme: 'light', screen: 'workflow-launch', state: 'launch' };
+  fire('change', reviewed(true));
+  hf.route = { theme: 'light', screen: 'workflow-launch', state: 'setup-review' };
+  // Re-entry resets the review and the repository.
+  fire('change', reviewed(true));
+  assert.equal(hf.launchRunDisabled('setup-review'), false);
+  hf.resetLaunchProposals();
+  assert.equal(hf.launchRunDisabled('setup-review'), true, 'reset on re-entry');
+  assert.match(hf.renderLaunch('setup-review'), /data-su-launch-dir>~\/repos\/app</);
+  // Other launch states do not show the review.
+  assert.doesNotMatch(hf.renderLaunch('launch'), /su-review|data-su-reviewed/);
+});
+
+test('setup-review keeps the review across an appearance change', () => {
+  const hf = loadDesignRuntime({ captureEvents: true, querySelectorOverride: () => ({}) });
+  hf.route = { theme: 'light', screen: 'workflow-launch', state: 'setup-review' };
+  hf.resetLaunchProposals();
+  hf.__dispatchDesignEvent({ type: 'change', target: { checked: true, closest: () => null, matches: s => s === '[data-su-reviewed]' }, preventDefault() {}, stopImmediatePropagation() {} });
+  hf.route = { theme: 'dark', screen: 'workflow-launch', state: 'setup-review' };
+  assert.equal(hf.launchRunDisabled('setup-review'), false, 'an appearance change does not reset the review');
+  assert.match(hf.renderLaunch('setup-review'), /data-su-reviewed checked>/);
+});
+
+test('setup and teardown commands are escaped in the editor and the sheet', () => {
+  const hf = loadDesignRuntime({ captureEvents: true, querySelectorOverride: () => undefined });
+  const nasty = 'echo "<b>x</b> & done" > "$HARFLOW_WORKSPACE/a<b>.txt"';
+  hf.setupFixture.commands.newFolder = nasty;
+  hf.setupFixture.commands.worktree = nasty;
+  hf.setupFixture.commands.teardown = nasty;
+  setupRoute(hf, 'start-new-folder');
+  const editorHtml = hf.renderEditor('start-new-folder');
+  assert.ok(editorHtml.includes('echo &quot;&lt;b&gt;x&lt;/b&gt; &amp; done&quot;'), 'editor textarea is escaped');
+  assert.doesNotMatch(editorHtml, /<b>x<\/b>/);
+  const editor = setupRoute(hf, 'end-teardown');
+  editor.patchFields('end:end', { teardownCommand: nasty }, true);
+  const endHtml = hf.renderEditor('end-teardown');
+  assert.ok(endHtml.includes('&lt;b&gt;x&lt;/b&gt; &amp; done&quot;'));
+  assert.doesNotMatch(endHtml, /<b>x<\/b>/);
+  hf.route = { theme: 'light', screen: 'workflow-launch', state: 'setup-review' };
+  hf.resetLaunchProposals();
+  const sheet = hf.renderLaunch('setup-review');
+  assert.ok(sheet.includes('echo &quot;&lt;b&gt;x&lt;/b&gt; &amp; done&quot;'), 'sheet commands are escaped');
+  assert.doesNotMatch(sheet, /<b>x<\/b>/);
+  assert.equal((sheet.match(/&lt;b&gt;x&lt;\/b&gt;/g) || []).length, 2, 'setup and teardown');
+  // The Repository value is escaped too.
+  hf.__dispatchDesignEvent({ type: 'input', target: { value: '~/a"<&', closest: () => null, matches: s => s === '[data-su-repo]' }, preventDefault() {}, stopImmediatePropagation() {} });
+  const after = hf.renderLaunch('setup-review');
+  assert.ok(after.includes('value="~/a&quot;&lt;&amp;"'));
+  assert.ok(after.includes('data-su-launch-dir>~/a&quot;&lt;&amp;<'));
 });
 
 test('council editor markup and run markup stay inside their own states', () => {
