@@ -136,12 +136,12 @@
   HF.setupFieldDefaults = kind => kind === 'start'
     ? { setupEnabled: false, setupCommand: '', setupTimeoutMinutes: 5 }
     : { teardownEnabled: false, teardownCommand: '', teardownTimeoutMinutes: 2, runWhen: 'success' };
-  const setupOn = { start: { setupEnabled: true, setupCommand: HF.setupFixture.commands.worktree, setupTimeoutMinutes: 5 }, end: { teardownEnabled: true, teardownCommand: HF.setupFixture.commands.teardown, teardownTimeoutMinutes: 2, runWhen: 'success' } };
+  const setupOn = () => ({ start: { setupEnabled: true, setupCommand: HF.setupFixture.commands.worktree, setupTimeoutMinutes: 5 }, end: { teardownEnabled: true, teardownCommand: HF.setupFixture.commands.teardown, teardownTimeoutMinutes: 2, runWhen: 'success' } });
   // Per route: the saved baseline, the unsaved edit over it, and which Variables disclosures start open.
   HF.setupRouteConfig = route => ({
-    'start-setup': { baseline: {}, draft: { 'start:start': setupOn.start }, open: { start: true } },
+    'start-setup': { baseline: {}, draft: { 'start:start': setupOn().start }, open: { start: true } },
     'start-new-folder': { baseline: { 'start:start': { setupEnabled: true, setupCommand: HF.setupFixture.commands.newFolder, setupTimeoutMinutes: 1 } }, draft: {}, open: {} },
-    'end-teardown': { baseline: { 'end:end': setupOn.end }, draft: {}, open: {} }
+    'end-teardown': { baseline: { 'end:end': setupOn().end }, draft: {}, open: {} }
   })[route] || null;
   HF.setupVariables = (kind, route) => kind === 'start'
     ? (route === 'start-new-folder' ? HF.setupFixture.builtins : [...HF.setupFixture.builtins, ...HF.setupFixture.inputs])
