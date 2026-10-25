@@ -94,3 +94,6 @@
 .stat-tile { display: flex; min-width: 0; flex: 1; flex-direction: column; gap: 3px; padding: 12px 14px; border: 1px solid var(--cardBorder); border-radius: var(--radius-card); background: var(--cardFill); }
 .stat-tile strong { font-size: 15px; font-weight: 600; line-height: 1.3; }
 .stat-entry-icon { display: inline-flex; width: 15px; height: 15px; flex: 0 0 15px; align-items: center; justify-content: center; opacity: .85; }
+.stat-kind .backend-dot { width: 10px; height: 10px; flex-basis: 10px; margin-top: 0; }
+.stat-model { width: 226px; min-width: 110px; flex: 0 1 226px; overflow: hidden; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.stat-model + .stat-submeta { flex-basis: 170px; }

@@ -1,6 +1,6 @@
 (function () {
   // Exploratory Statistics page (#9). No native source exists. Figures are deterministic fixtures derived from the
-  // Harflow Statistics design canvas (version 1792889509-4534); dates are anchored to 2026-10-25 and computed in UTC.
+  // Harflow Statistics design canvas (version 1792893875-1b6a); dates are anchored to 2026-10-25 and computed in UTC.
   const esc = HF.escape;
   const WORKFLOWS = [
     { name: 'Implement and review', min: 2292, tok: 2600, runs: 96, model: 'opus', nodes: [
@@ -46,6 +46,16 @@
     { name: 'Bump the payments SDK', h: 'antigravity', repo: 'mobile', min: 22, tok: 150, turns: 2 }
   ];
   // HF.harnessName is defined by a later script, so it is resolved at render time.
+  // Harness totals equal the chart's grand total (workflow elapsed time plus TASK_TOTAL), as on the canvas; per-model
+  // values sum to their harness. They do not reconcile with the workflow node fixtures.
+  const HARNESSES = [
+    { h: 'claude', min: 2620, tok: 4420, models: [{ model: 'opus', min: 1600, tok: 2900, ex: 310 }, { model: 'sonnet', min: 980, tok: 1420, ex: 260 }, { model: 'haiku', min: 40, tok: 100, ex: 22 }] },
+    { h: 'codex', min: 1210, tok: 1880, models: [{ model: 'gpt-5', min: 980, tok: 1500, ex: 190 }, { model: 'gpt-5-mini', min: 230, tok: 380, ex: 60 }] },
+    { h: 'opencode', min: 720, tok: 760, models: [{ model: 'qwen3-coder', min: 720, tok: 760, ex: 140 }] },
+    { h: 'vibe', min: 410, tok: 1080, models: [{ model: 'devstral', min: 410, tok: 1080, ex: 110 }] },
+    { h: 'antigravity', min: 172, tok: 420, models: [{ model: 'gemini-2.5-pro', min: 172, tok: 420, ex: 18 }] }
+  ];
+  const LISTS = { workflows: 'workflow', tasks: 'task', harnesses: 'harness' };
   const HN = h => HF.harnessName(h);
   const ROLE_ICON = { Planning: 'clipboard', Implementation: 'hammer', Review: 'bubble-check', Test: 'terminal' };
   const REPOS = ['billing-api', 'web', 'mobile'];
@@ -128,15 +138,22 @@
     const wfRunsTotal = WORKFLOWS.reduce((a, w) => a + Math.max(1, Math.round(w.runs * f)), 0);
     const coverage = { wfRuns: Math.round(wfRunsTotal * 0.76), wfRunsTotal, tasks: Math.round(taskCount * 0.9), tasksTotal: taskCount };
 
-    const isWf = o.list === 'workflows', src = isWf ? WORKFLOWS : TASKS;
+    const listKind = LISTS[o.list] ? o.list : 'workflows', kind = LISTS[listKind], isWf = kind === 'workflow';
+    const src = { workflow: WORKFLOWS, task: TASKS, harness: HARNESSES }[kind];
     const items = src.map((x, index) => ({ x, index, val: x[key] * f, oth: x[otherKey] * f })).sort((a, b) => b.val - a.val);
     const maxVal = items.length ? items[0].val : 1;
     const rows = items.map((it, idx) => {
-      const x = it.x, id = (isWf ? 'w:' : 't:') + it.index, open = !!o.open[id], runs = isWf ? Math.max(1, Math.round(x.runs * f)) : 0;
-      const row = { id, index: it.index, rank: idx + 1, name: x.name, isWorkflow: isWf, harness: isWf ? '' : x.h, meta: isWf ? runs + ' runs · ' + fmtTime(x.min / x.runs) + ' avg · ' + x.model : HN(x.h) + ' · ' + x.repo + ' · ' + plural(x.turns, 'turn'), pct: +(it.val / maxVal * 100).toFixed(1), value: fmt(it.val), other: fmtOther(it.oth), open, children: [], subTitle: '', subFooter: '', hasMore: false, moreLabel: '', runs };
+      const x = it.x, id = { workflow: 'w:', task: 't:', harness: 'h:' }[kind] + it.index, open = !!o.open[id], runs = isWf ? Math.max(1, Math.round(x.runs * f)) : 0;
+      const models = kind === 'harness' ? x.models.map(m => ({ m, ex: Math.max(1, Math.round(m.ex * f)) })) : [];
+      const executions = models.reduce((a, m) => a + m.ex, 0);
+      const meta = isWf ? runs + ' runs · ' + fmtTime(x.min / x.runs) + ' avg · ' + x.model : kind === 'harness' ? plural(executions, 'execution') + ' · ' + plural(x.models.length, 'model') : HN(x.h) + ' · ' + x.repo + ' · ' + plural(x.turns, 'turn');
+      const row = { id, index: it.index, rank: idx + 1, kind, name: kind === 'harness' ? HN(x.h) : x.name, isWorkflow: isWf, harness: kind === 'task' ? x.h : '', iconHarness: kind === 'harness' ? x.h : '', meta, executions, pct: +(it.val / maxVal * 100).toFixed(1), value: fmt(it.val), other: fmtOther(it.oth), open, children: [], subTitle: '', subFooter: '', hasMore: false, moreLabel: '', runs };
       if (open && isWf) {
         const wr = workflowRuns(x, range, usage, fmt, fmtOther);
         Object.assign(row, { children: wr.children, subTitle: 'Workflow runs, ' + (usage ? 'most tokens first' : 'longest first'), subFooter: 'Showing ' + wr.shown + ' of ' + wr.total + ' runs', hasMore: wr.total > wr.shown, moreLabel: 'Show all ' + wr.total + ' runs' });
+      } else if (open && kind === 'harness') {
+        const ms = models.map(({ m, ex }) => ({ model: m.model, ex, val: m[key] * f, oth: m[otherKey] * f, min: m.min * f })).sort((a, b) => b.val - a.val), top = ms[0].val;
+        Object.assign(row, { children: ms.map(m => ({ isModel: true, model: m.model, executions: m.ex, meta: plural(m.ex, 'execution') + ' · ' + fmtTime(m.min / m.ex) + ' avg', pct: +(m.val / top * 100).toFixed(1), value: fmt(m.val), other: fmtOther(m.oth) })), subTitle: 'Models, ' + (usage ? 'most tokens first' : 'longest first'), subFooter: plural(ms.length, 'model') + ' · the model the harness reported, not the one requested' });
       } else if (open) {
         Object.assign(row, { children: taskTurns(x, usage, range, fmt, fmtOther), subTitle: 'Agent turns, in order', subFooter: plural(x.turns, 'turn') + ' · ' + fmt(it.val) + ' in total' });
       }
@@ -157,10 +174,10 @@
     };
 
     return {
-      screen: o.screen, range, measure: usage ? 'usage' : 'time', usage, listKind: isWf ? 'workflows' : 'tasks', rangeLabel: 'Last ' + range + ' days',
+      screen: o.screen, range, measure: usage ? 'usage' : 'time', usage, listKind, rangeLabel: 'Last ' + range + ' days',
       chart: { label: usage ? 'Usage' : 'Total time', caption: usage ? 'Tokens as reported by harness: input, output and cache' : 'Elapsed run time per workflow run plus task time', total: fmt(wfSum + tkSum), wfTotal: fmt(wfSum), tkTotal: fmt(tkSum), yTop: fmtAxis(top, usage), yMid: fmtAxis(top / 2, usage), gap: range === 7 ? 16 : range === 30 ? 4 : 2, bars, aria: (usage ? 'Usage' : 'Total time') + ' per day, last ' + range + ' days, workflow runs and tasks stacked' },
       coverage,
-      list: { title: (isWf ? 'Workflows' : 'Tasks') + ' by ' + (usage ? 'usage' : 'total time'), valueHead: usage ? 'Usage' : 'Total time', otherHead: usage ? 'Total time' : 'Usage', rows, footer: isWf ? WORKFLOWS.length + ' workflows ran in this period · select a row to see its runs' : 'Top ' + TASKS.length + ' of ' + taskCount + ' tasks · select a row to see its turns' },
+      list: { title: { workflow: 'Workflows', task: 'Tasks', harness: 'Harnesses' }[kind] + ' by ' + (usage ? 'usage' : 'total time'), valueHead: usage ? 'Usage' : 'Total time', otherHead: usage ? 'Total time' : 'Usage', rows, footer: isWf ? WORKFLOWS.length + ' workflows ran in this period · select a row to see its runs' : kind === 'harness' ? HARNESSES.length + ' harnesses · workflow nodes and tasks combined · select a row to see its models' : 'Top ' + TASKS.length + ' of ' + taskCount + ' tasks · select a row to see its turns' },
       nodePage
     };
   };
@@ -197,14 +214,14 @@
       + (m.usage ? banner(`Usage covers ${cov.wfRuns} of ${cov.wfRunsTotal} workflow runs and ${cov.tasks} of ${cov.tasksTotal} tasks.`, 'The harness did not report tokens for the rest; they are left out, not counted as 0.') : '') + '</section>';
   };
 
-  const subRow = c => `<div class="stat-subrow"><span class="stat-status ${c.failed ? 'failed' : 'done'}">${icon(c.failed ? 'fail' : 'done', 13)}${c.status}</span><span class="stat-when">${c.when}</span><span class="stat-submeta">${esc(c.meta)}</span>${bar(c.pct, true)}<span class="stat-subvalue">${c.value}</span><span class="stat-other">${c.other}</span></div>`;
+  const subRow = c => c.isModel ? `<div class="stat-subrow"><span class="stat-model">${esc(c.model)}</span><span class="stat-submeta">${esc(c.meta)}</span>${bar(c.pct, true)}<span class="stat-subvalue">${c.value}</span><span class="stat-other">${c.other}</span></div>` : `<div class="stat-subrow"><span class="stat-status ${c.failed ? 'failed' : 'done'}">${icon(c.failed ? 'fail' : 'done', 13)}${c.status}</span><span class="stat-when">${c.when}</span><span class="stat-submeta">${esc(c.meta)}</span>${bar(c.pct, true)}<span class="stat-subvalue">${c.value}</span><span class="stat-other">${c.other}</span></div>`;
   const rowMarkup = r => {
     const sub = r.open ? `<div class="stat-substack" id="stat-sub-${r.id.replace(':', '-')}" role="group" aria-label="${esc(r.subTitle)}, ${esc(r.name)}"><div class="stat-subrow head"><span class="stat-caption grow">${r.subTitle}</span>${r.isWorkflow ? `<button type="button" class="stat-link" data-action="stat-nodes:${r.index}">View node breakdown${icon('chevron-right', 9)}</button>` : ''}</div>${r.children.map(subRow).join('')}<div class="stat-subrow"><span class="stat-foot grow">${r.subFooter}</span>${r.hasMore ? `<button type="button" class="stat-link" data-action="stat-more-runs">${r.moreLabel}</button>` : ''}</div></div>` : '';
-    return `<div class="stat-item"><button type="button" class="stat-row" data-action="stat-toggle:${r.id}" aria-expanded="${r.open}"${r.open ? ` aria-controls="stat-sub-${r.id.replace(':', '-')}"` : ''}><span class="stat-chev">${icon(r.open ? 'chevron-down' : 'chevron-right', 10)}</span><span class="stat-rank">${r.rank}</span><span class="stat-kind">${icon(r.isWorkflow ? 'workflow' : 'terminal', 14)}</span><span class="stat-name"><strong>${esc(r.name)}</strong><span>${dot(r.harness)}<span class="stat-ellipsis">${esc(r.meta)}</span></span></span>${bar(r.pct)}<span class="stat-value">${r.value}</span><span class="stat-other">${r.other}</span></button>${sub}</div>`;
+    return `<div class="stat-item"><button type="button" class="stat-row" data-action="stat-toggle:${r.id}" aria-expanded="${r.open}"${r.open ? ` aria-controls="stat-sub-${r.id.replace(':', '-')}"` : ''}><span class="stat-chev">${icon(r.open ? 'chevron-down' : 'chevron-right', 10)}</span><span class="stat-rank">${r.rank}</span><span class="stat-kind">${r.kind === 'harness' ? dot(r.iconHarness) : icon(r.isWorkflow ? 'workflow' : 'terminal', 14)}</span><span class="stat-name"><strong>${esc(r.name)}</strong><span>${dot(r.harness)}<span class="stat-ellipsis">${esc(r.meta)}</span></span></span>${bar(r.pct)}<span class="stat-value">${r.value}</span><span class="stat-other">${r.other}</span></button>${sub}</div>`;
   };
   const listCard = m => {
     const l = m.list;
-    return `<section class="stat-card" aria-label="${esc(l.title)}"><div class="stat-list-head">${segment('Rank', 'stat-list', [['workflows', 'Workflows'], ['tasks', 'Tasks']], m.listKind, 'rank')}<h3>${l.title}</h3><span class="stat-colhead">${l.valueHead}</span><span class="stat-colhead">${l.otherHead}</span></div>${l.rows.map(rowMarkup).join('')}<div class="stat-list-foot"><span>${l.footer}</span>${m.listKind === 'tasks' ? '<button type="button" class="stat-link" data-action="stat-all-tasks">Show all tasks</button>' : ''}</div></section>`;
+    return `<section class="stat-card" aria-label="${esc(l.title)}"><div class="stat-list-head">${segment('Rank', 'stat-list', [['workflows', 'Workflows'], ['tasks', 'Tasks'], ['harnesses', 'Harnesses']], m.listKind, 'rank')}<h3>${l.title}</h3><span class="stat-colhead">${l.valueHead}</span><span class="stat-colhead">${l.otherHead}</span></div>${l.rows.map(rowMarkup).join('')}<div class="stat-list-foot"><span>${l.footer}</span>${m.listKind === 'tasks' ? '<button type="button" class="stat-link" data-action="stat-all-tasks">Show all tasks</button>' : ''}</div></section>`;
   };
 
   const nodePageMarkup = m => {
@@ -254,7 +271,7 @@
       const action = target.dataset.action, [name, ...rest] = action.split(':'), value = rest.join(':'), self = `[data-action="${action}"]`;
       if (name === 'stat-range') { current.range = Number(value); rerender(self); HF.feedback(`Last ${current.range} days selected`); }
       else if (name === 'stat-measure') { current.measure = value === 'usage' ? 'usage' : 'time'; rerender(self); HF.feedback(`${current.measure === 'usage' ? 'Usage' : 'Total time'} measure selected`); }
-      else if (name === 'stat-list') { current.list = value === 'tasks' ? 'tasks' : 'workflows'; rerender(self); HF.feedback(`${current.list === 'tasks' ? 'Tasks' : 'Workflows'} ranking selected`); }
+      else if (name === 'stat-list') { current.list = LISTS[value] ? value : 'workflows'; rerender(self); HF.feedback(`${{ workflows: 'Workflows', tasks: 'Tasks', harnesses: 'Harnesses' }[current.list]} ranking selected`); }
       else if (name === 'stat-toggle') { if (current.open[value]) delete current.open[value]; else current.open[value] = true; rerender(self); }
       else if (name === 'stat-nodes') { current.workflow = WORKFLOWS[Number(value)]?.name || current.workflow; current.screen = 'nodes'; q('#statistics-content').scrollTop = 0; rerender('[data-action="stat-back"]'); syncRoute(); }
       else if (name === 'stat-back') {
