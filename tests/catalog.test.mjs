@@ -3618,13 +3618,29 @@ test('setup and teardown commands are escaped in the editor and the sheet', () =
   assert.doesNotMatch(hf.renderEditor('start-setup'), /&lt;b&gt;/);
 });
 
+// Resolves a focus selector against rendered HTML. Descendant parts are matched in document order, and a disabled or
+// missing target is rejected, mirroring what a browser would refuse to focus.
+const focusResolver = (getHtml, focused) => selector => {
+  const tags = [...getHtml().matchAll(/<[a-z][a-z0-9]*\b[^>]*>/g)];
+  let from = 0, found = null;
+  for (const part of selector.trim().split(/\s+(?=\[)/)) {
+    const wanted = [...part.matchAll(/\[([\w-]+)="([^"]*)"\]/g)].map(match => `${match[1]}="${match[2]}"`);
+    const index = tags.findIndex((tag, i) => i >= from && wanted.length && wanted.every(attribute => tag[0].includes(attribute)));
+    if (index < 0) return undefined;
+    found = tags[index][0]; from = index;
+  }
+  if (!found || /\sdisabled(?=[\s>=])/.test(found)) return undefined;
+  return { focus: () => focused.push(selector) };
+};
 const setupRunHarness = () => {
-  const stage = { innerHTML: '', querySelector: () => null };
+  const focused = [];
+  const resolve = focusResolver(() => stage.innerHTML, focused);
+  const stage = { innerHTML: '', querySelector: selector => /^\[data-action="[^"]+"\]$/.test(selector) ? resolve(selector) : null };
   const announcement = { textContent: '', classList: { add() {}, remove() {} } };
   const hf = loadDesignRuntime({ captureEvents: true, querySelectorOverride: selector => selector === '#stage' ? stage : selector === '#announcement' ? announcement : undefined });
   const start = state => { hf.route = { theme: 'light', screen: 'workflow-run', state: 'running' }; hf.resetWorkflowRun(hf.route); hf.route = { theme: 'light', screen: 'workflow-run', state }; hf.resetWorkflowRun(hf.route); return hf.renderRun(state); };
   const click = action => { const target = { dataset: { action }, isConnected: true, closest: selector => selector.startsWith('[data-action^="wr-"') ? target : null }; hf.__dispatchDesignEvent({ type: 'click', target, preventDefault() {}, stopImmediatePropagation() {} }); return stage.innerHTML; };
-  return { hf, stage, announcement, start, click };
+  return { hf, stage, announcement, start, click, focused };
 };
 const runToolbar = html => html.slice(html.indexOf('wfr-toolbar'), html.indexOf('wfr-run-layout'));
 const runActions = html => Array.from(runToolbar(html).matchAll(/data-action="([^"]+)"/g), match => match[1]);
@@ -3806,7 +3822,9 @@ const webHarness = () => {
   const html = { current: '' };
   const announcement = { textContent: '', classList: { add() {}, remove() {} } };
   const app = { style: {}, querySelector: () => null, querySelectorAll: () => [], get outerHTML() { return html.current; }, set outerHTML(value) { html.current = value; } };
-  const hf = loadDesignRuntime({ captureEvents: true, querySelectorOverride: selector => selector === '.web-app' ? app : selector === '#announcement' ? announcement : undefined });
+  const focused = [];
+  const resolve = focusResolver(() => html.current, focused);
+  const hf = loadDesignRuntime({ captureEvents: true, querySelectorOverride: selector => selector === '.web-app' ? app : selector === '#announcement' ? announcement : selector.startsWith('.web-app ') ? resolve(selector.slice('.web-app '.length)) : undefined });
   const navigations = [];
   hf.navigate = (...args) => navigations.push(args);
   hf.route = { theme: 'light', screen: 'web', state: 'triggers' };
@@ -3814,7 +3832,7 @@ const webHarness = () => {
   const fire = (type, target) => hf.__dispatchDesignEvent({ type, target, preventDefault() {}, stopImmediatePropagation() {} });
   const click = action => { const target = { dataset: { action }, disabled: false, closest: selector => selector === '[data-action^="web-"]' || selector === '.web-app' ? (selector === '.web-app' ? app : target) : null }; fire('click', target); return html.current; };
   const field = (type, name, props = {}) => { const target = { matches: () => false, dataset: { webField: name, ...(props.id ? { id: props.id } : {}) }, value: props.value ?? '', checked: !!props.checked, closest: selector => selector === '[data-web-field]' ? target : selector === '.web-app' ? app : null }; fire(type, target); };
-  return { hf, html, announcement, navigations, click, field, app, route: state => { hf.route = { theme: 'light', screen: 'web', state }; } };
+  return { hf, html, announcement, navigations, click, field, app, focused, route: state => { hf.route = { theme: 'light', screen: 'web', state }; html.current = hf.renderWeb(state); } };
 };
 const webText = html => html.replace(/<svg.*?<\/svg>/g, '').replace(/<[^>]+>/g, '|').replace(/&#39;/g, "'").replace(/\|+/g, '|');
 
@@ -3861,7 +3879,9 @@ test('catalog navigation groups families by platform, search hides empty groups,
   assert.doesNotMatch(html, /data-nav-group="web"/);
   assert.match(html, /data-nav-group="macos"/);
   assert.equal(run('zzzz-no-match'), '');
-  // The eyebrow statement from render().
+  // The eyebrow is set by one statement inside render(), which also drives the whole page (DOM, router, every family
+  // renderer), so render() cannot be loaded in this harness. The statement is extracted by text and executed instead; if
+  // render() is ever split into functions, extract the whole function with the brace matching used for renderNav above.
   const eyebrowStatement = /document\.querySelector\('#eyebrow'\)\.textContent=family\.platform==='web'\?'HARFLOW \/ WEB':'HARFLOW \/ MACOS';/.exec(source)?.[0];
   assert.ok(eyebrowStatement, 'render sets the eyebrow');
   const eyebrow = family => { const node = { textContent: '' }; new Function('document', 'family', eyebrowStatement)({ querySelector: selector => selector === '#eyebrow' ? node : null }, family); return node.textContent; };
@@ -4084,7 +4104,7 @@ test('web manual launches only show toasts and never navigate to the macOS sheet
   assert.equal(announcement.textContent, '');
 });
 
-test('resetWeb restores all web state', () => {
+test('resetWeb restores all web state, including the run-failed disclosures and the condition counter', () => {
   const { hf, click, field, route } = webHarness();
   route('incoming');
   click('web-filter:started');
@@ -4094,15 +4114,164 @@ test('resetWeb restores all web state', () => {
   click('web-reveal');
   field('input', 'task', { value: 'changed' });
   click('web-cond-add');
+  route('run-failed');
+  click('web-inputs');
+  click('web-plan');
   const dirty = hf.webState();
   assert.notEqual(dirty.filter, 'all');
   assert.equal(dirty.dirty, true);
+  assert.equal(dirty.inputsOpen, false);
+  assert.equal(dirty.planOpen, false);
+  assert.equal(dirty.nextCondition, 5);
+  assert.match(hf.renderWeb('run-failed'), /data-action="web-inputs" aria-expanded="false"/);
   hf.resetWeb();
-  assert.equal(JSON.stringify(hf.webState()), JSON.stringify({ filter: 'all', selected: 'd2', payloadOpen: false, reveal: false, source: 'github', draft: hf.webEditorSeed(), baseline: hf.webEditorSeed(), dirty: false }));
+  const fresh = { filter: 'all', selected: 'd2', payloadOpen: false, reveal: false, source: 'github', draft: hf.webEditorSeed(), baseline: hf.webEditorSeed(), dirty: false, inputsOpen: true, planOpen: true, nextCondition: 4 };
+  assert.equal(JSON.stringify(hf.webState()), JSON.stringify(fresh));
+  assert.match(hf.renderWeb('run-failed'), /data-action="web-inputs" aria-expanded="true"/);
+  route('trigger-editor');
+  click('web-cond-add');
+  assert.deepEqual(Array.from(hf.webState().draft.conditions, condition => condition.id), ['c1', 'c2', 'c3', 'c4'], 'the counter restarts after a reset');
+  hf.resetWeb();
   const first = hf.webStates.map(state => hf.renderWeb(state));
   click('web-filter:rejected');
   hf.resetWeb();
   assert.deepEqual(hf.webStates.map(state => hf.renderWeb(state)), first, 'deterministic output after a reset');
+});
+
+test('web focus after Save, Discard, condition changes, filters and selection lands on an enabled control', () => {
+  const { hf, click, field, focused, route } = webHarness();
+  route('trigger-editor');
+  field('input', 'task', { value: 'Fix #{issue.number} now' });
+  click('web-save');
+  assert.equal(focused.at(-1), '[data-web-field="enabled"]', 'after Save');
+  field('input', 'task', { value: 'again' });
+  click('web-discard');
+  assert.equal(focused.at(-1), '[data-web-field="enabled"]', 'after Discard');
+  assert.equal(hf.webState().dirty, false);
+  click('web-cond-add');
+  assert.equal(focused.at(-1), '[data-condition="c4"] [data-web-field="cond-path"]', 'the new condition path');
+  click('web-cond-remove:c2');
+  assert.equal(focused.at(-1), '[data-condition="c3"] [data-web-field="cond-path"]', 'the next condition');
+  click('web-cond-remove:c4');
+  assert.equal(focused.at(-1), '[data-condition="c3"] [data-web-field="cond-path"]', 'the previous condition when the last row goes');
+  click('web-cond-remove:c3');
+  assert.equal(focused.at(-1), '[data-condition="c1"] [data-web-field="cond-path"]', 'the remaining actor condition');
+  // The resolver rejects disabled and missing targets, so every assertion above names a focusable control.
+  assert.match(hf.renderWeb('trigger-editor'), /data-web-field="enabled" checked>/);
+  route('incoming');
+  focused.length = 0;
+  click('web-filter:started');
+  assert.equal(focused.at(-1), '[data-action="web-filter:started"]');
+  click('web-select:d5');
+  assert.equal(focused.at(-1), '[data-action="web-select:d5"]');
+  click('web-payload');
+  assert.equal(focused.at(-1), '[data-action="web-payload"]');
+  route('trigger-editor');
+  click('web-source:slack');
+  assert.equal(focused.at(-1), '[data-action="web-source:slack"]');
+  click('web-reveal');
+  assert.equal(focused.at(-1), '[data-action="web-reveal"]');
+  assert.equal(focusResolver(() => '<button data-action="web-save" disabled>', [])('[data-action="web-save"]'), undefined, 'a disabled control is never focusable');
+  assert.equal(focusResolver(() => '<button data-action="web-save">', [])('[data-action="web-missing"]'), undefined, 'a missing control is never focusable');
+});
+
+test('teardown completion moves focus to the close button and the command disclosure keeps focus', async () => {
+  const { start, click, focused } = setupRunHarness();
+  start('teardown-pending');
+  click('wr-command');
+  assert.equal(focused.at(-1), '[data-action="wr-command"]', 'the disclosure keeps focus on itself');
+  click('wr-command');
+  click('wr-run-teardown');
+  assert.equal(focused.at(-1), '[data-action="wr-deselect"]', 'focus moves when teardown starts');
+  focused.length = 0;
+  await new Promise(resolve => setTimeout(resolve, 900));
+  assert.deepEqual(focused, ['[data-action="wr-deselect"]'], 'and again when it completes');
+  // The disclosure restores focus to itself on setup states too.
+  start('setup-running');
+  focused.length = 0;
+  click('wr-command');
+  assert.deepEqual(focused, ['[data-action="wr-command"]']);
+  click('wr-command');
+  assert.deepEqual(focused, ['[data-action="wr-command"]', '[data-action="wr-command"]']);
+});
+
+test('the run-failed sidebar shows the run being viewed and the other web states keep the Main sidebar', () => {
+  const { hf } = webHarness();
+  const side = html => webText(html.slice(html.indexOf('web-sidebar'), html.indexOf('web-detail')));
+  const failed = side(hf.renderWeb('run-failed'));
+  assert.match(failed, /Running\|Fix #2488\|Claude · harflow-mac\|03:12\|Queued\|Fix #2488\|Pending · waits for the run above\|now\|Today\|Fix #2481\|Claude · harflow-mac\|8m\|/);
+  assert.doesNotMatch(failed, /Address review on #412/);
+  for (const state of ['triggers', 'trigger-editor', 'incoming']) {
+    const text = side(hf.renderWeb(state));
+    assert.match(text, /Running\|Fix #2481\|Claude · harflow-mac\|03:12\|Queued\|Fix #2481\|Pending · waits for the run above\|now\|/, state);
+    assert.doesNotMatch(text, /2488/, state);
+  }
+  assert.match(side(hf.renderWeb('triggers')), /Today\|Address review on #412\|Codex · harflow-mac\|2h\|/);
+});
+
+test('web delivery fixtures: the Rejected workflow, Open the run, and Reveal semantics', () => {
+  const { hf, click, route } = webHarness();
+  route('incoming');
+  const rejected = hf.webDeliveries.find(delivery => delivery.status === 'Rejected');
+  assert.equal(rejected.workflow, 'Draft release notes');
+  assert.ok(hf.webDeliveries.every(delivery => delivery.workflow !== 'Not started'), 'no row names "Not started" as a workflow');
+  assert.ok(webText(click('web-select:d7')).includes('Workflow|Draft release notes|'));
+  const withRun = [];
+  for (const delivery of hf.webDeliveries) {
+    const html = click(`web-select:${delivery.id}`);
+    if (html.includes('Open the run')) withRun.push(delivery.id);
+    assert.ok(!webText(html).includes('Workflow|Not started'), delivery.id);
+  }
+  assert.deepEqual(withRun, ['d2'], 'only the delivery that started #2481 links to the run');
+  assert.match(click('web-select:d2'), /data-action="route:web\/run-failed">Open the run</);
+  // Reveal keeps its label while aria-pressed carries the state.
+  route('trigger-editor');
+  let html = hf.renderWeb('trigger-editor');
+  assert.match(html, /<button type="button" class="web-btn plain" data-action="web-reveal" aria-pressed="false">Reveal<\/button>/);
+  html = click('web-reveal');
+  assert.match(html, /<button type="button" class="web-btn plain" data-action="web-reveal" aria-pressed="true">Reveal<\/button>/);
+  assert.doesNotMatch(html, />Hide</);
+  html = click('web-reveal');
+  assert.match(html, /data-action="web-reveal" aria-pressed="false">Reveal</);
+});
+
+test('the required actor condition survives a dispatched remove and the Not designed clause lists every ticket item', () => {
+  const { hf, click, route } = webHarness();
+  route('trigger-editor');
+  click('web-cond-remove:c1');
+  assert.deepEqual(Array.from(hf.webState().draft.conditions, condition => condition.id), ['c1', 'c2', 'c3']);
+  assert.equal(hf.webState().dirty, false, 'a refused remove does not dirty the draft');
+  click('web-cond-remove:c2');
+  assert.deepEqual(Array.from(hf.webState().draft.conditions, condition => condition.id), ['c1', 'c3']);
+
+  const inventory = fs.readFileSync(path.join(root, 'docs/screen-inventory.md'), 'utf8');
+  const end = inventory.indexOf('(HarflowWeb#1, HarflowWeb#2).');
+  assert.ok(end > 0, 'the web clause ends with the ticket references');
+  const clause = inventory.slice(inventory.lastIndexOf("the web app's Login", end), end);
+  const items = [
+    // HarflowWeb#1 Not yet designed
+    'Slack, generic Webhook and Schedule source settings', 'the new trigger flow and delete trigger', 'Test with sample results', 'secret rotation confirmation', 'the trigger list empty state', 'queue view and cancelling a queued run', 'recovery options behind the Failed badge', 'the web workflow editor', 'the web command review sheet for manual launches', 'the web approvals surface',
+    // HarflowWeb#2 Not yet designed
+    'empty and loading states', 'paging beyond the list', 'search', 'redelivering or replaying a delivery', 'waiting-for-approval presentation'
+  ];
+  for (const item of items) assert.ok(clause.includes(item), `missing: ${item}`);
+  assert.ok(clause.startsWith("the web app's Login (HarflowWeb#3)"));
+  assert.ok(inventory.includes('(HarflowWeb#1, HarflowWeb#2). '));
+  assert.ok(clause.indexOf('Slack, generic') < clause.indexOf('empty and loading states'), 'HarflowWeb#1 items come before HarflowWeb#2 items');
+});
+
+test('the run-failed graph stacks inside a container when the run pane is narrow', () => {
+  // No layout engine is available, so the stacking rule is checked as CSS text.
+  const css = fs.readFileSync(path.join(root, 'styles/web.css'), 'utf8');
+  assert.match(css, /\.web-run-main \{ container-type: inline-size; \}/);
+  const block = /@container \(max-width: 640px\) \{([\s\S]*?)\n\}/.exec(css)?.[1];
+  assert.ok(block, 'the container query exists');
+  assert.match(block, /\.web-graph \{ flex-direction: column; align-items: stretch; overflow-y: auto; \}/);
+  assert.match(block, /\.web-edge \{[^}]*width: 1\.5px; height: 16px/);
+  assert.match(block, /\.web-node\.terminal \{ align-self: center; \}/);
+  const hf = loadDesignRuntime();
+  const html = hf.renderWeb('run-failed');
+  assert.match(html, /<div class="web-run-main">[\s\S]*<div class="web-graph" role="group" aria-label="Workflow graph">/, 'the graph sits inside the container element');
 });
 
 test('web and setup-run markup stay inside their own states', () => {
