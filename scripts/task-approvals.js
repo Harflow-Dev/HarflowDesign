@@ -130,7 +130,7 @@ if(d==='expired'&&r.decided_by==='harflow'&&r.decision==='reject')return 'expire
  if(r.delivery==='sent')return `${d} · delivered`+({succeeded:' · succeeded',failed:' · failed'}[r.execution_outcome]||' · execution not observed');
  return d;
 };
-const provenance=r=>r.responder==='monitor'?'Answered from Monitor':r.responder==='caller'?'Answered by the owning caller':'';
+const provenance=r=>r.responder==='monitor'?'Answered from Harflow':r.responder==='caller'?'Answered by the owning caller':'';
 const guidance=r=>{
  const note=(text,tone='',hide=true)=>({text,tone,hide});
  if(!knownRequest(r))return note('This request uses a value this version does not recognize. It is shown as unknown and cannot be answered here.','warn');

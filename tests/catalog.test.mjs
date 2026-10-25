@@ -4656,7 +4656,7 @@ test('settled cards state their provenance and bound the agent reason', () => {
   const hf = loadDesignRuntime();
   hf.renderTasks('approvals', 'answered-from-monitor');
   const answered = approvalText(hf.approvalPanel());
-  assert.match(answered, /Answered from Monitor/);
+  assert.match(answered, /Answered from Harflow/);
   assert.match(answered, /Answered by the owning caller/);
   assert.match(answered, /Agent's stated reason/);
   assert.doesNotMatch(answered, /by you/i);
@@ -4836,7 +4836,7 @@ test('run sidebar approval states render caller approvals above the request and 
   assert.match(text(hf.approvalRunPanel()), /Sources\/Persistence\/Store\.swift/);
   assert.equal(hf.approvalController.canRespond(), true);
   const settled = text(sidebar(render('run-approval-settled')));
-  assert.match(settled, /Answered from Monitor/);
+  assert.match(settled, /Answered from Harflow/);
   assert.match(settled, /expired/);
   const legacy = sidebar(render('run-approval-legacy'));
   assert.match(text(legacy), /does not support Mac responses/);
