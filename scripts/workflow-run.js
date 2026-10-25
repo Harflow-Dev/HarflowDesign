@@ -241,7 +241,7 @@
     if (action === 'approval-inspect') controller.inspect(value);
     else if (action === 'approval-refresh') controller.refresh();
     else if (action === 'approval-page') controller.loadMore();
-    else if (action === 'approval-decision') controller.respond(value);
+    else if (action === 'approval-decision') { const [decision, id] = value.split(':'); controller.respond(decision, id); }
     renderCurrent();
   }, true);
   function runHandler(event) {

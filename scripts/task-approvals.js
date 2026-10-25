@@ -162,6 +162,8 @@ const pendingCount=()=>model.requests.filter(isPending).length;
 const pendingRows=()=>model.requests.filter(isPending).sort((a,b)=>(a.created_at-b.created_at)||a.id.localeCompare(b.id));
 const notify=()=>HF.refreshApprovalPresentation?.();
 const canRespond=()=>{const r=model.detail,listed=model.requests.find(x=>x.id===model.selectedID);return !!(model.current&&r?.id!==model.uncertain&&r?.id!==model.lost&&!model.undecidable&&knownRequest(r)&&complete(r)&&actionView(r).covered&&inScope(r)&&identityMatches(listed,r)&&canOwnResponse(listed,r,model)&&isPending(r)&&isPending(listed)&&r.deadline>now()&&listed.deadline>now()&&!disabled())};
+const canRespondFor=r=>!!(r&&r.id!==model.uncertain&&r.id!==model.lost&&!model.undecidable&&knownRequest(r)&&complete(r)&&actionView(r).covered&&inScope(r)&&canOwnResponse(r,r,model)&&isPending(r)&&r.deadline>now()&&!disabled());
+const forcedOpen=r=>isPending(r)||!knownRequest(r);
 const clone=value=>JSON.parse(JSON.stringify(value));
 const controller=HF.approvalController={
  get state(){return model},
@@ -171,6 +173,7 @@ const controller=HF.approvalController={
  identityMatches,canInspect,refreshKeepsInspection,canRespond,pendingCount,isPending,
  inspect(id,suppliedDetail){
   const listed=model.requests.find(r=>r.id===id);if(!canInspect(listed))return false;
+  if(!suppliedDetail&&model.selectedID===id&&model.detail&&!forcedOpen(listed)){model.selectedID=null;model.detail=null;model.current=false;notify();return true}
   model.selectedID=id;model.detail=null;model.current=false;if(id!==model.uncertain&&id!==model.lost)model.error=null;
   const detail=clone(suppliedDetail||listed);
   if(!identityMatches(listed,detail)||!complete(detail)||listed.disposition!==detail.disposition){model.error='The action changed or its full payload is unavailable. Refresh and inspect it again.';notify();return false}
@@ -179,11 +182,13 @@ const controller=HF.approvalController={
  refresh(page={}){
   if(disabled()||!model.taskID)return false;
   if(page.success===false){model.error=page.error||'Approval metadata unavailable.';model.current=false;notify();return false}
+  const wasPending=isPending(model.requests.find(r=>r.id===model.selectedID));
   if(page.requests)model.requests=clone(page.requests);
   if(page.total!==undefined)model.total=page.total;
   if(page.cursor!==undefined)model.cursor=page.cursor;
   const listed=model.requests.find(r=>r.id===model.selectedID);
-  if(!refreshKeepsInspection(model.detail,listed))model.current=false;
+  if(wasPending&&listed&&!forcedOpen(listed)){model.selectedID=null;model.detail=null;model.current=false}
+  else if(!refreshKeepsInspection(model.detail,listed))model.current=false;
   for(const key of ['uncertain','lost']){const held=model.requests.find(r=>r.id===model[key]);if(model[key]&&held&&!isPending(held))model[key]=false}
   if(!model.uncertain&&!model.lost)model.error=null;notify();return true;
  },
@@ -206,28 +211,28 @@ const controller=HF.approvalController={
     owner.submitting=false;owner.error='The request is no longer current and was not changed.';notify();return false;
    }
    const result={...detail,disposition:decision==='approve'?'approved':'denied',delivery:'delivered',execution_outcome:'not_observed',decision};
-   owner.requests=owner.requests.map(r=>r.id===result.id?result:r);owner.detail={...detail,...result};owner.submitting=false;
+   owner.requests=owner.requests.map(r=>r.id===result.id?result:r);owner.selectedID=null;owner.detail=null;owner.submitting=false;
    owner.notice=`${decision==='approve'?'Approved':'Rejected'} in this local fixture; no response was sent.`;notify();return true;
   };
  },
- respond(decision){const settle=this.beginResponse(decision);if(!settle)return false;setTimeout(settle,350);return true}
+ respond(decision,id){if(id&&model.selectedID!==id&&!this.inspect(id))return false;const settle=this.beginResponse(decision);if(!settle)return false;setTimeout(settle,350);return true}
 };
 controller.reset('monitor-pending');
 const panelHTML=()=>{
  const visible=model.total>0||!!model.error||!!model.loading;if(!visible)return '';
  if(model.loading)return `<div class="approval-card approval-inline" tabindex="-1" aria-label="Caller approvals"><header><strong>Caller approvals</strong><button type="button" data-action="approval-refresh" disabled>Refresh</button></header><p class="approval-metadata" role="status">Loading approval requests…</p></div>`;
  const rows=model.requests.slice().sort((a,b)=>{const pri=x=>x.delivery==='delivery_unknown'?1:(x.disposition==='pending'||['reserved','sending'].includes(x.delivery)?0:2);return pri(a)-pri(b)||(a.created_at-b.created_at)||a.id.localeCompare(b.id)});
- const item=r=>{const d=model.detail;const chosen=model.selectedID===r.id&&!!d;const view=chosen?d:r;const action=chosen?actionView(d):null;const g=chosen?guidance(d):null;const prov=provenance(view);
-  const controls=!chosen||g?.hide?'':canOwnResponse(r,d,model)?`<div class="approval-buttons"><button type="button" data-action="approval-decision:approve" ${canRespond()?'':'disabled'}>Approve once</button><button type="button" data-action="approval-decision:reject" ${canRespond()?'':'disabled'}>Reject</button></div>${d.ownership==='caller'?'<p class="approval-readonly">Respond here or through the owning client.</p>':''}`:d.ownership==='caller'&&model.futureMacResponseCapability===true?'<p class="approval-readonly">Respond here or through the owning client.</p>':'<p class="approval-readonly">This engine does not support Mac responses. Respond through the owning caller’s MCP or CLI.</p>';
-  const details=chosen?`<div class="approval-detail"><div class="approval-action-focus" tabindex="0" aria-label="Requested action">${action.content}</div>${action.reason}<div class="approval-metadata">Status: ${esc(statusLabel(d))}${prov?` · ${esc(prov)}`:''}</div>${g?`<p class="approval-note ${g.tone}" role="status">${esc(g.text)}</p>`:''}${controls}</div>`:'';
-  return `<div class="approval-request" tabindex="-1"><button type="button" class="approval-inspect" data-action="approval-inspect:${esc(r.id)}" ${disabled()?'':'aria-label="Inspect '+esc((chosen&&action?action.title:r.tool_name)+' action')+'"'} ${disabled()?'disabled':''}>${chosen&&action?esc(action.title):'Review '+esc(r.tool_name)+' action'}</button><div class="approval-metadata">${esc(statusLabel(view))}${prov?` · ${esc(prov)}`:''}${view.decided_by==='harflow'&&view.system_reason?` · ${esc(view.system_reason)}`:''}${view.workflow_node_name?` · Workflow step: ${esc(view.workflow_node_name)}`:''}${view.task_title?` · Agent task: ${esc(view.task_title)}`:''}</div>${details}</div>`};
+ const item=r=>{const chosen=model.selectedID===r.id&&!!model.detail;const forced=forcedOpen(r);const open=chosen||forced;const d=chosen?model.detail:r;const view=d;const action=open?actionView(d):null;const g=open?guidance(d):null;const prov=provenance(view);const ok=chosen?canRespond():canRespondFor(r);
+  const controls=!open||g?.hide?'':canOwnResponse(r,d,model)?`<div class="approval-buttons"><button type="button" data-action="approval-decision:approve:${esc(r.id)}" ${ok?'':'disabled'}>Approve once</button><button type="button" data-action="approval-decision:reject:${esc(r.id)}" ${ok?'':'disabled'}>Reject</button></div>${d.ownership==='caller'?'<p class="approval-readonly">Respond here or through the owning client.</p>':''}`:d.ownership==='caller'&&model.futureMacResponseCapability===true?'<p class="approval-readonly">Respond here or through the owning client.</p>':'<p class="approval-readonly">This engine does not support Mac responses. Respond through the owning caller’s MCP or CLI.</p>';
+  const details=open?`<div class="approval-detail"><div class="approval-action-focus" tabindex="0" aria-label="Requested action">${action.content}</div>${action.reason}<div class="approval-metadata">Status: ${esc(statusLabel(d))}${prov?` · ${esc(prov)}`:''}</div>${g?`<p class="approval-note ${g.tone}" role="status">${esc(g.text)}</p>`:''}${controls}</div>`:'';
+  return `<div class="approval-request" tabindex="-1" data-request-id="${esc(r.id)}" data-pending="${isPending(r)}">${forced?'':`<button type="button" class="approval-inspect" data-action="approval-inspect:${esc(r.id)}" aria-expanded="${chosen}" ${disabled()?'disabled':`aria-label="${chosen?'Collapse':'Expand'} ${esc((chosen&&action?action.title:r.tool_name)+' action')}"`}>${chosen&&action?esc(action.title):'Review '+esc(r.tool_name)+' action'}</button>`}<div class="approval-metadata">${esc(statusLabel(view))}${prov?` · ${esc(prov)}`:''}${view.decided_by==='harflow'&&view.system_reason?` · ${esc(view.system_reason)}`:''}${view.workflow_node_name?` · Workflow step: ${esc(view.workflow_node_name)}`:''}${view.task_title?` · Agent task: ${esc(view.task_title)}`:''}</div>${details}</div>`};
  const refresh=`<button type="button" data-action="approval-refresh" ${disabled()?'disabled':''}>Refresh</button>`;
  const notices=`${model.error?`<p class="approval-error" role="status">${esc(model.error)}</p>`:''}${model.notice?`<p class="approval-notice" role="status">${esc(model.notice)}</p>`:''}`;
  if(model.separate){
   const n=rows.length;
-  return rows.map((r,i)=>`<div class="approval-card approval-inline" role="group" tabindex="-1" aria-label="Approval request ${i+1} of ${n}"><header><strong>Approval request ${i+1} of ${n}${model.more?'+':''}</strong>${i===0?refresh:''}</header>${item(r)}</div>`).join('')+(model.more?`<div class="approval-card approval-inline" tabindex="-1"><p class="approval-note" role="status">More requests are pending than shown here. Refresh or load more to see them.</p>${model.cursor?`<button class="approval-more" type="button" data-action="approval-page" ${disabled()?'disabled':''}>Load more requests</button>`:''}</div>`:'')+(notices?`<div class="approval-card approval-inline" tabindex="-1">${notices}</div>`:'');
+  return rows.map((r,i)=>`<div class="approval-card approval-inline${forcedOpen(r)?' approval-pending':''}" role="group" tabindex="-1" aria-label="Approval request ${i+1} of ${n}"><header><strong>Approval request ${i+1} of ${n}${model.more?'+':''}</strong>${i===0?refresh:''}</header>${item(r)}</div>`).join('')+(model.more?`<div class="approval-card approval-inline" tabindex="-1"><p class="approval-note" role="status">More requests are pending than shown here. Refresh or load more to see them.</p>${model.cursor?`<button class="approval-more" type="button" data-action="approval-page" ${disabled()?'disabled':''}>Load more requests</button>`:''}</div>`:'')+(notices?`<div class="approval-card approval-inline" tabindex="-1">${notices}</div>`:'');
  }
- return `<div class="approval-card approval-inline" tabindex="-1" aria-label="Caller approvals"><header><strong>Caller approvals (${model.total})</strong>${refresh}</header>${rows.map(item).join('')}${model.cursor?`<button class="approval-more" type="button" data-action="approval-page" ${disabled()?'disabled':''}>Load more requests</button>`:''}${notices}</div>`;
+ return `<div class="approval-card approval-inline${rows.some(forcedOpen)?' approval-pending':''}" tabindex="-1" aria-label="Caller approvals"><header><strong>Caller approvals (${model.total})</strong>${refresh}</header>${rows.map(item).join('')}${model.cursor?`<button class="approval-more" type="button" data-action="approval-page" ${disabled()?'disabled':''}>Load more requests</button>`:''}${notices}</div>`;
 };
 HF.approvalPanel=()=>{
  const task=HF.taskDetailContext?.task||HF.currentTask;if(!task?.approvalFixture)return '';

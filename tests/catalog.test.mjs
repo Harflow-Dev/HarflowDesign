@@ -379,7 +379,7 @@ test('rendered specimens preserve fixture identity and ownership semantics', () 
   assert.match(hf.renderTasks('summary', 'completed'), /abc12345/);
 
   const callerOwned = hf.renderTasks('approvals', 'caller-owned');
-  assert.match(callerOwned, /data-action="approval-decision:approve"/);
+  assert.match(callerOwned, /data-action="approval-decision:approve:[^"]+"/);
   assert.equal(hf.approvalController.state.requests[0].ownership, 'caller');
   assert.equal(hf.approvalController.state.futureMacResponseCapability, true);
   assert.equal(hf.approvalController.state.taskID, 'abc12345');
@@ -389,8 +389,8 @@ test('rendered specimens preserve fixture identity and ownership semantics', () 
   assert.equal(hf.approvalController.state.requests[0].ownership, 'caller');
   assert.equal(hf.approvalController.state.futureMacResponseCapability, false);
   const inspected = hf.renderTasks('approvals', 'inspected');
-  assert.match(inspected, /data-action="approval-decision:approve"/);
-  assert.match(inspected, /data-action="approval-decision:reject"/);
+  assert.match(inspected, /data-action="approval-decision:approve:[^"]+"/);
+  assert.match(inspected, /data-action="approval-decision:reject:[^"]+"/);
 });
 
 test('parallel group keeps lane identity, status strips, and terminal eligibility explicit', () => {
@@ -613,13 +613,13 @@ test('approval settled, caller-owned, submitting, and error states expose the co
     const html = hf.renderTasks('approvals', state);
     assert.match(html, /Caller approvals/);
     if (state === 'error') assert.doesNotMatch(html, /data-action="approval-decision:/);
-    else if (state === 'caller-owned') assert.match(html, /data-action="approval-decision:approve"(?![^>]*disabled)/);
-    else assert.match(html, /data-action="approval-decision:approve"[^>]*disabled/);
+    else if (state === 'caller-owned') assert.match(html, /data-action="approval-decision:approve:[^"]+"(?![^>]*disabled)/);
+    else assert.match(html, /data-action="approval-decision:approve:[^"]+"[^>]*disabled/);
   }
   hf.approvalController.reset('submitting');
   const submitting = hf.approvalPanel();
   assert.match(submitting, /data-action="approval-refresh"[^>]*disabled/);
-  assert.match(submitting, /data-action="approval-inspect:[^"]+"[^>]*disabled/);
+  assert.match(submitting, /data-action="approval-decision:approve:[^"]+"[^>]*disabled/);
   hf.approvalController.reset('error');
   assert.match(hf.approvalPanel(), /Approval metadata unavailable\./);
 });
@@ -639,7 +639,7 @@ test('approval rows retain source metadata, escape action JSON, and sort pending
   model.detail = model.requests[1];
   model.current = true;
   const html = hf.approvalPanel();
-  const order = [...html.matchAll(/data-action="approval-inspect:([^"]+)/g)].map(([, id]) => id);
+  const order = [...html.matchAll(/data-request-id="([^"]+)"/g)].map(([, id]) => id);
   assert.deepEqual(order, ['a-pending', 'm-unknown', 'z-history']);
   assert.match(html, /Run command/);
   assert.match(html, /In \/Users\/example\/repo/);
@@ -694,7 +694,7 @@ test('approval history rows render each listed disposition independently of the 
   hf.approvalController.reset('history');
   hf.taskDetailContext = { task: { approvalFixture: true } };
   const html = hf.approvalPanel();
-  const rows = [...html.matchAll(/data-action="approval-inspect:([^"]+)"[\s\S]*?<div class="approval-metadata">([^<]+)/g)];
+  const rows = [...html.matchAll(/data-request-id="([^"]+)"[\s\S]*?<div class="approval-metadata">([^<]+)/g)];
   assert.equal(rows[0][1], 'approval_01');
   assert.equal(rows[0][2], 'pending');
   assert.equal(rows[1][1], 'approval_02');
@@ -4473,7 +4473,7 @@ test('refusal, capability and incomplete states disable approval with an explana
   assert.match(text('result-unknown'), /The result could not be confirmed\. Harflow refreshed this request and did not send your answer again\./);
   assert.equal(hf.approvalController.canRespond(), false);
   assert.match(text('incomplete'), /Approval is disabled because the full action is not available to review\./);
-  assert.match(hf.approvalPanel(), /data-action="approval-decision:approve" disabled/);
+  assert.match(hf.approvalPanel(), /data-action="approval-decision:approve:[^"]+" disabled/);
   assert.equal(hf.approvalController.canRespond(), false);
   const lost = text('capability-lost');
   assert.match(lost, /This engine does not support Mac responses\./);
@@ -4488,7 +4488,7 @@ test('refusal, capability and incomplete states disable approval with an explana
 test('multiple pending requests render separate cards, a counted hint and bounded guidance', () => {
   const hf = loadDesignRuntime();
   hf.renderTasks('approvals', 'multiple-pending');
-  assert.equal((hf.approvalPanel().match(/class="approval-card approval-inline"/g) || []).length, 3);
+  assert.equal((hf.approvalPanel().match(/class="approval-card approval-inline approval-pending"/g) || []).length, 3);
   assert.match(approvalText(hf.approvalTail()), /Waiting for approval: Bash · git push origin main · 2 more/);
   assert.match(approvalText(hf.approvalHint()), /3 pending requests · View in Activity/);
   assert.doesNotMatch(approvalText(hf.approvalPanel()), /More requests are pending than shown/);
@@ -4647,9 +4647,9 @@ test('the agent reason sits outside the requested action region', () => {
   assert.ok(html.indexOf('approval-reason') > html.indexOf(focus));
 });
 
-test('approved baseline approval states render exactly as at 506d7d2', () => {
+test('approved approval states keep the approved markup (pending always expanded, settled rows collapsible)', () => {
   const hf = loadDesignRuntime();
-  const baseline = { 'monitor-pending': 'b7dbe3fb078717e0', inspected: '155a72e5d4b1c388', submitting: 'd9371378636a317b', 'caller-owned': 'b7497dc96eba492e', 'caller-owned-legacy': '1a0f19a607b08fca', history: '6a49ef458b608e44', pagination: '7bbe61a3f4601722', approved: 'f27836a4b4910320', denied: '92b0cca01e0c4790', expired: '8332b53be6107cfe', error: '1dd6a3893861702f' };
+  const baseline = { 'monitor-pending': '6b4d099cadfbfa0d', inspected: '6b4d099cadfbfa0d', submitting: 'e1aed47d58095cd1', 'caller-owned': '184f97372d984dc7', 'caller-owned-legacy': 'ef3a33afbc0eab43', history: 'c735a62fc9b671f9', pagination: 'bff6f023009868dc', approved: '12b3f7025b228d0c', denied: 'e47e38c78a76776c', expired: 'def8d7600039fc51', error: '1dd6a3893861702f' };
   for (const [state, expected] of Object.entries(baseline)) {
     const page = hf.renderTasks('approvals', state);
     const digest = createHash('sha256').update([page, hf.approvalPanel(), hf.approvalTail(), hf.approvalHint()].join('\n--\n')).digest('hex').slice(0, 16);
@@ -4695,12 +4695,14 @@ test('run sidebar approval states render caller approvals above the request and 
   assert.ok(pending.indexOf('wfr-approvals') < pending.indexOf('Original request'), 'approvals precede the request');
   assert.match(text(pending), /Workflow step: Implement/);
   assert.match(text(pending), /Agent task: Implement persistence checks/);
-  assert.match(pending, /data-action="approval-decision:approve"/);
+  assert.match(pending, /data-action="approval-decision:approve:[^"]+"/);
   assert.doesNotMatch(text(pending), /task_0|approval_0|sha256/);
   const multiple = text(sidebar(render('run-approval-multiple')));
   assert.match(multiple, /Approval request 1 of 2\+/);
   assert.match(multiple, /Workflow step: Review/);
   assert.match(multiple, /More requests are pending/);
+  assert.equal((sidebar(render('run-approval-multiple')).match(/class="approval-action-focus"/g) || []).length, 2, 'both pending requests are expanded');
+  assert.doesNotMatch(sidebar(render('run-approval-multiple')), /data-action="approval-inspect:/, 'pending requests have no inspect toggle');
   assert.equal(hf.approvalController.inspect('approval_02'), true, 'run-scoped requests from other tasks can be inspected');
   assert.match(text(hf.approvalRunPanel()), /Sources\/Persistence\/Store\.swift/);
   assert.equal(hf.approvalController.canRespond(), true);
@@ -4711,4 +4713,75 @@ test('run sidebar approval states render caller approvals above the request and 
   assert.match(text(legacy), /does not support Mac responses/);
   assert.doesNotMatch(legacy, /approval-decision/);
   assert.doesNotMatch(sidebar(render('running')), /wfr-approvals/);
+});
+
+test('a pending request is always expanded and cannot be collapsed', () => {
+  const hf = loadDesignRuntime();
+  for (const state of ['monitor-pending', 'multiple-pending', 'incomplete', 'capability-lost', 'undecidable', 'ownership-lost', 'unknown-values', 'result-unknown', 'decision-lost']) {
+    hf.renderTasks('approvals', state);
+    const html = hf.approvalPanel();
+    assert.doesNotMatch(html, /data-pending="(true)"[^>]*>(?:<button[^>]*approval-inspect)/, `${state} has no inspect toggle on pending`);
+    assert.equal((html.match(/class="approval-action-focus"/g) || []).length, hf.approvalController.state.requests.length, `${state} expands every request`);
+  }
+  hf.renderTasks('approvals', 'multiple-pending');
+  assert.equal(hf.approvalController.state.requests.every(hf.approvalController.isPending), true);
+  assert.equal((hf.approvalPanel().match(/Approve once/g) || []).length, 3);
+  const before = hf.approvalPanel();
+  hf.approvalController.inspect('approval_01');
+  assert.equal(hf.approvalController.state.selectedID, 'approval_01');
+  assert.equal(hf.approvalController.inspect('approval_01'), true);
+  assert.equal(hf.approvalController.state.selectedID, 'approval_01', 'a second inspect does not collapse a pending request');
+  assert.match(hf.approvalPanel(), /Approve once/);
+  assert.ok(before.length > 0);
+  assert.equal(hf.approvalController.respond('approve', 'approval_03'), true, 'any expanded pending request can be answered');
+});
+
+test('a refresh that settles a request collapses it to its compact row', () => {
+  const hf = loadDesignRuntime();
+  hf.renderTasks('approvals', 'inspected');
+  const model = hf.approvalController.state;
+  assert.match(hf.approvalPanel(), /class="approval-action-focus"/);
+  const settled = { ...model.requests[0], disposition: 'approved', delivery: 'sent', decision: 'approve', decided_by: 'caller', responder: 'caller' };
+  assert.ok(hf.approvalController.refresh({ requests: [settled], total: 1 }));
+  const html = hf.approvalPanel();
+  assert.doesNotMatch(html, /class="approval-action-focus"/, 'the settled request is collapsed');
+  assert.match(html, /aria-expanded="false"/);
+  assert.match(html, /approved · delivered/);
+});
+
+test('settled rows expand and collapse, and settling a local response collapses the row', () => {
+  const hf = loadDesignRuntime();
+  hf.renderTasks('approvals', 'history');
+  hf.approvalController.state.selectedID = null;
+  hf.approvalController.state.detail = null;
+  assert.doesNotMatch(hf.approvalPanel(), /aria-expanded="true"/);
+  assert.equal(hf.approvalController.inspect('approval_02'), true);
+  assert.match(hf.approvalPanel(), /aria-expanded="true"[^>]*aria-label="Collapse/);
+  assert.equal(hf.approvalController.inspect('approval_02'), true);
+  assert.doesNotMatch(hf.approvalPanel(), /aria-expanded="true"/);
+  hf.renderTasks('approvals', 'caller-owned');
+  const settle = hf.approvalController.beginResponse('approve');
+  assert.ok(settle());
+  assert.equal(hf.approvalController.state.selectedID, null);
+  assert.doesNotMatch(hf.approvalPanel(), /class="approval-action-focus"/);
+});
+
+test('pending approval cards carry the warning class and settled rows do not', () => {
+  const hf = loadDesignRuntime();
+  for (const state of ['monitor-pending', 'multiple-pending', 'incomplete', 'capability-lost', 'undecidable', 'ownership-lost', 'unknown-values', 'result-unknown', 'submitting']) {
+    hf.renderTasks('approvals', state);
+    assert.match(hf.approvalPanel(), /class="approval-card approval-inline approval-pending"/, `${state} is warned`);
+  }
+  for (const state of ['approved', 'denied', 'delivered', 'executed-succeeded']) {
+    hf.renderTasks('approvals', state);
+    assert.doesNotMatch(hf.approvalPanel(), /approval-pending/, `${state} is neutral`);
+  }
+  assert.match(fs.readFileSync(path.join(root, 'styles/task-approvals.css'), 'utf8'), /\.approval-card\.approval-pending \{ background:var\(--warningBG\); border:1px solid var\(--warningFG\)/);
+  const hf2 = loadDesignRuntime();
+  hf2.route = { screen: 'workflow-run', state: 'run-approval-settled', theme: 'light' };
+  hf2.resetWorkflowRun(hf2.route);
+  assert.doesNotMatch(hf2.renderRun('run-approval-settled'), /approval-pending/);
+  hf2.route = { screen: 'workflow-run', state: 'run-approval-multiple', theme: 'light' };
+  hf2.resetWorkflowRun(hf2.route);
+  assert.equal((hf2.renderRun('run-approval-multiple').match(/approval-pending/g) || []).length, 2);
 });
