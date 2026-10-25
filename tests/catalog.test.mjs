@@ -4655,3 +4655,27 @@ test('approved baseline approval states render exactly as at 506d7d2', () => {
     assert.equal(digest, expected, `${state} markup is unchanged`);
   }
 });
+
+test('uncertainty and ownership loss follow the submitted request, not the selection', () => {
+  const hf = loadDesignRuntime();
+  hf.renderTasks('approvals', 'result-unknown');
+  const model = hf.approvalController.state;
+  const original = model.requests[0];
+  const settled = { ...original, id: 'approval_02', digest: 'sha256:fixture-action-02', disposition: 'approved', delivery: 'sent', decision: 'approve' };
+  hf.approvalController.refresh({ requests: [original, settled], total: 2 });
+  assert.ok(hf.approvalController.inspect('approval_02'));
+  hf.approvalController.refresh({ requests: [original, settled], total: 2 });
+  assert.ok(hf.approvalController.inspect('approval_01'));
+  assert.equal(hf.approvalController.canRespond(), false, 'the submitted request stays blocked');
+  assert.equal(hf.approvalController.beginResponse('reject'), null);
+  hf.approvalController.refresh({ requests: [{ ...original, disposition: 'approved', delivery: 'sent' }, settled], total: 2 });
+  assert.equal(model.uncertain, false, 'reconciled by identity once that request settles');
+  hf.renderTasks('approvals', 'ownership-lost');
+  assert.ok(hf.approvalController.inspect('approval_01'));
+  assert.match(hf.approvalController.state.error, /owner of this request is gone/);
+  assert.equal(hf.approvalController.canRespond(), false);
+  assert.equal(hf.approvalController.beginResponse('approve'), null);
+  assert.equal(hf.approvalController.beginResponse('reject'), null);
+  hf.approvalController.refresh({ requests: hf.approvalController.state.requests, total: 1 });
+  assert.equal(hf.approvalController.canRespond(), false);
+});

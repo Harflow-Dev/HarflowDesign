@@ -14,14 +14,14 @@ const extra=state=>{const found=({
  delivering:sel(decided({delivery:'sending'}),{futureMacResponseCapability:true}),
  'not-delivered':sel(decided({delivery:'failed'}),{futureMacResponseCapability:true}),
  cancelled:sel(request({ownership:'caller',disposition:'invalidated',decision:'approve',responder:'monitor',delivery:'delivery_unknown'}),{futureMacResponseCapability:true,stopped:true}),
- 'ownership-lost':sel(request({ownership:'caller'}),{current:false,futureMacResponseCapability:true,error:'Decision not applied. The owner of this request is gone.'}),
+ 'ownership-lost':sel(request({ownership:'caller'}),{current:false,lost:'approval_01',futureMacResponseCapability:true,error:'Decision not applied. The owner of this request is gone.'}),
  'unknown-values':sel(request({ownership:'future-owner',disposition:'future-state',delivery:'future-delivery',execution_outcome:'future-outcome'}),{futureMacResponseCapability:true,error:'Harflow reported a reason this version does not recognize. Refresh to see the current state.',current:false}),
  delivered:sel(decided(),{futureMacResponseCapability:true}),
  'executed-succeeded':sel(decided({execution_outcome:'succeeded'}),{futureMacResponseCapability:true}),
  'executed-failed':sel(decided({execution_outcome:'failed'}),{futureMacResponseCapability:true}),
  'delivery-unknown':sel(decided({delivery:'delivery_unknown'}),{futureMacResponseCapability:true}),
  'decision-lost':sel(decided({responder:'caller'}),{current:false,futureMacResponseCapability:true,error:'The request is no longer current and was not changed.'}),
- 'result-unknown':sel(request({ownership:'caller'}),{current:false,uncertain:true,futureMacResponseCapability:true,error:'The result could not be confirmed. Harflow refreshed this request and did not send your answer again.'}),
+ 'result-unknown':sel(request({ownership:'caller'}),{current:false,uncertain:'approval_01',futureMacResponseCapability:true,error:'The result could not be confirmed. Harflow refreshed this request and did not send your answer again.'}),
  'expiry-override':sel(decided({disposition:'expired',effective_decision:'reject',decided_by:'harflow'}),{futureMacResponseCapability:true}),
  'system-rejected':{requests:[request({id:'approval_01',disposition:'denied',decision:'reject',decided_by:'harflow',delivery:'sent',system_reason:'Protected path, agents cannot change .git/config',tool_name:'Write',action:{tool_name:'Write',input:{file_path:'.git/config',content:'[core]'}}}),request({id:'approval_02',digest:'sha256:fixture-action-02',created_at:1792818010,disposition:'denied',decision:'reject',decided_by:'harflow',delivery:'sent',system_reason:'Request too large to review'})],total:2,selectedID:'approval_01',detail:'FIRST',current:true},
  invalidated:sel(request({ownership:'caller',disposition:'invalidated',decision:'approve'}),{futureMacResponseCapability:true,stopped:true}),
@@ -149,7 +149,7 @@ const refreshKeepsInspection=(detail,listed,success=true)=>!!(success&&identityM
 const pendingCount=()=>model.requests.filter(isPending).length;
 const pendingRows=()=>model.requests.filter(isPending).sort((a,b)=>(a.created_at-b.created_at)||a.id.localeCompare(b.id));
 const notify=()=>HF.refreshApprovalPresentation?.();
-const canRespond=()=>{const r=model.detail,listed=model.requests.find(x=>x.id===model.selectedID);return !!(model.current&&!model.uncertain&&!model.undecidable&&knownRequest(r)&&complete(r)&&actionView(r).covered&&r.task_id===model.taskID&&identityMatches(listed,r)&&canOwnResponse(listed,r,model)&&isPending(r)&&isPending(listed)&&r.deadline>now()&&listed.deadline>now()&&!disabled())};
+const canRespond=()=>{const r=model.detail,listed=model.requests.find(x=>x.id===model.selectedID);return !!(model.current&&r?.id!==model.uncertain&&r?.id!==model.lost&&!model.undecidable&&knownRequest(r)&&complete(r)&&actionView(r).covered&&r.task_id===model.taskID&&identityMatches(listed,r)&&canOwnResponse(listed,r,model)&&isPending(r)&&isPending(listed)&&r.deadline>now()&&listed.deadline>now()&&!disabled())};
 const clone=value=>JSON.parse(JSON.stringify(value));
 const controller=HF.approvalController={
  get state(){return model},
@@ -158,7 +158,7 @@ const controller=HF.approvalController={
  identityMatches,canInspect,refreshKeepsInspection,canRespond,pendingCount,isPending,
  inspect(id,suppliedDetail){
   const listed=model.requests.find(r=>r.id===id);if(!canInspect(listed))return false;
-  model.selectedID=id;model.detail=null;model.current=false;if(!model.uncertain)model.error=null;
+  model.selectedID=id;model.detail=null;model.current=false;if(id!==model.uncertain&&id!==model.lost)model.error=null;
   const detail=clone(suppliedDetail||listed);
   if(!identityMatches(listed,detail)||!complete(detail)||listed.disposition!==detail.disposition){model.error='The action changed or its full payload is unavailable. Refresh and inspect it again.';notify();return false}
   model.detail=detail;model.current=true;notify();return true;
@@ -171,8 +171,8 @@ const controller=HF.approvalController={
   if(page.cursor!==undefined)model.cursor=page.cursor;
   const listed=model.requests.find(r=>r.id===model.selectedID);
   if(!refreshKeepsInspection(model.detail,listed))model.current=false;
-  if(model.uncertain&&listed&&!isPending(listed))model.uncertain=false;
-  if(!model.uncertain)model.error=null;notify();return true;
+  for(const key of ['uncertain','lost']){const held=model.requests.find(r=>r.id===model[key]);if(model[key]&&held&&!isPending(held))model[key]=false}
+  if(!model.uncertain&&!model.lost)model.error=null;notify();return true;
  },
  loadMore(page){
   if(disabled()||!model.taskID||!model.cursor)return false;
