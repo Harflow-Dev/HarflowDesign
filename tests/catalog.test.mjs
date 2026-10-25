@@ -612,7 +612,7 @@ test('approval settled, caller-owned, submitting, and error states expose the co
     hf.approvalController.reset(state);
     const html = hf.renderTasks('approvals', state);
     assert.match(html, /Caller approvals/);
-    if (state === 'error') assert.doesNotMatch(html, /data-action="approval-decision:/);
+    if (state === 'error' || state === 'expired') assert.doesNotMatch(html, /data-action="approval-decision:/);
     else if (state === 'caller-owned') assert.match(html, /data-action="approval-decision:approve:[^"]+"(?![^>]*disabled)/);
     else assert.match(html, /data-action="approval-decision:approve:[^"]+"[^>]*disabled/);
   }
@@ -4649,7 +4649,7 @@ test('the agent reason sits outside the requested action region', () => {
 
 test('approved approval states keep the approved markup (pending always expanded, settled rows collapsible)', () => {
   const hf = loadDesignRuntime();
-  const baseline = { 'monitor-pending': '6b4d099cadfbfa0d', inspected: '6b4d099cadfbfa0d', submitting: 'e1aed47d58095cd1', 'caller-owned': '184f97372d984dc7', 'caller-owned-legacy': 'ef3a33afbc0eab43', history: 'c735a62fc9b671f9', pagination: 'bff6f023009868dc', approved: '12b3f7025b228d0c', denied: 'e47e38c78a76776c', expired: 'def8d7600039fc51', error: '1dd6a3893861702f' };
+  const baseline = { 'monitor-pending': '6b4d099cadfbfa0d', inspected: '6b4d099cadfbfa0d', submitting: 'e1aed47d58095cd1', 'caller-owned': '184f97372d984dc7', 'caller-owned-legacy': 'ef3a33afbc0eab43', history: 'c735a62fc9b671f9', pagination: 'bff6f023009868dc', approved: '12b3f7025b228d0c', denied: 'e47e38c78a76776c', expired: 'd3b082b499a8f850', error: '1dd6a3893861702f' };
   for (const [state, expected] of Object.entries(baseline)) {
     const page = hf.renderTasks('approvals', state);
     const digest = createHash('sha256').update([page, hf.approvalPanel(), hf.approvalTail(), hf.approvalHint()].join('\n--\n')).digest('hex').slice(0, 16);
@@ -4772,7 +4772,7 @@ test('pending approval cards carry the warning class and settled rows do not', (
     hf.renderTasks('approvals', state);
     assert.match(hf.approvalPanel(), /class="approval-card approval-inline approval-pending"/, `${state} is warned`);
   }
-  for (const state of ['approved', 'denied', 'delivered', 'executed-succeeded']) {
+  for (const state of ['approved', 'denied', 'expired', 'delivered', 'executed-succeeded']) {
     hf.renderTasks('approvals', state);
     assert.doesNotMatch(hf.approvalPanel(), /approval-pending/, `${state} is neutral`);
   }
@@ -4784,4 +4784,14 @@ test('pending approval cards carry the warning class and settled rows do not', (
   hf2.route = { screen: 'workflow-run', state: 'run-approval-multiple', theme: 'light' };
   hf2.resetWorkflowRun(hf2.route);
   assert.equal((hf2.renderRun('run-approval-multiple').match(/approval-pending/g) || []).length, 2);
+});
+
+test('an expired request is a settled, collapsed, neutral row that can be expanded', () => {
+  const hf = loadDesignRuntime();
+  hf.renderTasks('approvals', 'expired');
+  const html = hf.approvalPanel();
+  assert.match(html, /expired · rejected by Harflow/);
+  assert.doesNotMatch(html, /approval-pending|approval-action-focus/);
+  assert.equal(hf.approvalController.inspect('approval_01'), true);
+  assert.match(hf.approvalPanel(), /Harflow rejected the request, so the action was not run/);
 });

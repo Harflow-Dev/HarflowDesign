@@ -42,7 +42,7 @@ const extra=state=>{const found=({
 })[state];if(found&&found.detail==='FIRST')found.detail=found.requests[0];return found};
 const scenario=state=>({
  'monitor-pending':{requests:[request()],total:1},inspected:{requests:[request()],total:1,selectedID:'approval_01',detail:request(),current:true},submitting:{requests:[request()],total:1,selectedID:'approval_01',detail:request(),current:true,submitting:true},
- 'caller-owned':{requests:[callerRequest()],total:1,selectedID:'approval_01',detail:callerRequest(),current:true,futureMacResponseCapability:true},'caller-owned-legacy':{requests:[callerRequest()],total:1,selectedID:'approval_01',detail:callerRequest(),current:true,futureMacResponseCapability:false},history:{requests:history(),total:17,selectedID:'approval_01',detail:history()[0],current:true},pagination:{requests:history().slice(0,5),total:17,cursor:'page-2'},approved:{requests:[request({disposition:'approved',delivery:'delivered',decision:'approve'})],total:1,selectedID:'approval_01',detail:request({disposition:'approved',delivery:'delivered',decision:'approve'})},denied:{requests:[request({disposition:'denied',delivery:'delivered',decision:'reject'})],total:1,selectedID:'approval_01',detail:request({disposition:'denied',delivery:'delivered',decision:'reject'})},expired:{requests:[request({deadline:now()-1000})],total:1,selectedID:'approval_01',detail:request({deadline:now()-1000}),current:true},error:{requests:[],total:0,error:'Approval metadata unavailable.'}
+ 'caller-owned':{requests:[callerRequest()],total:1,selectedID:'approval_01',detail:callerRequest(),current:true,futureMacResponseCapability:true},'caller-owned-legacy':{requests:[callerRequest()],total:1,selectedID:'approval_01',detail:callerRequest(),current:true,futureMacResponseCapability:false},history:{requests:history(),total:17,selectedID:'approval_01',detail:history()[0],current:true},pagination:{requests:history().slice(0,5),total:17,cursor:'page-2'},approved:{requests:[request({disposition:'approved',delivery:'delivered',decision:'approve'})],total:1,selectedID:'approval_01',detail:request({disposition:'approved',delivery:'delivered',decision:'approve'})},denied:{requests:[request({disposition:'denied',delivery:'delivered',decision:'reject'})],total:1,selectedID:'approval_01',detail:request({disposition:'denied',delivery:'delivered',decision:'reject'})},expired:{requests:[request({disposition:'expired',decision:'reject',decided_by:'harflow',delivery:'sent',system_reason:'approval_expired',deadline:now()-1000})],total:1},error:{requests:[],total:0,error:'Approval metadata unavailable.'}
 })[state]||extra(state)||{requests:[request()],total:1,futureMacResponseCapability:false};
 const runStep=(n,node,task,tool,input,o={})=>request({id:`approval_0${n}`,task_id:`task_0${n}`,digest:`sha256:fixture-run-0${n}`,ownership:'caller',workflow_node_name:node,task_title:task,tool_name:tool,action:{tool_name:tool,input},created_at:1792818000+n*10,...o});
 const runPush=(o={})=>runStep(1,'Implement','Implement persistence checks','Bash',{command:'git push origin feature/persistence-checks',description:'Publish the branch for review'},{reason:'The tests pass and the branch is ready to publish for review.',...o});
@@ -51,7 +51,7 @@ const runSel=(list,more={})=>({byRun:true,taskID:'run',requests:list,total:list.
 const runScenario=state=>({
  'run-approval-pending':runSel([runPush()]),
  'run-approval-multiple':runSel([runPush(),runWrite()],{separate:true,total:32,more:true,cursor:'page-2'}),
- 'run-approval-settled':{byRun:true,taskID:'run',requests:[runPush({disposition:'approved',decision:'approve',decided_by:'caller',responder:'monitor',delivery:'sent',execution_outcome:'succeeded'}),runWrite({disposition:'expired'})],total:2,futureMacResponseCapability:true},
+ 'run-approval-settled':{byRun:true,taskID:'run',requests:[runPush({disposition:'approved',decision:'approve',decided_by:'caller',responder:'monitor',delivery:'sent',execution_outcome:'succeeded'}),runWrite({disposition:'expired',decision:'reject',decided_by:'harflow',delivery:'sent',system_reason:'approval_expired'})],total:2,futureMacResponseCapability:true},
  'run-approval-legacy':runSel([runPush()],{futureMacResponseCapability:false})
 })[state];
 let model=scenario('monitor-pending'),generation=0;
@@ -120,6 +120,7 @@ const statusLabel=r=>{
  const d=r.disposition;
  if(!knownRequest(r))return 'unknown';
  if(d==='invalidated')return 'invalidated'+(r.delivery==='delivery_unknown'?' · delivery unknown':r.delivery==='failed'?' · not delivered':'');
+if(d==='expired'&&r.decided_by==='harflow'&&r.decision==='reject')return 'expired · rejected by Harflow';
  if(d==='expired'&&r.decision==='approve')return 'expired · approval overridden · rejection '+({sent:'delivered',sending:'delivering',reserved:'accepted'}[r.delivery]||r.delivery||'pending');
  if(r.decided_by==='harflow')return 'rejected by Harflow';
  if(r.delivery==='reserved')return `${d} · accepted`;
@@ -139,6 +140,7 @@ const guidance=r=>{
   return note('Decision not applied. Harflow could not confirm what was delivered.','warn');
  }
  if(r.disposition==='expired'&&r.decision==='approve')return note('The deadline passed before the approval could be delivered. Harflow sent a rejection instead, so the action was not run.','warn');
+ if(r.disposition==='expired'&&r.decided_by==='harflow')return note('The deadline passed before an answer arrived. Harflow rejected the request, so the action was not run.','warn');
  if(r.decided_by==='harflow')return note(`Rejected by Harflow: ${r.system_reason||'reason unavailable'}. The action was not run.`,'warn');
  if(r.delivery==='reserved')return note('Decision accepted. Waiting to deliver to the agent.');
  if(r.delivery==='sending')return note('Decision accepted. Delivering to the agent.');
