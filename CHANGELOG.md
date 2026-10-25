@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Show the Harflow app icon beside the catalog title and as the browser tab icon, using PNGs exported from HarflowMac `macos/Harflow/Resources/AppIcon.icns`.
+
 - Add a Harnesses option to the exploratory Statistics ranked list, with executions and model count per harness and a model drill-down, and move the reference to canvas version 1792893875-1b6a.
 
 - Revise the exploratory Council configuration and run activity to the new canvas design: named members with instructions as accordion cards, optional members that never block consensus, read-only limits, name and required-count validation, a labelled feed with a members roster, and consensus, member-left, and failed outcome states; editable limits, structured output, routing, and the Go to outcome link are removed.
