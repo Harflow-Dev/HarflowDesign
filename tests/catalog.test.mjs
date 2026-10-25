@@ -3618,6 +3618,509 @@ test('setup and teardown commands are escaped in the editor and the sheet', () =
   assert.doesNotMatch(hf.renderEditor('start-setup'), /&lt;b&gt;/);
 });
 
+const setupRunHarness = () => {
+  const stage = { innerHTML: '', querySelector: () => null };
+  const announcement = { textContent: '', classList: { add() {}, remove() {} } };
+  const hf = loadDesignRuntime({ captureEvents: true, querySelectorOverride: selector => selector === '#stage' ? stage : selector === '#announcement' ? announcement : undefined });
+  const start = state => { hf.route = { theme: 'light', screen: 'workflow-run', state: 'running' }; hf.resetWorkflowRun(hf.route); hf.route = { theme: 'light', screen: 'workflow-run', state }; hf.resetWorkflowRun(hf.route); return hf.renderRun(state); };
+  const click = action => { const target = { dataset: { action }, isConnected: true, closest: selector => selector.startsWith('[data-action^="wr-"') ? target : null }; hf.__dispatchDesignEvent({ type: 'click', target, preventDefault() {}, stopImmediatePropagation() {} }); return stage.innerHTML; };
+  return { hf, stage, announcement, start, click };
+};
+const runToolbar = html => html.slice(html.indexOf('wfr-toolbar'), html.indexOf('wfr-run-layout'));
+const runActions = html => Array.from(runToolbar(html).matchAll(/data-action="([^"]+)"/g), match => match[1]);
+const runText = html => html.replace(/<svg.*?<\/svg>/g, '').replace(/<[^>]+>/g, '|').replace(/&#39;/g, "'").replace(/\|+/g, '|');
+
+test('setup run states set the header badge, elapsed time, controls and summary', () => {
+  const { hf, start } = setupRunHarness();
+  assert.deepEqual(Array.from(hf.setupRunStates), ['setup-running', 'setup-failed', 'teardown-pending']);
+  const expected = {
+    'setup-running': { badge: 'Starting', elapsed: '00:07', actions: ['wr-mode:graph', 'wr-cancel'], summary: 'Preparing the workspace', cls: 'starting' },
+    'setup-failed': { badge: 'Failed', elapsed: '00:03', actions: ['wr-mode:graph', 'wr-run-again'], summary: 'Setup failed before the first node: invalid reference origin/release-9.', cls: 'failed' },
+    'teardown-pending': { badge: 'Completed', elapsed: '21:04', actions: ['wr-open-end', 'wr-mode:graph', 'wr-mode:parallel', 'wr-run-again'], summary: 'All nodes done. Teardown pending: Harflow stopped before it finished.', cls: 'completed' }
+  };
+  for (const [state, want] of Object.entries(expected)) {
+    const html = start(state);
+    assert.match(html, new RegExp(`<span class="wfr-badge ${want.cls}">(?:<span class="wfr-spinner" aria-hidden="true"></span>)?${want.badge}<span class="wfr-badge-elapsed">${want.elapsed}</span></span>`), `${state} badge`);
+    assert.deepEqual(runActions(html), want.actions, `${state} controls`);
+    assert.ok(runText(html).includes(want.summary), `${state} summary`);
+    assert.match(html, /<strong>Session reliability<\/strong>/, 'the family keeps its own title');
+  }
+  const running = start('setup-running');
+  assert.doesNotMatch(running, /wr-pause|>Pause</, 'no Pause during setup');
+  assert.match(runToolbar(running), /<button type="button" disabled>Parallel<\/button>/);
+  assert.match(running, /class="wf-cancel"/, 'destructive Cancel run');
+  assert.ok((runToolbar(running).match(/wfr-spinner/g) || []).length === 1, 'only the badge spins in the toolbar');
+  const failed = start('setup-failed');
+  assert.match(failed, /class="[^"]*wfr-run-again primary[^"]*" data-action="wr-run-again"/);
+  assert.doesNotMatch(failed, /wr-cancel|wfr-spinner/, 'nothing spins and nothing can be cancelled');
+  assert.match(runToolbar(failed), /<button type="button" disabled>Parallel<\/button>/);
+  const pending = start('teardown-pending');
+  assert.match(pending, /class="[^"]*wfr-run-again glass[^"]*" data-action="wr-run-again"/);
+  assert.match(pending, /data-action="wr-mode:parallel"/, 'Parallel is enabled once the nodes are done');
+  assert.doesNotMatch(runToolbar(pending), /wr-cancel|wr-pause/);
+});
+
+test('setup run states show the setup or teardown pane, the workspace path and the outcome copy', () => {
+  const { hf, start } = setupRunHarness();
+  assert.equal(hf.setupRunWorkspace, '~/Harflow/Workspaces/01JB7K2M');
+  for (const state of hf.setupRunStates) {
+    const html = start(state);
+    assert.ok(html.includes(`data-setup-run="${state}"`), state);
+    assert.ok(runText(html).includes('~/Harflow/Workspaces/01JB7K2M'), `${state} workspace`);
+    assert.doesNotMatch(html, /~\/\.harflow|\.harflow\/workspaces/, `${state} has no ~/.harflow path`);
+    assert.match(html, /data-action="wr-open-log"/);
+    assert.match(html, /aria-controls="wfr-setup-command"/);
+  }
+  const running = runText(start('setup-running'));
+  for (const text of ['Start › Setup', 'No agent starts until setup finishes. Timeout 5 min.', 'Running the setup command', 'Updating files:  64% (812/1268)']) assert.ok(running.includes(text), text);
+  const failed = runText(start('setup-failed'));
+  for (const text of ['exit 128', 'The run never started work: no agent ran and there is nothing to recover. Fix the cause, then Run again.', 'fatal: invalid reference: origin/release-9', 'Teardown', 'Skipped', 'Set to run only when the run succeeds']) assert.ok(failed.includes(text), text);
+  const pending = runText(start('teardown-pending'));
+  for (const text of ['End › Teardown', "The run's outcome stays Completed.", 'Run teardown', '[output ends here]', 'Nothing runs again until you choose to.']) assert.ok(pending.includes(text), text);
+  assert.match(start('teardown-pending'), /aria-label="Select End, teardown pending"/);
+  assert.match(start('teardown-pending'), /wf-attention-node/);
+  assert.match(start('teardown-pending'), /<span class="wf-subtitle">Finished<\/span>/);
+  assert.match(start('setup-running'), /<span class="wf-subtitle">Waiting for setup<\/span>/);
+  assert.match(start('setup-failed'), /<span class="wf-subtitle">Never started<\/span>/);
+});
+
+test('setup run states keep agent nodes pending and show Not started when one is selected', () => {
+  const { hf, start, click } = setupRunHarness();
+  for (const state of ['setup-running', 'setup-failed']) {
+    const html = start(state);
+    assert.deepEqual(Array.from(html.matchAll(/<small>(Pending|Running|Completed|Failed)<\/small>/g), match => match[1]), ['Pending', 'Pending', 'Pending'], `${state} agent nodes`);
+    for (const node of ['planning', 'implementation', 'review']) {
+      start(state);
+      const after = click(`wr-select:${node}`);
+      assert.match(after, /wfr-setup-idle/, `${state}/${node}`);
+      assert.ok(runText(after).includes('Not started'));
+      assert.ok(runText(after).includes('No agent runs until setup finishes, so there is no activity yet.'));
+      assert.doesNotMatch(after, /parallel-lane|wfr-selected-activity/, 'no activity');
+    }
+  }
+  start('teardown-pending');
+  const done = click('wr-select:planning');
+  assert.doesNotMatch(done, /wfr-setup-idle/);
+  assert.match(done, /wfr-selected-activity/, 'completed nodes keep their task activity');
+  assert.ok(runText(done).includes('Done'));
+  assert.ok(hf.setupRunNotStarted('Plan').includes('Not started'));
+});
+
+test('setup run command disclosure toggles aria-expanded', () => {
+  const { start, click } = setupRunHarness();
+  for (const state of ['setup-running', 'setup-failed']) {
+    assert.match(start(state), /data-action="wr-command" aria-expanded="false" aria-controls="wfr-setup-command"/);
+    assert.match(start(state), /<pre id="wfr-setup-command" class="wfr-setup-code" hidden><\/pre>/);
+    let html = click('wr-command');
+    assert.match(html, /data-action="wr-command" aria-expanded="true"/);
+    assert.match(html, /<pre id="wfr-setup-command" class="wfr-setup-code" >git -C &quot;\$HARFLOW_LAUNCH_DIR&quot; fetch origin/);
+    html = click('wr-command');
+    assert.match(html, /aria-expanded="false"/);
+  }
+  start('teardown-pending');
+  assert.match(click('wr-open-end'), /data-action="wr-command" aria-expanded="false"/);
+  assert.match(click('wr-command'), /worktree remove/);
+});
+
+test('teardown-pending: Needs attention opens the End pane and Run teardown moves to Completed', async () => {
+  const { hf, announcement, start, click } = setupRunHarness();
+  let html = start('teardown-pending');
+  assert.match(html, /data-setup-run="teardown-pending" data-teardown="pending"/, 'End is selected on entry');
+  assert.match(html, /data-action="wr-open-end"/);
+  assert.match(html, /data-action="wr-run-teardown"/);
+  // Needs attention reopens the End pane after it was closed.
+  html = click('wr-deselect');
+  assert.doesNotMatch(html, /data-setup-run=/);
+  html = click('wr-open-end');
+  assert.match(html, /data-setup-run="teardown-pending" data-teardown="pending"/);
+  assert.match(html, /wfr-layout|has-selection/);
+  html = click('wr-run-teardown');
+  assert.match(html, /data-teardown="running"/);
+  assert.equal(announcement.textContent, 'Mock teardown started');
+  assert.ok(runText(html).includes('Running'));
+  assert.ok(runText(html).includes("Running teardown once. The run's outcome stays Completed."));
+  assert.doesNotMatch(html, /data-action="wr-run-teardown"/, 'cannot start twice');
+  assert.match(html, /wf-running-node/, 'End shows running');
+  assert.match(html, /wfr-attention/, 'still needs attention while running');
+  click('wr-run-teardown');
+  await new Promise(resolve => setTimeout(resolve, 900));
+  html = hf.renderRun('teardown-pending');
+  assert.match(html, /data-teardown="completed"/);
+  assert.ok(runText(html).includes("Teardown finished. The run's outcome stays Completed."));
+  assert.ok(runText(html).includes('Worktree removed'));
+  assert.ok(runText(html).includes('All nodes done. Teardown completed.'));
+  assert.doesNotMatch(html, /wfr-attention|wr-open-end|wf-attention-node/, 'Needs attention clears');
+  assert.match(html, /Teardown completed · the run outcome stays Completed|Select End"/);
+  assert.equal(announcement.textContent, 'Mock teardown completed · the run outcome stays Completed');
+  // Re-entry resets the mock transition.
+  assert.match(start('teardown-pending'), /data-teardown="pending"/);
+});
+
+test('setup run Run again and Open full log only show toasts', () => {
+  const { hf, announcement, start, click } = setupRunHarness();
+  for (const state of ['setup-failed', 'teardown-pending']) {
+    start(state);
+    click('wr-run-again');
+    assert.equal(announcement.textContent, 'Mock run again requested · no run started');
+    assert.equal(hf.route.screen, 'workflow-run', `${state} stays on the run`);
+    assert.equal(hf.route.state, state);
+    assert.doesNotMatch(hf.renderRun(state), /launch-sheet|setup-review/, 'never opens the macOS sheet');
+  }
+  start('setup-running');
+  click('wr-open-log');
+  assert.equal(announcement.textContent, 'Full log is mock only');
+});
+
+test('setup run states are registered with their tickets and the sidebar element metadata', () => {
+  const hf = loadDesignRuntime();
+  for (const state of hf.setupRunStates) {
+    const status = hf.specimenStatus('workflow-run', state);
+    assert.equal(status.kind, 'exploratory', state);
+    assert.deepEqual(Array.from(status.tickets), ['#21', 'HarflowMCP#41']);
+    assert.ok(hf.screens.find(family => family.id === 'workflow-run').states.includes(state));
+  }
+  assert.match(hf.specimenStatus('workflow-run', 'teardown-pending').caption, /the run outcome stays Completed/);
+  assert.match(hf.specimenStatus('workflow-run', 'setup-failed').caption, /the run never started work/);
+  assert.equal(hf.specimenStatus('workflow-run', 'running').kind, 'contains-exploratory');
+});
+
+test('setup Not designed keeps timed out, teardown running beyond the mock, teardown failed, and cancel during setup', () => {
+  const inventory = fs.readFileSync(path.join(root, 'docs/screen-inventory.md'), 'utf8');
+  const clause = /workflow setup and teardown run states \(([^)]*)\)/.exec(inventory)?.[1];
+  assert.ok(clause, 'the Not designed clause exists');
+  assert.equal(clause, 'setup timed out, teardown running beyond the mock transition, teardown failed, and cancel during setup');
+  assert.doesNotMatch(clause, /setup running|setup failed|Teardown pending/i, 'the designed states are not listed as undesigned');
+});
+
+test('the Start setup banner says the review applies to manual launches', () => {
+  const hf = loadDesignRuntime();
+  hf.route = { theme: 'light', screen: 'workflow-editor', state: 'start-setup' };
+  hf.editorController.reset('start-setup');
+  const html = hf.renderEditor('start-setup').replace(/&#39;/g, "'");
+  assert.ok(html.includes("Harness permissions don't apply to this command. You review it each time you start the workflow yourself."));
+  assert.doesNotMatch(html, /You review it each time the workflow runs/);
+  hf.editorController.reset('end-teardown');
+});
+
+const webHarness = () => {
+  const html = { current: '' };
+  const announcement = { textContent: '', classList: { add() {}, remove() {} } };
+  const app = { style: {}, querySelector: () => null, querySelectorAll: () => [], get outerHTML() { return html.current; }, set outerHTML(value) { html.current = value; } };
+  const hf = loadDesignRuntime({ captureEvents: true, querySelectorOverride: selector => selector === '.web-app' ? app : selector === '#announcement' ? announcement : undefined });
+  const navigations = [];
+  hf.navigate = (...args) => navigations.push(args);
+  hf.route = { theme: 'light', screen: 'web', state: 'triggers' };
+  hf.resetWeb();
+  const fire = (type, target) => hf.__dispatchDesignEvent({ type, target, preventDefault() {}, stopImmediatePropagation() {} });
+  const click = action => { const target = { dataset: { action }, disabled: false, closest: selector => selector === '[data-action^="web-"]' || selector === '.web-app' ? (selector === '.web-app' ? app : target) : null }; fire('click', target); return html.current; };
+  const field = (type, name, props = {}) => { const target = { matches: () => false, dataset: { webField: name, ...(props.id ? { id: props.id } : {}) }, value: props.value ?? '', checked: !!props.checked, closest: selector => selector === '[data-web-field]' ? target : selector === '.web-app' ? app : null }; fire(type, target); };
+  return { hf, html, announcement, navigations, click, field, app, route: state => { hf.route = { theme: 'light', screen: 'web', state }; } };
+};
+const webText = html => html.replace(/<svg.*?<\/svg>/g, '').replace(/<[^>]+>/g, '|').replace(/&#39;/g, "'").replace(/\|+/g, '|');
+
+test('the Harflow web family is registered as a web platform with no source', () => {
+  const hf = loadDesignRuntime();
+  const family = hf.screens.find(screen => screen.id === 'web');
+  assert.deepEqual(Array.from(family.states), ['triggers', 'trigger-editor', 'incoming', 'run-failed']);
+  assert.equal(family.platform, 'web');
+  assert.equal(family.source, undefined);
+  assert.equal(family.proposals, undefined);
+  assert.deepEqual(Array.from(family.proposal.tickets), ['HarflowWeb#1', 'HarflowWeb#2']);
+  assert.ok(Array.from(family.proposal.tickets).every(ref => hf.isTicketRef(ref)));
+  assert.equal(hf.isTicketRef('HarflowWeb#3'), true);
+  assert.equal(hf.isTicketRef('HarflowWeb3'), false);
+  for (const state of family.states) {
+    const status = hf.specimenStatus('web', state);
+    assert.equal(status.kind, 'exploratory');
+    assert.match(status.caption, /^Exploratory · .*HarflowWeb#1.*HarflowWeb#2.* · Not approved/);
+  }
+  assert.ok(hf.screens.filter(screen => screen.id !== 'web').every(screen => !screen.platform), 'every other family is macOS');
+  assert.match(fs.readFileSync(path.join(root, 'scripts/catalog.js'), 'utf8'), /No native source/);
+});
+
+test('catalog navigation groups families by platform, search hides empty groups, and the eyebrow follows', () => {
+  const hf = loadDesignRuntime();
+  const source = fs.readFileSync(path.join(root, 'scripts/catalog.js'), 'utf8');
+  const start = source.indexOf('function renderNav(){');
+  let depth = 0, end = start;
+  for (let i = source.indexOf('{', start); i < source.length; i++) { if (source[i] === '{') depth++; if (source[i] === '}' && --depth === 0) { end = i + 1; break; } }
+  const renderNav = source.slice(start, end);
+  const nav = { innerHTML: '' }, search = { value: '' };
+  hf.route = { screen: 'web' };
+  const run = query => { search.value = query; new Function('HF', 'document', `${renderNav}; renderNav();`)(hf, { querySelector: selector => selector === '#catalog-search' ? search : selector === '#catalog-nav' ? nav : null }); return nav.innerHTML; };
+  let html = run('');
+  assert.equal((html.match(/<section class="nav-group"/g) || []).length, 2);
+  assert.match(html, /<section class="nav-group" data-nav-group="macos"><h2 class="nav-group-title" id="nav-group-macos">macOS<\/h2><ul aria-labelledby="nav-group-macos">/);
+  assert.match(html, /<section class="nav-group" data-nav-group="web"><h2 class="nav-group-title" id="nav-group-web">Harflow web<\/h2><ul aria-labelledby="nav-group-web"><li><button class="nav-item active" data-action="route:web\/triggers">Harflow web<small>4<\/small>/);
+  assert.ok(html.indexOf('data-nav-group="macos"') < html.indexOf('data-nav-group="web"'));
+  assert.equal((html.match(/<li>/g) || []).length, hf.screens.length);
+  html = run('incoming');
+  assert.match(html, /data-nav-group="web"/);
+  assert.doesNotMatch(html, /data-nav-group="macos"/, 'a group with no match is hidden');
+  html = run('statistics');
+  assert.doesNotMatch(html, /data-nav-group="web"/);
+  assert.match(html, /data-nav-group="macos"/);
+  assert.equal(run('zzzz-no-match'), '');
+  // The eyebrow statement from render().
+  const eyebrowStatement = /document\.querySelector\('#eyebrow'\)\.textContent=family\.platform==='web'\?'HARFLOW \/ WEB':'HARFLOW \/ MACOS';/.exec(source)?.[0];
+  assert.ok(eyebrowStatement, 'render sets the eyebrow');
+  const eyebrow = family => { const node = { textContent: '' }; new Function('document', 'family', eyebrowStatement)({ querySelector: selector => selector === '#eyebrow' ? node : null }, family); return node.textContent; };
+  assert.equal(eyebrow(hf.screens.find(screen => screen.id === 'web')), 'HARFLOW / WEB');
+  for (const family of hf.screens.filter(screen => screen.id !== 'web')) assert.equal(eyebrow(family), 'HARFLOW / MACOS', family.id);
+  assert.match(fs.readFileSync(path.join(root, 'index.html'), 'utf8'), /id="eyebrow"/);
+});
+
+test('web states render their copy and the specimen is a fluid shell', () => {
+  const { hf } = webHarness();
+  const triggers = webText(hf.renderWeb('triggers'));
+  for (const text of ['Fix assigned bug', 'Revision 4 · Triggers', 'New trigger', 'Triggers start this workflow from outside Harflow.', 'Bug assigned to me', 'Slack /harflow fix', 'Weekly crash sweep', 'Paused', 'Webhooks arrive on their own port']) assert.ok(triggers.includes(text), text);
+  const editor = webText(hf.renderWeb('trigger-editor'));
+  for (const text of ['All triggers', 'Enabled', 'Conditions', 'Run inputs', 'When a run is already going', 'Same run when', 'Payload URL', 'https://hooks.home.example/hooks/trg_8f2kq1', 'Access, from the workflow', 'Caller approvals are on for Review and open PR and can be answered from the Mac app or the web app.']) assert.ok(editor.includes(text), text);
+  const incoming = webText(hf.renderWeb('incoming'));
+  for (const text of ['Every delivery to every trigger in the last 30 days', 'Today', 'Earlier', 'Checks', 'Run inputs', 'Payload · 8.4 KB']) assert.ok(incoming.includes(text), text);
+  const failed = webText(hf.renderWeb('run-failed'));
+  for (const text of ['Run started 10:02 · harflow-mac · Revision 3 · from Bug assigned to me', 'Run again uses revision 5', 'the setup command changed, so you review it first', 'Fix #2481', 'gh pr create was denied after 3 attempts.']) assert.ok(failed.includes(text), text);
+  for (const state of hf.webStates) {
+    const html = hf.renderWeb(state);
+    assert.ok(html.includes(`<section class="app web-app" data-web-state="${state}"`), state);
+    assert.doesNotMatch(html, /nativeSurface|wfr-|editor-app/);
+  }
+  assert.equal(new Set(hf.webStates.map(state => hf.renderWeb(state))).size, 4, 'four distinct states');
+  // The editor sidebar drops the Today group; the others keep it.
+  assert.match(hf.renderWeb('triggers'), /<h2 class="web-side-heading">Today<\/h2>/);
+  assert.doesNotMatch(hf.renderWeb('trigger-editor'), /<h2 class="web-side-heading">Today<\/h2>/);
+  assert.equal(hf.webRejectedCount(), 1);
+  assert.match(hf.renderWeb('incoming'), /<span class="web-count" aria-label="1 rejected">1<\/span>/);
+});
+
+test('web Incoming: filters, newest-first rows, selection and the metadata-only Rejected row', () => {
+  const { hf, click, route } = webHarness();
+  route('incoming');
+  const deliveries = Array.from(hf.webDeliveries);
+  const order = group => deliveries.filter(delivery => delivery.group === group).map(delivery => delivery.time);
+  assert.deepEqual(order('Today'), ['10:04', '10:02', '10:02', '07:41', '07:15'], 'Today is newest first');
+  assert.deepEqual(deliveries.filter(delivery => delivery.group === 'Earlier').map(delivery => delivery.when), ['Oct 24, 16:20', 'Oct 23, 18:05'], 'Earlier is newest first');
+  assert.deepEqual(Array.from(hf.webFilters, ([id]) => id), ['all', 'started', 'notstarted', 'rejected']);
+  const ids = filter => Array.from(hf.webVisibleDeliveries(filter), delivery => delivery.id);
+  assert.deepEqual(ids('all'), ['d1', 'd2', 'd3', 'd4', 'd5', 'd6', 'd7']);
+  assert.deepEqual(ids('started'), ['d2', 'd5', 'd6']);
+  assert.deepEqual(ids('notstarted'), ['d1', 'd3', 'd4']);
+  assert.deepEqual(ids('rejected'), ['d7']);
+  assert.deepEqual(Array.from(new Set(deliveries.map(delivery => delivery.status))).sort(), ['Duplicate', 'Filtered out', 'Queued', 'Rejected', 'Started run']);
+  let html = hf.renderWeb('incoming');
+  assert.deepEqual(Array.from(html.matchAll(/data-action="web-select:(d\d)"/g), match => match[1]), ids('all'));
+  assert.ok(html.indexOf('<h3>Today</h3>') < html.indexOf('<h3>Earlier</h3>'));
+  assert.match(html, /web-delivery is-selected" data-action="web-select:d2"/, 'the first started run is selected');
+  html = click('web-filter:rejected');
+  assert.equal(hf.webState().filter, 'rejected');
+  assert.deepEqual(Array.from(html.matchAll(/data-action="web-select:(d\d)"/g), match => match[1]), ['d7']);
+  assert.doesNotMatch(html, /<h3>Today<\/h3>/, 'an empty group has no heading');
+  assert.equal(hf.webState().selected, 'd7', 'the selection moves into the filtered list');
+  assert.match(html, /data-action="web-filter:rejected" aria-pressed="true"/);
+  // The Rejected inspector is metadata only.
+  assert.match(html, /data-web-no-payload>Payload not shown for rejected deliveries\. Only the metadata above is kept\./);
+  assert.doesNotMatch(html, /data-action="web-payload"|id="web-payload"/);
+  assert.ok(webText(html).includes("Signature didn't match: check the secret on the sender"));
+  assert.ok(webText(html).includes('Nothing was extracted: the delivery was rejected.'));
+  html = click('web-filter:all');
+  html = click('web-select:d4');
+  assert.equal(hf.webState().selected, 'd4');
+  assert.match(html, /<h2 id="dl-title">#2477 assigned to kevin<\/h2>/);
+  assert.ok(webText(html).includes('Conditions did not match: assignee.login was kevin, expected hainayanda'));
+  assert.match(html, /web-delivery is-selected" data-action="web-select:d4"/);
+  html = click('web-select:d1');
+  assert.ok(webText(html).includes('Active run for issue 2481: waits for the 10:02 run'));
+  assert.match(html, /<span class="web-sr"> \(did not pass\)<\/span>/);
+  // Conditions in the checks match the editor's condition count.
+  const seed = hf.webEditorSeed();
+  assert.ok(webText(click('web-select:d2')).includes(`Conditions matched, ${seed.conditions.length} of ${seed.conditions.length}`));
+  assert.match(click('web-select:d2'), /data-action="route:web\/run-failed">Open the run</);
+});
+
+test('web payloads are escaped JSON with no null literals and reveal resets', () => {
+  const { hf, click, route } = webHarness();
+  route('incoming');
+  for (const delivery of hf.webDeliveries) {
+    if (delivery.metadataOnly) { assert.equal(delivery.payload, undefined); continue; }
+    assert.doesNotMatch(delivery.payload, /\bnull\b/, delivery.id);
+    assert.doesNotThrow(() => JSON.parse(delivery.payload), delivery.id);
+  }
+  let html = click('web-payload');
+  assert.match(html, /aria-expanded="true" aria-controls="web-payload"/);
+  const body = /<pre[^>]*id="web-payload"[^>]*>([\s\S]*?)<\/pre>/.exec(html)?.[1];
+  assert.ok(body, 'the payload is shown');
+  assert.match(body, /&quot;action&quot;: &quot;assigned&quot;/);
+  assert.doesNotMatch(body, /"|<|\bnull\b/, 'escaped');
+  click('web-select:d6');
+  html = click('web-payload');
+  assert.match(html, /&quot;command&quot;: &quot;\/harflow&quot;/);
+  assert.equal(hf.webState().payloadOpen, true);
+  assert.equal(hf.webState().selected, 'd6');
+  html = click('web-select:d2');
+  assert.equal(hf.webState().payloadOpen, false, 'selecting closes the payload');
+  const original = hf.webDeliveries[1].payload;
+  hf.webDeliveries[1].payload = '{"title":"<img src=x onerror=alert(1)> & \\"q\\""}';
+  try {
+    html = click('web-payload');
+    assert.doesNotMatch(html, /<img/);
+    assert.match(html, /&lt;img src=x onerror=alert\(1\)&gt; &amp; /);
+  } finally { hf.webDeliveries[1].payload = original; }
+});
+
+test('web trigger editor: Task template, required actor condition, dirty state and Discard', () => {
+  const { hf, click, field, route } = webHarness();
+  route('trigger-editor');
+  const seed = hf.webEditorSeed();
+  assert.equal(seed.task, 'Fix #{issue.number}');
+  assert.equal(seed.key, 'issue.number');
+  let html = hf.renderWeb('trigger-editor');
+  assert.doesNotMatch(html, /ISSUE_BODY|Untrusted text/i);
+  assert.doesNotMatch(webText(html), /Untrusted/);
+  assert.match(html, /data-web-field="task" value="Fix #\{issue\.number\}"/);
+  assert.match(html, /data-web-field="key" value="issue\.number"/);
+  // The actor condition is required: no remove button, locked path and operator.
+  const actor = /<div class="web-form-row web-condition" data-condition="c1">[\s\S]*?<\/div>/.exec(html)[0];
+  assert.match(actor, /<span class="web-chip">Actor<\/span>/);
+  assert.match(actor, /value="sender\.login" aria-label="Condition path" readonly/);
+  assert.match(actor, /value="hainayanda"/);
+  assert.doesNotMatch(actor, /web-cond-remove/);
+  assert.match(actor, /Required/);
+  assert.equal((html.match(/data-action="web-cond-remove:/g) || []).length, 2);
+  assert.match(html, /aria-label="Remove condition assignee\.login"/);
+  assert.equal(hf.webState().dirty, false);
+  assert.match(html, /<button type="button" class="web-btn primary" data-action="web-run" >/);
+  assert.match(html, /data-action="web-discard" disabled/);
+  assert.match(html, /data-action="web-save" disabled/);
+  // An edit dirties the draft, disables Run, and Discard restores the seed.
+  field('input', 'task', { value: 'Fix #{issue.number} now' });
+  let state = hf.webState();
+  assert.equal(state.dirty, true);
+  assert.equal(state.draft.task, 'Fix #{issue.number} now');
+  assert.equal(state.baseline.task, 'Fix #{issue.number}');
+  html = click('web-cond-remove:c2');
+  state = hf.webState();
+  assert.deepEqual(Array.from(state.draft.conditions, condition => condition.id), ['c1', 'c3']);
+  assert.match(html, /Unsaved changes · Revision 4 · Triggers/);
+  assert.match(html, /data-action="web-run" disabled/, 'Run is disabled while dirty');
+  assert.doesNotMatch(html, /data-action="web-discard" disabled/);
+  assert.doesNotMatch(html, /web-cond-remove:c1/, 'the required actor condition offers no remove control');
+  html = click('web-cond-add');
+  assert.deepEqual(Array.from(hf.webState().draft.conditions, condition => condition.id), ['c1', 'c3', 'c4']);
+  field('input', 'cond-path', { id: 'c4', value: 'issue.state' });
+  assert.equal(hf.webState().draft.conditions.find(condition => condition.id === 'c4').path, 'issue.state');
+  field('change', 'enabled', { checked: false });
+  assert.equal(hf.webState().draft.enabled, false);
+  field('change', 'cond-op', { id: 'c3', value: 'equals' });
+  assert.equal(hf.webState().draft.conditions.find(condition => condition.id === 'c3').op, 'equals');
+  html = click('web-concurrency:cancel');
+  assert.equal(hf.webState().draft.concurrency, 'cancel');
+  html = click('web-discard');
+  state = hf.webState();
+  assert.equal(state.dirty, false);
+  assert.equal(JSON.stringify(state.draft), JSON.stringify(state.baseline));
+  assert.equal(JSON.stringify(state.draft), JSON.stringify(hf.webEditorSeed()));
+  assert.match(html, /data-action="web-run" >/);
+  // Save makes the draft the new baseline.
+  field('input', 'repository', { value: 'Harflow-Dev/Other' });
+  click('web-save');
+  assert.equal(hf.webState().dirty, false);
+  assert.equal(hf.webState().baseline.repository, 'Harflow-Dev/Other');
+});
+
+test('web trigger editor: other sources are not designed, and Reveal shows a fixed fake secret', () => {
+  const { hf, click, announcement, route } = webHarness();
+  route('trigger-editor');
+  let html = hf.renderWeb('trigger-editor');
+  assert.doesNotMatch(html, /data-web-source-note/);
+  assert.match(html, /data-action="web-source:github" aria-pressed="true"/);
+  for (const [id, label] of [['slack', 'Slack'], ['webhook', 'Webhook'], ['schedule', 'Schedule']]) {
+    html = click(`web-source:${id}`);
+    assert.match(html, new RegExp(`data-web-source-note>${label} source settings are not designed\\. Only GitHub is drawn\\.<`));
+    assert.match(html, new RegExp(`data-action="web-source:${id}" aria-pressed="true"`));
+    assert.doesNotMatch(html, /data-web-field="event"/);
+    assert.equal(hf.webState().dirty, false, 'switching the source view does not dirty the draft');
+  }
+  click('web-source:github');
+  assert.doesNotMatch(hf.renderWeb('trigger-editor'), new RegExp(hf.webSecret));
+  assert.match(hf.renderWeb('trigger-editor'), /••••••••••••••••/);
+  html = click('web-reveal');
+  assert.ok(html.includes(hf.webSecret));
+  assert.equal(hf.webSecret, 'whsec_7Qm2xk9ZpL4vTn8c');
+  assert.equal(announcement.textContent, 'Secret shown · fixed fake value');
+  assert.equal(hf.webState().reveal, true);
+  html = click('web-reveal');
+  assert.ok(!html.includes(hf.webSecret));
+  assert.equal(announcement.textContent, 'Secret hidden');
+  click('web-reveal');
+  hf.resetWeb();
+  assert.equal(hf.webState().reveal, false, 're-entry hides the secret');
+  assert.ok(!hf.renderWeb('trigger-editor').includes(hf.webSecret));
+});
+
+test('web manual launches only show toasts and never navigate to the macOS sheet', () => {
+  const { hf, click, announcement, navigations, route } = webHarness();
+  const notDesigned = 'Web command review is not designed · mock only';
+  for (const [state, action] of [['triggers', 'web-run'], ['trigger-editor', 'web-run'], ['run-failed', 'web-run-again']]) {
+    route(state);
+    announcement.textContent = '';
+    click(action);
+    assert.equal(announcement.textContent, notDesigned, `${state} ${action}`);
+  }
+  assert.deepEqual(navigations, [], 'no navigation happened');
+  assert.doesNotMatch(hf.renderWeb('run-failed') + hf.renderWeb('triggers') + hf.renderWeb('trigger-editor'), /setup-review|workflow-launch|Run workflow/);
+  click('web-mock:New session');
+  assert.equal(announcement.textContent, 'New session · mock only');
+  click('web-mock:Recovery options are not designed on the web · mock only');
+  assert.equal(announcement.textContent, 'Recovery options are not designed on the web · mock only');
+  route('triggers');
+  click('web-editor-tab');
+  assert.deepEqual(navigations.map(args => args.join('/')), ['workflow-editor/saved'], 'the Editor tab leaves the web family and says so');
+  assert.equal(announcement.textContent, 'The web editor is not designed · mock only');
+  // Clicks outside the web route are ignored.
+  navigations.length = 0;
+  hf.route = { theme: 'light', screen: 'tasks', state: 'populated' };
+  announcement.textContent = '';
+  click('web-run');
+  assert.equal(announcement.textContent, '');
+});
+
+test('resetWeb restores all web state', () => {
+  const { hf, click, field, route } = webHarness();
+  route('incoming');
+  click('web-filter:started');
+  click('web-select:d5');
+  click('web-payload');
+  click('web-source:slack');
+  click('web-reveal');
+  field('input', 'task', { value: 'changed' });
+  click('web-cond-add');
+  const dirty = hf.webState();
+  assert.notEqual(dirty.filter, 'all');
+  assert.equal(dirty.dirty, true);
+  hf.resetWeb();
+  assert.equal(JSON.stringify(hf.webState()), JSON.stringify({ filter: 'all', selected: 'd2', payloadOpen: false, reveal: false, source: 'github', draft: hf.webEditorSeed(), baseline: hf.webEditorSeed(), dirty: false }));
+  const first = hf.webStates.map(state => hf.renderWeb(state));
+  click('web-filter:rejected');
+  hf.resetWeb();
+  assert.deepEqual(hf.webStates.map(state => hf.renderWeb(state)), first, 'deterministic output after a reset');
+});
+
+test('web and setup-run markup stay inside their own states', () => {
+  const hf = loadDesignRuntime();
+  const web = /web-app|web-sidebar|data-web-field|web-delivery|web-segmented/;
+  const run = /data-setup-run|wfr-setup|wfr-badge-elapsed|wfr-run-again/;
+  for (const family of hf.screens) for (const state of family.states) {
+    hf.route = { theme: 'light', screen: family.id, state };
+    if (family.id === 'workflow-run') hf.resetWorkflowRun(hf.route);
+    if (family.id === 'workflow-editor') hf.editorController.reset(state);
+    if (family.id === 'web') hf.resetWeb();
+    const html = renderers[family.id](hf, state);
+    assert.equal(web.test(html), family.id === 'web', `${family.id}/${state} web markup`);
+    assert.equal(run.test(html), family.id === 'workflow-run' && hf.setupRunStates.includes(state), `${family.id}/${state} setup run markup`);
+  }
+  hf.editorController.reset('saved');
+});
+
 test('council editor markup and run markup stay inside their own states', () => {
   const hf = loadDesignRuntime();
   const editorMarkup = /editor-council|add:council|data-council-(member|field|card|heading|root)/;
