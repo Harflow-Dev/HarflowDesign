@@ -30,6 +30,7 @@ function loadDesignRuntime({ captureEvents = false, querySelectorOverride, query
     document,
     setTimeout,
     clearTimeout,
+    CSS: { escape: value => String(value) },
     ...(history ? { history } : {}),
   });
   context.window = context;
@@ -2414,7 +2415,8 @@ test('statistics Harnesses list markup: kind-slot dot, names, plural model, no S
   assert.match(html, /<strong>OpenCode<\/strong>/);
   assert.doesNotMatch(html, /Opencode/);
   assert.match(html, /<strong>Antigravity<\/strong>/);
-  assert.match(html, /1 execution|18 executions/);
+  assert.match(html, /<span class="stat-ellipsis">18 executions · 1 model<\/span>/, 'Antigravity: 18 executions, one model');
+  assert.match(html, /<span class="stat-ellipsis">(?:\d+) executions · 3 models<\/span>/);
   assert.match(html, /· 1 model</);
   assert.match(html, /· 3 models</);
   assert.doesNotMatch(html, /Show all|stat-more-runs|stat-all-tasks|View node breakdown|stat-nodes:/);
@@ -2424,9 +2426,13 @@ test('statistics Harnesses list markup: kind-slot dot, names, plural model, no S
   assert.doesNotMatch(html, /stat-status|stat-when/, 'model sub-rows have no status or time slot');
   // Workflow and task rows keep the glyph in the kind slot.
   assert.match(hf.statisticsBody('overview', {}), /<span class="stat-kind"><svg/);
-  // A single-execution model reads in the singular.
-  const singular = hf.statisticsModel({ list: 'harnesses', range: 7, open }).list.rows;
-  for (const row of singular) for (const child of row.children) assert.match(child.meta, /^\d+ executions? · /);
+  // Every computed count is pluralised exactly. The fixtures never reach 1 execution at any range (the smallest is 4 at
+  // 7 days), so the singular "1 execution" path is not reachable through the model and is not asserted here.
+  for (const range of [7, 30, 90]) for (const row of hf.statisticsModel({ list: 'harnesses', range, open }).list.rows) {
+    const noun = n => `${n} execution${n === 1 ? '' : 's'}`;
+    assert.ok(row.meta.startsWith(`${noun(row.executions)} · `), `${range}/${row.name}: ${row.meta}`);
+    for (const child of row.children) { assert.ok(child.executions >= 4, `${range}/${child.model}`); assert.ok(child.meta.startsWith(`${noun(child.executions)} · `), child.meta); }
+  }
   assert.equal(hf.statisticsModel({ list: 'bogus' }).listKind, 'workflows');
 });
 
@@ -2993,6 +2999,214 @@ test('council editor focus follows add, remove and toggle', () => {
   assert.equal(focused.at(-1), '.editor-app [data-action="editor-council-add"]', 'removing the only card focuses Add member');
   editor.councilAdd();
   assert.match(focused.at(-1), /^\.editor-app #council-name-m\d+$/);
+});
+
+const councilFocusDom = hf => {
+  const focused = [];
+  let rendering = false;
+  const find = selector => {
+    if (rendering || !selector.startsWith('.editor-app ')) return undefined;
+    rendering = true;
+    let html;
+    try { html = hf.renderEditor(hf.route.state); } finally { rendering = false; }
+    const inner = selector.slice('.editor-app '.length);
+    const tags = html.match(/<(?:button|input|select|textarea)\b[^>]*>/g) || [];
+    const attrs = [...inner.matchAll(/\[([\w-]+)="([^"]*)"\]/g)].map(m => `${m[1]}="${m[2]}"`);
+    const byId = /^#([\w-]+)$/.exec(inner);
+    const tag = tags.find(t => byId ? t.includes(` id="${byId[1]}"`) : attrs.length && attrs.every(a => t.includes(a)));
+    if (!tag) return undefined;
+    const disabled = /\sdisabled(?=[\s>=])/.test(tag);
+    return { disabled, focus: () => { assert.equal(disabled, false, `focus() on a disabled control: ${selector}`); focused.push(inner); } };
+  };
+  return { focused, find };
+};
+
+test('Council run states render Pause and Cancel run while running and neither once failed', () => {
+  const hf = loadDesignRuntime();
+  for (const state of ['council', 'council-consensus', 'council-member-left']) {
+    const html = councilRun(hf, state);
+    assert.match(html, /data-action="wr-pause"/, `${state} Pause`);
+    assert.match(html, /data-action="wr-cancel"/, `${state} Cancel run`);
+  }
+  const failed = councilRun(hf, 'council-failed');
+  assert.doesNotMatch(failed, /wr-pause|wr-cancel|>Pause<|Cancel run/);
+});
+
+test('Council collapsed cards describe themselves with a unique excerpt that carries the name error', () => {
+  const hf = loadDesignRuntime();
+  for (const route of hf.councilEditorRoutes) {
+    councilRoute(hf, route);
+    const html = hf.renderEditor(route);
+    const buttons = html.match(/<button[^>]*data-council-card="[^"]+"[^>]*>/g) || [];
+    assert.ok(buttons.length >= 1, route);
+    const ids = buttons.map(button => /aria-describedby="([^"]+)"/.exec(button)?.[1]);
+    assert.ok(ids.every(Boolean), `${route} every collapsed card has aria-describedby`);
+    assert.equal(new Set(ids).size, ids.length, 'unique ids');
+    for (const id of ids) assert.equal((html.match(new RegExp(` id="${id}"`, 'g')) || []).length, 1, `${id} resolves exactly once`);
+  }
+  councilRoute(hf, 'council-name-errors');
+  const html = hf.renderEditor('council-name-errors');
+  for (const id of ['m2', 'm3']) assert.match(html, new RegExp(`class="editor-council-excerpt is-error" id="council-excerpt-${id}" data-council-excerpt>Another member is named QA\\.`));
+  assert.match(html, /aria-describedby="council-excerpt-m2"/);
+  assert.match(html, /id="council-excerpt-m1" data-council-excerpt>You are the architect/);
+});
+
+test('Council Discard, and Add then Discard, leave exactly one card open: the first member', () => {
+  const hf = loadDesignRuntime();
+  const openCards = html => (html.match(/class="editor-council-card is-open"/g) || []).length;
+  const editor = councilRoute(hf, 'council-name-errors');
+  assert.equal(editor.snapshot().councilUi.council.open, 'm4');
+  hf.renderEditor('council-name-errors');
+  let snap = editor.discard();
+  assert.equal(snap.councilUi.council.open, 'm1');
+  let html = hf.renderEditor('council-name-errors');
+  assert.equal(openCards(html), 1);
+  assert.match(html, /aria-expanded="true"[^>]*aria-label="Collapse Architect"|aria-label="Collapse Architect"[^>]*aria-expanded="true"/);
+  editor.reset('council-config');
+  hf.renderEditor('council-config');
+  snap = editor.councilAdd();
+  assert.equal(snap.councilUi.council.open, 'm4');
+  snap = editor.discard();
+  assert.equal(snap.councilUi.council.open, 'm1', 'the removed member’s card is not left open');
+  html = hf.renderEditor('council-config');
+  assert.equal(openCards(html), 1);
+  assert.equal(councilFields(snap).members.length, 3);
+  // An open card that still exists stays open.
+  editor.councilToggle('m2');
+  editor.councilSet('m2', 'name', 'Frontend lead');
+  assert.equal(editor.discard().councilUi.council.open, 'm2');
+});
+
+test('Council-consensus Review lane status matches the graph, and other council states keep it pending', () => {
+  const stage = { innerHTML: '', querySelector: () => null };
+  const hf = loadDesignRuntime({ captureEvents: true, querySelectorOverride: selector => selector === '#stage' ? stage : undefined });
+  hf.route = { theme: 'light', screen: 'workflow-run', state: 'council-consensus' };
+  const select = (state, node) => {
+    hf.route = { theme: 'light', screen: 'workflow-run', state }; hf.resetWorkflowRun(hf.route);
+    const target = { dataset: { action: `wr-select:${node}` }, isConnected: true, closest: selector => selector.startsWith('[data-action^="wr-"') ? target : null };
+    hf.__dispatchDesignEvent({ type: 'click', target, preventDefault() {}, stopImmediatePropagation() {} });
+    return stage.innerHTML;
+  };
+  const consensus = select('council-consensus', 'review');
+  assert.match(consensus, /<strong>Review<\/strong>/);
+  assert.match(consensus, /<article class="parallel-lane running" data-task-id="workflow-review-attempt-1">/);
+  for (const state of ['council', 'council-member-left', 'council-failed']) {
+    assert.match(select(state, 'review'), /<article class="parallel-lane pending" data-task-id="workflow-review-attempt-1">/, `${state} Review stays pending`);
+  }
+  assert.match(select('council-consensus', 'planning'), /<article class="parallel-lane completed"/, 'Plan is done in council states');
+});
+
+test('Council changing a member harness resets its model to Default', () => {
+  const hf = loadDesignRuntime();
+  const editor = councilRoute(hf, 'council-config');
+  assert.equal(councilFields(editor.snapshot()).members[0].model, 'Opus');
+  const snap = editor.councilSet('m1', 'harness', 'codex');
+  assert.equal(councilFields(snap).members[0].harness, 'codex');
+  assert.equal(councilFields(snap).members[0].model, '');
+  hf.renderEditor('council-config');
+  assert.match(hf.renderEditor('council-config'), /Model for Architect: Default/);
+  assert.equal(councilFields(editor.councilSet('m2', 'harness', 'vibe')).members[1].model, '');
+});
+
+test('Council focus after an eligibility change never lands on a disabled or missing control', () => {
+  let dom;
+  const hf = loadDesignRuntime({ querySelectorOverride: selector => dom?.find(selector) });
+  dom = councilFocusDom(hf);
+  // Collapsed: focus goes to the card toggle.
+  let editor = councilRoute(hf, 'council-too-few');
+  editor.councilRemove('m1');
+  dom.focused.length = 0;
+  let snap = editor.councilSet('m2', 'optional', false);
+  assert.equal(councilFields(snap).facilitator, 'm2', 'the member became the facilitator, so its checkbox is disabled');
+  assert.deepEqual(dom.focused, ['[data-action="editor-council-toggle:m2"]']);
+  // Expanded: focus goes to the Name input.
+  editor = councilRoute(hf, 'council-too-few');
+  editor.councilRemove('m1');
+  editor.councilToggle('m2');
+  dom.focused.length = 0;
+  editor.councilSet('m2', 'optional', false);
+  assert.deepEqual(dom.focused, ['#council-name-m2']);
+  // A control that stays enabled keeps focus.
+  editor = councilRoute(hf, 'council-config');
+  editor.councilToggle('m3');
+  dom.focused.length = 0;
+  editor.councilSet('m3', 'optional', false);
+  assert.deepEqual(dom.focused, ['[data-council-member="m3"][data-council-field="optional"]']);
+  // The stub itself rejects disabled and missing targets.
+  councilRoute(hf, 'council-config');
+  assert.equal(dom.find('.editor-app [data-council-member="m1"][data-council-field="optional"]').disabled, true);
+  assert.equal(dom.find('.editor-app #council-name-nope'), undefined);
+  assert.throws(() => dom.find('.editor-app [data-council-member="m1"][data-council-field="optional"]').focus(), /disabled control/);
+});
+
+test('an added Council node has the seeded node’s dimensions', () => {
+  const hf = loadDesignRuntime();
+  const editor = councilRoute(hf, 'council-config');
+  assert.deepEqual(JSON.parse(JSON.stringify(hf.councilNodeSize)), { width: 240, height: 108 });
+  const nodes = () => editor.snapshot().draft.nodes;
+  const seeded = nodes().find(node => node.id === 'council');
+  assert.deepEqual([seeded.width, seeded.height], [240, 108]);
+  const snap = editor.addNode('council');
+  const added = nodes().find(node => node.id === snap.selected.id);
+  assert.notEqual(added.id, 'council');
+  assert.deepEqual([added.width, added.height], [seeded.width, seeded.height]);
+  const other = editor.addNode('planning'), plain = nodes().find(node => node.id === other.selected.id);
+  assert.notEqual(plain.height, seeded.height, 'other node kinds keep their own size');
+});
+
+test('Council Add member is the pill button and the collapsed summary sits on the title line', () => {
+  const hf = loadDesignRuntime();
+  councilRoute(hf, 'council-config');
+  const html = hf.renderEditor('council-config');
+  assert.match(html, /<button type="button" class="editor-inspector-secondary editor-council-add" data-action="editor-council-add">/);
+  const css = fs.readFileSync(path.join(root, 'styles/workflow-editor-proposals.css'), 'utf8');
+  const rule = css.split('\n').find(line => /\.editor-council-add \{/.test(line));
+  assert.match(rule, /border-radius: 9999px/, 'the pill radius');
+  assert.match(css, /\.editor-council-add:hover \{ background: var\(--pillFill\)/);
+  const card = html.match(/<button[^>]*data-council-card="m2"[\s\S]*?<\/button>/)[0];
+  const line = /<span class="editor-council-line">([\s\S]*?)<\/span><span class="editor-council-excerpt/.exec(card)[1];
+  assert.match(line, /^<span class="editor-council-title[^"]*" data-council-title>Frontend<\/span>/, 'title first');
+  assert.match(line, /<span class="editor-council-harness"><span class="backend-dot codex" aria-hidden="true"><\/span><span class="editor-council-harness-text">Codex · Default · Medium<\/span><\/span>$/, 'harness summary ends the title line');
+  assert.ok(card.indexOf('editor-council-harness') < card.indexOf('editor-council-excerpt'), 'the excerpt is on its own line below');
+  assert.match(css, /\.editor-council-line \{[^}]*flex-wrap: nowrap/);
+});
+
+test('Council document input and change listeners edit the draft and gate Save', () => {
+  const hf = loadDesignRuntime({ captureEvents: true });
+  const editor = councilRoute(hf, 'council-config');
+  const app = { querySelector: () => null, querySelectorAll: () => [] };
+  const control = dataset => {
+    const el = { id: '', dataset, value: '', checked: false, matches: () => false, closest: selector => selector === '[data-council-field]' ? el : selector === '.editor-app' ? app : null };
+    return el;
+  };
+  const fire = (type, el) => hf.__dispatchDesignEvent({ type, target: el, preventDefault() {}, stopImmediatePropagation() {} });
+  let name = control({ councilMember: 'm2', councilField: 'name' });
+  name.value = 'Frontend lead'; fire('input', name);
+  let snap = editor.snapshot();
+  assert.equal(councilFields(snap).members[1].name, 'Frontend lead');
+  assert.deepEqual([snap.dirty, snap.canSave, snap.canRun], [true, true, false]);
+  name.value = ''; fire('input', name);
+  snap = editor.snapshot();
+  assert.equal(councilFields(snap).members[1].name, '', 'the invalid edit is kept');
+  assert.deepEqual([snap.dirty, snap.canSave, snap.canRun], [true, false, false], 'Save is disabled while a name is blank');
+  const question = control({ councilMember: undefined, councilField: 'question' });
+  name.value = 'Frontend'; fire('input', name);
+  question.value = '  '; fire('input', question);
+  assert.equal(editor.snapshot().canSave, false, 'a blank question also blocks Save');
+  question.value = 'New question'; fire('input', question);
+  assert.equal(councilFields(editor.snapshot()).question, 'New question');
+  // change events: the Optional checkbox and the harness select.
+  const optional = control({ councilMember: 'm3', councilField: 'optional' });
+  optional.checked = false; fire('change', optional);
+  assert.equal(councilFields(editor.snapshot()).members[2].optional, false);
+  const harness = control({ councilMember: 'm2', councilField: 'harness' });
+  harness.value = 'vibe'; fire('change', harness);
+  assert.equal(councilFields(editor.snapshot()).members[1].harness, 'vibe');
+  // Controls outside the editor are ignored.
+  const outside = control({ councilMember: 'm1', councilField: 'name' });
+  outside.closest = selector => selector === '[data-council-field]' ? outside : null;
+  outside.value = 'Ignored'; fire('input', outside);
+  assert.equal(councilFields(editor.snapshot()).members[0].name, 'Architect');
 });
 
 test('council editor markup and run markup stay inside their own states', () => {
