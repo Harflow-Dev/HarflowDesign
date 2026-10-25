@@ -3984,8 +3984,10 @@ test('web payloads are escaped JSON with no null literals and reveal resets', ()
   hf.webDeliveries[1].payload = '{"title":"<img src=x onerror=alert(1)> & \\"q\\""}';
   try {
     html = click('web-payload');
-    assert.doesNotMatch(html, /<img/);
-    assert.match(html, /&lt;img src=x onerror=alert\(1\)&gt; &amp; /);
+    // Only the payload region is checked: the title bar emblem and the appearance buttons are legitimate <img> elements.
+    const payload = /<pre[^>]*id="web-payload"[^>]*>([\s\S]*?)<\/pre>/.exec(html)[1];
+    assert.doesNotMatch(payload, /<img/);
+    assert.match(payload, /&lt;img src=x onerror=alert\(1\)&gt; &amp; /);
   } finally { hf.webDeliveries[1].payload = original; }
 });
 
@@ -4197,18 +4199,145 @@ test('teardown completion moves focus to the close button and the command disclo
   assert.deepEqual(focused, ['[data-action="wr-command"]', '[data-action="wr-command"]']);
 });
 
-test('the run-failed sidebar shows the run being viewed and the other web states keep the Main sidebar', () => {
+const webSidebar = html => /<aside class="web-sidebar"[\s\S]*?<\/aside>/.exec(html)[0];
+const webSidebarRows = html => {
+  const sections = webSidebar(html).split(/<h2 class="web-side-heading">/).slice(1).map(part => ({ name: part.slice(0, part.indexOf('</h2>')), body: part }));
+  const row = /<div class="web-task-row"><span class="task-status (\w+)" aria-hidden="true"><\/span><div class="web-task-text"><strong>([^<]*)<\/strong><span class="web-task-meta">(?:<span class="backend-dot (\w+)" aria-hidden="true"><\/span>)?<span>([^<]*)<\/span><\/span><\/div><span class="web-time">([^<]*)<\/span>(?:<span class="visually-hidden">(\w+)<\/span>)?<\/div>/g;
+  return Object.fromEntries(sections.filter(section => section.name !== 'Workflows').map(section => [section.name, Array.from(section.body.matchAll(row), match => ({ status: match[1], title: match[2], dot: match[3] || null, meta: match[4], time: match[5], sr: match[6] || null }))]));
+};
+
+test('each web state has its own board sidebar rows with status, dots, times and screen-reader words', () => {
   const { hf } = webHarness();
-  const side = html => webText(html.slice(html.indexOf('web-sidebar'), html.indexOf('web-detail')));
-  const failed = side(hf.renderWeb('run-failed'));
-  assert.match(failed, /Running\|Fix #2488\|Claude · harflow-mac\|03:12\|Queued\|Fix #2488\|Pending · waits for the run above\|now\|Today\|Fix #2481\|Claude · harflow-mac\|8m\|/);
-  assert.doesNotMatch(failed, /Address review on #412/);
-  for (const state of ['triggers', 'trigger-editor', 'incoming']) {
-    const text = side(hf.renderWeb(state));
-    assert.match(text, /Running\|Fix #2481\|Claude · harflow-mac\|03:12\|Queued\|Fix #2481\|Pending · waits for the run above\|now\|/, state);
-    assert.doesNotMatch(text, /2488/, state);
+  const run = (issue, time) => [{ status: 'running', title: `Fix #${issue}`, dot: 'claude', meta: 'Claude · harflow-mac', time, sr: null }];
+  const queued = issue => [{ status: 'queued', title: `Fix #${issue}`, dot: null, meta: 'Pending · waits for the run above', time: 'now', sr: null }];
+  const review = { status: 'completed', title: 'Address review on #412', dot: 'codex', meta: 'Codex · harflow-mac', time: '2h', sr: 'completed' };
+  const expected = {
+    triggers: { Running: run(2481, '03:12'), Queued: queued(2481), Today: [review] },
+    'trigger-editor': { Running: run(2481, '03:12'), Queued: queued(2481) },
+    incoming: { Running: run(2481, '03:12'), Queued: queued(2481) },
+    'run-failed': { Running: run(2488, '01:40'), Queued: queued(2488), Today: [{ status: 'failed', title: 'Fix #2481', dot: 'claude', meta: 'Claude · harflow-mac', time: '8m', sr: 'failed' }, review] }
+  };
+  for (const [state, want] of Object.entries(expected)) assert.equal(JSON.stringify(webSidebarRows(hf.renderWeb(state))), JSON.stringify(want), state);
+  assert.doesNotMatch(webText(webSidebar(hf.renderWeb('run-failed'))), /03:12/, 'run-failed shows 01:40, not 03:12');
+  for (const state of hf.webStates) {
+    const rows = Object.values(webSidebarRows(hf.renderWeb(state))).flat();
+    for (const item of rows.filter(item => item.status === 'queued')) assert.equal(item.dot, null, `${state} queued rows have no harness dot`);
+    for (const item of rows.filter(item => item.status !== 'queued')) assert.ok(item.dot, `${state} ${item.title}`);
+    assert.match(hf.renderWeb(state), /<span class="task-status running" aria-hidden="true">/);
   }
-  assert.match(side(hf.renderWeb('triggers')), /Today\|Address review on #412\|Codex · harflow-mac\|2h\|/);
+});
+
+test('web sidebar current-page markers and workflow rows', () => {
+  const { hf } = webHarness();
+  const current = html => Array.from(webSidebar(html).matchAll(/<button[^>]*aria-current="page"[^>]*>[\s\S]*?<span class="web-fill">([^<]*)<\/span>/g), match => match[1]);
+  assert.deepEqual(current(hf.renderWeb('triggers')), ['Fix assigned bug']);
+  assert.deepEqual(current(hf.renderWeb('trigger-editor')), ['Fix assigned bug']);
+  assert.deepEqual(current(hf.renderWeb('incoming')), ['Incoming'], 'Incoming is current only on the incoming state');
+  assert.deepEqual(current(hf.renderWeb('run-failed')), [], 'no item is current on run-failed');
+  for (const state of ['triggers', 'trigger-editor', 'run-failed']) assert.doesNotMatch(webSidebar(hf.renderWeb(state)), /web-side-item is-selected" data-action="route:web\/incoming"/, state);
+  for (const state of hf.webStates) {
+    const html = webSidebar(hf.renderWeb(state));
+    assert.match(html, /data-action="route:web\/incoming"/);
+    assert.match(html, /<button type="button" class="web-side-item(?: is-selected)?" data-action="route:web\/triggers"(?: aria-current="page")?><span class="web-side-glyph"><svg[\s\S]*?<\/svg><\/span><span class="web-fill">Fix assigned bug<\/span>/, `${state} Fix assigned bug routes to the triggers state`);
+    assert.equal((html.match(/data-action="route:web\/triggers"/g) || []).length, 1);
+    assert.match(html, /<span class="web-count" aria-label="1 rejected">1<\/span>/);
+  }
+  const workflows = state => Array.from(webSidebar(hf.renderWeb(state)).matchAll(/class="web-side-item[^"]*" data-action="([^"]+)"[^>]*><span class="web-side-glyph">[\s\S]*?<span class="web-fill">([^<]*)<\/span>/g), match => [match[1], match[2]]).filter(([, label]) => label !== 'Incoming');
+  assert.deepEqual(workflows('triggers'), [['route:web/triggers', 'Fix assigned bug'], ['web-mock:Address review comments', 'Address review comments'], ['web-mock:Implement and review', 'Implement and review']]);
+  assert.deepEqual(workflows('incoming').map(([action]) => action), ['route:web/triggers', 'web-mock:Address review comments', 'web-mock:Draft release notes']);
+  assert.deepEqual(workflows('run-failed').map(([, label]) => label), ['Fix assigned bug', 'Address review comments']);
+  assert.match(webSidebar(hf.renderWeb('triggers')), /<span class="web-side-glyph"><svg[^>]*><path d="M1\.8 8\.2 3\.6 2\.6/, 'Incoming has the inbox glyph');
+});
+
+test('web sidebar controls, labels and the disabled search field', () => {
+  const { hf } = webHarness();
+  const html = webSidebar(hf.renderWeb('triggers'));
+  assert.match(html, /<button type="button" class="web-new-session" data-action="web-mock:New session" aria-label="New session, Command N">/);
+  assert.match(html, /<kbd aria-hidden="true">⌘N<\/kbd>/);
+  assert.match(html, /<input type="search" disabled placeholder="Search loaded history" aria-label="Search loaded history">/);
+  assert.doesNotMatch(html, /<input[^>]*\sid=/, 'the search field has no id');
+  assert.match(html, /<button type="button" class="web-filter" data-action="web-mock:Harness filter is not designed on the web" aria-label="Filter tasks by harness, All harnesses">/);
+  assert.equal((html.match(/class="web-filter-dots"[\s\S]*?<\/span><\/span>/)[0].match(/backend-dot (\w+)/g) || []).join('|'), 'backend-dot claude|backend-dot codex|backend-dot opencode');
+  assert.match(html, /<div class="web-side-heading-row"><h2 class="web-side-heading">Workflows<\/h2><button type="button" class="web-side-add" data-action="web-mock:New workflow" aria-label="New workflow">/);
+  assert.match(html, /<button type="button" class="web-gear" data-action="web-mock:Settings" aria-label="Settings"><img src="assets\/symbols\/gearshape-16pt-2x\.png" alt=""><\/button>/);
+  assert.match(html, /<div class="web-sidebar-foot"><div class="appearance-control" role="group" aria-label="Appearance">/);
+  assert.match(html, /<nav class="web-sidebar-list" aria-label="Workflows and runs">/);
+  assert.equal((html.match(/<h2 class="web-side-heading">/g) || []).length, 4, 'Workflows, Running, Queued, Today');
+  assert.match(html, /<div class="web-sidebar-foot">[\s\S]*<\/aside>$/, 'the footer closes the sidebar');
+  // Status marks and glyphs are decorative.
+  assert.ok((html.match(/<span class="task-status \w+" aria-hidden="true">/g) || []).length === 3);
+  assert.ok((html.match(/<svg[^>]*aria-hidden="true"/g) || []).length >= 8);
+});
+
+test('web title bar has the Hide sidebar button, the Harflow emblem and Connected, and no traffic lights', () => {
+  const { hf } = webHarness();
+  for (const state of hf.webStates) {
+    const html = hf.renderWeb(state);
+    assert.doesNotMatch(html, /window-dots|class="titlebar"/, `${state} has no macOS traffic lights`);
+    assert.match(html, /<div class="web-titlebar web-titlebar-side"><button type="button" class="web-tbtn" data-action="web-mock:Hide sidebar" aria-label="Hide sidebar">/);
+    const bar = /<div class="web-titlebar web-titlebar-detail">[\s\S]*?<\/div>/.exec(html)[0];
+    assert.match(bar, /<span class="web-brand" role="group" aria-label="Harflow">/);
+    assert.match(bar, /<span class="window-emblem" aria-hidden="true"><img src="assets\/branding\/menubarTemplate\.png" srcset="assets\/branding\/menubarTemplate@2x\.png 2x" alt="" width="20" height="20"><\/span>/, 'the emblem keeps its img for the file:// fallback');
+    assert.match(bar, /<span class="web-brand-name">Harflow<\/span>/);
+    assert.ok(bar.includes(hf.connectionIndicator('web', 'connected')), 'the Connected indicator');
+    assert.match(hf.connectionIndicator('web', 'connected'), /Connected/, 'the indicator names its state');
+    assert.ok(html.indexOf('web-titlebar-detail') > html.indexOf('</aside>'), `${state} the brand bar sits in the detail pane`);
+  }
+});
+
+test('web sidebar is isolated from macOS hooks, ids and fixtures', () => {
+  const { hf } = webHarness();
+  const banned = ['filter', 'select-task'];
+  for (const state of hf.webStates) {
+    const html = hf.renderWeb(state);
+    for (const [, action] of html.matchAll(/data-action="([^"]*)"/g)) {
+      const name = action.split(':')[0];
+      assert.ok(!banned.includes(name), `${state}: ${action}`);
+      if (name === 'route') assert.match(action, /^route:web\//, `${state}: ${action}`);
+      assert.ok(!/^route:(settings|new-session|workflow-editor)/.test(action), `${state}: ${action}`);
+      assert.ok(name.startsWith('web-') || name === 'route', `${state}: ${action}`);
+    }
+    assert.ok(/data-action="web-filter:/.test(html) === (state === 'incoming'), `${state} keeps only its own web-filter segments`);
+    const ids = Array.from(html.matchAll(/\sid="([^"]+)"/g), match => match[1]);
+    assert.equal(new Set(ids).size, ids.length, `${state} ids are unique`);
+    assert.ok(!ids.includes('task-search') && !ids.includes('task-list'), state);
+    assert.doesNotMatch(html, /task-filter|id="task-/, state);
+    for (const text of ['Review session persistence', 'Session reliability', 'Development workflow', 'Review persistence', 'Verify recovery', 'fixture-']) assert.ok(!html.includes(text), `${state} leaks ${text}`);
+  }
+});
+
+test('the appearance control says device on the web and Mac elsewhere', () => {
+  const hf = loadDesignRuntime();
+  assert.match(hf.appearanceControl({ web: true }), /title="System — follows this device"/);
+  assert.doesNotMatch(hf.appearanceControl({ web: true }), /this Mac/);
+  assert.match(hf.appearanceControl(), /title="System — follows this Mac"/);
+  assert.match(hf.appearanceControl({}), /follows this Mac/);
+  assert.doesNotMatch(hf.appearanceControl(), /this device/);
+  for (const state of hf.webStates) {
+    assert.match(hf.renderWeb(state), /follows this device/);
+    assert.doesNotMatch(hf.renderWeb(state), /follows this Mac/);
+  }
+  hf.route = { theme: 'light', screen: 'tasks', state: 'populated' };
+  assert.match(hf.sidebar('populated'), /follows this Mac/);
+});
+
+test('every web sidebar and title bar mock control shows a toast and never navigates', () => {
+  const { hf, click, announcement, navigations, route } = webHarness();
+  for (const state of hf.webStates) {
+    route(state);
+    const shell = hf.renderWeb(state);
+    const mocks = Array.from(new Set(Array.from(webSidebar(shell).matchAll(/data-action="(web-mock:[^"]+)"/g), match => match[1]).concat(Array.from(/<div class="web-titlebar web-titlebar-side">[\s\S]*?<\/div>/.exec(shell)[0].matchAll(/data-action="(web-mock:[^"]+)"/g), match => match[1]))));
+    assert.ok(mocks.includes('web-mock:New session') && mocks.includes('web-mock:Hide sidebar') && mocks.includes('web-mock:New workflow') && mocks.includes('web-mock:Settings'), state);
+    for (const action of mocks) {
+      announcement.textContent = '';
+      click(action);
+      const name = action.slice('web-mock:'.length);
+      assert.equal(announcement.textContent, name.includes('mock only') ? name : `${name} · mock only`, `${state} ${action}`);
+    }
+  }
+  assert.deepEqual(navigations, [], 'mock controls never navigate');
+  // Incoming is a real route and keeps the web family.
+  assert.match(webSidebar(hf.renderWeb('triggers')), /data-action="route:web\/incoming"/);
 });
 
 test('web delivery fixtures: the Rejected workflow, Open the run, and Reveal semantics', () => {
