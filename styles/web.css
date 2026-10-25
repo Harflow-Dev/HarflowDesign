@@ -1,25 +1,14 @@
 /* Exploratory Harflow web family (HarflowWeb#1, HarflowWeb#2). A fluid web shell with no browser chrome. */
 .app.web-app { display: flex; flex-direction: row; align-items: stretch; width: 1200px; min-width: 1000px; height: 740px; min-height: 620px; color: var(--primaryText); background: var(--windowBG); font-size: 13px; line-height: 1.35; }
-.web-app svg { flex: none; width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.web-app svg:not(.web-glyph) { flex: none; width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
 .web-app h2, .web-app h3 { margin: 0; font-weight: 600; }
 .web-app button { font: inherit; color: inherit; }
 .web-app :is(button, input, select, [tabindex]):focus-visible { outline: 2px solid var(--accentLink); outline-offset: 1px; }
-.web-sidebar { display: flex; flex: 0 0 240px; flex-direction: column; min-height: 0; border-right: 1px solid var(--hairline); background: var(--sidebarBG); }
-.web-sidebar-head { display: flex; flex-direction: column; gap: 8px; padding: 14px 12px 8px; }
-.web-new { display: flex; align-items: center; gap: 8px; }
-.web-hint { color: var(--tertiaryText); font-size: 11px; }
-.web-search { padding: 6px 10px; border-radius: 8px; background: var(--neutralFill); color: var(--tertiaryText); }
-.web-sidebar-list { display: flex; flex: 1; flex-direction: column; gap: 2px; min-height: 0; padding: 4px 8px 12px; overflow: auto; }
 .web-app h2.web-side-heading { margin: 12px 6px 2px; color: var(--tertiaryText); font-size: 11px; font-weight: 600; }
 .web-side-item { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border: 0; border-radius: 8px; background: transparent; text-align: left; cursor: pointer; font-weight: 500; }
 .web-side-item.is-selected { background: var(--selectedRow); }
 .web-count { min-width: 18px; padding: 0 6px; border-radius: 9px; background: var(--warningBG); color: var(--warningFG); font-size: 11px; font-weight: 600; text-align: center; }
-.web-run-row { display: flex; align-items: flex-start; gap: 8px; padding: 6px 8px; }
-.web-run-row div { display: flex; flex: 1; flex-direction: column; min-width: 0; }
-.web-run-row strong { font-weight: 500; }
-.web-run-row span, .web-time { color: var(--secondaryText); font-size: 12px; }
 .web-time { color: var(--tertiaryText); font-variant-numeric: tabular-nums; }
-.web-sidebar-foot { padding: 10px 12px; border-top: 1px solid var(--hairline); color: var(--tertiaryText); font-size: 11px; }
 .web-detail { display: flex; flex: 1; flex-direction: column; min-width: 0; min-height: 0; background: var(--inspectorFill); }
 .web-header { display: flex; flex: none; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--hairline); background: var(--windowBG); }
 .web-title { display: flex; flex: 1; flex-direction: column; gap: 2px; min-width: 0; }
@@ -173,3 +162,51 @@
   .web-edge { flex: 0 0 16px; width: 1.5px; height: 16px; align-self: center; }
   .web-node.terminal { align-self: center; }
 }
+
+/* Sidebar and title bar, following the canvas boards. The sidebar width approximates the macOS sidebar. */
+.web-sidebar { box-sizing: border-box; display: flex; flex: 0 0 272px; flex-direction: column; min-height: 0; border-right: 1px solid var(--hairline); background: color-mix(in srgb, var(--windowBG) 50%, var(--sidebarBG)); }
+.web-titlebar { display: flex; flex: none; align-items: center; box-sizing: border-box; height: 40px; padding: 0 12px; background: transparent; }
+.web-titlebar-side { justify-content: flex-end; }
+.web-titlebar-detail { justify-content: center; }
+.web-detail { position: relative; }
+.web-brand { display: inline-flex; align-items: center; gap: 6px; }
+.web-brand-name { font-size: 15px; font-weight: 700; }
+.web-app button.web-tbtn { display: inline-flex; width: 28px; height: 28px; align-items: center; justify-content: center; padding: 0; border: 0; border-radius: 8px; background: transparent; color: var(--secondaryText); }
+.web-app button.web-tbtn:hover, .web-app button.web-gear:hover, .web-app button.web-filter:hover, .web-app button.web-side-add:hover { background: var(--selectedRow); }
+.web-app .web-glyph { flex: none; fill: none; stroke: currentColor; stroke-width: 1.2; stroke-linecap: round; stroke-linejoin: round; }
+.web-sidebar-head { display: flex; flex: none; flex-direction: column; gap: 8px; padding: 2px 12px 8px; }
+.web-app button.web-new-session { display: flex; align-items: center; gap: 8px; min-height: 32px; padding: 4px 10px; border: 0; border-radius: 8px; background: var(--neutralFill); font-size: 13px; font-weight: 500; text-align: left; }
+.web-new-session:hover { background: var(--selectedRow); }
+.web-new-session kbd { padding: 0; border: 0; background: transparent; color: var(--tertiaryText); font: inherit; font-size: 11px; }
+.web-accent { display: inline-flex; color: var(--accentLink); }
+.web-accent .web-glyph { stroke-width: 1.6; }
+.web-search-row { display: flex; align-items: center; gap: 6px; }
+.web-search { position: relative; display: block; flex: 1; min-width: 0; }
+.web-search-glyph { position: absolute; top: 50%; left: 9px; display: inline-flex; color: var(--tertiaryText); transform: translateY(-50%); pointer-events: none; }
+.web-app .web-search input { box-sizing: border-box; width: 100%; height: 28px; padding: 0 8px 0 28px; border: 0; border-radius: 8px; background: var(--neutralFill); color: var(--primaryText); font: inherit; opacity: 1; }
+.web-app .web-search input::placeholder { color: var(--tertiaryText); opacity: 1; }
+.web-app button.web-filter { display: inline-flex; flex: none; align-items: center; gap: 5px; height: 28px; padding: 0 8px; border: 0; border-radius: 8px; background: transparent; color: var(--secondaryText); }
+.web-filter-dots { display: inline-flex; gap: 2px; }
+.web-filter-dots .backend-dot { width: 7px; height: 7px; flex-basis: 7px; }
+.web-sidebar-list { display: flex; flex: 1; flex-direction: column; gap: 2px; min-height: 0; padding: 4px 8px 12px; overflow: auto; }
+.web-side-heading-row { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; }
+.web-app .web-side-heading-row h2.web-side-heading { margin: 0 6px 2px; }
+.web-app button.web-side-add { display: inline-flex; width: 22px; height: 22px; align-items: center; justify-content: center; padding: 0; border: 0; border-radius: 6px; background: transparent; color: var(--secondaryText); }
+.web-side-glyph { display: inline-flex; flex: none; color: var(--secondaryText); }
+.web-side-item .web-fill { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.web-task-row { display: flex; align-items: flex-start; gap: 8px; min-width: 0; padding: 6px 8px; }
+.web-task-row .task-status { margin-top: 1px; width: 15px; height: 15px; flex-basis: 15px; box-sizing: border-box; }
+.web-task-row .task-status.running { border-color: color-mix(in srgb, var(--runningFG) 25%, transparent); border-top-color: var(--runningFG); animation: web-spin 1s linear infinite; }
+.web-task-row .task-status.queued { border: 1.5px solid var(--cancelledGray); background: transparent; }
+.web-task-text { display: flex; flex: 1; flex-direction: column; gap: 1px; min-width: 0; }
+.web-task-text strong { overflow: hidden; font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
+.web-task-meta { display: flex; align-items: center; gap: 5px; min-width: 0; color: var(--secondaryText); font-size: 12px; }
+.web-task-meta > span:not(.backend-dot) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.web-task-meta .backend-dot, .web-filter-dots .backend-dot { margin-top: 0; }
+.web-task-meta .backend-dot { width: 7px; height: 7px; flex-basis: 7px; }
+.web-sidebar-foot { display: flex; flex: none; align-items: center; justify-content: space-between; padding: 6px 12px 10px; border-top: 1px solid var(--hairline); }
+.web-app button.web-gear { display: inline-flex; width: 32px; height: 32px; align-items: center; justify-content: center; padding: 0; border: 0; border-radius: 8px; background: transparent; }
+.web-gear img { width: 16px; height: 16px; opacity: .8; }
+html[data-theme="dark"] .web-gear img { filter: brightness(0) invert(85%); }
+@keyframes web-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .web-task-row .task-status.running { animation: none; } }

@@ -48,9 +48,9 @@ HF.createAppearanceController = ({storage,matchMedia,document,location,history}=
 
 HF.createAppearanceController();
 
-HF.appearanceControl=()=>`<div class="appearance-control" role="group" aria-label="Appearance">${[
+HF.appearanceControl=(options={})=>`<div class="appearance-control" role="group" aria-label="Appearance">${[
   ['light','sun.max','Light'],['dark','moon','Dark'],['system','desktopcomputer','System']
-].map(([value,symbol,label])=>{const selected=HF.appearance.preference===value;return `<button type="button" class="appearance-button${selected?' selected':''}" data-appearance-preference="${value}" aria-label="${label}" title="${value==='system'?'System — follows this Mac':label}" aria-pressed="${selected}"><img src="assets/symbols/appearance/${symbol}.png" alt=""></button>`}).join('')}</div>`;
+].map(([value,symbol,label])=>{const selected=HF.appearance.preference===value;return `<button type="button" class="appearance-button${selected?' selected':''}" data-appearance-preference="${value}" aria-label="${label}" title="${value==='system'?`System — follows this ${options.web?'device':'Mac'}`:label}" aria-pressed="${selected}"><img src="assets/symbols/appearance/${symbol}.png" alt=""></button>`}).join('')}</div>`;
 HF.connectionIndicator=(screen,state)=>{
   const setupUnavailable=screen==='tasks'&&['setup-required','setup-installing','setup-failed','setup-update-required','setup-updating','setup-update-failed'].includes(state);
   const disconnected=screen==='tasks'&&(['loading','list-error','install-retry'].includes(state)||setupUnavailable);

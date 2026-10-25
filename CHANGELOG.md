@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Match the Harflow web sidebar and title bar to the canvas boards: per-board sidebars, the Hide sidebar button, New session, search and harness filter, status marks and harness dots, the appearance control and Settings footer, and a centred Harflow brand with the Connected indicator, all built without macOS sidebar actions or fixtures.
+
 - Clarify in the exploratory Start inspector that the setup command is reviewed each time you start the workflow yourself, because command review applies to manual launches only.
 
 - Add an exploratory Harflow web family (HarflowWeb#1, HarflowWeb#2): the workflow Triggers tab, a trigger editor with a local draft, the Incoming delivery log with filters and an inspector, and a failed run with Run again. The catalog groups families under macOS and Harflow web, sets the eyebrow per platform, and accepts HarflowWeb ticket references.
