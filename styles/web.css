@@ -164,7 +164,7 @@
 }
 
 /* Sidebar and title bar, following the canvas boards. The sidebar width approximates the macOS sidebar. */
-.web-sidebar { box-sizing: border-box; display: flex; flex: 0 0 272px; flex-direction: column; min-height: 0; border-right: 1px solid var(--hairline); background: color-mix(in srgb, var(--windowBG) 50%, var(--sidebarBG)); }
+.web-sidebar { box-sizing: border-box; display: flex; flex: 0 0 272px; width: 272px; min-width: 0; max-width: 272px; flex-direction: column; min-height: 0; border-right: 1px solid var(--hairline); background: color-mix(in srgb, var(--windowBG) 50%, var(--sidebarBG)); }
 .web-titlebar { display: flex; flex: none; align-items: center; box-sizing: border-box; height: 40px; padding: 0 12px; background: transparent; }
 .web-titlebar-side { justify-content: flex-end; }
 .web-titlebar-detail { justify-content: center; }
