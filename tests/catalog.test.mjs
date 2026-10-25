@@ -2020,42 +2020,6 @@ test('standalone reorder moves one node to an insertion gap and changes nothing 
   assert.doesNotMatch(onDemand, /data-standalone-id|editor-insertion-line/);
 });
 
-test('council node keeps invalid configuration visible and blocks Run without dropping edits', () => {
-  const hf = loadDesignRuntime();
-  const base = { question: 'Q', memberCount: 3, facilitator: '1', maxRounds: 5 };
-  const errors = fields => Array.from(hf.councilValidation({ ...base, ...fields }));
-  assert.deepEqual(errors({}), []);
-  assert.match(errors({ memberCount: 1 })[0], /at least 2 members\. It has 1\./);
-  assert.ok(errors({ facilitator: '' }).some(message => /facilitator/.test(message)));
-  assert.ok(errors({ facilitator: '4' }).some(message => /facilitator/.test(message)));
-  assert.ok(errors({ question: '  ' }).some(message => /question and context/.test(message)));
-  assert.ok(errors({ maxRounds: 0 }).some(message => /Max rounds/.test(message)));
-  assert.deepEqual(errors({ maxRounds: '' }), [], 'an empty limit means the engine default');
-  assert.equal(hf.councilNodeSummary({ memberCount: 3, maxRounds: 5 }), '3 members · max 5 rounds');
-  assert.equal(hf.councilNodeSummary({ memberCount: 1, maxRounds: '' }), '1 member · engine default rounds');
-  hf.route = { theme: 'light', screen: 'workflow-editor', state: 'council-config' };
-  hf.editorController.reset('council-config');
-  const html = hf.renderEditor('council-config');
-  assert.match(html, /Members \(3\)/);
-  assert.match(html, /3 members · max 5 rounds/);
-  assert.match(html, /The facilitator drafts candidates\. Every member must explicitly accept the exact candidate version before the council reaches consensus\./);
-  assert.match(html, /aria-label="Member 1 harness"/);
-  assert.match(html, /data-editor-action="add:council"/);
-  assert.match(html, /Valid workflow · 2 nodes/);
-  assert.equal(hf.editorController.snapshot().selected.kind, 'council');
-  assert.equal(hf.editorController.snapshot().canRun, true, 'a clean, valid council draft can run');
-  const snapshot = hf.editorController.setField('memberCount', 1);
-  assert.equal(snapshot.dirty, true);
-  assert.equal(snapshot.canRun, false);
-  assert.equal(snapshot.draft.fieldValues['council:council'].memberCount, 1, 'the invalid edit is preserved');
-  const invalid = hf.renderEditor('council-config');
-  assert.match(invalid, /editor-council-errors" role="alert"/);
-  assert.match(invalid, /Workflow is not valid: Council: A council needs at least 2 members\. It has 1\./);
-  hf.editorController.reset('saved');
-  hf.route = { theme: 'light', screen: 'workflow-editor', state: 'saved' };
-  assert.doesNotMatch(hf.renderEditor('saved'), /editor-council|add:council/);
-});
-
 test('readiness report separates the three finding states, shows scope, and marks stale results', () => {
   const hf = loadDesignRuntime();
   const fresh = hf.renderReadinessReport(hf.readinessModel());
@@ -2101,26 +2065,6 @@ test('Run Workflow chooser lists starred workflows first and keeps native sheet 
   assert.match(html, /class="launch-divider" role="separator"/);
   assert.equal(hf.specimenStatus('workflow-launch', 'library-starred').kind, 'exploratory');
   assert.doesNotMatch(hf.renderLaunch('library'), /launch-star|launch-list/);
-});
-
-test('Council run activity is one feed that names agents, rounds, questions, versions, and the outcome', () => {
-  const hf = loadDesignRuntime();
-  const html = hf.councilActivity();
-  assert.equal((html.match(/class="wfr-council-feed"/g) || []).length, 1);
-  assert.equal((html.match(/class="council-speaker"/g) || []).length, (html.match(/<article class="council-turn">/g) || []).length);
-  for (const text of ['Facilitator', 'Member', 'Round 1 of 5 · 14:36', 'Round 2 of 5 · 14:41', 'Iris → Noor · about Candidate v1', 'Answered', 'Supersedes v1', 'Prior acceptances reset', 'Objects to v1', 'Dana accepts v2', 'Consensus reached on Candidate v2', 'Conclusion:', 'Rationale:', 'Caveats:']) assert.ok(html.includes(text), text);
-  assert.doesNotMatch(html, /accepts v1/, 'superseded acceptances are not shown as current');
-  assert.doesNotMatch(html, /<strong>(Claude|Codex|Vibe)<\/strong>/, 'the harness is never the speaker');
-  hf.route = { theme: 'light', screen: 'workflow-run', state: 'council' };
-  hf.resetWorkflowRun(hf.route);
-  const run = hf.renderRun('council');
-  assert.match(run, /3 members · round 2 of 5/);
-  assert.match(run, /data-action="wr-select:council"/);
-  assert.match(run, /<button type="button" disabled>Parallel<\/button>/);
-  assert.doesNotMatch(run, /wfr-sidebar-default/, 'selected Council opens the 420-point feed');
-  hf.route = { theme: 'light', screen: 'workflow-run', state: 'running' };
-  hf.resetWorkflowRun(hf.route);
-  assert.doesNotMatch(hf.renderRun('running'), /wfr-council|wr-select:council/);
 });
 
 const statTime = text => { let m = 0; const h = /(\d+) h/.exec(text), n = /(\d+) min/.exec(text); if (h) m += 60 * Number(h[1]); if (n) m += Number(n[1]); return m; };
@@ -2473,32 +2417,471 @@ test('statistics markup does not leak into other families', () => {
     assert.doesNotMatch(renderers[other.id](hf, other.states[0]), /stat-entry|stat-seg|statistics-content/, `${other.id} renders statistics markup`);
   }
 });
-test('council limits are validated, preserved, and block Run', () => {
+const councilRoute = (hf, route) => { hf.route = { theme: 'light', screen: 'workflow-editor', state: route }; hf.editorController.reset(route); return hf.editorController; };
+const councilFields = snap => JSON.parse(JSON.stringify((snap.draft || snap).fieldValues['council:council']));
+const councilUiState = snap => JSON.parse(JSON.stringify(snap.councilUi));
+const councilMembers = (members = []) => members.map(([id, name, optional = false, harness = 'claude']) => ({ id, name, harness, model: '', effort: '', instructions: '', optional }));
+const councilRun = (hf, state) => { hf.route = { theme: 'light', screen: 'workflow-run', state }; hf.resetWorkflowRun(hf.route); return hf.renderRun(state); };
+
+test('council validation: names, required count, question, and the only-message rule', () => {
   const hf = loadDesignRuntime();
-  hf.route = { theme: 'light', screen: 'workflow-editor', state: 'council-config' };
-  hf.editorController.reset('council-config');
-  const bad = { maxRounds: 0, questionLimit: -1, followUpLimit: 21, timeBudgetMinutes: 0, tokenBudget: 10000001 };
-  for (const [key, value] of Object.entries(bad)) {
-    hf.editorController.reset('council-config');
-    const snapshot = hf.editorController.setField(key, value);
-    assert.equal(snapshot.canRun, false, `${key}=${value} blocks Run`);
-    assert.equal(snapshot.draft.fieldValues['council:council'][key], value, `${key} edit preserved`);
-    assert.match(hf.renderEditor('council-config'), /editor-council-errors" role="alert"/);
+  const check = (members, extra = {}) => Array.from(hf.councilValidation({ question: 'Q', facilitator: members[0]?.id, members: councilMembers(members), ...extra }));
+  assert.deepEqual(check([['a', 'Alpha'], ['b', 'Beta']]), []);
+  const blank = 'Name this member. The name labels its messages in Activity.';
+  assert.deepEqual(check([['a', 'Alpha'], ['b', 'Beta'], ['c', '']]), [blank]);
+  assert.deepEqual(check([['a', 'Alpha'], ['b', 'Beta'], ['c', '   ']]), [blank], 'whitespace-only is blank');
+  const dup = name => `Another member is named ${name}. Names must be unique so every message is attributable.`;
+  assert.deepEqual(check([['a', 'QA'], ['b', ' qa '], ['c', 'Gamma']]), [dup('QA'), dup('qa')], 'duplicates ignore case and surrounding whitespace');
+  assert.deepEqual(check([['a', 'Alpha'], ['b', 'Beta'], ['c', 'Gamma']]), []);
+  // Question
+  assert.deepEqual(check([['a', 'A'], ['b', 'B']], { question: '  ' }), ['Enter the question and context for the council.']);
+  // Required count: optional members do not count; there is no member cap.
+  assert.deepEqual(check([['a', 'A'], ['b', 'B', true]]), ['A council needs at least 2 required members']);
+  assert.deepEqual(check([['a', 'A'], ['b', 'B', true], ['c', 'C', true]]), ['A council needs at least 2 required members']);
+  assert.deepEqual(check([['a', 'A'], ['b', 'B'], ['c', 'C', true]]), []);
+  assert.deepEqual(check([['a', 'A']]), ['A council needs at least 2 required members']);
+  assert.deepEqual(check([]), ['A council needs at least 2 required members']);
+  const many = Array.from({ length: 9 }, (_, i) => [`m${i}`, `Member ${i}`]);
+  assert.deepEqual(check(many), [], 'no maximum member count');
+  // No required member: the too-few banner is the only message (no separate facilitator message).
+  const none = check([['a', 'A', true], ['b', 'B', true]], { facilitator: 'a' });
+  assert.deepEqual(none, ['A council needs at least 2 required members']);
+  assert.equal(hf.councilModel({ question: 'Q', facilitator: '', members: councilMembers([['a', 'A', true]]) }).facilitatorId, '');
+  // Detail variants for the banner.
+  assert.match(hf.councilModel({ members: councilMembers([['a', 'A'], ['b', 'B', true]]) }).tooFewDetail, /^Optional members do not count\. Clear Optional on a member or add one\. Your edits are kept\.$/);
+  assert.match(hf.councilModel({ members: councilMembers([['a', 'A']]) }).tooFewDetail, /^Add a member to run this node\. Your edits are kept\.$/);
+  assert.equal(hf.councilModel({ members: councilMembers([['a', 'A'], ['b', 'B', true], ['c', 'C', true]]) }).heading, 'Members (3 · 2 optional)');
+  assert.equal(hf.councilModel({ members: councilMembers([['a', 'A'], ['b', 'B']]) }).heading, 'Members (2)');
+  assert.deepEqual(Array.from(hf.councilModel({ members: councilMembers([['a', '']]) }).rows.map(row => row.title)), ['Member 1']);
+});
+
+test('council facilitator is derived on read without side effects and never optional', () => {
+  const hf = loadDesignRuntime();
+  const fields = { question: 'Q', facilitator: 'z', members: councilMembers([['a', 'A', true], ['b', 'B'], ['c', 'C']]) };
+  const before = JSON.stringify(fields);
+  assert.equal(hf.councilEffectiveFacilitator(fields), 'b', 'stale id falls back to the first required member');
+  hf.councilModel(fields); hf.councilValidation(fields); hf.councilNodeSummary(fields);
+  assert.equal(JSON.stringify(fields), before, 'read paths do not mutate the draft');
+  assert.equal(hf.councilEffectiveFacilitator({ facilitator: 'a', members: fields.members }), 'b', 'an optional member is never the facilitator');
+  assert.equal(hf.councilEffectiveFacilitator({ facilitator: 'c', members: fields.members }), 'c');
+  assert.equal(hf.councilEffectiveFacilitator({ members: councilMembers([['a', 'A', true]]) }), '');
+  assert.equal(hf.councilEffectiveFacilitator({}), '');
+  hf.councilNormalizeFacilitator(fields);
+  assert.equal(fields.facilitator, 'b', 'normalize persists the derived id');
+  const model = hf.councilModel(fields);
+  assert.deepEqual(Array.from(model.rows.filter(row => row.isFacilitator).map(row => row.id)), ['b']);
+  assert.equal(model.rows.find(row => row.id === 'b').optionalHelp, 'The facilitator is always required.');
+});
+
+test('council editor: facilitator checkbox is disabled, the select lists required members only, and removal reassigns', () => {
+  const hf = loadDesignRuntime();
+  const editor = councilRoute(hf, 'council-config');
+  let html = hf.renderEditor('council-config');
+  assert.match(html, /<h3 data-council-heading>Members \(3 · 1 optional\)<\/h3>/);
+  assert.match(html, /id="council-optional-m1" type="checkbox" data-council-member="m1" data-council-field="optional"\s+disabled>/);
+  assert.match(html, /The facilitator is always required\./);
+  const select = html.match(/<select data-council-field="facilitator"[^>]*>(.*?)<\/select>/)[1];
+  assert.match(select, /Architect · Claude/);
+  assert.match(select, /Frontend · Codex/);
+  assert.doesNotMatch(select, /QA/, 'optional members cannot be facilitators');
+  assert.equal((select.match(/<option/g) || []).length, 2);
+  // Attempting to make the facilitator optional is ignored.
+  let snap = editor.councilSet('m1', 'optional', true);
+  assert.equal(councilFields(snap).members[0].optional, false);
+  assert.equal(snap.dirty, false);
+  // Removing the facilitator reassigns it to the first remaining required member.
+  snap = editor.councilToggle('m2');
+  snap = editor.councilRemove('m1');
+  assert.deepEqual(councilFields(snap).members.map(member => member.id), ['m2', 'm3']);
+  assert.equal(councilFields(snap).facilitator, 'm2');
+  assert.equal(snap.dirty, true);
+  html = hf.renderEditor('council-config');
+  assert.match(html, /A council needs at least 2 required members/);
+  assert.equal(snap.canRun, false);
+  assert.equal(snap.canSave, false);
+  // Selecting another facilitator persists it.
+  editor.reset('council-config');
+  snap = editor.councilSet('m1', 'facilitator', 'm2');
+  assert.equal(councilFields(snap).facilitator, 'm2');
+  snap = editor.councilSet('m1', 'facilitator', 'm3');
+  assert.equal(councilFields(snap).facilitator, 'm2', 'an optional member is not accepted as facilitator');
+});
+
+test('council editor recovers from removing the facilitator while the others are optional', () => {
+  const hf = loadDesignRuntime();
+  const editor = councilRoute(hf, 'council-too-few');
+  let snap = editor.snapshot();
+  assert.deepEqual(councilFields(snap).members.map(member => member.optional), [false, true, true]);
+  assert.equal(councilFields(snap).facilitator, 'm1');
+  snap = editor.councilRemove('m1');
+  assert.equal(councilFields(snap).facilitator, '', 'no required member: no facilitator');
+  let html = hf.renderEditor('council-too-few');
+  assert.match(html, /<select data-council-field="facilitator" aria-label="Facilitator" disabled><option>No required members<\/option>/);
+  assert.equal((html.match(/editor-council-banner/g) || []).length, 1);
+  snap = editor.councilAdd();
+  const added = councilFields(snap).members.at(-1);
+  assert.equal(councilFields(snap).facilitator, added.id, 'the new required member becomes the facilitator');
+  snap = editor.councilSet(added.id, 'name', 'Reviewer');
+  snap = editor.councilSet('m2', 'optional', false);
+  const fields = councilFields(snap);
+  assert.equal(fields.facilitator, added.id, 'the facilitator is stable once required members exist');
+  assert.deepEqual(Array.from(hf.councilValidation(fields)), []);
+  assert.equal(hf.councilModel(fields).requiredCount, 2);
+  // Un-optional path: remove facilitator again, then clear Optional on two members.
+  editor.reset('council-too-few');
+  editor.councilRemove('m1');
+  snap = editor.councilSet('m2', 'optional', false);
+  assert.equal(councilFields(snap).facilitator, 'm2');
+  snap = editor.councilSet('m3', 'optional', false);
+  assert.equal(councilFields(snap).facilitator, 'm2');
+  assert.deepEqual(Array.from(hf.councilValidation(councilFields(snap))), []);
+  html = hf.renderEditor('council-too-few');
+  assert.doesNotMatch(html, /editor-council-banner/);
+});
+
+test('council editor: effort cycles, Vibe has no effort, and the summary follows', () => {
+  const hf = loadDesignRuntime();
+  const editor = councilRoute(hf, 'council-config');
+  editor.councilToggle('m2');
+  const effort = () => councilFields(editor.snapshot()).members[1].effort;
+  assert.equal(effort(), 'medium');
+  const seen = [];
+  for (let i = 0; i < 4; i++) { editor.councilCycleEffort('m2'); seen.push(effort()); }
+  assert.deepEqual(seen, ['high', '', 'low', 'medium'], 'Default, Low, Medium, High cycle');
+  assert.match(hf.renderEditor('council-config'), /aria-label="Effort for Frontend: Medium"/);
+  const open = hf.renderEditor('council-config');
+  assert.doesNotMatch(open, /Vibe does not take a reasoning effort/);
+  // Switching to Vibe hides the control and clears the stored effort.
+  let snap = editor.councilSet('m2', 'harness', 'vibe');
+  assert.equal(councilFields(snap).members[1].effort, '');
+  const html = hf.renderEditor('council-config');
+  assert.match(html, /Vibe does not take a reasoning effort\./);
+  assert.doesNotMatch(html, /data-action="editor-council-effort:m2"/);
+  editor.councilToggle('m2');
+  const closed = hf.renderEditor('council-config');
+  assert.match(closed, /Vibe · Default<\/span>/, 'collapsed summary drops the effort');
+  assert.doesNotMatch(closed, /Vibe · Default · /);
+  // Cycling a Vibe member is ignored.
+  snap = editor.councilCycleEffort('m2');
+  assert.equal(councilFields(snap).members[1].effort, '');
+  assert.equal(hf.councilModel({ members: councilMembers([['a', 'A', false, 'vibe']]) }).rows[0].summary, 'Vibe · Default');
+  assert.equal(hf.councilModel({ members: councilMembers([['a', 'A', false, 'opencode']]) }).rows[0].summary, 'OpenCode · Default · Default');
+  // An unknown harness is rejected.
+  snap = editor.councilSet('m2', 'harness', 'nope');
+  assert.equal(councilFields(snap).members[1].harness, 'vibe');
+});
+
+test('council accordion keeps the draft clean and ids are deterministic after reset', () => {
+  const hf = loadDesignRuntime();
+  const editor = councilRoute(hf, 'council-config');
+  hf.renderEditor('council-config');
+  assert.equal(editor.snapshot().councilUi.council.open, 'm1');
+  for (const id of ['m2', 'm2', 'm3', 'm1']) { const snap = editor.councilToggle(id); assert.equal(snap.dirty, false, `toggle ${id}`); assert.equal(snap.canRun, true); }
+  assert.equal(editor.snapshot().councilUi.council.open, 'm1');
+  editor.councilToggle('m1');
+  assert.equal(editor.snapshot().councilUi.council.open, null, 'toggling the open card collapses it');
+  editor.councilToggle('m2');
+  assert.equal(editor.snapshot().councilUi.council.open, 'm2', 'one card open at a time');
+  const html = hf.renderEditor('council-config');
+  assert.equal((html.match(/class="editor-council-card is-open"/g) || []).length, 1);
+  assert.equal((html.match(/aria-expanded="true"/g) || []).length, 1);
+  assert.match(html, /aria-label="Collapse Frontend"/);
+  assert.match(html, /aria-label="Edit Architect"/);
+  assert.match(html, /aria-label="Remove Frontend"/);
+  assert.equal(editor.councilToggle('missing').councilUi.council.open, 'm2', 'unknown ids are ignored');
+  // Ids come from a counter that reset reseeds.
+  const first = editor.councilAdd(); const second = editor.councilAdd();
+  assert.deepEqual(councilFields(second).members.slice(3).map(member => member.id), ['m4', 'm5']);
+  assert.equal(second.councilUi.council.open, 'm5');
+  editor.reset('council-config');
+  const again = editor.councilAdd();
+  assert.deepEqual(councilFields(again).members.slice(3).map(member => member.id), ['m4']);
+  assert.equal(first.dirty, true);
+  assert.deepEqual(Object.keys(editor.reset('council-config').councilUi), [], 'reset clears accordion state');
+  assert.equal(councilFields(editor.reset('council-name-errors')).members.at(-1).id, 'm4');
+  assert.equal(editor.snapshot().councilUi.council.open, 'm4');
+  assert.equal(councilFields(editor.reset('council-name-errors')).members.at(-1).id, 'm4', 'same route, same ids');
+});
+
+test('council Save needs a dirty valid draft, Run a saved valid one, and Discard restores the saved baseline', () => {
+  const hf = loadDesignRuntime();
+  const editor = councilRoute(hf, 'council-config');
+  let snap = editor.snapshot();
+  assert.deepEqual([snap.dirty, snap.canSave, snap.canRun, snap.canDiscard], [false, false, true, false]);
+  snap = editor.councilSet('m2', 'name', 'Frontend lead');
+  assert.deepEqual([snap.dirty, snap.canSave, snap.canRun, snap.canDiscard], [true, true, false, true]);
+  snap = editor.save();
+  assert.deepEqual([snap.dirty, snap.canSave, snap.canRun], [false, false, true]);
+  assert.equal(councilFields(snap.baseline).members[1].name, 'Frontend lead');
+  snap = editor.councilSet('m2', 'name', '');
+  assert.deepEqual([snap.dirty, snap.canSave, snap.canRun], [true, false, false], 'a blank name blocks Save and Run');
+  assert.equal(councilFields(snap).members[1].name, '', 'the invalid edit is kept');
+  assert.match(hf.renderEditor('council-config'), /Workflow is not valid: Council: Name this member/);
+  snap = editor.discard();
+  assert.equal(councilFields(snap).members[1].name, 'Frontend lead', 'Discard restores the last saved baseline, not the seed');
+  assert.deepEqual([snap.dirty, snap.canRun], [false, true]);
+  snap = editor.councilSet('m1', 'question', '   ');
+  assert.equal(snap.canSave, false);
+  assert.match(hf.renderEditor('council-config'), /Enter the question and context for the council\./);
+  assert.equal(snap.canRun, false);
+  editor.discard();
+  // Re-entry reseeds from the canvas fixture.
+  const fresh = editor.reset('council-config');
+  assert.equal(councilFields(fresh).members[1].name, 'Frontend');
+});
+
+test('council-name-errors and council-too-few start dirty and invalid over a valid baseline', () => {
+  const hf = loadDesignRuntime();
+  const editor = councilRoute(hf, 'council-name-errors');
+  let snap = editor.snapshot();
+  assert.deepEqual([snap.dirty, snap.canSave, snap.canRun, snap.canDiscard], [true, false, false, true]);
+  assert.deepEqual(councilFields(snap).members.map(member => member.name), ['Architect', 'QA', 'QA', '']);
+  assert.deepEqual(Array.from(hf.councilValidation(councilFields(snap.baseline))), [], 'the baseline is valid');
+  assert.equal(snap.councilUi.council.open, 'm4', 'the blank member is expanded');
+  const html = hf.renderEditor('council-name-errors');
+  assert.ok((html.match(/Another member is named QA\. Names must be unique/g) || []).length >= 2, 'both duplicates show the error');
+  assert.equal((html.match(/editor-council-excerpt is-error/g) || []).length, 2, 'collapsed duplicates show the error as their excerpt');
+  assert.match(html, /Name this member\. The name labels its messages in Activity\./);
+  assert.match(html, /aria-invalid="true" aria-describedby="council-name-error-m4"/);
+  assert.match(html, /Fix the configuration to run/);
+  assert.match(html, /Member 4/);
+  assert.match(html, /placeholder="For example, QA"/);
+  assert.doesNotMatch(html, /editor-council-banner/);
+  snap = editor.discard();
+  assert.deepEqual(councilFields(snap).members.map(member => member.name), ['Architect', 'Frontend', 'QA']);
+  assert.deepEqual([snap.dirty, snap.canRun], [false, true]);
+
+  const few = councilRoute(hf, 'council-too-few');
+  snap = few.snapshot();
+  assert.deepEqual([snap.dirty, snap.canSave, snap.canRun, snap.canDiscard], [true, false, false, true]);
+  assert.deepEqual(councilFields(snap).members.map(member => member.optional), [false, true, true]);
+  assert.equal(snap.councilUi.council.open, null);
+  const fewHtml = hf.renderEditor('council-too-few');
+  assert.match(fewHtml, /role="alert"><svg[^>]*>.*<strong>A council needs at least 2 required members<\/strong><span>Optional members do not count\. Clear Optional on a member or add one\. Your edits are kept\.<\/span>/);
+  assert.match(fewHtml, /Members \(3 · 2 optional\)/);
+  assert.equal(few.discard().canRun, true);
+});
+
+test('two Council nodes keep independent members', () => {
+  const hf = loadDesignRuntime();
+  const editor = councilRoute(hf, 'council-config');
+  let snap = editor.addNode('council');
+  const second = snap.selected.id;
+  assert.notEqual(second, 'council');
+  const fields = id => JSON.parse(JSON.stringify(editor.snapshot().draft.fieldValues[`council:${id}`]));
+  assert.ok(fields(second), 'the new node has its own council fields');
+  assert.deepEqual(fields(second).members.map(member => member.name), ['Architect', 'Frontend', 'QA']);
+  editor.select('council', second);
+  editor.councilSet('m2', 'name', 'Second node only');
+  editor.councilRemove('m3');
+  assert.deepEqual(fields(second).members.map(member => member.name), ['Architect', 'Second node only']);
+  assert.deepEqual(fields('council').members.map(member => member.name), ['Architect', 'Frontend', 'QA'], 'the first node is untouched');
+  editor.select('council', 'council');
+  editor.councilAdd();
+  assert.equal(fields('council').members.length, 4);
+  assert.equal(fields(second).members.length, 2);
+  const ui = editor.snapshot().councilUi;
+  assert.ok(ui.council && ui[second], 'accordion state is per node');
+  const html = hf.renderEditor('council-config');
+  assert.match(html, /Architect, Second node only/);
+  assert.match(html, /Architect, Frontend, QA, Member 4/);
+});
+
+test('council node summaries are consistent in the editor and the run for every state', () => {
+  const hf = loadDesignRuntime();
+  const summary = fields => JSON.parse(JSON.stringify(hf.councilNodeSummary(fields)));
+  assert.deepEqual(summary({ question: 'Q', facilitator: 'a', members: councilMembers([['a', 'A'], ['b', 'B'], ['c', 'C', true]]) }), { members: 'A, B, C', meta: '2 required · 1 optional · max 5 rounds' });
+  assert.deepEqual(summary({ question: 'Q', facilitator: 'a', members: councilMembers([['a', 'A'], ['b', 'B']]) }), { members: 'A, B', meta: '2 required · max 5 rounds' });
+  assert.deepEqual(summary({ question: 'Q', members: councilMembers([['a', 'A'], ['b', 'B', true]]) }), { members: 'A, B', meta: 'Fix the configuration to run' });
+  assert.deepEqual(summary({ question: 'Q', members: councilMembers([['a', ''], ['b', 'B']]) }), { members: 'Member 1, B', meta: 'Fix the configuration to run' });
+  const expectedMeta = { 'council-config': '2 required · 1 optional · max 5 rounds', 'council-name-errors': 'Fix the configuration to run', 'council-too-few': 'Fix the configuration to run' };
+  for (const route of hf.councilEditorRoutes) {
+    councilRoute(hf, route);
+    const rendered = hf.renderEditor(route);
+    assert.ok(rendered.includes(`data-council-meta>${expectedMeta[route]}</small>`), `${route} meta`);
+    assert.match(rendered, /data-council-members>Architect, /, `${route} members`);
+  }
+  const lines = { council: ['Architect, Frontend, QA · round 2 of 5', 'Phase: voting on v2', 'Round 2 of 5 · Voting on v2', 'Running'], 'council-consensus': ['Architect, Frontend, QA · round 2 of 5', 'Phase: consensus on v2', 'Round 2 of 5 · Consensus on v2', 'Completed'], 'council-member-left': ['Architect, Frontend, QA · round 1 of 5', 'Phase: discussing v1', 'Round 1 of 5 · Discussing v1', 'Running'], 'council-failed': ['Architect, Frontend, QA · round 1 of 5', 'Phase: failed', 'Round 1 of 5 · Failed', 'Failed'] };
+  assert.deepEqual(Array.from(hf.councilRunStates), Object.keys(lines));
+  for (const [state, [line, phase, header, status]] of Object.entries(lines)) {
+    const run = hf.councilRunSummary(state);
+    assert.deepEqual([run.line, run.phase, run.header, run.status], [line, phase, header, status], state);
+    const html = councilRun(hf, state);
+    assert.ok(html.includes(`<small>${line}</small><small>${phase}</small>`), `${state} node lines`);
+    assert.ok(html.includes(`<span class="council-phase">${header}</span>`), `${state} header`);
+  }
+  assert.deepEqual(Array.from(hf.councilRunSummary('council-member-left').left), ['QA']);
+  assert.deepEqual(Array.from(hf.councilRunSummary('unknown').left), [], 'unknown states fall back to the default run');
+});
+
+test('council run states cut the feed, show the right chips, roster, outcome and system messages', () => {
+  const hf = loadDesignRuntime();
+  const articles = html => (html.match(/<article class="council-turn"/g) || []).length;
+  const labels = state => Array.from(hf.councilActivity(state).matchAll(/<article class="council-turn" aria-label="([^"]*)"/g), match => match[1]);
+  const feed = state => hf.councilActivity(state);
+
+  const base = feed('council');
+  assert.equal(articles(base), 8);
+  assert.deepEqual(labels('council').filter(label => label.startsWith('Council')), ['Council, system, 14:41', 'Council, system, 14:44']);
+  for (const text of ['Round 1 of 5 · 14:36', 'Round 2 of 5 · 14:41', 'Question to <strong>Architect</strong> · about Candidate v1', 'Answered 14:41', 'Reply to <strong>QA</strong>’s question', 'Supersedes v1', 'Prior acceptances reset', 'Objects to v1', 'Architect accepts', 'Frontend accepts', 'QA (optional): no vote yet', 'Candidate v2']) assert.ok(base.includes(text), text);
+  assert.doesNotMatch(base, /Consensus reached|QA left the council|Council failed|Withdrawn|Unresolved/);
+  assert.doesNotMatch(base, /<strong>(Claude|Codex|Vibe)<\/strong>/, 'the harness is never the speaker');
+  assert.equal((base.match(/class="wfr-council-feed" id="council-feed" tabindex="0" role="region" aria-label="Council discussion, one feed"/g) || []).length, 1);
+  assert.match(base, /aria-label="Close selected activity"/);
+  assert.match(base, /role="list" aria-label="Members"/);
+
+  const consensus = feed('council-consensus');
+  assert.equal(articles(consensus), 9);
+  assert.equal(labels('council-consensus').at(-1), 'Council, system, consensus');
+  assert.match(consensus, /Consensus reached on Candidate v2/);
+  assert.match(consensus, /Accepted by Architect and Frontend \(2 of 2 required\)\./);
+  assert.match(consensus, /QA \(optional\) did not vote\./);
+  assert.match(consensus, /Caveat from Architect: the bound was not load tested\./);
+  assert.doesNotMatch(consensus, /Go to outcome|Conclusion|Rationale/);
+
+  const left = feed('council-member-left');
+  assert.equal(articles(left), 4, 'cut off before QA’s question is answered');
+  assert.equal(labels('council-member-left').at(-1), 'Council, system, optional member failed');
+  assert.match(left, /council-chip disposition withdrawn">Withdrawn</);
+  assert.doesNotMatch(left, /Answered|Round 2 of 5|Supersedes|Candidate v2/);
+  assert.match(left, /QA left the council/);
+  assert.match(left, /QA’s harness \(Vibe\) exited unexpectedly\. QA is optional, so the council continues with Architect and Frontend\./);
+  assert.match(left, /QA’s open question to Architect is withdrawn\./);
+  assert.match(left, /<strong>QA<\/strong><span>Optional<\/span><span class="council-left">Left<\/span>/);
+  assert.equal((left.match(/council-left"/g) || []).length, 1, 'only QA is marked Left');
+
+  const failed = feed('council-failed');
+  assert.equal(articles(failed), 4);
+  assert.equal(labels('council-failed').at(-1), 'Council, system, failed');
+  assert.match(failed, /council-chip disposition unresolved">Unresolved</);
+  assert.match(failed, /Council failed/);
+  assert.match(failed, /This is a failure, not a lack of consensus\./);
+  assert.doesNotMatch(failed, /council-left|Withdrawn|Answered/);
+  for (const state of ['council', 'council-consensus']) assert.doesNotMatch(feed(state), /council-left"/);
+  for (const state of hf.councilRunStates) assert.equal((feed(state).match(/<span class="council-role">(Facilitator|Member|Optional)<\/span>/g) || []).length >= 3, true);
+});
+
+test('council run states set the graph node, badge, toolbar and spinners; failed never shows the load error', () => {
+  const hf = loadDesignRuntime();
+  const run = state => councilRun(hf, state);
+  const spinners = html => (html.match(/wfr-spinner/g) || []).length;
+  const running = run('council');
+  assert.match(running, /<span class="wfr-badge running">(?:<span[^>]*><\/span>)?Running<\/span>/);
+  assert.match(running, /Cancel run/);
+  assert.match(running, /wf-running-node/);
+  assert.match(running, /data-action="wr-select:council"/);
+  assert.match(running, /<button type="button" disabled>Parallel<\/button>/);
+
+  const consensus = run('council-consensus');
+  assert.match(consensus, /<span class="wfr-badge running">(?:<span[^>]*><\/span>)?Running<\/span>/, 'the run is still running after consensus');
+  assert.match(consensus, /Cancel run/);
+  assert.match(consensus, /class="node wfr-council-node[^"]*wf-completed-node/, 'the Council node is completed without a spinner');
+  assert.match(consensus, /wfr-council-node[^>]*>(?:(?!<\/button>).)*Phase: consensus on v2<\/small><\/button>/, 'no spinner inside the Council node');
+  assert.match(consensus, /<strong>Review<\/strong>.*?<small>Running<\/small><span class="wfr-node-spinner wfr-spinner"/, 'Review runs next');
+
+  const left = run('council-member-left');
+  assert.match(left, /<span class="wfr-badge running">(?:<span[^>]*><\/span>)?Running<\/span>/);
+  assert.match(left, /Cancel run/);
+  assert.match(left, /wfr-council-node[^"]*wf-running-node/);
+  assert.match(left, /<strong>Review<\/strong>.*?<small>Pending<\/small>/);
+
+  const failed = run('council-failed');
+  assert.match(failed, /<span class="wfr-badge failed">Failed<\/span>/);
+  assert.equal(spinners(failed), 0, 'no spinners anywhere');
+  assert.doesNotMatch(failed, /Cancel run|>Pause</, 'the run is over: no Pause or Cancel run');
+  assert.match(failed, /wfr-council-node[^"]*wf-failed-node/);
+  assert.match(failed, /Phase: failed/);
+  assert.match(failed, /<strong>Review<\/strong>.*?<small>Pending<\/small>/);
+  assert.match(failed, /<button type="button" class="selected" data-action="wr-mode:graph">Graph<\/button><button type="button" disabled>Parallel<\/button>/);
+  assert.doesNotMatch(failed, /error-state|wfr-error-state/, 'a failed council is not the load-error presentation');
+  assert.match(run('error'), /wfr-error-state/, 'the real error route still shows it');
+  assert.ok(spinners(running) > 0 && spinners(left) > 0);
+  for (const state of hf.councilRunStates) {
+    const html = run(state);
+    assert.match(html, /wfr-council/, `${state} opens the Council feed`);
+    assert.doesNotMatch(html, /wfr-sidebar-default/);
+  }
+});
+
+test('council states never offer outcome jump, token budget, structured output, routing or editable limits', () => {
+  const hf = loadDesignRuntime();
+  const banned = /Go to outcome|wr-council-jump|council-outcome"|Token budget|Structured output|Routing|outputSchema|Route by outcome|maxRounds|questionLimit|followUpLimit|timeBudget|type="number"|memberCount/i;
+  for (const state of hf.councilRunStates) {
+    assert.doesNotMatch(councilRun(hf, state), banned, `run/${state}`);
+    assert.doesNotMatch(hf.councilActivity(state), banned, `activity/${state}`);
+  }
+  for (const route of hf.councilEditorRoutes) {
+    councilRoute(hf, route);
+    const rendered = hf.renderEditor(route);
+    assert.doesNotMatch(rendered, banned, route);
+    assert.doesNotMatch(rendered, /editor-council-errors/, route);
   }
   hf.editorController.reset('council-config');
-  assert.ok(Array.from(hf.councilValidation({ question: 'Q', memberCount: 3, facilitator: '1', tokenBudget: 1.5 })).some(message => /Token budget must be a whole number from 1 to 10000000\./.test(message)));
-  for (const key of ['questionLimit', 'followUpLimit', 'timeBudgetMinutes', 'tokenBudget', 'maxRounds']) assert.deepEqual(Array.from(hf.councilValidation({ question: 'Q', memberCount: 3, facilitator: '1', [key]: '' })), []);
   const html = hf.renderEditor('council-config');
-  assert.match(html, /<h3>Structured output<\/h3>/);
-  assert.match(html, /data-editor-field="structuredOutput"/);
-  assert.match(html, /<h3>Routing<\/h3>/);
-  assert.match(html, /<option value="outcome"[^>]*>Route by outcome/);
-  assert.doesNotMatch(html, /Structured output and routing are configured like other nodes/);
-  hf.editorController.setField('structuredOutput', true);
-  assert.equal(hf.editorController.snapshot().canRun, false, 'structured output without fields is flagged');
-  assert.match(hf.renderEditor('council-config'), /Describe the structured output fields/);
-  hf.editorController.setField('outputSchema', 'conclusion, rationale');
-  assert.deepEqual(Array.from(hf.councilValidation(hf.editorController.snapshot().draft.fieldValues['council:council'])), []);
+  assert.match(html, /<dl class="editor-council-limits"><div><dt>Max rounds<\/dt><dd>5<\/dd><\/div><div><dt>Question limit<\/dt><dd>3<\/dd><\/div><div><dt>Follow-up limit<\/dt><dd>2<\/dd><\/div><div><dt>Time budget<\/dt><dd>15 min<\/dd><\/div><\/dl>/, 'limits are read-only rows');
+  assert.doesNotMatch(html, /<input[^>]*data-editor-field="(maxRounds|questionLimit|followUpLimit|timeBudgetMinutes|tokenBudget)"/);
+  assert.doesNotMatch(html, /disabled>Add member/);
+  const editor = hf.editorController;
+  for (let i = 0; i < 4; i++) editor.councilAdd();
+  assert.equal(councilFields(editor.snapshot()).members.length, 7, 'no member cap');
+  assert.match(hf.renderEditor('council-config'), /data-action="editor-council-add"(?![^>]*disabled)/);
+});
+
+test('council states are registered as exploratory with their tickets', () => {
+  const hf = loadDesignRuntime();
+  const editor = hf.screens.find(screen => screen.id === 'workflow-editor'), runFamily = hf.screens.find(screen => screen.id === 'workflow-run');
+  for (const state of hf.councilEditorRoutes) {
+    assert.ok(editor.states.includes(state), state);
+    const status = hf.specimenStatus('workflow-editor', state);
+    assert.equal(status.kind, 'exploratory');
+    assert.deepEqual(Array.from(status.tickets), ['#17']);
+    assert.match(status.caption, /^Exploratory · ticket #17 · Not approved/);
+  }
+  for (const state of hf.councilRunStates) {
+    assert.ok(runFamily.states.includes(state), state);
+    const status = hf.specimenStatus('workflow-run', state);
+    assert.equal(status.kind, 'exploratory');
+    assert.deepEqual(Array.from(status.tickets), ['#17', '#15'], `${state} also shows the compact sidebar when closed`);
+  }
+  assert.equal(hf.specimenStatus('workflow-run', 'running').kind === 'exploratory', false);
+});
+
+test('council editor focus follows add, remove and toggle', () => {
+  const focused = [];
+  const hf = loadDesignRuntime({ querySelectorOverride: selector => selector.startsWith('.editor-app ') ? { focus: () => focused.push(selector) } : undefined });
+  const editor = councilRoute(hf, 'council-config');
+  editor.councilAdd();
+  assert.equal(focused.at(-1), '.editor-app #council-name-m4', 'Add member focuses the new Name input');
+  editor.councilRemove('m4');
+  assert.equal(focused.at(-1), '.editor-app [data-action="editor-council-toggle:m3"]', 'removing the last card focuses the previous card’s toggle');
+  editor.councilRemove('m2');
+  assert.equal(focused.at(-1), '.editor-app [data-action="editor-council-toggle:m3"]', 'focus moves to the next card’s toggle');
+  editor.councilRemove('m3');
+  assert.equal(focused.at(-1), '.editor-app [data-action="editor-council-toggle:m1"]', 'otherwise the previous card’s toggle');
+  editor.councilToggle('m1');
+  assert.equal(focused.at(-1), '.editor-app [data-action="editor-council-toggle:m1"]');
+  editor.councilCycleEffort('m1');
+  assert.equal(focused.at(-1), '.editor-app [data-action="editor-council-effort:m1"]', 'cycling effort keeps focus on the effort control');
+  editor.councilRemove('m1');
+  assert.equal(focused.at(-1), '.editor-app [data-action="editor-council-add"]', 'removing the only card focuses Add member');
+  editor.councilAdd();
+  assert.match(focused.at(-1), /^\.editor-app #council-name-m\d+$/);
+});
+
+test('council editor markup and run markup stay inside their own states', () => {
+  const hf = loadDesignRuntime();
+  const editorMarkup = /editor-council|add:council|data-council-(member|field|card|heading|root)/;
+  const runMarkup = /wfr-council|council-turn|wr-select:council|council-phase/;
+  for (const family of hf.screens) {
+    for (const state of family.states) {
+      hf.route = { theme: 'light', screen: family.id, state };
+      if (family.id === 'workflow-run') hf.resetWorkflowRun(hf.route);
+      if (family.id === 'workflow-editor') hf.editorController.reset(state);
+      const html = renderers[family.id](hf, state);
+      assert.equal(editorMarkup.test(html), family.id === 'workflow-editor' && hf.councilEditorRoutes.includes(state), `${family.id}/${state} council editor markup`);
+      assert.equal(runMarkup.test(html), family.id === 'workflow-run' && hf.councilRunStates.includes(state), `${family.id}/${state} council run markup`);
+    }
+  }
   hf.editorController.reset('saved');
 });
 
