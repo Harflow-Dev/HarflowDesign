@@ -224,3 +224,6 @@ content updates and appearance changes after resolution. Computed styles showed 
 ease-out opacity on both layers with normal motion, and zero-duration replacement with
 the explicit reduced-motion override. The sample viewport stayed 264 pixels high across
 the checked outcomes. These checks do not certify native intermediate frames or lifecycle.
+
+The owner approved the loading handoff rule on 2026-10-26; see
+`docs/loading-handoff.md` and proposal commit `9d3916c`.

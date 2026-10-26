@@ -1,6 +1,8 @@
 # Loading handoff motion — proposal for HarflowMac #20
 
-Status: exploratory; native implementation awaits explicit approval.
+Status: approved by the owner on 2026-10-26. Reference proposal: `9d3916c`.
+Approved states: `foundations/skeleton-crossfade/{light,dark}`, with populated,
+empty and error outcomes and system/full/reduced motion variations.
 
 Preview `#foundations/skeleton-crossfade/light` and
 `#foundations/skeleton-crossfade/dark`. Replay loading, choose populated/empty/error,
