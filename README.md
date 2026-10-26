@@ -42,3 +42,7 @@ for file in scripts/*.js features/*.js; do node --check "$file" || exit 1; done;
 ```
 
 Set the Pages build environment variable `NODE_VERSION` to `24`. Pages reruns validation before publishing, so a failed catalog suite blocks that deployment independently of GitHub Actions. Only the staged site directories are published; repository metadata, tests, CI configuration, and local editor projects are excluded.
+
+The exploratory [loading-handoff motion proposal](docs/loading-handoff.md) is previewable at
+`#foundations/skeleton-crossfade/light` and `/dark`, with populated, empty, error and
+Reduce Motion controls. Native implementation awaits approval.

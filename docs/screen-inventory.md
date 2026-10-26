@@ -4,7 +4,7 @@ Baseline: HarflowMac [`7fbed912`](https://github.com/Harflow-Dev/HarflowMac/tree
 
 | Family | Editable states | Pinned source | Fidelity |
 |---|---|---|---|
-| Foundations | `default`, `components`, `native-reference` | [Swift source](https://github.com/Harflow-Dev/HarflowMac/blob/7fbed912b61094f2ee427a7d9be76a026767a61e/macos/HfFoundation/HfUI/Sources/HfUI/Style/Palette.swift) | Native foundation reference available |
+| Foundations | `default`, `components`, `native-reference`, `skeleton-crossfade` | [Swift source](https://github.com/Harflow-Dev/HarflowMac/blob/7fbed912b61094f2ee427a7d9be76a026767a61e/macos/HfFoundation/HfUI/Sources/HfUI/Style/Palette.swift) | Native foundation reference available |
 | Sessions & sidebar | `populated`, `loading`, `empty`, `no-results`, `backend-empty`, `list-error`, `install-retry`, `degraded-catalog`, `older-history-error`, `store-incompatible`, `appearance-header`, `starred-workflows`, `context-menu`, `delete-confirmation`, `setup-required`, `setup-installing`, `setup-failed`, `setup-update-required`, `setup-updating`, `setup-update-failed`, `setup-ready` | [Swift source](https://github.com/Harflow-Dev/HarflowMac/blob/7fbed912b61094f2ee427a7d9be76a026767a61e/macos/HfFeatures/MainWindowFeature/Sources/MainWindowFeature/Coordinator/MainWindowNavigationView.swift) | Native sidebar fixture compared; first-install setup layout approved below, native parity under validation; `store-incompatible` (#12), `appearance-header` (#6), `starred-workflows` (#7), `context-menu` and `delete-confirmation` (#8, with Rename… from #4) are exploratory proposals with no native source |
 | Task activity | `running`, `completed`, `failed`, `timed-out`, `cancelled`, `taken-over`, `spawned`, `missing`, `deferred`, `no-live`, `no-session` | [Swift source](https://github.com/Harflow-Dev/HarflowMac/blob/7fbed912b61094f2ee427a7d9be76a026767a61e/macos/HfFeatures/MainWindowFeature/Sources/MainWindowFeature/TaskDetail/TaskDetailView.swift) | Rich native running, completed, failed, and running-takeover fixtures compared; host toolbar approximated |
 | Task summary | `completed`, `loading`, `empty`, `paged`, `error`, `unsupported`, `metadata-only` | [Swift source](https://github.com/Harflow-Dev/HarflowMac/blob/7fbed912b61094f2ee427a7d9be76a026767a61e/macos/HfFeatures/MainWindowFeature/Sources/MainWindowFeature/TaskDetail/TaskDetailView.swift) | Native Summary and Prompt fixtures compared; shared task-detail shell |
@@ -211,3 +211,16 @@ Twelve isolated native references cover the three selected preferences, two conn
 ## Workflow sidebar sizing and terminology approval
 
 On 2026-10-26, the user requested native implementation of HarflowMac #15 and #16. This approves the specified 288-point default sidebar and 420-point selected Activity direction in `58a81b9` (`scripts/workflow-run.js`, `styles/workflow-run.css`; `#workflow-run/running/light`, `#workflow-run/selected-node/dark`, and `#workflow-run/parallel/light`) and the meaning-based glossary in `docs/terminology.md`. It does not approve unrelated proposal states. Native validation remains separate. Approval response copy uses “Answered from Harflow”; public `monitor` channel values remain unchanged.
+
+## Loading handoff proposal (#20)
+
+`foundations/skeleton-crossfade` is exploratory, not approved. See [the motion rule](loading-handoff.md)
+for 180 ms ease-out timing, instant Reduce Motion behavior, once-per-selection ownership,
+the native sidebar exception and natural inline-size caveat. Populated, empty and error outcomes
+reuse existing result categories; the fixed browser viewport is a motion reference only.
+
+Local browser checks covered Light and Dark, loading/populated/empty/error outcomes, replay,
+content updates and appearance changes after resolution. Computed styles showed 180 ms
+ease-out opacity on both layers with normal motion, and zero-duration replacement with
+the explicit reduced-motion override. The sample viewport stayed 264 pixels high across
+the checked outcomes. These checks do not certify native intermediate frames or lifecycle.

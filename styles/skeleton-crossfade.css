@@ -1,0 +1,25 @@
+.skeleton-crossfade-reference { max-width: 960px; }
+.crossfade-controls { display: flex; align-items: end; flex-wrap: wrap; gap: 12px; }
+.crossfade-controls label { display: grid; gap: 6px; color: var(--secondaryText); font-size: 12px; }
+.crossfade-controls select { padding: 7px 10px; border: 1px solid var(--hairline); border-radius: 8px; background: var(--cardFill); color: var(--primaryText); }
+.crossfade-frame { position: relative; height: 264px; border: 1px solid var(--hairline); border-radius: 12px; overflow: hidden; background: var(--cardFill); }
+.crossfade-layer { position: absolute; inset: 0; padding: 24px; }
+/* Scoped !important preserves the explicit preview override even under the catalog's
+   global system Reduce Motion rule. It is not an app-wide motion setting. */
+.crossfade-frame[data-reduced="false"] .crossfade-layer { transition: opacity 180ms ease-out !important; }
+.crossfade-frame[data-reduced="true"] .crossfade-layer,
+.crossfade-frame.crossfade-resetting .crossfade-layer { transition: none !important; }
+.crossfade-skeleton { opacity: 1; pointer-events: none; display: grid; align-content: start; gap: 16px; }
+.crossfade-skeleton i { height: 16px; border-radius: 8px; background: var(--neutralFill); width: 80%; }
+.crossfade-skeleton i:first-child { width: 45%; height: 24px; margin-bottom: 12px; }
+.crossfade-skeleton i:last-child { width: 60%; }
+.crossfade-result { opacity: 0; pointer-events: none; }
+.crossfade-frame[data-loaded="true"] .crossfade-skeleton { opacity: 0; }
+.crossfade-frame[data-loaded="true"] .crossfade-result { opacity: 1; pointer-events: auto; }
+.crossfade-outcome h3 { margin-top: 0; }
+.crossfade-outcome p { margin: 12px 0; }
+.crossfade-detail { padding: 12px; background: var(--neutralFill); border-radius: 8px; font-family: ui-monospace, monospace; }
+.crossfade-status { min-height: 32px; margin-top: 12px; }
+.crossfade-rules dl { display: grid; grid-template-columns: 150px 1fr; gap: 12px 24px; }
+.crossfade-rules dt { font-weight: 600; }
+.crossfade-rules dd { margin: 0; color: var(--secondaryText); }
