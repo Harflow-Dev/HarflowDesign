@@ -51,3 +51,13 @@ empty-section behavior and native reconciliation boundary.
 The browser fixture uses a fixed 264-pixel sample viewport and cheap mock content.
 That dimension is not a native layout token. CSS compositing approximates SwiftUI;
 it does not prove native first-frame gating, lifecycle, performance or pixel fidelity.
+
+## Parallel panel width amendment
+
+The owner requested and approved a 1.5× larger minimum Parallel panel width on
+2026-10-26: 420 → 630 points. This applies to standalone group lanes and workflow
+Parallel lanes, including their loading placeholders. Wider viewports still divide
+space evenly when each lane can meet the minimum; otherwise the row scrolls
+horizontally. The selected Graph activity sidebar and application window minimum
+are unchanged. Preview `parallel/{mixed,two-lanes,deferred}` and `workflow-run/parallel`
+in both appearances.

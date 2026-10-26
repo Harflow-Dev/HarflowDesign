@@ -182,7 +182,7 @@
 .wfr-parallel-columns .parallel-group-header,.wfr-parallel-columns .parallel-toolbar,.wfr-parallel-columns .parallel-status-summary { display: none; }
 .wfr-parallel-columns .parallel-app-body { width: 100%; }
 .wfr-parallel-columns .parallel-lanes { display: flex; width: 100%; }
-.wfr-parallel-columns .parallel-lane { min-width: 0; flex: 1; }
+.wfr-parallel-columns .parallel-lane { min-width: 630px; flex: 1 0 630px; }
 .wfr-parallel-columns .parallel-lane-head { padding: 16px; }
 .wfr-parallel-columns .parallel-lane-title h3 { font-size: 18px; }
 .wfr-selected-activity::before { content: none; }

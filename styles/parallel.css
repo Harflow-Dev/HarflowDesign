@@ -13,7 +13,7 @@
 .parallel-app .parallel-claims>span{display:inline-block;border-radius:999px;background:var(--pillFill);padding:4px 8px;font-weight:600;color:var(--secondaryText);font-size:12px;line-height:16px}
 .parallel-app .parallel-claims p{margin:6px 0 0;color:var(--tertiaryText);font-size:11px;line-height:14px}
 .parallel-app .parallel-lanes{display:flex;flex:1;min-height:0;overflow-x:auto;overflow-y:hidden;overscroll-behavior:contain}
-.parallel-app .parallel-lane{position:relative;display:flex;flex-direction:column;flex:1 0 420px;min-width:420px;min-height:0;padding:16px;gap:10px;--parallel-status-color:var(--runningFG);border-right:1px solid var(--hairline);background:var(--cardFill);overflow:hidden}
+.parallel-app .parallel-lane{position:relative;display:flex;flex-direction:column;flex:1 0 630px;min-width:630px;min-height:0;padding:16px;gap:10px;--parallel-status-color:var(--runningFG);border-right:1px solid var(--hairline);background:var(--cardFill);overflow:hidden}
 .parallel-app .parallel-lane:last-child{border-right:0}
 .parallel-app .parallel-lane.completed{--parallel-status-color:var(--doneGreen)}
 .parallel-app .parallel-lane.failed{--parallel-status-color:var(--failedRed)}
@@ -58,7 +58,7 @@
 .parallel-app .parallel-header-skeleton i,.parallel-app .parallel-lane-skeleton i,.parallel-app .parallel-lane-skeleton b{display:block;background:var(--neutralFill);border-radius:6px;animation:parallel-pulse 1.2s ease-in-out infinite alternate}
 .parallel-app .parallel-header-skeleton i{height:18px;width:210px}
 .parallel-app .parallel-header-skeleton i+i{height:12px;width:320px}
-.parallel-app .parallel-lane-skeleton{flex:1 0 420px;min-width:420px;padding:16px;border-right:1px solid var(--hairline);background:var(--cardFill)}
+.parallel-app .parallel-lane-skeleton{flex:1 0 630px;min-width:630px;padding:16px;border-right:1px solid var(--hairline);background:var(--cardFill)}
 .parallel-app .parallel-lane-skeleton i{width:160px;height:14px;margin-bottom:4px}
 .parallel-app .parallel-lane-skeleton i+i{width:120px;height:10px}
 .parallel-app .parallel-lane-skeleton hr{margin:10px 0;border:0;border-top:1px solid var(--hairline)}
