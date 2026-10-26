@@ -214,7 +214,7 @@ On 2026-10-26, the user requested native implementation of HarflowMac #15 and #1
 
 ## Loading handoff proposal (#20)
 
-`foundations/skeleton-crossfade` is exploratory, not approved. See [the motion rule](loading-handoff.md)
+`foundations/skeleton-crossfade` was approved by the owner on 2026-10-26. See [the motion rule](loading-handoff.md)
 for 180 ms ease-out timing, instant Reduce Motion behavior, once-per-selection ownership,
 the native sidebar exception and natural inline-size caveat. Populated, empty and error outcomes
 reuse existing result categories; the fixed browser viewport is a motion reference only.

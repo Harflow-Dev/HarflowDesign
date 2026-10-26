@@ -22,10 +22,10 @@ New directions are exploratory until explicitly approved. Record an approved des
 
 The Foundations / Native reference state links local HfUI rendering-test captures in both appearances (2000 × 1560; 220 tests passed in the source validation run). These validate native foundation references, not every catalog screen. Native fixture captures of the sidebar, task content, parallel view, workflows, session form, settings, and menu popover are included in `assets/references/screens/` for comparison. These are deterministic renders of pinned source views, not captures of a live user session. Current coverage and limitations are tracked in [screen-inventory.md](docs/screen-inventory.md).
 
-## Loading handoff motion proposal
+## Loading handoff motion
 
-HarflowMac #20 is explored in [loading-handoff.md](docs/loading-handoff.md) and
-`#foundations/skeleton-crossfade/light` / `dark`. Proposed timing is the existing
+HarflowMac #20 is specified in [loading-handoff.md](docs/loading-handoff.md) and
+`#foundations/skeleton-crossfade/light` / `dark`. Approved timing is the existing
 180 ms ease-out arrival, with an instant Reduce Motion swap, retained selection identity,
-and a documented native sidebar exception. This direction is exploratory pending approval;
+and a documented native sidebar exception. The owner approved this rule on 2026-10-26;
 inline content preserves its natural layout, including omission of an empty Files edited section.
