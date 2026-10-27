@@ -1,5 +1,9 @@
 # Harflow interface reference
 
+The approved original Statistics overview and agreed metric behavior are recorded in
+[Statistics implementation reference](docs/statistics-approved.md). The separate
+`accounting-*` specimens remain unapproved exploration.
+
 Editable, offline design catalog derived from the current HarflowMac implementation. The baseline is source-derived. Approved directions are recorded in the screen inventory; approval does not establish native pixel fidelity.
 
 HarflowDesign is maintained directly in Git. Open root `index.html` in a browser, or serve the folder:
