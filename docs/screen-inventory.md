@@ -54,7 +54,7 @@ Not designed: Statistics empty state and missing history, loading, error, contex
 
 ## Approved start screen
 
-The start screen replaces the empty detail pane ("Select a task") of the main window when no task or workflow is selected. It was approved by the owner on 2026-10-27 and ported from the Harflow design-system canvas version 1793071559-4004 (ScreenShellStart and ScreenShellStartNoWorkflows). Approved reference: HarflowDesign commit PENDING, `scripts/start-screen.js` and `styles/start-screen.css`, screen states `tasks/start` and `tasks/start-no-workflows`.
+The start screen replaces the empty detail pane ("Select a task") of the main window when no task or workflow is selected. It was approved by the owner on 2026-10-27 and ported from the Harflow design-system canvas version 1793071559-4004 (ScreenShellStart and ScreenShellStartNoWorkflows). Approved reference: HarflowDesign commit `62b96753b8a0d9dbc0a1064ab922945dcd29c08b`, `scripts/start-screen.js` and `styles/start-screen.css`, screen states `tasks/start` and `tasks/start-no-workflows`.
 
 It replaces the native `emptyDetailView` in `macos/HfFeatures/MainWindowFeature/Sources/MainWindowFeature/Coordinator/MainWindowNavigationView.swift`, which still draws "Select a task". No native source exists for the start screen; the approval does not claim native fidelity.
 
