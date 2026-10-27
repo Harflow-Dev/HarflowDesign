@@ -70,7 +70,7 @@ HF.renderTasks=(screen,state)=>{
     HF.taskDetailContext=null;
     return HF.renderSidebarProposal(state);
   }
-  if(!['tasks','task-detail','summary'].includes(screen)||['empty','no-results','backend-empty','loading','list-error','missing','deferred'].includes(state)&&screen!=='summary') return base(screen,state);
+  if(!['tasks','task-detail','summary'].includes(screen)||[...HF.startStates,'missing','deferred'].includes(state)&&screen!=='summary') return base(screen,state);
   let task=HF.currentTask;
   const summaryRoute=screen==='summary';
   if(summaryRoute&&!task)task=HF.taskSummaryFixture();

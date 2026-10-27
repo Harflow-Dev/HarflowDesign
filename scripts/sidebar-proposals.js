@@ -85,7 +85,7 @@
 
   // Shared shell for the four sidebar proposal states: the populated sidebar with its proposal-specific
   // regions, an unselected detail pane, and any menu or dialog overlay.
-  HF.renderSidebarProposal = state => HF.app(`<div class="split">${HF.sidebar(state)}<main class="content sp-empty-detail">${HF.empty('Select a task', 'Tasks started through harflow show up in the sidebar, live.')}</main></div>${HF.sidebarProposalOverlay(state)}`, '', 'Harflow', state === 'appearance-header' ? { actions: HF.appearanceHeaderControl() } : {});
+  HF.renderSidebarProposal = state => HF.app(`<div class="split">${HF.sidebar(state)}<main class="content">${HF.startScreen(HF.startStateModel(state))}</main></div>${HF.sidebarProposalOverlay(state)}`, '', 'Harflow', state === 'appearance-header' ? { actions: HF.appearanceHeaderControl() } : {});
 
   // ---- Interaction (browser only) ------------------------------------------------------------------------
   let current = { starred: DEFAULT_STARRED.slice(), menu: null, dialog: null };

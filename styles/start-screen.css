@@ -1,0 +1,44 @@
+/* Start screen: detail pane with nothing selected. A 480-point column centred in the pane; 32 points between groups. */
+.start-screen { flex: 1; min-height: 0; display: flex; overflow: auto; padding: 0 24px 52px; background: var(--windowBG); }
+.start-column { width: 480px; max-width: 100%; margin: auto; display: flex; flex-direction: column; gap: 32px; }
+.start-header { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
+.start-emblem { display: block; width: 40px; height: 40px; margin-bottom: 6px; background-color: var(--primaryText); -webkit-mask: image-set(url('../assets/branding/menubarTemplate.png') 1x, url('../assets/branding/menubarTemplate@2x.png') 2x) center / contain no-repeat; mask: image-set(url('../assets/branding/menubarTemplate.png') 1x, url('../assets/branding/menubarTemplate@2x.png') 2x) center / contain no-repeat; }
+.start-screen .start-greeting { margin: 0; font-size: 22px; line-height: 26px; font-weight: 600; color: var(--primaryText); }
+.start-status { margin: 0; font-size: 13px; line-height: 16px; color: var(--secondaryText); }
+.start-status-skeleton { width: 260px; max-width: 100%; height: 16px; display: flex; align-items: center; }
+.start-status-skeleton i { display: block; width: 100%; height: 12px; border-radius: 6px; background: var(--neutralFill); animation: start-pulse 1.2s ease-in-out infinite alternate; }
+@keyframes start-pulse { to { opacity: .45; } }
+@media (prefers-reduced-motion: reduce) { .start-status-skeleton i { animation: none; } }
+
+.start-glyph { display: inline-block; flex: none; background-color: currentColor; -webkit-mask-position: center; mask-position: center; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; -webkit-mask-size: contain; mask-size: contain; }
+.start-glyph-plus { width: 11px; height: 11px; -webkit-mask-image: url("../assets/symbols/plus.png"); mask-image: url("../assets/symbols/plus.png"); }
+.start-glyph-workflow { width: 13px; height: 13px; -webkit-mask-image: url("../assets/symbols/point.3.connected.trianglepath.dotted.png"); mask-image: url("../assets/symbols/point.3.connected.trianglepath.dotted.png"); }
+.start-glyph-play { width: 10px; height: 10px; -webkit-mask-image: url("../assets/symbols/play.png"); mask-image: url("../assets/symbols/play.png"); }
+
+.start-actions { display: flex; align-items: center; gap: 8px; }
+.start-screen .start-btn { display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-height: 30px; padding: 0 14px; border: 0; border-radius: 9999px; font-size: 13px; line-height: 16px; font-weight: 600; white-space: nowrap; cursor: pointer; }
+.start-screen .start-btn.primary { padding: 0 16px; color: var(--onAccent); background: var(--accentFill); }
+.start-screen .start-btn.primary:hover { background: var(--accentFill); filter: brightness(1.08); }
+.start-screen .start-btn.tinted { color: var(--accentLink); background: var(--runningBG); }
+.start-screen .start-btn.tinted:hover { background: var(--runningBG); filter: brightness(.97); }
+.start-shortcut { margin-left: 4px; font-size: 11px; line-height: 14px; font-weight: 400; color: color-mix(in srgb, var(--onAccent) 80%, transparent); }
+.start-screen .start-btn:focus-visible, .start-screen .start-workflow-row:focus-visible, .start-screen .start-show-all:focus-visible { outline: 2px solid var(--accentLink); outline-offset: 2px; }
+.start-screen .start-workflow-row:focus-visible, .start-screen .start-show-all:focus-visible { outline-offset: -2px; }
+
+.start-workflows { display: flex; flex-direction: column; gap: 10px; }
+.start-heading { margin: 0; padding: 0 4px; font-size: 11px; line-height: 14px; font-weight: 600; color: var(--tertiaryText); }
+.start-card { background: var(--cardFill); border: 1px solid var(--cardBorder); border-radius: 12px; overflow: hidden; }
+.start-screen .start-workflow-row { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 52px; padding: 12px 14px; border: 0; border-radius: 0; background: transparent; text-align: left; color: var(--primaryText); cursor: pointer; }
+.start-workflow-row + .start-workflow-row, .start-workflow-row + .start-show-all { border-top: 1px solid var(--hairline) !important; }
+.start-screen .start-workflow-row:hover, .start-screen .start-show-all:hover { background: color-mix(in srgb, var(--neutralFill) 55%, transparent); }
+.start-tile { display: flex; align-items: center; justify-content: center; flex: none; width: 28px; height: 28px; border-radius: 7px; background: var(--neutralFill); color: var(--secondaryText); }
+.start-tile .start-glyph { width: 14px; height: 14px; }
+.start-workflow-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 15px; line-height: 19px; font-weight: 500; color: var(--primaryText); }
+.start-workflow-runs { flex: none; font-size: 12px; line-height: 15px; font-variant-numeric: tabular-nums; color: var(--tertiaryText); }
+.start-run { display: inline-flex; align-items: center; justify-content: center; flex: none; gap: 5px; height: 26px; padding: 0 12px; border-radius: 9999px; font-size: 13px; line-height: 16px; font-weight: 600; color: var(--accentLink); background: var(--runningBG); }
+.start-screen .start-show-all { display: block; width: 100%; min-height: 40px; padding: 10px 14px; border: 0; border-radius: 0; background: transparent; text-align: center; font-size: 13px; line-height: 16px; color: var(--accentLink); cursor: pointer; }
+
+.start-card-empty { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 14px; }
+.start-empty-title { margin: 0; font-size: 15px; line-height: 19px; font-weight: 600; color: var(--primaryText); }
+.start-empty-body { margin: 0; font-size: 13px; line-height: 16px; color: var(--secondaryText); }
+.start-card-empty .start-btn { margin-top: 6px; }

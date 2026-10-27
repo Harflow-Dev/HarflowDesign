@@ -43,7 +43,6 @@
 .app .sp-alert button.danger { color: var(--dangerFG); }
 .sp-alert button:focus-visible { outline: 2px solid var(--accentLink); outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) { .sp-menu, .sp-alert { transition: none; } }
-.sp-empty-detail { display: flex; align-items: center; justify-content: center; min-width: 0; }
 
 /* Run Workflow chooser with stars (#7) */
 .launch-chooser { position: relative; margin: 14px 0; }

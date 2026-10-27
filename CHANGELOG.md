@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add the approved start screen to the main window in place of the empty "Select a task" detail: a time-of-day greeting, a status line, New session and New workflow actions, and the three most-run workflows with a no-workflows variant. New `tasks/start` and `tasks/start-no-workflows` states; the empty, loading, list error, no results, and harness-empty states and the sidebar proposal states show it too. Ported from design-system canvas version 1793071559-4004.
+
 - Match the Harflow web sidebar and title bar to the canvas boards: per-board sidebars, the Hide sidebar button, New session, search and harness filter, status marks and harness dots, the appearance control and Settings footer, and a centred Harflow brand with the Connected indicator, all built without macOS sidebar actions or fixtures.
 
 - Clarify in the exploratory Start inspector that the setup command is reviewed each time you start the workflow yourself, because command review applies to manual launches only.
