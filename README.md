@@ -12,13 +12,13 @@ Open `http://localhost:8080`. No dependencies, build, account, engine, or siblin
 
 - `styles/tokens.css`: exact appearance-aware RGB values from HfUI.
 - `styles/specimens.css`: shared specimen layouts and components.
-- `styles/start-screen.css`, `tasks.css`, `task-activity.css`, `task-summary.css`, `task-approvals.css`, `parallel.css`, `workflows.css`, `workflow-editor.css`, `workflow-editor-inspector.css`, `workflow-run.css`, `dialogs.css`, `state-recovery.css`, `sidebar-setup.css`, `sidebar-proposals.css`, `workflow-editor-proposals.css`, `council-activity.css`, `statistics.css`, `web.css`: screen-specific layouts.
+- `styles/start-screen.css`, `tasks.css`, `task-activity.css`, `task-summary.css`, `task-approvals.css`, `parallel.css`, `workflows.css`, `workflow-editor.css`, `workflow-editor-inspector.css`, `workflow-run.css`, `dialogs.css`, `state-recovery.css`, `sidebar-setup.css`, `sidebar-proposals.css`, `workflow-editor-proposals.css`, `council-activity.css`, `statistics.css`, `statistics-accounting.css`, `web.css`: screen-specific layouts.
 - `styles/appearance.css`: shared native-derived appearance footer and connection indicator.
 - `scripts/appearance.js`: local Light/Dark/System preference and independent catalog preview override.
 - `styles/catalog.css`: reference website navigation and chrome.
 - `scripts/registry.js`: screen families, states, and pinned source links. It also holds proposal metadata (`proposals`, `proposal`) from which the catalog caption, state picker suffix, search, and in-stage label for exploratory ticket proposals are derived.
 - `scripts/workflow-connectors.js`: shared native-derived connection geometry for workflow editor and run.
-- `scripts/start-screen.js`, `tasks.js`, `task-activity.js`, `task-summary.js`, `task-approvals.js`, `parallel.js`, `workflows.js`, `workflow-editor.js`, `workflow-editor-inspector.js`, `workflow-run.js`, `dialogs.js`, `state-recovery.js`, `sidebar-setup.js`, `sidebar-proposals.js`, `workflow-editor-proposals.js`, `council-activity.js`, `workflow-launch-proposals.js`, `statistics.js`, `web.js`: editable screen specimens.
+- `scripts/start-screen.js`, `tasks.js`, `task-activity.js`, `task-summary.js`, `task-approvals.js`, `parallel.js`, `workflows.js`, `workflow-editor.js`, `workflow-editor-inspector.js`, `workflow-run.js`, `dialogs.js`, `state-recovery.js`, `sidebar-setup.js`, `sidebar-proposals.js`, `workflow-editor-proposals.js`, `council-activity.js`, `workflow-launch-proposals.js`, `statistics.js`, `statistics-accounting.js`, `web.js`: editable screen specimens.
 - `scripts/catalog.js`: local navigation and mock interactions.
 - `docs/screen-inventory.md`: coverage, limitations, and source evidence.
 
@@ -46,3 +46,5 @@ Set the Pages build environment variable `NODE_VERSION` to `24`. Pages reruns va
 The approved [loading-handoff motion rule](docs/loading-handoff.md) is previewable at
 `#foundations/skeleton-crossfade/light` and `/dark`, with populated, empty, error and
 Reduce Motion controls. The owner approved the rule on 2026-10-26; native implementation is under validation.
+
+The Statistics `overview` and `nodes` states retain the historical canvas. The `accounting-*` states are a separate exploratory proposal with prospective fixture evidence; see [the accounting proposal](docs/statistics-proposal.md). Neither direction is approved.

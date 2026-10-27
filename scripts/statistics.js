@@ -81,7 +81,7 @@
 
   const fresh = state => ({ range: 30, measure: 'time', list: 'workflows', open: {}, screen: state === 'nodes' ? 'nodes' : 'overview', workflow: WORKFLOWS[0].name });
   let current = fresh();
-  HF.resetStatistics = () => { current = fresh(HF.route?.screen === 'statistics' ? HF.route.state : undefined); };
+  HF.resetStatistics = () => { if (HF.route?.screen === 'statistics' && HF.route.state.startsWith('accounting-')) return HF.resetAccounting(HF.route.state); current = fresh(HF.route?.screen === 'statistics' ? HF.route.state : undefined); };
 
   const workflowRuns = (w, range, usage, fmt, fmtOther) => {
     const seed = hash(w.name), total = Math.max(1, Math.round(w.runs * FACTOR[range])), shown = Math.min(MAX_RUNS, total), runs = [];
@@ -242,6 +242,7 @@
 
   const entry = range => `<div class="section-label">Overview</div><button type="button" class="task-row stat-entry active" data-action="route:statistics/overview" aria-current="page"><span class="stat-entry-icon" aria-hidden="true">${icon('chart', 14)}</span><span class="task-row-copy"><strong>Statistics</strong><small>Last ${range} days</small></span></button>`;
   HF.renderStatistics = state => {
+    if (state.startsWith('accounting-')) return HF.renderAccounting(state);
     const sidebar = HF.sidebar('populated').replace('class="task-row active"', 'class="task-row"').replace('<div class="workflows-heading">', entry(current.range) + '<div class="workflows-heading">');
     return HF.app(`<div class="split">${sidebar}<main class="content stat-content" id="statistics-content">${HF.statisticsBody(state === 'nodes' ? 'nodes' : 'overview', current)}</main></div>`);
   };

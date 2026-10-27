@@ -1,0 +1,128 @@
+.acct-page {
+  padding: 28px;
+  min-width: 880px;
+  max-width: 1120px;
+  margin: auto;
+  color: var(--primaryText);
+}
+
+.acct-heading,
+.acct-card-head,
+.acct-row,
+.acct-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.acct-heading { margin-bottom: 24px; }
+.acct-heading h2 { font-size: 22px; margin: 0 0 5px; }
+.acct-heading p,
+.acct-card p,
+.acct-row p {
+  color: var(--secondaryText);
+  margin: 5px 0;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.acct-page button,
+.acct-page select {
+  font: inherit;
+  color: inherit;
+  background: var(--neutralFill);
+  border: 1px solid var(--cardBorder);
+  border-radius: var(--radius-row);
+  padding: 7px 10px;
+  cursor: pointer;
+}
+.acct-page button[aria-pressed="true"] {
+  background: var(--selectedRow);
+  border-color: var(--accentLink);
+}
+.acct-page button:disabled { opacity: .5; cursor: default; }
+.acct-page button:focus-visible,
+.acct-page select:focus-visible,
+.acct-page summary:focus-visible {
+  outline: 2px solid var(--accentLink);
+  outline-offset: 2px;
+}
+
+.acct-filters { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
+.acct-filters label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--secondaryText);
+}
+.acct-filters select { max-width: 250px; min-width: 112px; color: var(--primaryText); }
+.acct-view-switch { margin-bottom: 20px; }
+.acct-card,
+.acct-tiles section {
+  background: var(--cardFill);
+  border: 1px solid var(--cardBorder);
+  border-radius: var(--radius-card);
+  padding: 18px;
+  margin-bottom: 16px;
+}
+.acct-card h3 { font-size: 14px; margin: 0 0 10px; }
+.acct-card h3:not(:first-child) { margin-top: 22px; }
+.acct-card-head h3 { margin: 0; }
+.acct-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.acct-tiles section { display: flex; flex-direction: column; gap: 7px; }
+.acct-tiles strong { font-size: 24px; }
+.acct-tiles span,
+.acct-tiles small,
+.acct-note { font-size: 12px; color: var(--secondaryText); }
+.acct-note { line-height: 1.5; margin: 12px 0 18px; }
+.acct-row { border-top: 1px solid var(--cardBorder); padding: 12px 0; font-size: 12px; }
+.acct-row > div { min-width: 0; flex: 1; }
+.acct-row > span { text-align: right; max-width: 55%; line-height: 1.5; }
+.acct-row p { overflow-wrap: anywhere; }
+.acct-group-meta { display: block; color: var(--secondaryText); }
+.acct-page details { font-size: 12px; margin: 12px 0; }
+.acct-page summary { cursor: pointer; line-height: 1.5; }
+.acct-page details > p { margin: 8px 0; }
+.acct-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.acct-pagination { justify-content: center; margin-top: 16px; font-size: 12px; }
+
+.acct-chart {
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+  padding: 16px 0;
+}
+.acct-day { display: flex; flex: 1; min-width: 0; position: relative; flex-direction: column; align-items: center; gap: 6px; font-size: 11px; }
+.acct-bar-space { height: 150px; width: 100%; max-width: 28px; position: relative; display: flex; align-items: end; }
+.acct-stack { width: 100%; display: flex; flex-direction: column; justify-content: end; }
+.acct-stack i { display: block; width: 100%; flex-shrink: 0; }
+.acct-workflow-bar { background: var(--accentFill); }
+.acct-task-bar { background: var(--doneGreen); }
+.acct-day small { color: var(--secondaryText); white-space: nowrap; }
+.acct-legend { display: flex; flex-wrap: wrap; gap: 14px; }
+.acct-legend span::before { content: ''; display: inline-block; width: 9px; height: 9px; background: var(--accentFill); margin-right: 5px; }
+.acct-legend span:nth-child(2)::before { background: var(--doneGreen); }
+.acct-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 10px; }
+.acct-table caption { text-align: left; color: var(--secondaryText); margin-bottom: 8px; }
+.acct-table th,
+.acct-table td { text-align: left; border-top: 1px solid var(--cardBorder); padding: 8px; }
+
+/* Keep daily spacing uniform across the entire selected calendar range. */
+.acct-day-value { display: block; height: 13px; font-size: 10px; }
+.acct-chart-90 { gap: 1px; }
+.acct-chart-90 .acct-day small { font-size: 10px; }
+.acct-zero-marker {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: var(--secondaryText);
+}
+
+.acct-workflow-group { border-top: 1px solid var(--cardBorder); padding: 14px 0; }
+.acct-workflow-group h4 { margin: 0 0 8px; font-size: 13px; }

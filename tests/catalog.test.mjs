@@ -8,7 +8,7 @@ import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const scripts = ['tokens.js', 'registry.js', 'appearance.js', 'components.js', 'start-screen.js', 'tasks.js', 'task-activity.js', 'parallel.js', 'task-approvals.js', 'task-summary.js', 'workflows.js', 'workflow-connectors.js', 'workflow-editor-proposals.js', 'workflow-editor-inspector.js', 'workflow-editor.js', 'council-activity.js', 'workflow-run.js', 'dialogs.js', 'workflow-launch-proposals.js', 'state-recovery.js', 'sidebar-setup.js', 'sidebar-proposals.js', 'statistics.js', 'web.js', 'skeleton-crossfade.js', 'foundations.js'];
+const scripts = ['tokens.js', 'registry.js', 'appearance.js', 'components.js', 'start-screen.js', 'tasks.js', 'task-activity.js', 'parallel.js', 'task-approvals.js', 'task-summary.js', 'workflows.js', 'workflow-connectors.js', 'workflow-editor-proposals.js', 'workflow-editor-inspector.js', 'workflow-editor.js', 'council-activity.js', 'workflow-run.js', 'dialogs.js', 'workflow-launch-proposals.js', 'state-recovery.js', 'sidebar-setup.js', 'sidebar-proposals.js', 'statistics.js', 'statistics-accounting.js', 'web.js', 'skeleton-crossfade.js', 'foundations.js'];
 
 function loadDesignRuntime({ captureEvents = false, querySelectorOverride, querySelectorAllOverride, history, timers } = {}) {
   const announcement = { textContent: '', classList: { add() {}, remove() {} } };
@@ -2080,14 +2080,33 @@ const statText = html => html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ');
 test('statistics is an exploratory whole-proposal family with no native source', () => {
   const hf = loadDesignRuntime();
   const family = hf.screens.find(screen => screen.id === 'statistics');
-  assert.deepEqual(Array.from(family.states), ['overview', 'nodes']);
+  assert.deepEqual(Array.from(family.states), ['overview', 'nodes', 'accounting-overview', 'accounting-loading', 'accounting-empty', 'accounting-no-history', 'accounting-error', 'accounting-active', 'accounting-runs', 'accounting-tasks', 'accounting-detail', 'accounting-turns', 'accounting-context-workflow', 'accounting-context-run', 'accounting-context-repository']);
   assert.equal(family.source, undefined);
   assert.deepEqual(Array.from(family.proposal.tickets), ['#9']);
   for (const state of family.states) {
     assert.equal(hf.specimenStatus('statistics', state).kind, 'exploratory');
     assert.match(hf.specimenStatus('statistics', state).caption, /^Exploratory · ticket #9 · Not approved/);
   }
+  for (const state of family.states.filter(state => state.startsWith('accounting-'))) {
+    const html = renderers.statistics(hf, state);
+    assert.match(html, /id="accounting-content"/, `${state} owns its content container`);
+    assert.doesNotMatch(html, /id="statistics-content"|data-action="stat-[^"]*"/, `${state} stays isolated from legacy Statistics controls`);
+  }
   assert.match(fs.readFileSync(path.join(root, 'scripts/catalog.js'), 'utf8'), /No native source/);
+});
+
+test('legacy Statistics model, body, and render output stay byte-for-byte compatible with the pre-accounting baseline', () => {
+  const hf = loadDesignRuntime();
+  const digest = value => createHash('sha256').update(typeof value === 'string' ? value : JSON.stringify(value)).digest('hex');
+  assert.equal(digest(hf.statisticsModel({})), 'b30cffd9756df45116ddacdf210d742acb6be6cefe0c67e97a86b643ae4925aa');
+  assert.equal(digest(hf.statisticsBody('overview', {})), '20d940c8efd1087d1384d0d4aa6ae202ddf5c079d7d0df76db3cc35e70933a2c');
+  assert.equal(digest(hf.statisticsBody('nodes', {})), '83c9ef479d1163fabbedf08082ba5879d16d30d3983a97577b1af86b6740228c');
+  hf.route = { theme: 'light', screen: 'statistics', state: 'overview' };
+  hf.resetStatistics();
+  assert.equal(digest(hf.renderStatistics('overview')), 'a08580e99057c03804f1e87e26613e9f413eb947ac691f2797d170e67073c92b');
+  hf.route.state = 'nodes';
+  hf.resetStatistics();
+  assert.equal(digest(hf.renderStatistics('nodes')), '7fa031643b2927888e14c14e8c559ec53b32a504e5a6e2c6ded4b917cf8ac44a');
 });
 
 test('statistics shows no cost anywhere at any range or measure', () => {
@@ -4651,7 +4670,9 @@ test('council run and statistics markup appear only in their own states', () => 
       if (family.id === 'workflow-editor') hf.editorController.reset(state);
       const html = renderers[family.id](hf, state);
       assert.equal(council.test(html), family.id === 'workflow-run' && state.startsWith('council'), `${family.id}/${state} council markup`);
-      assert.equal(statistics.test(html), family.id === 'statistics', `${family.id}/${state} statistics markup`);
+      assert.equal(statistics.test(html), family.id === 'statistics' && !state.startsWith('accounting-'), `${family.id}/${state} statistics markup`);
+      const accounting = /acct-entry|data-action="acct-/;
+      assert.equal(accounting.test(html), family.id === 'statistics' && state.startsWith('accounting-'), `${family.id}/${state} accounting markup`);
     }
   }
 });

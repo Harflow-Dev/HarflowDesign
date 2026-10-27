@@ -28,6 +28,8 @@ This glossary governs user-facing design copy. The terminology was requested dur
 | Incoming | The web app's log of deliveries and the place rejected deliveries are surfaced. It is the only notification surface. |
 | Run again | A manual launch of a finished run's workflow on its latest revision with the same inputs. It shows any command review again and is separate from Recover. |
 | Recover | Continue the same run after a failure or an interruption, as in the run recovery options. Not the same as Run again. |
+| Execution (accounting) | One engine-accounted attempt or continuation segment, distinct from a message or repeated snapshot. |
+| Known token subtotal | Sum of qualified, disjoint execution totals; incomplete or unavailable contributions are disclosed separately. |
 | Harflow | Application/product name. Historical source paths may retain older names where needed for accurate provenance. |
 
 ## Applying the glossary
