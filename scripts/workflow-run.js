@@ -2,13 +2,13 @@
   const states = new Map();
   const esc = value => HF.escape(String(value ?? ''));
   const button = HF.button;
-  const selectedRoutes = new Set(['selected-node', 'attempts', 'on-demand-not-called', 'on-demand-calls', 'child-session', 'child-workflow', 'missing-task']);
+  const selectedRoutes = new Set(['selected-node', 'selected-conversations', 'attempts', 'on-demand-not-called', 'on-demand-calls', 'child-session', 'child-workflow', 'missing-task']);
   const terminal = new Set(['completed', 'cancelled', 'council-failed']);
   const isSetupRun = state => (HF.setupRunStates || []).includes(state);
   const isCouncil = state => (HF.councilRunStates || ['council']).includes(state);
   const investigationCall = () => ({ id: 'workflow-investigation-call-1', title: 'Inspect session recovery', backend: 'codex', status: 'completed', result: 'The session state is persisted correctly.' });
   const baseState = state => /^run-approval-/.test(state) ? 'running' : state;
-  const newStateFor = route => ({ route: route.state, mode: route.state === 'parallel' ? 'parallel' : 'graph', selection: isCouncil(route.state) ? 'council' : route.state === 'teardown-pending' ? 'end' : ['setup-running', 'setup-failed'].includes(route.state) ? 'start' : selectedRoutes.has(route.state) ? (route.state.startsWith('on-demand') ? 'on-demand' : 'implementation') : null, nodeType: 'implementation', attempt: route.state === 'attempts' ? 2 : 1, recoveryOpen: route.state === 'attention' || route.state === 'settling', recoveryBusy: route.state === 'settling', requiresAnswer: false, exhaustedRetries: route.state === 'attention', canSkipOptionalReview: route.state === 'attention', extraAttempts: 0, recoveryInstructions: '', expanded: false, showReason: false, goalEditing: false, goal: 'Ship a reliable workflow run with clear activity and recovery.', goalDraft: 'Ship a reliable workflow run with clear activity and recovery.', goalDraftInitialized: false, deciding: ['running', 'starting'].includes(route.state), lastReason: route.state === 'running' ? 'The previous node completed successfully. The orchestrator is evaluating the next assignment.' : '', runReason: route.state === 'attention' ? 'Implementation reached its attempt limit.' : '', recoveryQuestion: '', diagnostics: [], selectedActivation: false, zoom: 1, disclosures: { request: false, goal: false, technical: false }, feedScroll: {}, canvasScroll: 0, canvasScrollLeft: 0, parallelScroll: 0, parallelLaneScrollLeft: 0, sidebarScroll: 0, focusTarget: null, commandOpen: false, teardown: 'pending' });
+  const newStateFor = route => ({ route: route.state, mode: route.state === 'parallel' ? 'parallel' : 'graph', selection: isCouncil(route.state) ? 'council' : route.state === 'teardown-pending' ? 'end' : ['setup-running', 'setup-failed'].includes(route.state) ? 'start' : selectedRoutes.has(route.state) ? (route.state.startsWith('on-demand') ? 'on-demand' : 'implementation') : null, nodeType: 'implementation', attempt: route.state === 'attempts' ? 2 : 1, selectedConversationID: route.state === 'selected-conversations' ? 'conversation-implementation' : null, conversationOrder: route.state === 'selected-conversations' ? ['conversation-implementation', 'conversation-review'] : [], recoveryOpen: route.state === 'attention' || route.state === 'settling', recoveryBusy: route.state === 'settling', requiresAnswer: false, exhaustedRetries: route.state === 'attention', canSkipOptionalReview: route.state === 'attention', extraAttempts: 0, recoveryInstructions: '', expanded: false, showReason: false, goalEditing: false, goal: 'Ship a reliable workflow run with clear activity and recovery.', goalDraft: 'Ship a reliable workflow run with clear activity and recovery.', goalDraftInitialized: false, deciding: ['running', 'starting'].includes(route.state), lastReason: route.state === 'running' ? 'The previous node completed successfully. The orchestrator is evaluating the next assignment.' : '', runReason: route.state === 'attention' ? 'Implementation reached its attempt limit.' : '', recoveryQuestion: '', diagnostics: [], selectedActivation: false, zoom: 1, disclosures: { request: false, goal: false, technical: false }, feedScroll: {}, canvasScroll: 0, canvasScrollLeft: 0, parallelScroll: 0, parallelLaneScrollLeft: 0, sidebarScroll: 0, focusTarget: null, commandOpen: false, teardown: 'pending' });
   const newState = source => ({ ...newStateFor({ ...source, state: baseState(source.state) }), approvalRoute: /^run-approval-/.test(source.state) ? source.state : '' });
   const getState = () => {
     const route = HF.route || { state: 'running' };
@@ -111,11 +111,39 @@
     const task = resolveTask(type, attempt);
     return { ...task, status: task.status[0].toUpperCase() + task.status.slice(1), backend: task.backend[0].toUpperCase() + task.backend.slice(1), repo: 'HarflowMac', taskID: task.id };
   };
+  const wrapPath = '/Users/example/HarflowMac/Packages/Workflow/Tests/Fixtures/LongDirectoryName/TaskActivitySnapshot.swift';
+  const wrapDigest = `sha256:${'a8'.repeat(32)}`;
+  const wrapJSON = JSON.stringify({ repository_path: wrapPath, content_sha256: wrapDigest, opaque_value: 'x'.repeat(120) }, null, 2);
+  const conversationDefinitions = [
+    { id: 'conversation-implementation', title: 'Implementation · attempt 2', type: 'implementation', status: 'running', backend: 'claude', summary: '' },
+    { id: 'conversation-review', title: 'Review integration · completed', type: 'review', status: 'completed', backend: 'codex', summary: `The result keeps its original source text. Inline code: \`${wrapPath}\` and checksum \`${wrapDigest}\`.\n\n\`\`\`json\n${wrapJSON}\n\`\`\`` , wrapFixture: true },
+    { id: 'conversation-ci', title: 'CI verification · completed', type: 'review', status: 'completed', backend: 'codex', summary: 'The arriving conversation is available after the selection is retained.' }
+  ];
+  function selectedConversationRecords() {
+    const current = getState();
+    const records = current.conversationOrder.map(id => conversationDefinitions.find(item => item.id === id)).filter(Boolean).map(item => {
+      const source = resolveTask(item.type, item.type === 'implementation' ? 2 : 1);
+      const id = item.id.replace('conversation-', 'workflow-');
+      const task = { ...source, id, taskID: id, title: item.title, status: item.status, backend: item.backend, sessionID: id, result: item.summary, summary: item.summary };
+      return { ...item, task };
+    });
+    if (!records.some(record => record.id === current.selectedConversationID)) current.selectedConversationID = records[0]?.id ?? null;
+    return records;
+  }
   function activity(task) {
+    const conversations = getState().route === 'selected-conversations' ? selectedConversationRecords() : null;
+    const selectedConversation = conversations?.find(item => item.id === getState().selectedConversationID);
+    const activityTask = selectedConversation?.task ?? task;
     const isEmpty = ['missing-task', 'loading', 'error'].includes(HF.route.state);
-    const sharedColumn = HF.renderParallelColumn({ id: task.taskID, title: `${task.title} · ${task.attempt}`, backend: task.backend.toLowerCase(), status: task.status.toLowerCase(), prompt: task.prompt || 'I’ll start by reading the test and the code it exercises.', activity: !isEmpty && task.status.toLowerCase() !== 'pending', sessionID: task.sessionID || task.taskID, activityFixture: 'native-eight-steps', summary: task.status === 'Completed' ? task.result : '' });
+    const columnTitle = selectedConversation ? activityTask.title : `${activityTask.title} · ${activityTask.attempt}`;
+    let sharedColumn = HF.renderParallelColumn({ id: activityTask.taskID, title: columnTitle, backend: activityTask.backend.toLowerCase(), status: activityTask.status.toLowerCase(), prompt: activityTask.prompt || 'I’ll start by reading the test and the code it exercises.', activity: !isEmpty && activityTask.status.toLowerCase() !== 'pending', sessionID: activityTask.sessionID || activityTask.taskID, activityFixture: 'native-eight-steps', summary: activityTask.status.toLowerCase() === 'completed' ? activityTask.summary || activityTask.result : '' });
+    if (selectedConversation?.wrapFixture) {
+      const wrapSample = `<p class="ta-prose wfr-wrap-sample">Source path <code>${esc(wrapPath)}</code>; content checksum <code>${esc(wrapDigest)}</code>.</p><pre class="wfr-wrap-pre"><code>${esc(wrapJSON)}</code></pre>`;
+      sharedColumn = sharedColumn.replace(/<\/div><\/div><\/article>$/, `${wrapSample}</div></div></article>`);
+    }
     const columns = isEmpty ? `<div class="parallel-empty">Activity unavailable${HF.route.state === 'missing-task' ? ': the task record is not available.' : '.'}</div>` : sharedColumn;
-    return `<div class="wfr-selected-activity"><header><strong>${esc(task.title)}</strong>${button('<span class="wf-sr-only">Close selected activity</span>'+icon('close'), 'wr-deselect', 'quiet')}</header>${HF.route.state === 'attempts' && task.type === 'implementation' ? `<label class="wfr-attempt">Attempt<select data-action="wr-attempt"><option value="2" ${task.attempt === 2 ? 'selected' : ''}>Attempt 2 · Running</option><option value="1" ${task.attempt === 1 ? 'selected' : ''}>Attempt 1 · Failed</option></select></label>` : ''}<div class="parallel-app wfr-shared-column"><div class="parallel-app-body"><div class="parallel-lanes">${columns}</div></div></div></div>`;
+    const picker = conversations?.length > 1 ? `<label class="wfr-conversation-picker"><span>Conversation</span><select aria-label="Conversation" data-action="wr-conversation">${conversations.map(item => `<option value="${esc(item.id)}" ${item.id === selectedConversation.id ? 'selected' : ''}>${esc(item.title)}</option>`).join('')}</select></label>` : '';
+    return `<div class="wfr-selected-activity"><header><strong>${esc(activityTask.title)}</strong>${button('<span class="wf-sr-only">Close selected activity</span>'+icon('close'), 'wr-deselect', 'quiet')}</header>${picker}${HF.route.state === 'attempts' && activityTask.type === 'implementation' ? `<label class="wfr-attempt">Attempt<select data-action="wr-attempt"><option value="2" ${activityTask.attempt === 2 ? 'selected' : ''}>Attempt 2 · Running</option><option value="1" ${activityTask.attempt === 1 ? 'selected' : ''}>Attempt 1 · Failed</option></select></label>` : ''}<div class="parallel-app wfr-shared-column"><div class="parallel-app-body"><div class="parallel-lanes">${columns}</div></div></div></div>`;
   }
   function workflowParallelRecords() {
     return [resolveTask('implementation', getState().attempt), resolveTask('review', 1)].map(task => ({ ...task, session: true, summary: task.status === 'completed' ? task.result : '', outcome: '', activity: task.status !== 'pending' }));
@@ -127,7 +155,10 @@
   }
   function openTask() {
     const state = getState();
-    const task = resolveTask(state.selection === 'on-demand' ? 'on-demand' : state.nodeType, state.attempt);
+    const selectedConversation = state.route === 'selected-conversations'
+      ? selectedConversationRecords().find(item => item.id === state.selectedConversationID)?.task
+      : null;
+    const task = selectedConversation || resolveTask(state.selection === 'on-demand' ? 'on-demand' : state.nodeType, state.attempt);
     HF.pendingParallelTask = { ...task, time: '9:02 AM', repoPath: '/Users/demo/HarflowMac' };
     HF.navigate('task-detail', task.status);
   }
@@ -178,9 +209,11 @@
   };
   let lastRouteKey = '', teardownTimer = null, teardownGeneration = 0;
   HF.workflowRunController = {
-    snapshot() { const value = getState(); return { ...value, disclosures: { ...value.disclosures }, diagnostics: value.diagnostics.map(item => ({ ...item })) }; },
+    snapshot() { const value = getState(); return { ...value, conversationOrder: value.conversationOrder.slice(), disclosures: { ...value.disclosures }, diagnostics: value.diagnostics.map(item => ({ ...item })) }; },
     render(state = HF.route?.state) { return state ? HF.renderRun(state) : ''; },
     select(type, render = false) { const value = getState(); value.selection = type; if (['planning','implementation','review'].includes(type)) { if (value.nodeType !== type) value.selectedTask = null; value.nodeType = type; value.selectedTaskType = value.selectedTask ? type : null; delete value.callTask; } if (type === 'on-demand') { value.mode = 'graph'; if (HF.route.state === 'on-demand-calls' && !value.callTask) value.callTask = { id: 'workflow-investigation-call-1', title: 'Investigation', backend: 'codex', status: 'running' }; } if (render) renderCurrent(); return this.snapshot(); },
+    selectConversation(id, render = false) { const current = getState(); if (current.route === 'selected-conversations' && conversationDefinitions.some(item => item.id === id && current.conversationOrder.includes(id))) current.selectedConversationID = id; if (render) renderCurrent(); return this.snapshot(); },
+    setConversationOrder(ids, render = false) { const current = getState(); if (current.route === 'selected-conversations') { const allowed = new Set(conversationDefinitions.map(item => item.id)); current.conversationOrder = [...new Set(ids.filter(id => allowed.has(id)))]; selectedConversationRecords(); } if (render) renderCurrent(); return this.snapshot(); },
     deselect(render = false) { const value = getState(); value.selection = null; if (render) renderCurrent(); return this.snapshot(); },
     setMode(mode, render = false) { if (mode === 'graph' || mode === 'parallel') getState().mode = mode; if (render) renderCurrent(); return this.snapshot(); },
     toggleSummary(render = false) { const value = getState(); value.expanded = !value.expanded; if (render) renderCurrent(); return this.snapshot(); },
@@ -249,6 +282,7 @@
     if (!target || !target.isConnected || HF.route?.screen !== 'workflow-run') return;
     const [action, value] = target.dataset.action.split(':');
     if (action === 'wr-attempt' && event.type === 'change') { event.preventDefault(); event.stopImmediatePropagation(); if (getState().route !== 'attempts' || getState().selection !== 'implementation' || ![1, 2].includes(Number(target.value))) return; getState().attempt = Number(target.value); getState().scrollTop = document.querySelector('.parallel-feed-scroll')?.scrollTop || 0; renderCurrent(); return; }
+    if (action === 'wr-conversation' && event.type === 'change') { event.preventDefault(); event.stopImmediatePropagation(); const current = getState(); if (current.route !== 'selected-conversations' || !current.conversationOrder.includes(target.value)) return; current.selectedConversationID = target.value; current.focusTarget = 'wr-conversation'; renderCurrent(); return; }
     if (event.type !== 'click') return;
     event.preventDefault(); event.stopImmediatePropagation();
     const current = getState();

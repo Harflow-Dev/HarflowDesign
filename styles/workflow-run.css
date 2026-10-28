@@ -191,6 +191,22 @@
 .wfr-selected-activity .parallel-lane { flex: 1; min-width: 0; width: 100%; border-right: 0; }
 .wfr-selected-activity .parallel-lane-head { padding: 16px; }
 .wfr-selected-activity .parallel-lane-title h3 { font-size: 18px; }
+.wfr-conversation-picker { display: flex; min-width: 0; align-items: center; gap: 10px; margin: 10px 16px; color: var(--secondaryText); font-size: 12px; }
+.wfr-conversation-picker span { flex: 0 0 auto; }
+.wfr-conversation-picker select { min-width: 0; max-width: 100%; flex: 1 1 auto; }
+.wfr-selected-activity > header strong { min-width: 0; overflow-wrap: anywhere; }
+.wfr-selected-activity .parallel-app,.wfr-selected-activity .parallel-app-body,.wfr-selected-activity .parallel-lanes { min-width: 0; max-width: 100%; overflow: hidden; }
+.wfr-selected-activity .parallel-lane { min-width: 0; max-width: 100%; flex: 1 1 0; }
+.wfr-selected-activity .parallel-lane-title h3,.wfr-selected-activity .parallel-lane-meta { min-width: 0; overflow-wrap: anywhere; white-space: normal; }
+.wfr-selected-activity .parallel-feed-scroll,.wfr-selected-activity .parallel-result { min-width: 0; max-width: 100%; overflow-x: hidden; overflow-y: auto; }
+.wfr-selected-activity .parallel-feed-content,.wfr-selected-activity .parallel-feed-content > * { min-width: 0; max-width: 100%; }
+.wfr-selected-activity .parallel-feed-content .ta-prose,.wfr-selected-activity .parallel-summary { white-space: pre-wrap; overflow-wrap: anywhere; word-break: normal; }
+.wfr-selected-activity .ta-tool-items > div { min-width: 0; }
+.wfr-selected-activity .ta-tool-items code,.wfr-selected-activity .ta-edit-group summary code,.wfr-selected-activity .ta-diff-line code,.wfr-selected-activity .wfr-wrap-pre,.wfr-selected-activity .wfr-wrap-pre code { min-width: 0; max-width: 100%; overflow-wrap: anywhere; white-space: pre-wrap; }
+.wfr-selected-activity .ta-tool-items code { overflow: visible; text-overflow: clip; }
+.wfr-selected-activity .ta-diff-line { height: auto; min-height: 20px; align-items: flex-start; white-space: pre-wrap; overflow-wrap: anywhere; }
+.wfr-selected-activity .wfr-wrap-pre { max-height: none; margin: 0; overflow-x: hidden; overflow-y: visible; padding: 10px; border-radius: 8px; background: var(--codeFill); color: var(--secondaryText); font: 12px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace; }
+.wfr-selected-activity .wfr-wrap-sample code { overflow-wrap: anywhere; white-space: pre-wrap; font: 12px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace; }
 .wfr-specimen .wf-standalone-card .wf-orchestrator-icon.investigation { color: var(--secondaryText); }
 .wfr-bolt { font-size: 19px; line-height: 1; }
 .wfr-summary-head > strong { font-size: 12px; font-weight: 600; }

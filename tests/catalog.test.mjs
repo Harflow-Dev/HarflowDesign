@@ -1134,6 +1134,57 @@ test('workflow run controller preserves graph and parallel presentation transiti
   assert.equal(controller.snapshot().selection, null);
 });
 
+test('selected workflow activity keeps a fit-width conversation selection across hiding and membership changes', () => {
+  const hf = loadDesignRuntime();
+  hf.route = { screen: 'workflow-run', state: 'selected-conversations', theme: 'light' };
+  hf.resetWorkflowRun(hf.route);
+  const controller = hf.workflowRunController;
+  let html = controller.render('selected-conversations');
+  assert.match(html, /<label class="wfr-conversation-picker"><span>Conversation<\/span><select aria-label="Conversation" data-action="wr-conversation">/);
+  assert.equal((html.match(/<option value="conversation-/g) || []).length, 2);
+  assert.match(html, /value="conversation-implementation" selected/);
+  assert.match(html, /class="parallel-lane running"/);
+
+  controller.selectConversation('conversation-review');
+  html = controller.render('selected-conversations');
+  assert.match(html, /value="conversation-review" selected/);
+  assert.match(html, /class="parallel-lane completed"/);
+  assert.match(html, /wfr-wrap-pre/);
+  assert.match(html, new RegExp(hf.escape('/Users/example/HarflowMac/Packages/Workflow/Tests/Fixtures/LongDirectoryName/TaskActivitySnapshot.swift')));
+  assert.match(html, new RegExp(hf.escape(`sha256:${'a8'.repeat(32)}`)));
+  assert.doesNotMatch(html, /[\u200B-\u200D\uFEFF]/, 'visual wrapping does not insert copy-visible characters');
+
+  controller.deselect();
+  assert.doesNotMatch(controller.render('selected-conversations'), /wfr-conversation-picker/);
+  controller.select('implementation');
+  html = controller.render('selected-conversations');
+  assert.match(html, /value="conversation-review" selected/, 'reopening restores the chosen conversation');
+
+  controller.setConversationOrder(['conversation-review', 'conversation-implementation', 'conversation-ci']);
+  html = controller.render('selected-conversations');
+  assert.match(html, /value="conversation-review" selected/, 'reordering and a new arrival preserve selection by identity');
+  assert.equal((html.match(/<option value="conversation-/g) || []).length, 3);
+
+  controller.setConversationOrder(['conversation-implementation', 'conversation-ci']);
+  html = controller.render('selected-conversations');
+  assert.match(html, /value="conversation-implementation" selected/, 'removing the selection chooses the first remaining conversation');
+});
+
+test('selected workflow activity wraps readable code without changing ordinary Parallel lane sizing', () => {
+  const css = fs.readFileSync(path.join(root, 'styles/workflow-run.css'), 'utf8');
+  const parallel = fs.readFileSync(path.join(root, 'styles/parallel.css'), 'utf8');
+  assert.match(css, /\.wfr-selected-activity \.parallel-lane \{ min-width: 0; max-width: 100%; flex: 1 1 0; \}/);
+  assert.match(css, /\.wfr-selected-activity \.parallel-feed-scroll[^\n]*overflow-x: hidden; overflow-y: auto/);
+  assert.match(css, /\.wfr-selected-activity[^\n]*overflow-wrap: anywhere; white-space: pre-wrap/);
+  assert.match(css, /\.wfr-selected-activity \.wfr-wrap-pre[^\n]*overflow-x: hidden/);
+  assert.match(parallel, /\.parallel-app \.parallel-lane\{[^}]*flex:1 0 630px;min-width:630px/);
+
+  const hf = loadDesignRuntime();
+  hf.route = { screen: 'workflow-run', state: 'selected-node', theme: 'light' };
+  hf.resetWorkflowRun(hf.route);
+  assert.doesNotMatch(hf.renderRun('selected-node'), /wfr-conversation-picker/, 'a single conversation has no redundant selector');
+});
+
 test('workflow run selected activity keeps attempt identity and truthful special cases', () => {
   const hf = loadDesignRuntime();
   const routeRun = state => {
@@ -1864,6 +1915,7 @@ test('compact workflow-run sidebar proposal (#15) covers every state that can di
     if (canShowCompact) display.push(state);
     const status = hf.specimenStatus('workflow-run', state);
     if (state.startsWith('council')) { assert.equal(status.kind, 'exploratory'); assert.deepEqual(Array.from(status.tickets), ['#17', '#15']); display.pop(); continue; }
+    if (state === 'selected-conversations') { assert.equal(status.kind, 'exploratory'); assert.deepEqual(Array.from(status.tickets), ['#26']); if (canShowCompact) display.pop(); continue; }
     if (['setup-running', 'setup-failed', 'teardown-pending'].includes(state)) { assert.equal(status.kind, 'exploratory'); assert.deepEqual(Array.from(status.tickets), ['#21', 'HarflowMCP#41']); if (canShowCompact) display.pop(); continue; }
     if (state.startsWith('run-approval-')) { assert.equal(status.kind, 'exploratory'); assert.deepEqual(Array.from(status.tickets), ['#13', '#14']); if (canShowCompact) display.pop(); continue; }
     assert.equal(status.kind === 'contains-exploratory', canShowCompact, `workflow-run/${state} #15 element metadata`);
