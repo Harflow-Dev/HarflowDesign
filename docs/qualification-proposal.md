@@ -1,6 +1,6 @@
 # Harness qualification proposal — HarflowMac #36
 
-Status: exploratory; no user approval has been recorded. Review [the local specimen](../features/qualification.html). It is offline, uses deterministic invented versions/results, and never contacts an engine, runs a provider probe, or starts a task.
+Status: approved by the owner on 2026-10-28 for native implementation. Approved reference: HarflowDesign commit `5d48a18`, `features/qualification.html`, `features/qualification.js`, and `features/qualification.css`, all documented states in Light and Dark. Approval does not certify native fidelity or a supporting engine release. Review [the local specimen](../features/qualification.html). It is offline, uses deterministic invented versions/results, and never contacts an engine, runs a provider probe, or starts a task.
 
 ## Placement and states
 

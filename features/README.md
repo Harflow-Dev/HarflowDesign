@@ -21,4 +21,4 @@ The specimen approximates a coherent main-window sidebar and task detail with la
 
 ## Harness qualification proposal
 
-[`qualification.html`](qualification.html) explores HarflowMac #36 in New session, Run workflow, and Settings with explicit loading, success, failure, runtime invalidation, unavailable, unsupported, cancellation, and stale-binary states. It is not approved. The fixture controls let reviewers deliver current/old results and cancel a retry without running an engine. See [the proposal and source basis](../docs/qualification-proposal.md).
+[`qualification.html`](qualification.html) explores HarflowMac #36 in New session, Run workflow, and Settings with explicit loading, success, failure, runtime invalidation, unavailable, unsupported, cancellation, and stale-binary states. The owner approved this direction at `5d48a18` on 2026-10-28. The fixture controls let reviewers deliver current/old results and cancel a retry without running an engine. See [the proposal and source basis](../docs/qualification-proposal.md).
