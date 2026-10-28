@@ -54,3 +54,8 @@ Reduce Motion controls. The owner approved the rule on 2026-10-26; native implem
 The Statistics `overview` and `nodes` states retain the historical canvas. The `accounting-*` states are a separate exploratory proposal with prospective fixture evidence; see [the accounting proposal](docs/statistics-proposal.md). Neither direction is approved.
 
 The [harness qualification specimen](features/qualification.html) is the approved direction for HarflowMac #36 (`5d48a18`, owner approval on 2026-10-28). It covers deterministic checking, result, failure, cancellation and unsupported states; see [the proposal](docs/qualification-proposal.md).
+
+The [task-continuity specimen](features/task-continuity.html) records HarflowMac #37's
+approved direction (owner approval in the issue on 2026-10-28). It includes running,
+restart, supervision loss, diagnostic history, completed and unsupported states; see
+[task continuity](docs/task-continuity.md). Browser and native verification remain separate.

@@ -1,0 +1,30 @@
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--windowBG); color: var(--primaryText); font: 13px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+button, select { font: inherit; color: inherit; cursor: pointer; }
+button, select { border: 1px solid var(--cardBorder); border-radius: 8px; padding: 6px 10px; background: var(--cardFill); }
+a { color: var(--accentLink); }
+button:focus-visible, select:focus-visible, a:focus-visible, summary:focus-visible, #supervision:focus { outline: 2px solid var(--accentLink); outline-offset: 3px; }
+.catalog-bar { display: flex; flex-wrap: wrap; gap: 24px; padding: 14px 24px; border-bottom: 1px solid var(--hairline); }
+.catalog-bar span, p { color: var(--secondaryText); }
+main { max-width: 1200px; margin: auto; padding: 24px; }
+h1 { font-size: 24px; margin: 0 0 8px; } h2 { font-size: 18px; margin: 0; } h3 { font-size: 13px; margin: 0 0 8px; } p { margin: 6px 0 12px; }
+.controls { display: flex; flex-wrap: wrap; gap: 16px; align-items: end; padding: 16px; margin: 24px 0; border: 1px solid var(--cardBorder); border-radius: 12px; }
+label { display: grid; gap: 4px; font-size: 12px; color: var(--secondaryText); }
+.specimen-scroll { overflow-x: auto; padding: 4px 4px 20px; }
+.window { display: flex; width: 1000px; min-width: 1000px; min-height: 580px; border: 1px solid var(--cardBorder); border-radius: 12px; overflow: hidden; background: var(--windowBG); }
+.task-pane { display: flex; flex: 1; min-width: 0; flex-direction: column; }
+.task-header { padding: 20px 24px 12px; }.task-status { font-size: 12px; margin-bottom: 0; } #status-dot { color: var(--runningFG); } #status-dot.completed { color: var(--doneGreen); }
+.continuity { display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px; padding: 0 24px 12px; color: var(--secondaryText); font-size: 12px; }
+.continuity button { color: var(--accentLink); background: none; border: 0; padding: 0 4px; font-size: 12px; margin-left: auto; }
+.tabs { display: flex; gap: 4px; padding: 0 24px 16px; }.tabs button { font-size: 12px; }.tabs button[aria-selected="true"] { background: var(--neutralFill); font-weight: 600; }
+.pane { flex: 1; padding: 24px; border-top: 1px solid var(--hairline); }.pane p { max-width: 620px; }.task-footer { padding: 12px 24px; border-top: 1px solid var(--hairline); }
+.inspector { flex: 0 0 288px; width: 288px; padding: 20px; background: var(--inspectorFill); border-left: 1px solid var(--hairline); font-size: 12px; overflow-wrap: anywhere; }.inspector > button { margin-bottom: 20px; }.inspector section { margin-top: 20px; }.inspector h3 { font-size: 12px; }
+dl { margin: 8px 0 20px; } dt { color: var(--secondaryText); margin-top: 8px; } dd { margin: 0; } #evidence dd { font-family: ui-monospace, monospace; font-size: 11px; }
+summary { cursor: pointer; font-weight: 600; } #warnings h3, #warning-list { color: var(--warningFG); } #warning-list { padding-left: 18px; } #warning-list li { margin-bottom: 8px; }
+.simulation, .notes { max-width: 1000px; padding: 16px; border: 1px solid var(--cardBorder); border-radius: 12px; margin: 16px 0; font-size: 12px; }.simulation h2, .notes h2 { font-size: 14px; }.simulation button { margin-right: 8px; }
+@media (max-width: 800px) { main { padding: 20px 12px; }.catalog-bar { padding: 12px; } }
+
+#warning-count { margin-top: 10px; color: var(--warningFG); font-size: 12px; border: 0; padding: 0; background: none; }
+#history-list { padding-left: 16px; font-family: ui-monospace, monospace; font-size: 11px; }
+#warnings:focus { outline: 2px solid var(--accentLink); outline-offset: 3px; }

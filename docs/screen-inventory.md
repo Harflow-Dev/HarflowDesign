@@ -274,3 +274,15 @@ The owner approved the loading handoff rule on 2026-10-26; see
 ## Harness qualification (approved #36)
 
 The standalone [qualification feature specimen](../features/qualification.html), [script](../features/qualification.js), and [style](../features/qualification.css) explore New session, Run workflow and Settings / Harnesses at HarflowMac `31ed11a1186c2aa87406c29b56cf063f5bc8c762`. It is not a catalog registry state. The owner approved this direction on 2026-10-28 at commit `5d48a18`; approval does not certify native fidelity or engine release support. State selector values are `unknown`, `loading`, `success`, `failed`, `runtime`, `missing`, `unsupported`, `cancelled`, and `stale`, each available in Light and Dark. See [qualification-proposal.md](qualification-proposal.md) for source paths, transitions and limits. Browser/native visual review remains pending.
+
+## Task continuity (approved direction #37)
+
+The standalone [task-continuity specimen](../features/task-continuity.html),
+[script](../features/task-continuity.js) and [style](../features/task-continuity.css)
+record the direction approved in HarflowMac #37 on 2026-10-28. State selector values
+are `normal`, `surviving`, `details`, `uncertain`, `capture`, `input`, `both`,
+`completed`, `absent`, `unsupported` and `invalid-time`, in Light and Dark. The
+shared header persists across Activity, Summary and Prompt. See
+[the behavior and source reference](task-continuity.md). This is a standalone feature
+specimen linked from the root catalog, not a registry route. Native layout,
+VoiceOver and browser visual verification are pending.
