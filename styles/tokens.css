@@ -55,6 +55,10 @@
   --dotAntigravity: #B4417A;
   --dotOpencode: #0B8A7C;
   --dotOther: #8E8E93;
+  /* Chosen Cursor identity (letter R). Not part of the Palette.swift pin above. */
+  --cursorBG: #E4F1FA;
+  --cursorFG: #0C4F7A;
+  --dotCursor: #1574B3;
   --radius-card:12px; --radius-row:8px; --radius-panel:16px; --radius-sheet:20px;
 }
 [data-theme="dark"] {
@@ -113,4 +117,8 @@
   --dotAntigravity: #F08AB8;
   --dotOpencode: #2CC2B0;
   --dotOther: #98989D;
+  /* Chosen Cursor identity (letter R). Not part of the Palette.swift pin above. */
+  --cursorBG: #143044;
+  --cursorFG: #8ECAF2;
+  --dotCursor: #6EB6E6;
 }

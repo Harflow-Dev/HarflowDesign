@@ -67,6 +67,7 @@
 .backend-dot.vibe { background: var(--dotVibe); }
 .backend-dot.opencode { background: var(--dotOpencode); }
 .backend-dot.antigravity { background: var(--dotAntigravity); }
+.backend-dot.cursor { background: var(--dotCursor); }
 .sidebar-bottom { display: flex; align-items: center; justify-content: space-between; margin: auto -14px 0; padding: 10px 14px 2px; }
 .sidebar-bottom .caption { display: none; }
 .task-meta { gap: 7px; font-size: 13px; }

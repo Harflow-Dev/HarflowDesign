@@ -137,6 +137,7 @@
 @media (prefers-reduced-motion: reduce) { .editor-reorder-preview { transition: none; } }
 .workflow-specimen .editor-council .backend-dot { margin-top: 0; }
 .workflow-specimen .editor-council .backend-dot.antigravity { background: var(--dotAntigravity); }
+.workflow-specimen .editor-council .backend-dot.cursor { background: var(--dotCursor); }
 
 /* Workflow setup and teardown inspector (#21, HarflowMCP#41). Native 288-point inspector width. */
 .editor-app .editor-node .editor-setup-dot { position: absolute; top: 12px; right: 12px; width: 8px; height: 8px; border-radius: 50%; background: var(--accentLink); box-shadow: 0 0 0 2px var(--cardFill); }

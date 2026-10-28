@@ -12,6 +12,7 @@
 .council-roster-item strong { color: var(--primaryText); font-weight: 600; }
 .council-roster .backend-dot, .council-speaker .backend-dot, .council-harness .backend-dot { margin-top: 0; }
 .backend-dot.antigravity { background: var(--dotAntigravity); }
+.backend-dot.cursor { background: var(--dotCursor); }
 .council-left { padding: 1px 7px; border-radius: 6px; background: var(--warningBG); color: var(--warningFG); font-size: 11px; font-weight: 600; }
 .council-round { display: flex; align-items: center; gap: 10px; margin: 14px 0 10px; color: var(--tertiaryText); font-size: 11px; }
 .council-round::before, .council-round::after { content: ""; flex: 1; height: 1px; background: var(--hairline); }

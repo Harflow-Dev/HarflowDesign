@@ -176,6 +176,7 @@
 .backend-dot.codex { background: var(--dotCodex); }
 .backend-dot.vibe { background: var(--dotVibe); }
 .backend-dot.opencode { background: var(--dotOpencode); }
+.backend-dot.cursor { background: var(--dotCursor); }
 
 .new-agent-copy {
   display: flex;
