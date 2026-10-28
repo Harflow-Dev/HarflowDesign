@@ -286,3 +286,19 @@ shared header persists across Activity, Summary and Prompt. See
 [the behavior and source reference](task-continuity.md). This is a standalone feature
 specimen linked from the root catalog, not a registry route. Native layout,
 VoiceOver and browser visual verification are pending.
+
+## Messages, recovery and header alignment (#32 / #38 / #39)
+
+The standalone [work interaction reference](../features/work-interaction.html) is exploratory,
+not user-approved. It uses current task Activity structure and shared native tokens. States
+cover Task, Workflow run, Node task and Workflow editor; ready, queued, immediate-delivery
+refusal, attempt limit, child/root routing, older engine, loading and long text. Header row
+controls show both supplemental rows, either row or neither. Light and Dark are available.
+The shared 16-point icon column, 8-point text gap and 12-point row gap prevent symbol
+intrinsic width from moving the text column. Browser typography, symbols and controls are
+approximations. Engine eligibility and native captures are separate evidence.
+
+Native structure baseline: HarflowMac commit `bb82773e3126c2416b4c1dde87b25a1f82e12eb5`,
+`macos/HfFeatures/MainWindowFeature/Sources/MainWindowFeature/TaskDetail/TaskDetailView.swift`,
+`Workflow/WorkflowView.swift` and `Workflow/WorkflowRecoveryForm.swift` in the same feature package.
+This reference refines those structures; it does not claim their historical controls already supported the proposed routes.
