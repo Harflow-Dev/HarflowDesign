@@ -290,8 +290,8 @@ VoiceOver and browser visual verification are pending.
 ## Messages, recovery and header alignment (#32 / #38 / #39)
 
 The standalone [work interaction reference](../features/work-interaction.html) is exploratory,
-not user-approved. It uses current task Activity structure and shared native tokens. States
-cover Task, Workflow run, Node task and Workflow editor; ready, queued, immediate-delivery
+with placement corrected explicitly by the owner on 2026-10-29; other visual details remain exploratory. The workflow run canvas has no global composer. Selecting Orchestrator opens its right-hand Activity and composer; every selected node Activity and every Parallel panel has its own composer. Workflow create/edit retain their builder composer. It uses current task Activity structure and shared native tokens. States
+cover Task, Workflow run (canvas only), Orchestrator Activity, Node task, Parallel and Workflow editor; ready, queued, immediate-delivery
 refusal, attempt limit, child/root routing, older engine, loading and long text. Header row
 controls show both supplemental rows, either row or neither. Light and Dark are available.
 The shared 16-point icon column, 8-point text gap and 12-point row gap prevent symbol
