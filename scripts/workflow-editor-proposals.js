@@ -52,7 +52,7 @@
   HF.councilNewMember = id => ({ id, name: '', harness: 'claude', model: '', effort: '', instructions: '', optional: false });
   HF.councilTakesEffort = harness => harness !== 'vibe';
   HF.councilEffortLabel = effort => (HF.councilEfforts.find(([value]) => value === (effort || '')) || HF.councilEfforts[0])[1];
-  HF.harnessName = backend => ({ claude: 'Claude', codex: 'Codex', opencode: 'OpenCode', vibe: 'Vibe', antigravity: 'Antigravity' })[backend] || String(backend);
+  HF.harnessName = backend => ({ claude: 'Claude', codex: 'Codex', opencode: 'OpenCode', vibe: 'Vibe', antigravity: 'Antigravity', cursor: 'Cursor' })[backend] || String(backend);
   HF.councilErrors = {
     question: 'Enter the question and context for the council.',
     blankName: 'Name this member. The name labels its messages in Activity.',

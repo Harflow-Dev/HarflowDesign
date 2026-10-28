@@ -9,7 +9,8 @@
     ['claude', 'Claude', 'Claude Code CLI', false],
     ['codex', 'Codex', 'OpenAI Codex CLI', false],
     ['vibe', 'Vibe', 'Mistral Vibe CLI, using your configured model', false],
-    ['opencode', 'Opencode', 'Opencode CLI', true]
+    ['opencode', 'Opencode', 'Opencode CLI', true],
+    ['cursor', 'Cursor', 'Cursor Agent CLI', false]
   ];
 
   const accessOptions = [
@@ -26,7 +27,7 @@
       'start-failed': 'Could not start the session. Check the repository and try again.'
     }[state];
     const cards = state === 'loading'
-      ? `<div class="new-agent-grid" aria-label="Loading harnesses">${Array.from({ length: 4 }, () => '<div class="new-agent-skeleton"></div>').join('')}</div>`
+      ? `<div class="new-agent-grid" aria-label="Loading harnesses">${Array.from({ length: agentCards.length }, () => '<div class="new-agent-skeleton"></div>').join('')}</div>`
       : `<div class="new-agent-grid">${agentCards.map(([id, name, help, unavailable], index) => `
           <button type="button" class="new-agent-card ${index === 0 ? 'selected' : ''} ${unavailable ? 'not-installed' : ''}"
             data-action="agent:${id}" ${unavailable ? 'disabled' : ''} aria-pressed="${index === 0}">

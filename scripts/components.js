@@ -12,7 +12,7 @@ HF.field=(label,value='',type='text')=>`<label class="form-field">${label}<input
 HF.select=(label,values)=>`<label class="form-field">${label}<select>${values.map(v=>`<option>${v}</option>`).join('')}</select></label>`;
 HF.feedback=text=>{const a=document.querySelector('#announcement');a.textContent=text;a.classList.add('visible');clearTimeout(HF.toastTimer);HF.toastTimer=setTimeout(()=>a.classList.remove('visible'),3500)};
 HF.fixtures=[{id:'fixture-claude-01',title:'Review session persistence',backend:'claude',status:'running',time:'2 min ago'},{id:'fixture-codex-02',title:'Refine workflow validation',backend:'codex',status:'completed',time:'18 min ago'},{id:'fixture-vibe-03',title:'Implement inspector state',backend:'vibe',status:'failed',time:'42 min ago'},{id:'fixture-claude-04',title:'Audit artifact references',backend:'claude',status:'completed',time:'Yesterday'}];
-HF.avatar=backend=>`<span class="avatar ${backend}">${{claude:'C',codex:'X',vibe:'V',opencode:'O',antigravity:'A'}[backend]||'H'}</span>`;
+HF.avatar=backend=>`<span class="avatar ${backend}">${{claude:'C',codex:'X',vibe:'V',opencode:'O',antigravity:'A',cursor:'R'}[backend]||'H'}</span>`;
 })();
 
 try{if(typeof location!=='undefined'&&location.protocol==='file:')document.documentElement.classList.add('file-protocol')}catch(e){}
