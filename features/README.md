@@ -18,3 +18,7 @@ Pinned HarflowMac revision `079281e72da37145f0de4c7d901a5a1864fc6800`:
 - `macos/HfFeatures/MainWindowFeature/Sources/MainWindowFeature/Sidebar/SidebarView.swift` — sidebar footer keeps a Settings gear; the appearance selector sits beside Settings, while the connection indicator appears beside the window title in this proposal.
 
 The specimen approximates a coherent main-window sidebar and task detail with labelled, keyboard-operable Light/Dark/System icon buttons beside Settings in the sidebar footer and titlebar actions at the 1000-point minimum width. A small Connected indicator sits beside the Harflow title; its accessible label and hover title expose its status. The footer contains only appearance controls and Settings. The sidebar placement was approved on 2026-10-24. Use the commit containing this approved placement as the implementation reference. The ranking samples and second-window specimen remain illustrative fixtures; they are not represented as existing native behavior.
+
+## Harness qualification proposal
+
+[`qualification.html`](qualification.html) explores HarflowMac #36 in New session, Run workflow, and Settings with explicit loading, success, failure, runtime invalidation, unavailable, unsupported, cancellation, and stale-binary states. It is not approved. The fixture controls let reviewers deliver current/old results and cancel a retry without running an engine. See [the proposal and source basis](../docs/qualification-proposal.md).

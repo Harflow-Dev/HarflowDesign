@@ -52,3 +52,5 @@ The approved [loading-handoff motion rule](docs/loading-handoff.md) is previewab
 Reduce Motion controls. The owner approved the rule on 2026-10-26; native implementation is under validation.
 
 The Statistics `overview` and `nodes` states retain the historical canvas. The `accounting-*` states are a separate exploratory proposal with prospective fixture evidence; see [the accounting proposal](docs/statistics-proposal.md). Neither direction is approved.
+
+The [harness qualification specimen](features/qualification.html) is an exploratory proposal for HarflowMac #36. Review its deterministic checking, result, failure, cancellation and unsupported states before native implementation; see [the proposal](docs/qualification-proposal.md).

@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Harness qualification · Harflow exploratory design</title>
+  <link rel="stylesheet" href="../styles/tokens.css"><link rel="stylesheet" href="qualification.css">
+  <script src="qualification.js" defer></script>
+</head>
+<body>
+  <header class="catalog-bar"><a href="../index.html">Harflow interface reference</a><span>Exploratory · HarflowMac #36 · Not approved</span></header>
+  <main>
+    <div class="intro"><p class="eyebrow">Harness readiness</p><h1>Check the selected harness before launch.</h1><p>A compact qualification card keeps the installed version, feature results, and retry beside the launch decision. These are deterministic fixtures; no checks or tasks run.</p></div>
+    <section class="controls" aria-label="Design specimen controls">
+      <label>Surface<select id="surface"><option value="session">New session</option><option value="workflow">Run workflow</option><option value="settings">Settings · Harnesses</option></select></label>
+      <label>State<select id="state"><option value="unknown">Not checked</option><option value="loading">Qualifying</option><option value="success">Ready</option><option value="failed">Failed</option><option value="runtime">Failed at runtime</option><option value="missing">Harness unavailable</option><option value="unsupported">Unsupported engine</option><option value="cancelled">Cancelled</option><option value="stale">Binary changed</option></select></label>
+      <label>Appearance<select id="theme"><option value="light">Light</option><option value="dark">Dark</option></select></label>
+      <button id="reset" type="button">Reset specimen</button>
+    </section>
+    <section class="specimen-scroll" aria-label="Native surface approximation">
+      <article class="sheet">
+        <header class="sheet-header"><p class="eyebrow" id="surface-label">New session</p><h2 id="surface-title">Start a task</h2><p id="surface-description">Choose a harness and describe the work.</p></header>
+        <div class="form-fields" id="launch-fields">
+          <label>Task<textarea readonly aria-label="Task description fixture">Review the pending changes.</textarea></label>
+          <div class="field-pair"><label>Harness<select id="harness"><option value="original">Codex · 0.107.0</option><option value="replacement">Codex · 0.108.0 (different binary)</option></select></label><label>Access level<input readonly value="Write in repository" aria-label="Access level fixture"></label></div>
+        </div>
+        <section class="qualification" aria-labelledby="qualification-heading">
+          <div class="card-heading"><div><h3 id="qualification-heading">Harness qualification</h3><p class="identity" id="identity">Codex · 0.107.0</p></div><span class="badge" id="status-badge">Not checked</span></div>
+          <div class="status-copy" role="status" aria-live="polite" aria-atomic="true"><h4 id="status-title"></h4><p id="status-description"></p></div>
+          <ul id="feature-list" aria-label="Per-feature qualification results"></ul>
+          <p class="reason" id="reason" hidden></p>
+          <div class="card-actions"><button id="qualify" type="button">Check harness</button><button id="cancel-check" type="button" hidden>Cancel check</button></div>
+          <p class="footnote" id="footnote">Saved results only. Refreshing the catalog does not run a check.</p>
+        </section>
+        <div class="sheet-footer" id="launch-footer"><button type="button" id="cancel-launch">Cancel</button><button type="button" class="primary" id="launch" disabled>Start task</button></div>
+        <p id="launch-note" class="launch-note" role="status" aria-live="polite"></p>
+      </article>
+    </section>
+    <section class="simulation" aria-label="Fixture completion controls"><h2>Try the interaction</h2><p>Choose <b>Failed</b>, then <b>Retry qualification</b>. While the card is busy, choose the result below or cancel. Switch the harness version to invalidate the in-flight check; its old success must be ignored.</p><div class="fixture-actions"><button type="button" id="complete-success">Deliver current success</button><button type="button" id="complete-failure">Deliver current failure</button><button type="button" id="old-success">Deliver old-binary success</button></div><p id="simulation-note" role="status" aria-live="polite">Completion controls are catalog fixtures, outside the app surface.</p></section>
+    <section class="notes"><h2>Behavior under review</h2><p>The launch action stays unavailable while required features are unchecked, qualifying, failed, or unsupported. A result is useful only for the selected executable identity and required feature set. A runtime failure replaces earlier success. Cancellation ends this UI attempt; it does not certify a stopped engine process or undo a published receipt.</p><p>Run workflow uses the same card for the selected candidate; multiple candidates would need a list of these cards. Settings provides an explicit check without starting a task. No state changes the selected access level or offers an unrestricted fallback.</p><p><a href="../docs/qualification-proposal.md">Source basis, states, and native integration constraints</a></p></section>
+  </main>
+</body>
+</html>
