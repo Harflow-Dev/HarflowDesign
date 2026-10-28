@@ -2080,7 +2080,7 @@ const statText = html => html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ');
 test('statistics is an exploratory whole-proposal family with no native source', () => {
   const hf = loadDesignRuntime();
   const family = hf.screens.find(screen => screen.id === 'statistics');
-  assert.deepEqual(Array.from(family.states), ['overview', 'nodes', 'accounting-overview', 'accounting-loading', 'accounting-empty', 'accounting-no-history', 'accounting-error', 'accounting-active', 'accounting-runs', 'accounting-tasks', 'accounting-detail', 'accounting-turns', 'accounting-context-workflow', 'accounting-context-run', 'accounting-context-repository']);
+  assert.deepEqual(Array.from(family.states), ['overview', 'nodes', 'chart-hover', 'accounting-overview', 'accounting-loading', 'accounting-empty', 'accounting-no-history', 'accounting-error', 'accounting-active', 'accounting-runs', 'accounting-tasks', 'accounting-detail', 'accounting-turns', 'accounting-context-workflow', 'accounting-context-run', 'accounting-context-repository']);
   assert.equal(family.source, undefined);
   assert.deepEqual(Array.from(family.proposal.tickets), ['#9']);
   for (const state of family.states) {
@@ -2107,6 +2107,82 @@ test('legacy Statistics model, body, and render output stay byte-for-byte compat
   hf.route.state = 'nodes';
   hf.resetStatistics();
   assert.equal(digest(hf.renderStatistics('nodes')), '7fa031643b2927888e14c14e8c559ec53b32a504e5a6e2c6ded4b917cf8ac44a');
+});
+
+test('statistics chart-hover is a registered exploratory state of the statistics family', () => {
+  const hf = loadDesignRuntime();
+  const family = hf.screens.find(screen => screen.id === 'statistics');
+  assert.ok(family.states.includes('chart-hover'));
+  assert.equal(family.states[family.states.indexOf('nodes') + 1], 'chart-hover');
+  assert.equal(hf.specimenStatus('statistics', 'chart-hover').kind, 'exploratory');
+  assert.match(hf.specimenStatus('statistics', 'chart-hover').caption, /^Exploratory · ticket #9 · Not approved/);
+  assert.match(hf.stateLabel('statistics', 'chart-hover'), /chart hover · Exploratory/);
+});
+
+test('statistics chart-hover pins one card on the highest-total day with that day\'s values', () => {
+  const hf = loadDesignRuntime();
+  for (const measure of ['time', 'usage']) for (const range of [7, 30, 90]) {
+    const label = `${measure}/${range}`, parse = measure === 'usage' ? statTokens : statTime;
+    hf.route = { theme: 'light', screen: 'statistics', state: 'chart-hover' };
+    hf.resetStatistics();
+    hf.renderStatistics('chart-hover');
+    const html = hf.statisticsBody('overview', { range, measure, hover: true });
+    const m = hf.statisticsModel({ range, measure });
+    assert.equal((html.match(/class="stat-hover"/g) || []).length, 1, `${label} exactly one card`);
+    assert.equal((html.match(/class="stat-bar hot"/g) || []).length, 1, `${label} exactly one highlighted column`);
+    const bars = html.match(/<div class="stat-bar(?: hot)?"/g);
+    const index = bars.findIndex(tag => tag.includes(' hot'));
+    const day = hf.statisticsHoverDay(m, undefined);
+    assert.equal(day.index, index, label);
+    const bar = m.chart.bars[index];
+    assert.equal(day.total, bar.total);
+    assert.equal(day.wf, bar.wf);
+    assert.equal(day.tk, bar.tk);
+    for (const other of m.chart.bars) assert.ok(parse(other.total) <= parse(bar.total), `${label} ${other.day} does not exceed the pinned day`);
+    const card = html.match(/<div class="stat-hover"[^>]*>(.*?)<\/div>/)[1];
+    assert.match(card, new RegExp(`<span class="stat-hover-date">(Sun|Mon|Tue|Wed|Thu|Fri|Sat), ${bar.day}</span>`));
+    assert.ok(card.includes(`<strong class="stat-hover-total">${bar.total}</strong>`));
+    assert.ok(card.includes(`<span>Workflow runs</span><b>${bar.wf}</b>`));
+    assert.ok(card.includes(`<span>Tasks</span><b>${bar.tk}</b>`));
+    assert.ok(card.includes('stat-swatch wf') && card.includes('stat-swatch tk'));
+    assert.equal(card.includes('Known qualified usage only'), measure === 'usage', `${label} usage note`);
+    assert.doesNotMatch(card, /No finished work/);
+    assert.match(html, /<div class="stat-hover" aria-hidden="true" style="left:clamp\(/);
+    const width = measure === 'usage' ? 240 : 220;
+    assert.equal(hf.statisticsHoverWidth(measure === 'usage'), width);
+    assert.match(html, new RegExp(`<div class="stat-hover"[^>]*style="[^"]*width:${width}px`), `${label} card carries the ${measure} width`);
+    assert.ok(html.includes(`clamp(${width / 2}px,`) && html.includes(`calc(100% - ${width / 2}px))`), `${label} clamp uses the card width`);
+    assert.doesNotMatch(html, /padding-top|margin-top/, `${label} reserves no strip above the plot`);
+    assert.match(fs.readFileSync(path.join(root, 'styles/statistics.css'), 'utf8'), /\.stat-hover span, \.stat-hover b, \.stat-hover strong \{ white-space: nowrap; \}/, 'card text cannot wrap');
+    assert.doesNotMatch(fs.readFileSync(path.join(root, 'styles/statistics.css'), 'utf8'), /\.stat-chart-hover\s*\{[^}]*(padding|margin)/, 'chart-hover chart has no reserved strip');
+    const bottom = html.match(/<div class="stat-hover"[^>]*style="[^"]*bottom:min\(([\d.]+)px,/);
+    assert.ok(bottom, `${label} card has a bar-derived bottom offset`);
+    assert.equal(Number(bottom[1]), +(bar.wfPx + bar.tkPx + 8).toFixed(1), `${label} bottom edge is 8px above the pinned bar top`);
+    assert.ok(html.indexOf('class="stat-hover"') > html.indexOf('class="stat-bars"') && html.indexOf('class="stat-hover"') < html.indexOf('class="stat-xaxis"'), `${label} card floats inside the plot area`);
+    // Another index pins the card on that day instead.
+    const other = hf.statisticsBody('overview', { range, measure, hover: 0 });
+    assert.match(other, /<div class="stat-bar hot"/);
+    assert.equal(other.match(/<div class="stat-bar(?: hot)?"/g).findIndex(tag => tag.includes(' hot')), 0);
+  }
+  assert.ok(hf.statisticsHoverCardInner({ date: 'Tue, Oct 21', total: '0 min', wf: '', tk: '', empty: true }, false).includes('No finished work'));
+  assert.doesNotMatch(hf.statisticsHoverCardInner({ date: 'Tue, Oct 21', total: '0 min', wf: '', tk: '', empty: true }, false), /Workflow runs|Tasks/);
+});
+
+test('statistics chart-hover drops per-bar titles, keeps the data table, and leaves the overview untouched', () => {
+  const hf = loadDesignRuntime();
+  for (const range of [7, 30, 90]) {
+    const hover = hf.statisticsBody('overview', { range, hover: true }), plain = hf.statisticsBody('overview', { range });
+    assert.doesNotMatch(hover, /class="stat-bar(?: hot)?" title=/);
+    assert.equal((plain.match(/class="stat-bar" title="/g) || []).length, range);
+    assert.match(hover, /<table class="visually-hidden">/);
+    assert.equal((hover.match(/<tr>/g) || []).length - 0, (plain.match(/<tr>/g) || []).length);
+    assert.equal(hover.match(/<div class="stat-bars" role="img" aria-label="[^"]*"/)[0], plain.match(/<div class="stat-bars" role="img" aria-label="[^"]*"/)[0]);
+    assert.equal(hf.statisticsBody('overview', { range, hover: false }), plain);
+    assert.equal(hf.statisticsBody('nodes', { range, hover: true }), hf.statisticsBody('nodes', { range }));
+  }
+  statRoute(hf, 'overview');
+  assert.doesNotMatch(hf.renderStatistics('overview'), /stat-hover/);
+  assert.match(hf.renderStatistics('chart-hover'), /class="stat-hover"/);
 });
 
 test('statistics shows no cost anywhere at any range or measure', () => {

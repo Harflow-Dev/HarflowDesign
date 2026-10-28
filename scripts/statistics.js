@@ -79,7 +79,7 @@
   const stamp = (ago, minuteOfDay) => dayLabel(dayOf(ago)) + ', ' + pad(Math.floor(minuteOfDay / 60)) + ':' + pad(minuteOfDay % 60);
   const plural = (n, one, many = one + 's') => n + ' ' + (n === 1 ? one : many);
 
-  const fresh = state => ({ range: 30, measure: 'time', list: 'workflows', open: {}, screen: state === 'nodes' ? 'nodes' : 'overview', workflow: WORKFLOWS[0].name });
+  const fresh = state => ({ range: 30, measure: 'time', list: 'workflows', open: {}, screen: state === 'nodes' ? 'nodes' : 'overview', workflow: WORKFLOWS[0].name, hover: state === 'chart-hover' });
   let current = fresh();
   HF.resetStatistics = () => { if (HF.route?.screen === 'statistics' && HF.route.state.startsWith('accounting-')) return HF.resetAccounting(HF.route.state); current = fresh(HF.route?.screen === 'statistics' ? HF.route.state : undefined); };
 
@@ -109,15 +109,8 @@
     return turns.map((x, i) => ({ failed: false, status: 'Done', when: stamp(day, start + i * 47), meta: 'Turn ' + (i + 1) + ' · ' + (i === 0 ? 'Initial prompt' : 'Follow-up message'), pct: +(x[key] / max * 100).toFixed(1), value: fmt(x[key]), other: fmtOther(x[otherKey]) }));
   };
 
-  // The view model. All figures shown by the specimen are computed here so they can be inspected without the DOM.
-  HF.statisticsModel = (opts = {}) => {
-    const o = { ...fresh(), ...opts };
-    const range = FACTOR[o.range] ? o.range : 30, f = FACTOR[range];
-    const usage = o.measure === 'usage', key = usage ? 'tok' : 'min', otherKey = usage ? 'min' : 'tok';
-    const fmt = v => usage ? fmtTok(v) : fmtTime(v), fmtOther = v => usage ? fmtTime(v) : fmtTok(v);
-    const wfSum = WORKFLOWS.reduce((a, w) => a + w[key], 0) * f, tkSum = TASK_TOTAL[key] * f;
-
-    // Daily series seeded by days-ago so ranges overlap consistently; weekends dip.
+  // Daily series seeded by days-ago so ranges overlap consistently; weekends dip. Shared by the model and the hover helper.
+  const dailySeries = (range, usage, wfSum, tkSum) => {
     const days = [];
     let wW = 0, tW = 0;
     for (let i = 0; i < range; i++) {
@@ -128,6 +121,18 @@
     }
     let maxDay = 0;
     for (const x of days) { x.wv = x.w / wW * wfSum; x.tv = x.t / tW * tkSum; maxDay = Math.max(maxDay, x.wv + x.tv); }
+    return { days, maxDay };
+  };
+
+  // The view model. All figures shown by the specimen are computed here so they can be inspected without the DOM.
+  HF.statisticsModel = (opts = {}) => {
+    const o = { ...fresh(), ...opts };
+    const range = FACTOR[o.range] ? o.range : 30, f = FACTOR[range];
+    const usage = o.measure === 'usage', key = usage ? 'tok' : 'min', otherKey = usage ? 'min' : 'tok';
+    const fmt = v => usage ? fmtTok(v) : fmtTime(v), fmtOther = v => usage ? fmtTime(v) : fmtTok(v);
+    const wfSum = WORKFLOWS.reduce((a, w) => a + w[key], 0) * f, tkSum = TASK_TOTAL[key] * f;
+
+    const { days, maxDay } = dailySeries(range, usage, wfSum, tkSum);
     const top = usage ? nice(maxDay) : nice(maxDay / 60) * 60, every = range === 7 ? 1 : range === 30 ? 7 : 15;
     const bars = days.map(x => {
       const tkPx = x.tv / top * CHART_H, wfPx = x.wv / top * CHART_H, label = dayLabel(x.d);
@@ -182,6 +187,38 @@
     };
   };
 
+  // Chart hover presentation (exploratory, chart-hover state only). Kept outside the model so the approved overview output is unchanged.
+  const WDAY = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  // Fixed card widths so rows never wrap: the widest fixture values are '4 h 12 min' (time) and '432 k tokens' (usage).
+  const HOVER_W = { time: 220, usage: 240 };
+  HF.statisticsHoverWidth = usage => usage ? HOVER_W.usage : HOVER_W.time;
+  const hoverFormat = usage => ({ fmt: v => usage ? fmtTok(v) : fmtTime(v) });
+  const hoverSeries = model => {
+    const usage = !!model.usage, key = usage ? 'tok' : 'min', f = FACTOR[model.range] || 1;
+    const wfSum = WORKFLOWS.reduce((a, w) => a + w[key], 0) * f, tkSum = TASK_TOTAL[key] * f;
+    return dailySeries(model.range, usage, wfSum, tkSum).days;
+  };
+  // Returns { index, date, total, wf, tk, empty } for one day; without an index, the day with the highest total (first on a tie).
+  HF.statisticsHoverDay = (model, index) => {
+    const days = hoverSeries(model), { fmt } = hoverFormat(model.usage);
+    let i = Number.isInteger(index) ? Math.min(Math.max(index, 0), days.length - 1) : 0;
+    if (!Number.isInteger(index)) days.forEach((x, n) => { if (x.wv + x.tv > days[i].wv + days[i].tv) i = n; });
+    const x = days[i], total = x.wv + x.tv;
+    return { index: i, date: WDAY[x.d.getUTCDay()] + ', ' + dayLabel(x.d), total: fmt(total), wf: fmt(x.wv), tk: fmt(x.tv), empty: !(total > 0) };
+  };
+  // Left offset of the card: centred on the hovered column, clamped to the plot so it never overflows the chart card.
+  HF.statisticsHoverLeft = (count, index, gap, usage) => { const half = HF.statisticsHoverWidth(usage) / 2; return `clamp(${half}px, calc((100% - ${(count - 1) * gap}px) * ${+((index + 0.5) / count).toFixed(5)} + ${index * gap}px), calc(100% - ${half}px))`; };
+  // Vertical placement: the card floats over the plot with its bottom edge 8px above the stacked bar top, and never rises above
+  // the chart card's inner top edge. HOVER_CLEAR is the distance from the plot top to that edge (card padding, heading, gap), minus an 8px margin.
+  const HOVER_CLEAR = 82;
+  HF.statisticsHoverHeight = (day, usage) => 57 + (usage ? 17 : 0) + (day.empty ? 19 : 38);
+  HF.statisticsHoverBottom = (bar, height) => { const barPx = +((bar.wfPx || 0) + (bar.tkPx || 0)).toFixed(1); return `min(${+(barPx + 8).toFixed(1)}px, calc(100% + ${HOVER_CLEAR - height}px))`; };
+  HF.statisticsHoverCardInner = (day, usage) => `<span class="stat-hover-date">${esc(day.date)}</span><strong class="stat-hover-total">${esc(day.total)}</strong>`
+    + (usage ? '<span class="stat-hover-note">Known qualified usage only</span>' : '')
+    + (day.empty ? '<span class="stat-hover-empty">No finished work</span>'
+      : `<span class="stat-hover-row"><i class="stat-swatch wf" aria-hidden="true"></i><span>Workflow runs</span><b>${esc(day.wf)}</b></span><span class="stat-hover-row"><i class="stat-swatch tk" aria-hidden="true"></i><span>Tasks</span><b>${esc(day.tk)}</b></span>`);
+  HF.statisticsHoverCard = (day, usage, count, gap, bar) => `<div class="stat-hover" aria-hidden="true" style="left:${HF.statisticsHoverLeft(count, day.index, gap, usage)};width:${HF.statisticsHoverWidth(usage)}px;bottom:${HF.statisticsHoverBottom(bar, HF.statisticsHoverHeight(day, usage))};height:${HF.statisticsHoverHeight(day, usage)}px">${HF.statisticsHoverCardInner(day, usage)}</div>`;
+
   const ICONS = {
     chart: ['0 0 14 14', '<path d="M2.6 12V7.6M5.5 12V3.4M8.5 12V6.2M11.4 12V9" stroke-width="1.7"/>'],
     'chevron-down': ['0 0 10 10', '<path d="M1.8 3.6 5 6.8 8.2 3.6" stroke-width="1.6"/>'],
@@ -206,10 +243,10 @@
   const dot = h => h ? `<span class="backend-dot ${esc(h)}" aria-hidden="true"></span>` : '';
   const bar = (pct, small) => `<span class="stat-track${small ? ' small' : ''}" aria-hidden="true"><span style="width:${pct}%"></span></span>`;
 
-  const chartCard = m => {
-    const c = m.chart, cov = m.coverage;
+  const chartCard = (m, hover) => {
+    const c = m.chart, cov = m.coverage, hot = hover === undefined ? null : HF.statisticsHoverDay(m, hover === true ? undefined : hover);
     return `<section class="stat-card stat-chart-card" aria-label="${esc(c.label)} per day"><div class="stat-chart-head"><div class="stat-hero"><span class="stat-caption">${c.label}</span><strong>${c.total}</strong><span class="stat-sub-caption">${c.caption}</span></div><div class="stat-legend"><span><i class="stat-swatch wf" aria-hidden="true"></i>Workflow runs <b>${c.wfTotal}</b></span><span><i class="stat-swatch tk" aria-hidden="true"></i>Tasks <b>${c.tkTotal}</b></span></div></div>`
-      + `<div class="stat-chart"><div class="stat-yaxis" aria-hidden="true"><span style="top:-7px">${c.yTop}</span><span style="top:83px">${c.yMid}</span><span style="top:173px">0</span></div><div class="stat-plot"><div class="stat-area"><i class="stat-line" style="top:0"></i><i class="stat-line" style="top:90px"></i><i class="stat-line base"></i><div class="stat-bars" role="img" aria-label="${esc(c.aria)}" style="gap:${c.gap}px">${c.bars.map(b => `<div class="stat-bar" title="${esc(b.tip)}" aria-hidden="true"><div class="stat-bar-tk" style="height:${b.tkPx}px"></div><div class="stat-bar-wf" style="height:${b.wfPx}px;border-radius:${b.wfRadius}"></div></div>`).join('')}</div></div><div class="stat-xaxis" style="gap:${c.gap}px" aria-hidden="true">${c.bars.map(b => `<div><span>${b.label}</span></div>`).join('')}</div></div></div>`
+      + `<div class="stat-chart${hot ? ' stat-chart-hover' : ''}"><div class="stat-yaxis" aria-hidden="true"><span style="top:-7px">${c.yTop}</span><span style="top:83px">${c.yMid}</span><span style="top:173px">0</span></div><div class="stat-plot"><div class="stat-area"><i class="stat-line" style="top:0"></i><i class="stat-line" style="top:90px"></i><i class="stat-line base"></i><div class="stat-bars" role="img" aria-label="${esc(c.aria)}" style="gap:${c.gap}px">${c.bars.map((b, i) => `<div class="stat-bar${hot && hot.index === i ? ' hot' : ''}"${hot ? '' : ` title="${esc(b.tip)}"`} aria-hidden="true"><div class="stat-bar-tk" style="height:${b.tkPx}px"></div><div class="stat-bar-wf" style="height:${b.wfPx}px;border-radius:${b.wfRadius}"></div></div>`).join('')}</div>${hot ? HF.statisticsHoverCard(hot, m.usage, c.bars.length, c.gap, c.bars[hot.index]) : ''}</div><div class="stat-xaxis" style="gap:${c.gap}px" aria-hidden="true">${c.bars.map(b => `<div><span>${b.label}</span></div>`).join('')}</div></div></div>`
       + `<table class="visually-hidden"><caption>${esc(c.label)} per day, workflow runs and tasks</caption><thead><tr><th scope="col">Day</th><th scope="col">Workflow runs</th><th scope="col">Tasks</th><th scope="col">Total</th></tr></thead><tbody>${c.bars.map(b => `<tr><th scope="row">${b.day}</th><td>${b.wf}</td><td>${b.tk}</td><td>${b.total}</td></tr>`).join('')}</tbody></table>`
       + (m.usage ? banner(`Usage covers ${cov.wfRuns} of ${cov.wfRunsTotal} workflow runs and ${cov.tasks} of ${cov.tasksTotal} tasks.`, 'The harness did not report tokens for the rest; they are left out, not counted as 0.') : '') + '</section>';
   };
@@ -237,12 +274,13 @@
     if (screen === 'nodes') {
       return `<div class="stat-page"><header class="stat-header"><button type="button" class="stat-back" data-action="stat-back" aria-label="Back to Statistics">${icon('chevron-left', 10)}Statistics</button><div><h2>${esc(m.nodePage.name)}</h2><p>Node breakdown · ${m.nodePage.runs} runs · ${m.rangeLabel}</p></div></header>${controls(m, false)}${nodePageMarkup(m)}</div>`;
     }
-    return `<div class="stat-page"><header class="stat-header"><div><h2>Statistics</h2><p>${m.rangeLabel} · All repositories</p></div></header>${controls(m, true)}${chartCard(m)}${listCard(m)}</div>`;
+    return `<div class="stat-page"><header class="stat-header"><div><h2>Statistics</h2><p>${m.rangeLabel} · All repositories</p></div></header>${controls(m, true)}${chartCard(m, opts.hover === true || Number.isInteger(opts.hover) ? opts.hover : undefined)}${listCard(m)}</div>`;
   };
 
   const entry = range => `<div class="section-label">Overview</div><button type="button" class="task-row stat-entry active" data-action="route:statistics/overview" aria-current="page"><span class="stat-entry-icon" aria-hidden="true">${icon('chart', 14)}</span><span class="task-row-copy"><strong>Statistics</strong><small>Last ${range} days</small></span></button>`;
   HF.renderStatistics = state => {
     if (state.startsWith('accounting-')) return HF.renderAccounting(state);
+    current.hover = state === 'chart-hover';
     const sidebar = HF.sidebar('populated').replace('class="task-row active"', 'class="task-row"').replace('<div class="workflows-heading">', entry(current.range) + '<div class="workflows-heading">');
     return HF.app(`<div class="split">${sidebar}<main class="content stat-content" id="statistics-content">${HF.statisticsBody(state === 'nodes' ? 'nodes' : 'overview', current)}</main></div>`);
   };
@@ -259,12 +297,37 @@
     // In-place navigation between the overview and the node page keeps the page state, so it replaces the hash
     // without a hashchange render; the catalog route (state picker, sidebar entry) still resets it.
     const syncRoute = () => {
-      const state = current.screen === 'nodes' ? 'nodes' : 'overview';
+      // The chart-hover presentation is kept for the session; the node page uses its own route and returning restores it.
+      const state = current.screen === 'nodes' ? 'nodes' : current.hover ? 'chart-hover' : 'overview';
       if (HF.route) HF.route.state = state;
       try { history.replaceState(history.state, '', `#statistics/${state}/${HF.appearance?.themeMode || 'system'}`); } catch { /* file:// previews may refuse */ }
       const picker = q('#state-picker'); if (picker) picker.value = state;
       const caption = q('#specimen-caption'); if (caption) caption.textContent = HF.specimenStatus('statistics', state).caption;
     };
+    // Chart hover (chart-hover state only): the card and band follow the pointer over the day columns and hide when it leaves.
+    const hoverBars = target => { const bars = target?.closest?.('.stat-chart-hover .stat-bars'); return bars || null; };
+    const setHover = (bars, index) => {
+      const chart = bars.closest('.stat-chart-hover'), card = chart?.querySelector('.stat-hover'); if (!card) return;
+      bars.querySelectorAll('.stat-bar.hot').forEach(bar => bar.classList.remove('hot'));
+      if (index < 0) { card.classList.add('off'); return; }
+      const model = HF.statisticsModel(current), day = HF.statisticsHoverDay(model, index);
+      bars.children[index].classList.add('hot');
+      card.innerHTML = HF.statisticsHoverCardInner(day, model.usage);
+      card.style.left = HF.statisticsHoverLeft(model.chart.bars.length, index, model.chart.gap, model.usage);
+      card.style.height = HF.statisticsHoverHeight(day, model.usage) + 'px';
+      card.style.bottom = HF.statisticsHoverBottom(model.chart.bars[index], HF.statisticsHoverHeight(day, model.usage));
+      card.classList.remove('off');
+    };
+    document.addEventListener('pointermove', event => {
+      if (!active()) return;
+      const bars = hoverBars(event.target), bar = event.target.closest?.('.stat-bar'); if (!bars) return;
+      const index = bar ? Array.prototype.indexOf.call(bars.children, bar) : -1;
+      if (index >= 0 && !bar.classList.contains('hot')) setHover(bars, index);
+    });
+    document.addEventListener('pointerleave', event => {
+      if (!active() || !event.target.classList?.contains('stat-bars') || !hoverBars(event.target)) return;
+      setHover(event.target, -1);
+    }, true);
     document.addEventListener('click', event => {
       if (!active()) return;
       const target = event.target.closest?.('[data-action^="stat-"]'); if (!target || target.disabled) return;

@@ -97,3 +97,18 @@
 .stat-kind .backend-dot { width: 10px; height: 10px; flex-basis: 10px; margin-top: 0; }
 .stat-model { width: 226px; min-width: 110px; flex: 0 1 226px; overflow: hidden; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
 .stat-model + .stat-submeta { flex-basis: 170px; }
+/* Chart hover (exploratory chart-hover state). The card is a transient overlay on the plot and does not change the chart layout. */
+.stat-chart-hover .stat-bars { isolation: isolate; }
+.stat-chart-hover .stat-bar { position: relative; }
+.stat-chart-hover .stat-bar::before { content: ""; position: absolute; z-index: -1; inset: 0 -1px; border-radius: 4px; background: transparent; }
+.stat-chart-hover .stat-bar.hot::before { background: var(--selectedRow); }
+.stat-hover { position: absolute; z-index: 5; box-sizing: border-box; display: flex; flex-direction: column; gap: 3px; padding: 10px 12px; border: 1px solid var(--cardBorder); border-radius: 10px; background: var(--cardFill); box-shadow: 0 8px 24px #0002; font-size: 12px; line-height: 16px; transform: translateX(-50%); pointer-events: none; }
+.stat-hover.off { visibility: hidden; }
+.stat-hover-date { color: var(--secondaryText); font-size: 11px; line-height: 14px; }
+.stat-hover-total { font-size: 16px; font-weight: 600; line-height: 20px; }
+.stat-hover-note { color: var(--tertiaryText); font-size: 11px; line-height: 14px; }
+.stat-hover-row { display: flex; align-items: center; gap: 6px; color: var(--secondaryText); }
+.stat-hover-row span { flex: 1; }
+.stat-hover-row b { color: var(--primaryText); font-weight: 600; }
+.stat-hover-empty { color: var(--secondaryText); }
+.stat-hover span, .stat-hover b, .stat-hover strong { white-space: nowrap; }
