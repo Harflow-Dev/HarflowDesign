@@ -1,0 +1,20 @@
+.workflow-sidebar-bottom { display: flex; flex: none; flex-direction: column; align-items: stretch; gap: 4px; min-height: 0; margin: auto -14px 0; padding: 7px 14px 4px; border-top: 1px solid var(--hairline); }
+.workflow-errors-slot:empty { display: none; }
+.workflow-error-entry { position: relative; }
+.workflow-error-popover > summary { display: flex; min-height: 34px; align-items: center; gap: 8px; padding: 6px 8px; border: 1px solid var(--hairline); border-radius: 8px; background: var(--sidebarBG); color: var(--primaryText); cursor: pointer; font-size: 12px; font-weight: 600; list-style: none; }
+.workflow-error-popover > summary::-webkit-details-marker,.workflow-error-item summary::-webkit-details-marker { display: none; }
+.workflow-error-popover > summary::before { content: "!"; display: inline-grid; width: 17px; height: 17px; place-items: center; border-radius: 50%; background: var(--failedRed); color: var(--onAccent); font-size: 11px; }
+.workflow-error-count { display: inline-block; margin-left: auto; color: var(--primaryText); font-family: ui-monospace,SFMono-Regular,Menlo,monospace; font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.workflow-error-list { position: absolute; z-index: 8; bottom: calc(100% + 8px); left: 0; width: min(380px,calc(100vw - 24px)); max-height: min(440px,60vh); overflow: auto; padding: 5px 10px; border: 1px solid var(--hairline); border-radius: 10px; background: var(--cardFill); box-shadow: 0 8px 24px #0003; }
+.workflow-error-item { padding: 9px 0; border-bottom: 1px solid var(--hairline); }
+.workflow-error-item:last-child { border-bottom: 0; }
+.workflow-error-item strong { display: block; font-size: 11px; font-weight: 600; }
+.workflow-error-item p { margin: 4px 0 7px; font-size: 11px; line-height: 1.4; overflow-wrap: anywhere; }
+.workflow-error-note { color: var(--secondaryText); font-size: 10px; font-weight: 400; line-height: 1.4; }
+.workflow-error-actions { display: flex; flex-wrap: wrap; gap: 5px; }
+.workflow-error-actions button { min-height: 27px; padding: 4px 7px; font-size: 10px; }
+.workflow-sidebar-bottom .sidebar-bottom-controls { display: flex; min-height: 32px; align-items: center; justify-content: space-between; }
+.workflow-sidebar-bottom .sidebar-bottom-controls .appearance-control { gap: 2px; }
+.workflow-sidebar-bottom .sidebar-bottom-controls .appearance-button { width: 28px; height: 28px; }
+.workflow-sidebar-bottom .sidebar-bottom-controls .settings-gear { width: 28px; height: 28px; }
+.workflow-sidebar-bottom :is(button,summary):focus-visible { outline: 2px solid var(--accentLink); outline-offset: 2px; }

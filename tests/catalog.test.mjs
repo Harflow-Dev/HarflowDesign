@@ -8,7 +8,7 @@ import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const scripts = ['tokens.js', 'registry.js', 'appearance.js', 'components.js', 'start-screen.js', 'tasks.js', 'task-activity.js', 'parallel.js', 'task-approvals.js', 'task-summary.js', 'workflows.js', 'workflow-connectors.js', 'workflow-editor-proposals.js', 'workflow-editor-inspector.js', 'workflow-editor.js', 'council-activity.js', 'workflow-run.js', 'dialogs.js', 'workflow-launch-proposals.js', 'state-recovery.js', 'sidebar-setup.js', 'sidebar-proposals.js', 'statistics.js', 'statistics-accounting.js', 'web.js', 'skeleton-crossfade.js', 'foundations.js'];
+const scripts = ['tokens.js', 'registry.js', 'appearance.js', 'components.js', 'start-screen.js', 'workflow-errors.js', 'tasks.js', 'task-activity.js', 'parallel.js', 'task-approvals.js', 'task-summary.js', 'workflows.js', 'workflow-connectors.js', 'workflow-editor-proposals.js', 'workflow-editor-inspector.js', 'workflow-editor.js', 'council-activity.js', 'workflow-run.js', 'dialogs.js', 'workflow-launch-proposals.js', 'state-recovery.js', 'sidebar-setup.js', 'sidebar-proposals.js', 'statistics.js', 'statistics-accounting.js', 'web.js', 'skeleton-crossfade.js', 'foundations.js'];
 
 function loadDesignRuntime({ captureEvents = false, querySelectorOverride, querySelectorAllOverride, history, timers } = {}) {
   const announcement = { textContent: '', classList: { add() {}, remove() {} } };
@@ -2039,6 +2039,73 @@ test('appearance moves into the header only on its exploratory state', () => {
   assert.deepEqual(Array.from(hf.specimenStatus('tasks', 'appearance-header').tickets), ['#6']);
 });
 
+test('workflow error entry stays in the sidebar footer and retains source state across retries and snackbar dismissal', () => {
+  const hf = loadDesignRuntime({ timers: { setTimeout: () => 1, clearTimeout() {} } });
+  const entry = (state, theme) => {
+    hf.route = { screen: 'tasks', state, theme };
+    hf.resetWorkflowErrors(hf.route);
+    return hf.workflowErrorsEntry();
+  };
+  for (const theme of ['light', 'dark']) {
+    assert.equal(entry('workflow-errors-zero', theme), '', 'zero errors hide the entry');
+    const one = entry('workflow-errors-one', theme);
+    assert.match(one, /Workflow errors/);
+    assert.match(one, /workflow-error-count">1/);
+    assert.match(one, /Development workflow/);
+    assert.match(one, /Workflow reads retry automatically\./);
+    assert.match(one, /Retry workflow read/);
+    assert.doesNotMatch(one, /data-action="workflow-error-resolve/ , 'source resolution is external to this read-only retained-error summary');
+
+    const three = entry('workflow-errors-three', theme);
+    assert.match(three, /workflow-error-count">3/);
+    assert.equal((three.match(/class="workflow-error-item"/g) || []).length, 3);
+    assert.equal((three.match(/Workflow reads retry automatically\./g) || []).length, 1, 'shared automatic-retry note appears once');
+    assert.match(three, /Session reliability/);
+    assert.match(three, /Workflow library/);
+    const sidebar = hf.renderTasks('tasks', 'workflow-errors-three');
+    assert.match(sidebar, /class="sidebar-bottom workflow-sidebar-bottom"/);
+    assert.ok(sidebar.indexOf('workflow-error-entry') < sidebar.indexOf('sidebar-bottom-controls'));
+
+    const controller = hf.workflowErrorsController;
+    const retried = controller.retry('run-history');
+    assert.equal(retried.activeCount, 3, 'retry does not duplicate or clear the retained source');
+    assert.equal(retried.sources.find(source => source.id === 'run-history').attempts, 1);
+    const afterDismiss = controller.dismissSnackbar();
+    assert.equal(afterDismiss.activeCount, 3, 'dismissing the incident snackbar leaves sidebar sources intact');
+    const resolved = controller.resolve('workflow-read');
+    assert.equal(resolved.activeCount, 2);
+    assert.equal(resolved.sources.find(source => source.id === 'workflow-read').resolved, true, 'resolution is retained in source history');
+    assert.equal(controller.resolve('run-history').activeCount, 1);
+    assert.equal(controller.resolve('workflow-refresh').activeCount, 0);
+    assert.equal(hf.workflowErrorsEntry(), '', 'resolved sources hide the entry');
+  }
+});
+
+test('workflow error states are exploratory and the footer entry is not a floating control', () => {
+  const hf = loadDesignRuntime();
+  for (const state of ['workflow-errors-zero', 'workflow-errors-one', 'workflow-errors-three', 'workflow-errors-open']) {
+    const proposal = hf.specimenStatus('tasks', state);
+    assert.equal(proposal.kind, 'exploratory');
+    assert.deepEqual(Array.from(proposal.tickets), ['#31']);
+    hf.route = { screen: 'tasks', state, theme: 'light' };
+    hf.resetWorkflowErrors(hf.route);
+    const html = hf.renderTasks('tasks', state);
+    assert.match(html, /class="sidebar-bottom workflow-sidebar-bottom"/);
+    assert.match(html, /class="appearance-control"/);
+    assert.match(html, /settings-gear/);
+  }
+  hf.route = { screen: 'tasks', state: 'workflow-errors-open', theme: 'dark' };
+  hf.resetWorkflowErrors(hf.route);
+  assert.match(hf.workflowErrorsEntry(), /class="workflow-error-popover" open/);
+  const css = fs.readFileSync(path.join(root, 'styles/workflow-errors.css'), 'utf8');
+  assert.match(css, /\.workflow-sidebar-bottom \{ display: flex; flex: none; flex-direction: column;/);
+  assert.match(css, /\.workflow-error-popover > summary \{[^}]*border: 1px solid var\(--hairline\);[^}]*background: var\(--sidebarBG\)/);
+  assert.match(css, /\.workflow-error-count \{[^}]*margin-left: auto;[^}]*font-family: ui-monospace,SFMono-Regular,Menlo,monospace/);
+  assert.doesNotMatch(css, /workflow-error-count[^}]*background:/, 'the live count is plain monospaced text');
+  assert.match(css, /\.workflow-error-list\s*\{[^}]*position: absolute;[^}]*bottom: calc\(100% \+ 8px\)[^}]*width: min\(380px/);
+  assert.doesNotMatch(css, /position:\s*fixed|right:\s*\d+px;\s*bottom:/, 'only the opened details panel is a sidebar-anchored popover');
+});
+
 test('sidebar proposal markup does not leak into shared sidebar renders', () => {
   const hf = loadDesignRuntime();
   const marker = /star-toggle|appearance-header-control|sp-menu|sp-alert|sp-overlay-root|data-sp-workflow/;
@@ -2047,6 +2114,7 @@ test('sidebar proposal markup does not leak into shared sidebar renders', () => 
   for (const family of hf.screens) {
     for (const state of family.states) {
       if (family.id === 'tasks' && proposal.includes(state)) continue;
+      if (family.id === 'tasks' && state.startsWith('workflow-errors-')) continue;
       if (family.id === 'workflow-launch' && state === 'library-starred') continue;
       hf.route = { theme: 'light', screen: family.id, state };
       if (family.id === 'workflow-run') hf.resetWorkflowRun(hf.route);
