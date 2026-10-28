@@ -1,6 +1,6 @@
-/* Exploratory Statistics page (#9). The page keeps its native minimum width and scrolls instead of compressing. */
-.stat-content { overflow: auto; background: var(--windowBG); }
-.stat-page { box-sizing: border-box; min-width: 880px; padding: 0 0 24px; font-variant-numeric: tabular-nums; }
+/* Statistics responsive-width refinement requested by the owner. Rankings retain vertical scrolling. */
+.stat-content { overflow-y: auto; overflow-x: hidden; background: var(--windowBG); }
+.stat-page { box-sizing: border-box; min-width: 0; width: 100%; padding: 0 0 24px; font-variant-numeric: tabular-nums; }
 .stat-header { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--hairline); }
 .stat-header > div { min-width: 0; flex: 1; }
 .stat-header h2 { margin: 0; overflow: hidden; font-size: 18px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
@@ -23,12 +23,12 @@
 .stat-glyph.solid { fill: currentColor; stroke: none; }
 .stat-card { position: relative; margin-bottom: 16px; border: 1px solid var(--cardBorder); border-radius: var(--radius-card); background: var(--cardFill); }
 .stat-chart-card { padding: 16px 16px 12px; display: flex; flex-direction: column; gap: 14px; }
-.stat-chart-head { display: flex; align-items: flex-start; gap: 24px; }
+.stat-chart-head { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 24px; }
 .stat-hero { display: flex; min-width: 0; flex: 1; flex-direction: column; gap: 4px; }
 .stat-hero strong { font-size: 22px; font-weight: 600; line-height: 1.2; }
 .stat-caption { color: var(--tertiaryText); font-size: 11px; }
 .stat-sub-caption { color: var(--secondaryText); font-size: 11px; }
-.stat-legend { display: flex; align-items: center; gap: 16px; padding-top: 2px; color: var(--secondaryText); font-size: 12px; }
+.stat-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; padding-top: 2px; color: var(--secondaryText); font-size: 12px; }
 .stat-legend span { display: inline-flex; align-items: center; gap: 6px; }
 .stat-legend b { color: var(--primaryText); font-weight: 600; }
 .stat-swatch { width: 10px; height: 10px; border-radius: 2px; }
@@ -53,7 +53,7 @@
 .stat-banner strong { font-weight: 600; }
 .stat-banner span { color: var(--secondaryText); }
 .stat-page > .stat-banner { margin-bottom: 16px; }
-.stat-list-head { display: flex; align-items: center; gap: 12px; padding: 12px 14px; }
+.stat-list-head { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 12px 14px; }
 .stat-list-head h3 { min-width: 0; flex: 1; margin: 0; font-size: 14px; font-weight: 600; }
 .stat-colhead { width: 110px; flex: none; color: var(--tertiaryText); font-size: 11px; text-align: right; }
 .stat-colhead.share { width: 70px; }
@@ -68,7 +68,7 @@
 .stat-name strong { overflow: hidden; font-size: 13px; font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
 .stat-name > span { display: flex; min-width: 0; align-items: center; gap: 5px; color: var(--secondaryText); font-size: 12px; }
 .stat-ellipsis { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.stat-track { display: block; width: 200px; height: 6px; flex: none; overflow: hidden; border-radius: 3px; background: var(--neutralFill); }
+.stat-track { display: block; width: 200px; min-width: 24px; height: 6px; flex: 0 1 200px; overflow: hidden; border-radius: 3px; background: var(--neutralFill); }
 .stat-track span { display: block; height: 100%; border-radius: inherit; background: var(--accentFill); }
 .stat-track.small { height: 4px; border-radius: 2px; }
 .stat-track.small span { background: color-mix(in srgb, var(--accentLink) 50%, transparent); }
@@ -112,3 +112,15 @@
 .stat-hover-row b { color: var(--primaryText); font-weight: 600; }
 .stat-hover-empty { color: var(--secondaryText); }
 .stat-hover span, .stat-hover b, .stat-hover strong { white-space: nowrap; }
+
+/* Detail panes narrower than the original specimen keep every expanded metric reachable. */
+.stat-page { container-type: inline-size; }
+@container (max-width: 800px) {
+  .stat-subrow { flex-wrap: wrap; padding-left: 14px; background-position-x: 14px; background-size: calc(100% - 28px) 1px; }
+  .stat-submeta { flex-basis: 100%; }
+  .stat-model + .stat-submeta { flex-basis: 100%; }
+  .stat-row { flex-wrap: wrap; }
+  .stat-track { flex-basis: 80px; }
+  .stat-tiles { flex-wrap: wrap; }
+  .stat-tile { flex-basis: 180px; }
+}
