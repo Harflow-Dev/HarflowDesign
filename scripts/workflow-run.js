@@ -2,13 +2,44 @@
   const states = new Map();
   const esc = value => HF.escape(String(value ?? ''));
   const button = HF.button;
-  const selectedRoutes = new Set(['selected-node', 'selected-conversations', 'attempts', 'on-demand-not-called', 'on-demand-calls', 'child-session', 'child-workflow', 'missing-task']);
+  const selectedRoutes = new Set(['selected-node', 'selected-conversations', 'attempts', 'on-demand-not-called', 'on-demand-calls', 'consultant-activity', 'child-session', 'child-workflow', 'missing-task', 'orchestrator-decisions', 'orchestrator-idle']);
   const terminal = new Set(['completed', 'cancelled', 'council-failed']);
   const isSetupRun = state => (HF.setupRunStates || []).includes(state);
   const isCouncil = state => (HF.councilRunStates || ['council']).includes(state);
-  const investigationCall = () => ({ id: 'workflow-investigation-call-1', title: 'Inspect session recovery', backend: 'codex', status: 'completed', result: 'The session state is persisted correctly.' });
+  const investigationCall = () => ({ id: 'workflow-investigation-call-1', title: 'Inspect session recovery', backend: 'codex', status: 'completed', origin: 'Orchestrator', reason: 'Investigate recovery failure.', result: 'The session state is persisted correctly.' });
   const baseState = state => /^run-approval-/.test(state) ? 'running' : state;
-  const newStateFor = route => ({ route: route.state, mode: route.state === 'parallel' ? 'parallel' : 'graph', selection: isCouncil(route.state) ? 'council' : route.state === 'teardown-pending' ? 'end' : ['setup-running', 'setup-failed'].includes(route.state) ? 'start' : selectedRoutes.has(route.state) ? (route.state.startsWith('on-demand') ? 'on-demand' : 'implementation') : null, nodeType: 'implementation', attempt: route.state === 'attempts' ? 2 : 1, selectedConversationID: route.state === 'selected-conversations' ? 'conversation-implementation' : null, conversationOrder: route.state === 'selected-conversations' ? ['conversation-implementation', 'conversation-review'] : [], recoveryOpen: route.state === 'attention' || route.state === 'settling', recoveryBusy: route.state === 'settling', requiresAnswer: false, exhaustedRetries: route.state === 'attention', canSkipOptionalReview: route.state === 'attention', extraAttempts: 0, recoveryInstructions: '', expanded: false, showReason: false, goalEditing: false, goal: 'Ship a reliable workflow run with clear activity and recovery.', goalDraft: 'Ship a reliable workflow run with clear activity and recovery.', goalDraftInitialized: false, deciding: ['running', 'starting'].includes(route.state), lastReason: route.state === 'running' ? 'The previous node completed successfully. The orchestrator is evaluating the next assignment.' : '', runReason: route.state === 'attention' ? 'Implementation reached its attempt limit.' : '', recoveryQuestion: '', diagnostics: [], selectedActivation: false, zoom: 1, disclosures: { request: false, goal: false, technical: false }, feedScroll: {}, canvasScroll: 0, canvasScrollLeft: 0, parallelScroll: 0, parallelLaneScrollLeft: 0, sidebarScroll: 0, focusTarget: null, commandOpen: false, teardown: 'pending' });
+  const newStateFor = route => {
+    const decisionDemo = ['orchestrator-decisions', 'orchestrator-idle'].includes(route.state);
+    const latestRunning = route.state === 'orchestrator-decisions';
+    const decisions = decisionDemo ? [
+      { id: 'decision-previous', title: 'Decision 1 · completed', status: 'completed', detail: 'Reviewed the prior result and selected the next action.', taskID: 'workflow-orchestrator-decision-1' },
+      { id: 'decision-latest', title: latestRunning ? 'Decision 2 · running' : 'Decision 2 · completed', status: latestRunning ? 'running' : 'completed', detail: latestRunning ? 'The orchestrator is evaluating the next assignment.' : 'The decision task completed. No decision task is running; the orchestrator is waiting for the next event.', taskID: 'workflow-orchestrator-decision-2' }
+    ] : [];
+    const decisionTasks = Object.fromEntries(decisions.map(decision => [decision.taskID, {
+      id: decision.taskID, taskID: decision.taskID, title: decision.title, backend: 'codex', status: decision.status,
+      prompt: 'Evaluate the workflow result and choose the next action.', result: decision.detail, summary: decision.detail,
+      activityFixture: 'native-eight-steps', sessionID: decision.taskID
+    }]));
+    return {
+      route: route.state, mode: route.state === 'parallel' ? 'parallel' : 'graph',
+      selection: isCouncil(route.state) ? 'council' : route.state === 'teardown-pending' ? 'end' : ['setup-running', 'setup-failed'].includes(route.state) ? 'start' : decisionDemo ? 'orchestrator' : selectedRoutes.has(route.state) ? (route.state.startsWith('on-demand') || route.state === 'consultant-activity' ? 'on-demand' : 'implementation') : null,
+      nodeType: 'implementation', attempt: route.state === 'attempts' ? 2 : 1,
+      selectedConversationID: route.state === 'selected-conversations' ? 'conversation-implementation' : null,
+      conversationOrder: route.state === 'selected-conversations' ? ['conversation-implementation', 'conversation-review'] : [],
+      callTask: ['on-demand-calls', 'consultant-activity'].includes(route.state) ? investigationCall() : null,
+      selectedDecisionID: 'decision-latest', decisions, decisionTasks,
+      recoveryOpen: route.state === 'attention' || route.state === 'settling', recoveryBusy: route.state === 'settling',
+      requiresAnswer: false, exhaustedRetries: route.state === 'attention', canSkipOptionalReview: route.state === 'attention',
+      extraAttempts: 0, recoveryInstructions: '', expanded: false, showReason: false, goalEditing: false,
+      goal: 'Ship a reliable workflow run with clear activity and recovery.', goalDraft: 'Ship a reliable workflow run with clear activity and recovery.', goalDraftInitialized: false,
+      deciding: ['running', 'starting'].includes(route.state),
+      lastReason: route.state === 'running' ? 'The previous node completed successfully. The orchestrator is evaluating the next assignment.' : '',
+      runReason: route.state === 'attention' ? 'Implementation reached its attempt limit.' : '', recoveryQuestion: '', diagnostics: [],
+      selectedActivation: false, zoom: 1, disclosures: { request: false, goal: false, technical: false }, feedScroll: {},
+      canvasScroll: 0, canvasScrollLeft: 0, parallelScroll: 0, parallelLaneScrollLeft: 0, sidebarScroll: 0,
+      focusTarget: null, commandOpen: false, teardown: 'pending'
+    };
+  };
   const newState = source => ({ ...newStateFor({ ...source, state: baseState(source.state) }), approvalRoute: /^run-approval-/.test(source.state) ? source.state : '' });
   const getState = () => {
     const route = HF.route || { state: 'running' };
@@ -78,7 +109,18 @@
   function standalone(state) {
     const current = getState();
     const onDemand = ['on-demand-not-called', 'on-demand-calls'].includes(state);
-    return `<section class="wf-standalone"><div class="wf-standalone-label"><strong>Standalone</strong><span>Outside the workflow path</span></div><div class="wf-standalone-items"><button type="button" class="wf-standalone-card ${current.selection === 'orchestrator' ? 'selected' : ''}" data-action="wr-select:orchestrator"><span class="wf-orchestrator-icon">${icon('orchestrator')}</span><strong>Orchestrator</strong><img class="wf-lock" src="assets/symbols/lock.png" alt="Always present"><small><i class="wf-dot codex"></i>Codex</small><span class="wf-subtitle">${state === 'attention' ? 'Needs attention' : ({ 'setup-running': 'Waiting for setup', 'setup-failed': 'Never started', 'teardown-pending': 'Finished' })[state] || 'Deciding'}</span></button><button type="button" class="wf-standalone-card wfr-on-demand-card ${current.selection === 'on-demand' ? 'selected' : ''}" data-action="wr-select:on-demand"><span class="wf-orchestrator-icon investigation"><span class="wfr-bolt" aria-hidden="true">ϟ</span></span><strong>Investigation</strong><small><i class="wf-dot"></i></small><span class="wf-subtitle">${state === 'on-demand-calls' ? 'Called' : 'Not called'}</span></button></div></section>`;
+    const decisionRunning = current.decisions?.some(item => item.taskID && current.decisionTasks?.[item.taskID]?.status === 'running');
+    const orchestratorSubtitle = state === 'attention' ? 'Needs attention' : ({ 'setup-running': 'Waiting for setup', 'setup-failed': 'Never started', 'teardown-pending': 'Finished', 'orchestrator-idle': 'Idle' })[state] || (decisionRunning ? 'Deciding' : 'Idle');
+    return `<section class="wf-standalone"><div class="wf-standalone-label"><strong>Standalone</strong><span>Outside the workflow path</span></div><div class="wf-standalone-items"><button type="button" class="wf-standalone-card ${current.selection === 'orchestrator' ? 'selected' : ''} ${decisionRunning ? 'wfr-decision-running' : ''}" data-action="wr-select:orchestrator"><span class="wf-orchestrator-icon">${icon('orchestrator')}</span><strong>Orchestrator</strong><img class="wf-lock" src="assets/symbols/lock.png" alt="Always present"><small><i class="wf-dot codex"></i>Codex</small><span class="wf-subtitle">${orchestratorSubtitle}</span></button><button type="button" class="wf-standalone-card wfr-on-demand-card ${current.selection === 'on-demand' ? 'selected' : ''}" data-action="wr-select:on-demand"><span class="wf-orchestrator-icon investigation"><span class="wfr-bolt" aria-hidden="true">ϟ</span></span><strong>Investigation</strong><small><i class="wf-dot"></i></small><span class="wf-subtitle">${state === 'on-demand-calls' || state === 'consultant-activity' ? 'Called' : 'Not called'}</span></button></div></section>`;
+  }
+  function orchestratorActivity() {
+    const current = getState();
+    const selected = current.decisions.find(item => item.id === current.selectedDecisionID) || current.decisions[current.decisions.length - 1];
+    if (selected && current.selectedDecisionID !== selected.id) current.selectedDecisionID = selected.id;
+    const picker = current.decisions.length > 1 ? `<label class="wfr-decision-picker"><span>Decision activity · ${current.decisions.length}</span><select aria-label="Decision activity" data-action="wr-decision">${current.decisions.map(item => `<option value="${esc(item.id)}" ${item.id === selected?.id ? 'selected' : ''}>${esc(item.title)}</option>`).join('')}</select></label>` : '';
+    const task = selected?.taskID ? current.decisionTasks?.[selected.taskID] || null : null;
+    const feed = selected?.detail ? `<div class="wfr-decision-feed"><p>${esc(selected.detail)}</p>${task?.status === 'running' ? '<p class="wf-help">Decision task running</p>' : task ? '<p class="wf-help">Decision task completed</p>' : selected.taskID ? '<p class="wf-help">Task record unavailable.</p>' : '<p class="wf-help">No task record is associated with this decision.</p>'}${task ? button('Open task', 'wr-open-decision-task', 'link') : ''}</div>` : '<div class="parallel-empty">Decision activity unavailable.</div>';
+    return `<div class="wfr-on-demand wfr-orchestrator-activity"><header><strong>Orchestrator</strong>${button(icon('close')+'<span class="wf-sr-only">Close selected node</span>', 'wr-deselect', 'quiet')}</header>${picker}${feed}</div>`;
   }
   function plan(state) {
     if (state === 'loading') return `<div class="wfr-loading-panel"><div class="wfr-skeleton wide"></div><div class="wfr-skeleton"></div><div class="wfr-skeleton"></div></div>`;
@@ -155,6 +197,13 @@
   }
   function openTask() {
     const state = getState();
+    if (state.selection === 'on-demand') {
+      const call = state.callTask;
+      if (!call || call.id !== 'workflow-investigation-call-1') { HF.feedback('Call activity unavailable'); return; }
+      HF.pendingParallelTask = { ...call, time: '9:02 AM', repoPath: '/Users/demo/HarflowMac' };
+      HF.navigate('task-detail', call.status);
+      return;
+    }
     const selectedConversation = state.route === 'selected-conversations'
       ? selectedConversationRecords().find(item => item.id === state.selectedConversationID)?.task
       : null;
@@ -166,10 +215,11 @@
     return `<div class="wfr-child-workflow"><header><strong>Implementation</strong>${button(icon('close')+'<span class="wf-sr-only">Close selected node</span>', 'wr-deselect', 'quiet')}</header><div class="wfr-child-body"><h3>Child workflow</h3><p>This node opens a nested workflow run.</p>${button('Open workflow', 'wr-open-child', 'quiet')}</div></div>`;
   }
   function onDemand(state) {
-    const calls = state === 'on-demand-calls';
+    const calls = state === 'on-demand-calls' || state === 'consultant-activity';
     const current = getState();
-    if (calls) current.callTask = investigationCall();
-    return `<div class="wfr-on-demand"><header><strong>Investigation</strong>${button(icon('close')+'<span class="wf-sr-only">Close selected node</span>', 'wr-deselect', 'quiet')}</header><div class="wfr-call-meta"><span>${calls ? '1 call' : '0 calls'}</span><span>Investigation · on demand · Access level: Read-only · network unspecified</span></div>${calls ? `<div class="wfr-call-list"><article class="wfr-call"><h3>#1 · Inspect session recovery ${statusBadge('Completed')}</h3><p>Called by the orchestrator after node</p><p>Investigate recovery failure.</p><p>“The session state is persisted correctly.”</p>${button('Open task', 'wr-open-task', 'link')}</article></div>` : HF.empty('Not called', 'The orchestrator has not called this node.')}</div>`;
+    const call = calls ? current.callTask : null;
+    const activityMatches = call && call.id === 'workflow-investigation-call-1';
+    return `<div class="wfr-on-demand"><header><strong>Investigation</strong>${button(icon('close')+'<span class="wf-sr-only">Close selected node</span>', 'wr-deselect', 'quiet')}</header><div class="wfr-call-meta"><span>${calls ? '1 call' : '0 calls'}</span><span>Investigation · on demand · Access level: Read-only · network unspecified</span></div>${calls ? `<div class="wfr-call-list"><article class="wfr-call"><h3>#1 · ${esc(call?.title || 'Consultant call')} ${statusBadge(call?.status === 'completed' ? 'Completed' : 'Running')}</h3><p>Origin: ${esc(call?.origin || 'Unavailable')}</p><p>Called by the orchestrator after node</p><p>Reason: ${esc(call?.reason || 'Unavailable')}</p>${activityMatches ? `<div class="wfr-consultant-activity"><strong>Call activity</strong><p>${esc(call.result)}</p>${button('Open task', 'wr-open-task', 'link')}</div>` : '<p class="wf-help">Call activity unavailable: no task record is associated with this call.</p>'}</article></div>` : HF.empty('Not called', 'The orchestrator has not called this node.')}</div>`;
   }
   function recovery(state) {
     const current = getState();
@@ -202,9 +252,9 @@
     const agentSelected = isSetupRun(state) && state !== 'teardown-pending' && ['planning', 'implementation', 'review'].includes(current.selection);
     const setupPane = isSetupRun(state) && ((current.selection === 'start' && state !== 'teardown-pending') || (current.selection === 'end' && state === 'teardown-pending'));
     const fallback = isSetupRun(state) ? HF.setupRunFallback(state, current.teardown) : plan(state);
-    const sidebar = state === 'error' ? '' : selected ? (setupPane ? HF.setupRunPane(state, { commandOpen: current.commandOpen, teardown: current.teardown }) : agentSelected ? HF.setupRunNotStarted({ planning: 'Plan', implementation: 'Implementation', review: 'Review' }[current.selection]) : ['start', 'end', 'orchestrator'].includes(current.selection) ? fallback : current.selection === 'council' && isCouncil(state) ? HF.councilActivity(state) : state === 'child-workflow' ? childWorkflow() : current.selection === 'on-demand' ? onDemand(state.startsWith('on-demand') ? state : 'on-demand-not-called') : activity(taskFixture(current.nodeType, current.attempt))) : state === 'loading' ? `<div class="wfr-inspector-loading"><i class="wfr-loading-heading"></i>${[0,1,2].map(() => '<div class="wfr-loading-row"><i></i><div><i></i><i></i></div></div>').join('')}</div>` : fallback;
+    const sidebar = state === 'error' ? '' : selected ? (setupPane ? HF.setupRunPane(state, { commandOpen: current.commandOpen, teardown: current.teardown }) : agentSelected ? HF.setupRunNotStarted({ planning: 'Plan', implementation: 'Implementation', review: 'Review' }[current.selection]) : ['start', 'end'].includes(current.selection) ? fallback : current.selection === 'orchestrator' ? (['orchestrator-decisions','orchestrator-idle'].includes(state) ? orchestratorActivity() : fallback) : current.selection === 'council' && isCouncil(state) ? HF.councilActivity(state) : state === 'child-workflow' ? childWorkflow() : current.selection === 'on-demand' ? onDemand(state.startsWith('on-demand') || state === 'consultant-activity' ? state : 'on-demand-not-called') : activity(taskFixture(current.nodeType, current.attempt))) : state === 'loading' ? `<div class="wfr-inspector-loading"><i class="wfr-loading-heading"></i>${[0,1,2].map(() => '<div class="wfr-loading-row"><i></i><div><i></i><i></i></div></div>').join('')}</div>` : fallback;
     const attention = state === 'attention' ? button(`${icon('attention')} Needs attention`, 'wr-open-recovery', 'wfr-attention') : state === 'teardown-pending' && current.teardown !== 'completed' ? button(`${icon('attention')} Needs attention`, 'wr-open-end', 'wfr-attention') : '';
-    const wideSelection = Boolean(selected && (setupPane || !['start', 'end', 'orchestrator'].includes(current.selection)));
+    const wideSelection = Boolean(selected && (setupPane || !['start', 'end'].includes(current.selection) && (current.selection !== 'orchestrator' || ['orchestrator-decisions', 'orchestrator-idle'].includes(state))));
     return HF.app(`<header class="wfr-toolbar ${state === 'loading' ? 'wfr-loading-header' : ''}"><div class="wfr-title"><strong>${runTitle}</strong>${statusBadge(status(state === 'error' ? 'running' : state), setupElapsed[state] || '')}<small>Run started 9:02 · HarflowMac</small></div><span class="spacer"></span>${attention}<span class="wfr-view-label">View</span><div class="wfr-view-picker" role="group" aria-label="View">${noView ? '<button class="selected" disabled>Graph</button><button disabled>Parallel</button>' : button('Graph','wr-mode:graph',activeMode==='graph'?'selected':'')+(isCouncil(state) || ['setup-running', 'setup-failed'].includes(state) ? '<button type="button" disabled>Parallel</button>':button('Parallel','wr-mode:parallel',activeMode==='parallel'?'selected':''))}</div>${controls}</header><div class="wfr-run-layout ${wideSelection ? 'has-selection' : ''} ${activeMode === 'parallel' ? 'parallel-mode' : ''} ${state === 'error' ? 'error-state' : ''}" data-mode="${activeMode}"><main class="wfr-run-main" id="run-main">${left}</main>${state === 'error' ? '' : `<aside class="wfr-run-sidebar" id="run-sidebar" tabindex="-1">${sidebar}</aside>`}${current.recoveryOpen ? recovery(state) : ''}</div>${summary(state)}`, 'workflow-specimen wfr-specimen', 'Workflow run');
   };
   let lastRouteKey = '', teardownTimer = null, teardownGeneration = 0;
@@ -283,6 +333,7 @@
     const [action, value] = target.dataset.action.split(':');
     if (action === 'wr-attempt' && event.type === 'change') { event.preventDefault(); event.stopImmediatePropagation(); if (getState().route !== 'attempts' || getState().selection !== 'implementation' || ![1, 2].includes(Number(target.value))) return; getState().attempt = Number(target.value); getState().scrollTop = document.querySelector('.parallel-feed-scroll')?.scrollTop || 0; renderCurrent(); return; }
     if (action === 'wr-conversation' && event.type === 'change') { event.preventDefault(); event.stopImmediatePropagation(); const current = getState(); if (current.route !== 'selected-conversations' || !current.conversationOrder.includes(target.value)) return; current.selectedConversationID = target.value; current.focusTarget = 'wr-conversation'; renderCurrent(); return; }
+    if (action === 'wr-decision' && event.type === 'change') { event.preventDefault(); event.stopImmediatePropagation(); const current = getState(); if (!current.decisions.some(item => item.id === target.value)) return; current.selectedDecisionID = target.value; current.focusTarget = 'wr-decision'; renderCurrent(); return; }
     if (event.type !== 'click') return;
     event.preventDefault(); event.stopImmediatePropagation();
     const current = getState();
@@ -324,6 +375,7 @@
       case 'wr-parent': HF.feedback('Parent workflow selected · mock only'); return;
       case 'wr-retry': HF.feedback('Mock reload requested'); return;
       case 'wr-open-task': openTask(); return;
+      case 'wr-open-decision-task': { const decision = current.decisions.find(item => item.id === current.selectedDecisionID); const task = decision?.taskID ? current.decisionTasks?.[decision.taskID] : null; if (!task) { HF.feedback('Decision task unavailable'); return; } HF.pendingParallelTask = { ...task, time: '9:02 AM', repoPath: '/Users/demo/HarflowMac' }; HF.navigate('task-detail', task.status); return; }
       case 'wr-zoom': { const next = value === 'reset' ? 1 : Math.max(.5, Math.min(2, current.zoom + (value === 'in' ? .25 : -.25))); current.zoom = Math.round(next * 100) / 100; renderCurrent(); return; }
       default: return;
     }

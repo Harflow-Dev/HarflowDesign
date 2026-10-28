@@ -1185,6 +1185,58 @@ test('selected workflow activity wraps readable code without changing ordinary P
   assert.doesNotMatch(hf.renderRun('selected-node'), /wfr-conversation-picker/, 'a single conversation has no redundant selector');
 });
 
+test('workflow orchestrator history and consultant activity follow fixture task identity', () => {
+  const hf = loadDesignRuntime();
+  const render = (state, theme) => { hf.route = { screen: 'workflow-run', state, theme }; hf.resetWorkflowRun(hf.route); return hf.renderRun(state); };
+  for (const theme of ['light', 'dark']) {
+    let html = render('orchestrator-decisions', theme);
+    assert.match(html, /wfr-decision-running/);
+    assert.match(html, /Decision activity · 2/);
+    assert.match(html, /class="wfr-run-layout has-selection/);
+    assert.match(html, /aria-label="Decision activity"/);
+    assert.match(html, /Decision task running/);
+    assert.match(html, /Open task/);
+    const controller = hf.workflowRunController;
+    const originalTask = controller.snapshot().decisionTasks['workflow-orchestrator-decision-2'];
+    controller.setSummaryState({ decisionTasks: { ...controller.snapshot().decisionTasks, [originalTask.id]: { ...originalTask, status: 'completed' } } });
+    assert.doesNotMatch(controller.render('orchestrator-decisions'), /wfr-decision-running/, 'the glow reads the associated task status rather than a stale history label');
+    controller.setSummaryState({ decisionTasks: { ...controller.snapshot().decisionTasks, [originalTask.id]: originalTask } });
+    controller.setSummaryState({ selectedDecisionID: 'decision-previous' });
+    const refreshedTask = { id: 'workflow-orchestrator-decision-3', taskID: 'workflow-orchestrator-decision-3', title: 'Decision 3 · running', backend: 'codex', status: 'running', prompt: 'Evaluate the latest result.', result: 'A later decision arrived during refresh.', activityFixture: 'native-eight-steps', sessionID: 'workflow-orchestrator-decision-3' };
+    controller.setSummaryState({ decisions: [
+      { id: 'decision-arrived', title: 'Decision 3 · running', status: 'running', detail: 'A later decision arrived during refresh.', taskID: refreshedTask.id },
+      ...controller.snapshot().decisions
+    ], decisionTasks: { ...controller.snapshot().decisionTasks, [refreshedTask.id]: refreshedTask } });
+    html = controller.render('orchestrator-decisions');
+    assert.match(html, /value="decision-previous" selected/, 'manual history choice survives a refreshed activity list');
+    assert.match(html, /Decision activity · 3/);
+    assert.match(html, /Open task/, 'historical decision keeps its own associated task activity');
+    assert.match(html, /wfr-decision-running/, 'glow follows the newly arrived running task while an earlier history item is selected');
+
+    html = render('orchestrator-idle', theme);
+    assert.doesNotMatch(html, /wfr-decision-running/, 'a completed activation label does not make an idle decision task glow');
+    assert.match(html, /aria-label="Decision activity"/);
+    assert.match(html, /Decision task completed/);
+    assert.match(html, /No decision task is running/);
+  }
+
+  let html = render('consultant-activity', 'dark');
+  assert.match(html, /Origin: Orchestrator/);
+  assert.match(html, /Reason: Investigate recovery failure\./);
+  assert.match(html, /The session state is persisted correctly\./);
+  assert.match(html, /Call activity/);
+  const controller = hf.workflowRunController;
+  controller.setSummaryState({ callTask: null });
+  html = controller.render('consultant-activity');
+  assert.match(html, /Call activity unavailable: no task record is associated with this call\./);
+  assert.doesNotMatch(html, /Call activity<\/strong>/);
+
+  for (const state of ['running', 'completed', 'cancelled', 'setup-running', 'setup-failed', 'teardown-pending']) {
+    html = render(state, 'light');
+    assert.doesNotMatch(html, /wfr-decision-running/, `${state} has no decision task fixture, so the standalone card stays idle`);
+  }
+});
+
 test('workflow run selected activity keeps attempt identity and truthful special cases', () => {
   const hf = loadDesignRuntime();
   const routeRun = state => {
@@ -1916,6 +1968,7 @@ test('compact workflow-run sidebar proposal (#15) covers every state that can di
     const status = hf.specimenStatus('workflow-run', state);
     if (state.startsWith('council')) { assert.equal(status.kind, 'exploratory'); assert.deepEqual(Array.from(status.tickets), ['#17', '#15']); display.pop(); continue; }
     if (state === 'selected-conversations') { assert.equal(status.kind, 'exploratory'); assert.deepEqual(Array.from(status.tickets), ['#26']); if (canShowCompact) display.pop(); continue; }
+    if (['orchestrator-decisions', 'orchestrator-idle', 'consultant-activity'].includes(state)) { assert.equal(status.kind, 'exploratory'); assert.deepEqual(Array.from(status.tickets), ['#28']); if (canShowCompact) display.pop(); continue; }
     if (['setup-running', 'setup-failed', 'teardown-pending'].includes(state)) { assert.equal(status.kind, 'exploratory'); assert.deepEqual(Array.from(status.tickets), ['#21', 'HarflowMCP#41']); if (canShowCompact) display.pop(); continue; }
     if (state.startsWith('run-approval-')) { assert.equal(status.kind, 'exploratory'); assert.deepEqual(Array.from(status.tickets), ['#13', '#14']); if (canShowCompact) display.pop(); continue; }
     assert.equal(status.kind === 'contains-exploratory', canShowCompact, `workflow-run/${state} #15 element metadata`);
