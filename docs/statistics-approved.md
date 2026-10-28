@@ -9,6 +9,18 @@ The observed hosted assets match HarflowDesign commit `1b1d5d8` (also unchanged 
 overview layout and its demonstrated interactions, with the existing app surfaces
 reused. Approval does not establish native pixel fidelity or production readiness.
 
+The owner approved the daily chart hover card on 2026-10-28:
+`https://design.harflow.dev/#statistics/chart-hover/system`. The hosted assets match
+HarflowDesign commit `7c66c63`: `scripts/statistics.js` (SHA-256 prefix
+`adba2f5aca88`) and `styles/statistics.css` (`7479484f44a1`). It replaces the
+per-bar tooltip: the card shows the day's date with weekday, its total, the
+workflow-run and task values for the selected measure, "Known qualified usage
+only" for Usage, and "No finished work" on an empty day. It floats over the chart
+without changing its layout, follows the pointer over full-height day columns,
+highlights the hovered day, and hides when the pointer leaves. Pinning on the
+highest-total day is a specimen affordance for review, not native behavior.
+Keyboard access is not part of the approval.
+
 The separate `accounting-*` specimens introduced at `f9e14a1` remain unapproved
 exploration. They are not the native implementation's visual reference.
 
