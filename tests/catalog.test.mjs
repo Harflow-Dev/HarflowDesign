@@ -2253,7 +2253,7 @@ const statText = html => html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ');
 test('statistics is an exploratory whole-proposal family with no native source', () => {
   const hf = loadDesignRuntime();
   const family = hf.screens.find(screen => screen.id === 'statistics');
-  assert.deepEqual(Array.from(family.states), ['overview', 'nodes', 'chart-hover', 'accounting-overview', 'accounting-loading', 'accounting-empty', 'accounting-no-history', 'accounting-error', 'accounting-active', 'accounting-runs', 'accounting-tasks', 'accounting-detail', 'accounting-turns', 'accounting-context-workflow', 'accounting-context-run', 'accounting-context-repository']);
+  assert.deepEqual(Array.from(family.states), ['overview', 'nodes', 'chart-hover', 'loading', 'empty', 'error', 'unsupported', 'refreshing', 'accounting-overview', 'accounting-loading', 'accounting-empty', 'accounting-no-history', 'accounting-error', 'accounting-active', 'accounting-runs', 'accounting-tasks', 'accounting-detail', 'accounting-turns', 'accounting-context-workflow', 'accounting-context-run', 'accounting-context-repository']);
   assert.equal(family.source, undefined);
   assert.deepEqual(Array.from(family.proposal.tickets), ['#9']);
   for (const state of family.states) {
@@ -2280,6 +2280,37 @@ test('legacy Statistics model, body, and render output stay byte-for-byte compat
   hf.route.state = 'nodes';
   hf.resetStatistics();
   assert.equal(digest(hf.renderStatistics('nodes')), '7fa031643b2927888e14c14e8c559ec53b32a504e5a6e2c6ded4b917cf8ac44a');
+});
+
+test('statistics loading proposal keeps the overview shell and hides the skeleton', () => {
+  const hf = loadDesignRuntime();
+  hf.route = { theme: 'light', screen: 'statistics', state: 'loading' };
+  const loading = hf.renderStatistics('loading');
+  assert.match(loading, /<h2>Statistics<\/h2>/);
+  assert.match(loading, /Last 30 days · All repositories/);
+  assert.match(loading, /stat-loading" aria-hidden="true"/);
+  assert.match(loading, /stat-skel-controls/);
+  assert.doesNotMatch(loading, /<button disabled |stat-loading-controls|stat-track/);
+  assert.doesNotMatch(loading, /Preparing statistics/);
+  assert.equal((loading.match(/stat-skel-bar/g) || []).length, 30);
+  const empty = hf.statisticsOutcome('empty');
+  assert.match(empty, /No finished work in this retained history/);
+  assert.doesNotMatch(empty, /stat-skel|button disabled/);
+  const error = hf.statisticsOutcome('error');
+  assert.match(error, /History read exceeded its time budget/);
+  assert.match(error, /data-action="stat-retry"/);
+  const unsupported = hf.statisticsOutcome('unsupported');
+  assert.match(unsupported, /does not provide statistics/);
+  assert.doesNotMatch(unsupported, /stat-retry|stat-skel/);
+  const refreshing = hf.statisticsOutcome('refreshing');
+  assert.match(refreshing, /Updating the last 7 days/);
+  assert.match(refreshing, /Last 7 days · All repositories/);
+  assert.match(refreshing, /data-action="stat-range:7" aria-pressed="true"/);
+  assert.match(refreshing, /stat-chart/);
+  assert.doesNotMatch(refreshing, /stat-skel/);
+  for (const state of ['loading', 'empty', 'error', 'unsupported', 'refreshing']) {
+    assert.equal(hf.specimenStatus('statistics', state).kind, 'exploratory');
+  }
 });
 
 test('statistics chart-hover is a registered exploratory state of the statistics family', () => {

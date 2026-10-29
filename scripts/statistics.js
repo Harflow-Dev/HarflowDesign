@@ -278,8 +278,35 @@
   };
 
   const entry = range => `<div class="section-label">Overview</div><button type="button" class="task-row stat-entry active" data-action="route:statistics/overview" aria-current="page"><span class="stat-entry-icon" aria-hidden="true">${icon('chart', 14)}</span><span class="task-row-copy"><strong>Statistics</strong><small>Last ${range} days</small></span></button>`;
+  // Proposal for HarflowMac #41. Not approved. The overview and nodes markup above is unchanged.
+  const skel = (width, height, radius = 6) => `<i class="stat-skel" style="width:${width};height:${height}px;border-radius:${radius}px"></i>`;
+  const controlSkeleton = `<div class="stat-controls stat-skel-controls" aria-hidden="true">${skel('168px', 30, 10)}${skel('128px', 26, 10)}${skel('112px', 26, 10)}${skel('120px', 26, 10)}<span class="stat-spacer"></span>${skel('196px', 30, 10)}</div>`;
+  HF.statisticsOutcome = state => {
+    const model = HF.statisticsModel({ range: 30, measure: 'time', list: 'workflows', screen: 'overview' });
+    const header = `<div class="stat-page"><header class="stat-header"><div><h2>Statistics</h2><p>${state === 'refreshing' ? 'Last 7 days · All repositories' : 'Last 30 days · All repositories'}</p></div></header>`;
+    if (state === 'loading') {
+      const bars = [18, 42, 28, 64, 36, 88, 22, 54, 120, 46, 30, 72, 16, 96, 40, 58, 24, 110, 34, 48, 20, 76, 32, 14, 68, 26, 90, 38, 52, 22];
+      const rows = [0.92, 0.7, 0.55, 0.34].map(fraction => `<div class="stat-item"><div class="stat-skel-row">${skel('10px', 10, 3)}${skel('14px', 12)}${skel('14px', 14, 7)}<span class="stat-name">${skel('68%', 13)}${skel('46%', 12)}</span><i class="stat-skel stat-skel-meter" style="width:${Math.round(fraction * 160)}px;height:6px;border-radius:3px"></i>${skel('72px', 13)}${skel('64px', 12)}</div></div>`).join('');
+      return `${header}${controlSkeleton}<div class="stat-loading" aria-hidden="true"><section class="stat-card stat-chart-card"><div class="stat-chart-head"><div class="stat-hero">${skel('88px', 11)}${skel('148px', 22, 8)}${skel('220px', 11)}</div><div class="stat-legend">${skel('132px', 12)}${skel('96px', 12)}</div></div><div class="stat-chart"><div class="stat-yaxis">${skel('28px', 11)}${skel('28px', 11)}${skel('16px', 11)}</div><div class="stat-plot"><div class="stat-area stat-skel-plot">${bars.map(height => `<i class="stat-skel stat-skel-bar" style="height:${height}px"></i>`).join('')}</div><div class="stat-xaxis">${[0, 1, 2, 3, 4].map(() => `<div>${skel('28px', 11)}</div>`).join('')}</div></div></div></section><section class="stat-card"><div class="stat-list-head">${skel('220px', 26, 8)}<h3>${skel('160px', 14)}</h3>${skel('72px', 11)}${skel('72px', 11)}</div>${rows}<div class="stat-list-foot">${skel('46%', 12)}</div></section></div></div>`;
+    }
+    const live = controls(model, true);
+    if (state === 'empty') return `${header}${live}<p class="stat-outcome">No finished work in this retained history. Choose another range or adjust the filters to look for retained finished work.</p></div>`;
+    if (state === 'error') return `${header}${live}<div class="stat-outcome"><p>History read exceeded its time budget. No totals are shown.</p><button type="button" data-action="stat-retry">Retry</button></div></div>`;
+    if (state === 'unsupported') return `${header}${live}<p class="stat-outcome">This engine does not provide statistics.</p></div>`;
+    const refreshing = HF.statisticsBody('overview', { range: 30, measure: 'time', list: 'workflows' })
+      .replace('Last 30 days · All repositories', 'Last 7 days · All repositories')
+      .replace('class="stat-seg-item selected" data-action="stat-range:30" aria-pressed="true"', 'class="stat-seg-item" data-action="stat-range:30" aria-pressed="false"')
+      .replace('class="stat-seg-item" data-action="stat-range:7" aria-pressed="false"', 'class="stat-seg-item selected" data-action="stat-range:7" aria-pressed="true"')
+      .replace('<div class="stat-controls">', '<p class="stat-outcome stat-updating" role="status">Updating the last 7 days. These figures are still the last 30 days.</p><div class="stat-controls">');
+    return refreshing;
+  };
+
   HF.renderStatistics = state => {
     if (state.startsWith('accounting-')) return HF.renderAccounting(state);
+    if (['loading', 'empty', 'error', 'unsupported', 'refreshing'].includes(state)) {
+      const sidebar = HF.sidebar('populated').replace('class="task-row active"', 'class="task-row"').replace('<div class="workflows-heading">', entry(state === 'refreshing' ? 7 : 30) + '<div class="workflows-heading">');
+      return HF.app(`<div class="split">${sidebar}<main class="content stat-content" id="statistics-content">${HF.statisticsOutcome(state)}</main></div>`);
+    }
     current.hover = state === 'chart-hover';
     const sidebar = HF.sidebar('populated').replace('class="task-row active"', 'class="task-row"').replace('<div class="workflows-heading">', entry(current.range) + '<div class="workflows-heading">');
     return HF.app(`<div class="split">${sidebar}<main class="content stat-content" id="statistics-content">${HF.statisticsBody(state === 'nodes' ? 'nodes' : 'overview', current)}</main></div>`);
@@ -333,6 +360,11 @@
       const target = event.target.closest?.('[data-action^="stat-"]'); if (!target || target.disabled) return;
       event.preventDefault(); event.stopImmediatePropagation();
       const action = target.dataset.action, [name, ...rest] = action.split(':'), value = rest.join(':'), self = `[data-action="${action}"]`;
+      if (['loading', 'empty', 'error', 'unsupported'].includes(HF.route?.state)) {
+        if (name === 'stat-retry') HF.feedback('Retry loads statistics again.');
+        return;
+      }
+      if (HF.route?.state === 'refreshing') { HF.feedback('The chart keeps the last 30 days until the new range is ready.'); return; }
       if (name === 'stat-range') { current.range = Number(value); rerender(self); HF.feedback(`Last ${current.range} days selected`); }
       else if (name === 'stat-measure') { current.measure = value === 'usage' ? 'usage' : 'time'; rerender(self); HF.feedback(`${current.measure === 'usage' ? 'Usage' : 'Total time'} measure selected`); }
       else if (name === 'stat-list') { current.list = LISTS[value] ? value : 'workflows'; rerender(self); HF.feedback(`${{ workflows: 'Workflows', tasks: 'Tasks', harnesses: 'Harnesses' }[current.list]} ranking selected`); }

@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Propose a Statistics shimmer skeleton (`statistics/loading`) and the empty, error, unsupported and refreshing handoff states for HarflowMac #41. The time range and filters are shimmer blocks. Each block has one highlight inside its shape, and the chart has no second sweep across the bars. Not approved.
+
+- Approve queued messages as pinned transcript bubbles, replacing the strip above the composer, in the work-interaction reference for HarflowMac #42. Approved by the owner on 2026-10-29.
+
+- Remove the workflow builder composer from the workflow window (HarflowMac #43): the work-interaction reference no longer offers a Workflow editor surface. Builder tasks start from Generate or Edit with agent; an embedded builder task keeps its own composer (`workflow-editor/builder-conversation`). Requested by the owner on 2026-10-29.
+
 - Add an exploratory `statistics/chart-hover` state (#9): a hover card on the daily chart showing the day's date, total, and workflow and task values for the selected measure, pinned on the highest-total day, replacing the native per-bar tooltip; keyboard behaviour is an open question.
 
 - Add the approved start screen to the main window in place of the empty "Select a task" detail: a time-of-day greeting, a status line, New session and New workflow actions, and the three most-run workflows with a no-workflows variant. New `tasks/start` and `tasks/start-no-workflows` states; the empty, loading, list error, no results, and harness-empty states and the sidebar proposal states show it too. Ported from design-system canvas version 1793071559-4004.

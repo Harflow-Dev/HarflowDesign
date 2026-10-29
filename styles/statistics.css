@@ -124,3 +124,35 @@
   .stat-tiles { flex-wrap: wrap; }
   .stat-tile { flex-basis: 180px; }
 }
+
+/* Statistics loading proposal (#41). Not approved. Blocks match the overview card geometry. */
+.stat-outcome { margin-top: 8px; margin-bottom: 16px; color: var(--secondaryText); font-size: 13px; line-height: 1.45; }
+.stat-outcome button { margin-top: 12px; }
+.stat-updating { margin-bottom: 0; }
+.stat-loading { pointer-events: none; }
+.stat-skel {
+  --stat-fill: rgb(0 0 0 / 6%);
+  --stat-hot: rgb(0 0 0 / 2%);
+  position: relative; display: block; overflow: hidden; flex: none;
+  background-color: var(--stat-fill);
+  background-image: linear-gradient(90deg, var(--stat-fill) 0 46%, var(--stat-hot) 50%, var(--stat-fill) 54% 100%);
+  background-size: 220% 100%;
+  background-repeat: no-repeat;
+  animation: stat-shimmer 1.4s linear infinite;
+}
+.stat-skel::after { content: none; }
+[data-theme="dark"] .stat-skel { --stat-fill: rgb(255 255 255 / 7%); --stat-hot: rgb(255 255 255 / 14%); }
+.stat-skel-controls { margin-top: 24px; }
+.stat-loading .stat-yaxis { display: flex; flex-direction: column; justify-content: space-between; align-items: flex-end; }
+.stat-skel-plot { position: absolute; inset: 0; display: flex; align-items: flex-end; gap: 2px; overflow: hidden; }
+.stat-skel-bar { flex: 1 1 0; width: auto; min-width: 0; overflow: clip; border-radius: 2px 2px 0 0; }
+.stat-skel-meter { flex: 0 0 auto; align-self: center; }
+.stat-skel-row { display: flex; align-items: center; gap: 10px; padding: 10px 14px; }
+.stat-skel-row .stat-name { gap: 4px; }
+.stat-list-head h3 .stat-skel { margin-top: 2px; }
+@keyframes stat-shimmer { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .stat-skel { background-image: none; animation: stat-skel-pulse 1.6s ease-in-out infinite; }
+}
+@keyframes stat-skel-pulse { 50% { opacity: .55; } }
+
