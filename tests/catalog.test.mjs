@@ -4875,6 +4875,20 @@ test('every asset cache key in index.html is the first 12 hex characters of the 
   assert.ok(references.some(([, file]) => file === 'scripts/appearance.js'));
 });
 
+test('catalog document declares its language and metadata before the body', () => {
+  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  const bodyStart = html.indexOf('<body>');
+  assert.match(html, /^<!doctype html>/i);
+  assert.ok(bodyStart > 0, 'catalog has a body');
+  const head = html.slice(0, bodyStart);
+  assert.match(head, /<html lang="en">/);
+  assert.match(head, /<head>[\s\S]*<meta charset="utf-8">/);
+  assert.match(head, /<meta name="viewport" content="width=device-width,initial-scale=1">/);
+  assert.match(head, /<title>Harflow · Interface reference<\/title>/);
+  assert.match(head, /<link rel="stylesheet" href="styles\/tokens\.css\?v=[0-9a-f]{12}">/);
+  assert.match(head, /<\/head>\s*$/);
+});
+
 test('web and setup-run markup stay inside their own states', () => {
   const hf = loadDesignRuntime();
   const web = /web-app|web-sidebar|data-web-field|web-delivery|web-segmented/;
