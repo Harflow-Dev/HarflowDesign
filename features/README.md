@@ -22,3 +22,7 @@ The specimen approximates a coherent main-window sidebar and task detail with la
 ## Harness qualification proposal
 
 [`qualification.html`](qualification.html) explores HarflowMac #36 in New session, Run workflow, and Settings with explicit loading, success, failure, runtime invalidation, unavailable, unsupported, cancellation, and stale-binary states. The owner approved this direction at `5d48a18` on 2026-10-28. The fixture controls let reviewers deliver current/old results and cancel a retry without running an engine. See [the proposal and source basis](../docs/qualification-proposal.md).
+
+## Needs you proposal
+
+[`needs-you.html`](needs-you.html) is an exploratory, not approved, standalone proposal for HarflowMac #30. It gathers every pending approval, question and recovery checkpoint, whoever started the run, into a Needs you sidebar entry and list, a request detail with an answer control, a notification banner and a menu-bar section. Answers are offered only when the engine's `interaction_state` shows the caller has ended or Harflow already owns the run. See [the proposal](../docs/needs-you-proposal.md) for source basis, engine field mapping, deferred items and open questions.

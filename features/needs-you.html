@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Needs you · Harflow exploratory design</title>
+  <link rel="stylesheet" href="../styles/tokens.css"><link rel="stylesheet" href="needs-you.css">
+  <script src="needs-you.js" defer></script>
+</head>
+<body>
+  <header class="catalog-bar"><a href="../index.html">Harflow interface reference</a><span>Exploratory, not approved · HarflowMac #30</span></header>
+  <main>
+    <div class="intro">
+      <p class="eyebrow">Exploratory, not approved</p>
+      <h1>Show every pending input, whoever started the run.</h1>
+      <p>A Needs you entry gathers approvals, questions and recovery checkpoints from tasks and workflow runs, including nested child workflows and nodes. Harflow answers only when the engine reports that the caller has ended. These are deterministic fixtures; no engine is contacted and nothing is sent.</p>
+    </div>
+    <section class="controls" aria-label="Design specimen controls">
+      <label>Surface<select id="surface">
+        <option value="list">Sidebar entry and list</option>
+        <option value="detail">Request detail and answer</option>
+        <option value="notify">Notification</option>
+        <option value="menubar">Menu-bar extra</option>
+      </select></label>
+      <label>State<select id="state"></select></label>
+      <label>Request kind<select id="kind"><option value="question">Question</option><option value="approval">Approval</option></select></label>
+      <label>Width<select id="width"><option value="1000">1000</option><option value="1200">1200</option><option value="1440">1440</option></select></label>
+      <label>Appearance<select id="theme"><option value="light">Light</option><option value="dark">Dark</option></select></label>
+      <label class="check"><input type="checkbox" id="reduce"> Reduce Motion</label>
+      <button id="reset" type="button">Reset</button>
+    </section>
+    <p class="surface-hint" id="surface-hint"></p>
+    <section class="specimen-scroll" aria-label="Native surface approximation" id="specimen" tabindex="-1"></section>
+    <section class="simulation" aria-label="Fixture completion controls">
+      <h2>Try the interaction</h2>
+      <p>These controls stand in for the engine and sit outside the app surface. Send an answer, then choose the engine&rsquo;s response. On the waiting state, deliver the caller ending to watch the request become answerable.</p>
+      <div class="fixture-actions">
+        <button type="button" id="deliver-accept">Engine accepts</button>
+        <button type="button" id="deliver-returned">Refuse: caller returned</button>
+        <button type="button" id="deliver-changed">Refuse: checkpoint changed</button>
+        <button type="button" id="deliver-expired">Request expired</button>
+        <button type="button" id="deliver-ended">Caller ended</button>
+      </div>
+      <p id="live" role="status" aria-live="polite">Fixture controls are enabled when the matching state is reached.</p>
+    </section>
+    <section class="notes">
+      <h2>Behavior under review</h2>
+      <p>Needs you lists every pending input the app can read, whoever started the run. Only requests whose caller the engine confirms ended, or that Harflow already owns, can be answered here. A request whose caller is connected is shown read-only and says who it is waiting for. Unknown caller identity fails closed. Answering hands the run to Harflow; the original caller can no longer answer it, and the engine may still refuse on submit.</p>
+      <p>No opt-in for answering while the caller is connected exists in the engine, so none is drawn. Browser controls, materials, the notification banner and the menu-bar popover approximate native surfaces.</p>
+      <p><a href="../docs/needs-you-proposal.md">Source basis, engine field mapping, deferred items and open questions</a></p>
+    </section>
+  </main>
+</body>
+</html>

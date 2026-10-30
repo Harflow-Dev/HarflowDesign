@@ -288,6 +288,10 @@ shared header persists across Activity, Summary and Prompt. See
 specimen linked from the root catalog, not a registry route. Native layout,
 VoiceOver and browser visual verification are pending.
 
+## Needs you (exploratory #30)
+
+The standalone [needs-you specimen](../features/needs-you.html), [script](../features/needs-you.js) and [style](../features/needs-you.css) are exploratory, not approved, and are not a catalog registry state. Baseline: HarflowMac `da2f4cab79e5b9240b250857cbb783a3a83e16fe`. Surface values are `list`, `detail`, `notify` and `menubar`. List states: `populated`, `single`, `empty`, `loading`, `error`, `older`. Detail states: `answerable`, `handed-over`, `waiting`, `unknown`, `handed-live`, `submitting`, `answered`, `expired`, `refused`, `recovery`, `very-long`, `older`. Notification states: `question`, `approval`, `recovery`, `waiting`, `grouped`. Menu-bar states: `populated`, `few`, `empty`, `older`. Width choices are 1000, 1200 and 1440; Light, Dark and Reduce Motion are controls. See [needs-you-proposal.md](needs-you-proposal.md). Browser and native visual review are pending.
+
 ## Statistics loading proposal (#41)
 
 `statistics/loading`, `statistics/empty`, `statistics/error`, `statistics/unsupported` and `statistics/refreshing` are exploratory, not approved. See [statistics loading](statistics-loading.md). Preview `#statistics/loading/light` and `/dark`, and the same for `empty`, `error`, `unsupported` and `refreshing`. The catalog width picker covers 1000, 1200 and 1440 points.
