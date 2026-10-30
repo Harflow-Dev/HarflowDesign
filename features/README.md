@@ -25,4 +25,4 @@ The specimen approximates a coherent main-window sidebar and task detail with la
 
 ## Needs you proposal
 
-[`needs-you.html`](needs-you.html) is an exploratory, not approved, standalone proposal for HarflowMac #30. It gathers the approvals, questions and recovery checkpoints the user can answer now, whoever started the run, into a Needs you sidebar entry and list, a request detail with an answer control, a notification banner and a menu-bar section. Requests waiting for a connected caller are excluded. See [the proposal](../docs/needs-you-proposal.md) for source basis, engine field mapping, decisions and deferred items.
+[`needs-you.html`](needs-you.html) is the standalone design for HarflowMac #30, approved by the owner on 2026-10-30 at commit `3925e65`. It gathers the approvals, questions and recovery checkpoints the user can answer now, whoever started the run, into a Needs you sidebar entry and list, a request detail with an answer control, a notification banner and a menu-bar section. Requests waiting for a connected caller are excluded. See [the proposal](../docs/needs-you-proposal.md) for source basis, engine field mapping, decisions and deferred items.

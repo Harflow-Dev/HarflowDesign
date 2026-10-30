@@ -1,6 +1,6 @@
 # Needs you proposal - HarflowMac #30
 
-Status: exploratory, not approved. Specimen: [features/needs-you.html](../features/needs-you.html), with [script](../features/needs-you.js) and [style](../features/needs-you.css). It is offline, uses invented deterministic fixtures, and never contacts an engine or sends an answer.
+Status: Approved by the owner on 2026-10-30 at commit `3925e65`, covering every surface and state in the specimen at that commit; this is the implementation reference for HarflowMac #30. Specimen: [features/needs-you.html](../features/needs-you.html), with [script](../features/needs-you.js) and [style](../features/needs-you.css). It is offline, uses invented deterministic fixtures, and never contacts an engine or sends an answer.
 
 Goal: gather every pending input the user can act on now, whoever started the run, into one place.
 
