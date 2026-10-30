@@ -43,7 +43,7 @@
         inputs: [['Working folder', '~/Projects/billing'], ['Access level', 'Write in repository']],
         rowText: 'Run command: ./scripts/apply-schema.sh --target staging' },
       { id: 'webhook', kind: 'approval', title: 'Add retry to webhook client', path: ['Add retry to webhook client'], by: people.cc, mins: 9, scope: 'task',
-        interaction: null,
+        interaction: null, monitorResponse: true,
         action: 'Edit file', description: 'The task wants to change a file outside the folders it may write to.',
         command: 'src/clients/webhook.py',
         inputs: [['Change', '14 lines added, 2 removed']],
@@ -62,19 +62,17 @@
   const clone = value => JSON.parse(JSON.stringify(value));
 
   const kindLabel = { approval: 'Approval', question: 'Question', recovery: 'Recovery' };
-  const callerLabel = { alive: 'Connected', dead: 'Ended', unknown: 'Unknown' };
-  const callerClass = { alive: 'cs-alive', dead: 'cs-dead', unknown: 'cs-unknown' };
-
+  
   const surfaceStates = {
-    list: [['populated', 'Populated'], ['single', 'Single item'], ['empty', 'Empty'], ['loading', 'Loading'], ['error', 'Partial list error'], ['older', 'Older engine']],
-    detail: [['answerable', 'Answerable'], ['handed-over', 'Already handed over'], ['waiting', 'Waiting for caller'], ['unknown', 'Caller unknown'], ['handed-live', 'Handed over live'], ['submitting', 'Submitting'], ['answered', 'Answered'], ['expired', 'Expired'], ['refused', 'Refused on submit'], ['recovery', 'Recovery checkpoint'], ['very-long', 'Very long text'], ['older', 'Older engine']],
-    notify: [['question', 'Question'], ['approval', 'Approval'], ['recovery', 'Recovery'], ['waiting', 'Waiting for caller'], ['grouped', 'Several grouped']],
+    list: [['populated', 'Populated'], ['single', 'Single item'], ['empty', 'Empty'], ['loading', 'Loading'], ['error', 'Partial list error'], ['arriving', 'Request arrives'], ['older', 'Older engine']],
+    detail: [['answerable', 'Answerable'], ['handed-over', 'Already handed over'], ['task-approval', 'Task approval'], ['submitting', 'Submitting'], ['answered', 'Answered'], ['expired', 'Expired'], ['refused', 'Refused on submit'], ['recovery', 'Recovery checkpoint'], ['very-long', 'Very long text']],
+    notify: [['question', 'Question'], ['approval', 'Approval'], ['recovery', 'Recovery'], ['arrived', 'Became answerable'], ['grouped', 'Several grouped']],
     menubar: [['populated', 'Populated'], ['few', 'Two items'], ['empty', 'Empty'], ['older', 'Older engine']]
   };
   const surfaceHints = {
-    list: 'Overview row above Statistics, with the list in the detail pane. Select a title to open the request.',
-    detail: 'Full request, provenance and ownership. Use the Request kind control for Question or Approval states.',
-    notify: 'A mock macOS banner. Waiting-for-caller requests also notify, and the banner says so. Select a banner to open the request.',
+    list: 'Overview row above Statistics, with the list in the detail pane. Only requests you can answer are listed or counted. Select a title to open the request.',
+    detail: 'Full request, provenance and ownership. Use the Request kind control for Question or Approval states. Only requests you can answer are reachable from Needs you.',
+    notify: 'A mock macOS banner. Notifications fire only for requests you can answer, including one whose caller has just ended. Select a banner to open the request.',
     menubar: `Menu-bar popover with up to ${MENU_LIMIT} requests. Show all opens the main window list.`
   };
 
@@ -83,48 +81,46 @@
   function fresh() {
     return { surface: 'list', listState: 'populated', state: 'populated', items: makeItems(), current: null, phase: 'idle', answer: '', attempts: '1',
       expandedRows: {}, detailExpanded: false, notice: '', error: '', unreadable: 0, loading: false, live: false, focus: null, leavingId: null,
-      notify: 'question', menu: 'populated', answeredTitle: '', answeredText: '', unsent: '' };
+      notify: 'question', menu: 'populated', answeredTitle: '', answeredText: '', older: false, arrivedId: null, toast: null };
   }
   function clearTimer() { if (timer) { clearTimeout(timer); timer = null; } }
   function announce(text) { $('live').textContent = text; }
 
-  // Mode mapping from engine interaction_state.
+  // Mode mapping from engine interaction_state. Only non-excluded modes are ever shown.
   function mode(r) {
     const i = r.interaction;
-    if (!i) return r.scope === 'task' ? 'task-level' : 'older';
+    if (!i) return r.scope === 'task' && r.monitorResponse ? 'task-monitor' : 'excluded';
     if (i.owner === 'monitor') return i.handover ? 'handed-over' : 'monitor-owned';
-    if (i.caller === 'alive') return 'waiting';
-    if (i.caller === 'unknown') return 'unknown';
-    return i.available ? 'answerable' : 'unavailable';
+    return i.caller === 'dead' && i.available ? 'answerable' : 'excluded';
   }
-  const answerable = r => ['answerable', 'handed-over', 'monitor-owned'].includes(mode(r));
-  const callerStatus = r => r.interaction ? r.interaction.caller : 'unknown';
+  const answerable = r => mode(r) !== 'excluded';
+  const vis = () => S.items.filter(answerable);
+  const endedCaller = r => !!r.interaction && r.interaction.caller === 'dead';
   const age = m => m < 60 ? `${m} min ago` : `${Math.round(m / 60)} h ago`;
   const firstLine = text => String(text).split('\n')[0];
   const sorted = items => items.slice().sort((a, b) => b.mins - a.mins);
   const lastSegment = r => r.path[r.path.length - 1];
-  const waitingFor = r => r.by.name;
 
   function pathHtml(r) {
     return `<ol class="path" aria-label="Path">${r.path.map(segment => `<li>${esc(segment)}</li>`).join('')}</ol>`;
   }
   function kindChip(r) { return `<span class="kind kind-${r.kind}">${kindLabel[r.kind]}</span>`; }
-  function callerChip(r) {
-    const status = callerStatus(r);
-    return `<span class="cstatus ${callerClass[status]}">${callerLabel[status]}</span>`;
-  }
+  function callerSeg(r) { return endedCaller(r) ? `<span>Caller <span class="cstatus cs-dead">Ended</span></span>` : ''; }
 
   // ---- State presets -------------------------------------------------------------------
   function detailPreset(state, kindValue) {
-    const base = state === 'recovery' ? byId(makeItems(), 'audit') : byId(makeItems(), kindValue === 'approval' ? 'schema' : 'target');
+    const base = state === 'recovery' ? byId(makeItems(), 'audit') : state === 'task-approval' ? byId(makeItems(), 'webhook') : byId(makeItems(), kindValue === 'approval' ? 'schema' : 'target');
     const r = clone(base);
     if (state === 'very-long') r.text = r.rowText = VERY_LONG_QUESTION;
-    const i = r.interaction;
+    const i = r.interaction || {};
     if (state === 'handed-over') { i.owner = 'monitor'; i.handover = { when: '18 minutes ago', previous: 'Caller', reason: 'The caller process was no longer running.' }; i.reason = ''; }
-    if (state === 'waiting' || state === 'handed-live') { i.caller = 'alive'; i.available = false; i.reason = 'The caller process is still running.'; }
-    if (state === 'unknown') { i.caller = 'unknown'; i.available = false; i.reason = 'The caller was started through a shell script, so its process cannot be identified.'; }
-    if (state === 'older') { r.interaction = null; r.scope = 'workflow'; }
     return r;
+  }
+
+  // An engine without interaction_state reports no workflow interaction, so those requests are excluded.
+  function olderEngine() {
+    S.older = true;
+    S.items.forEach(item => { if (item.scope !== 'task') item.interaction = null; });
   }
 
   function applyState() {
@@ -134,10 +130,11 @@
     if (surface === 'list') {
       S.listState = state;
       if (state === 'single') S.items = [byId(S.items, 'schema')];
-      if (state === 'empty') S.items = [];
+      if (state === 'empty') S.items = ['region', 'links'].map(id => byId(S.items, id));
       if (state === 'loading') { S.items = []; S.loading = true; }
       if (state === 'error') { S.items = ['notes', 'target', 'schema', 'links'].map(id => byId(S.items, id)); S.unreadable = 2; }
-      if (state === 'older') S.items.forEach(item => { item.interaction = null; if (item.scope !== 'task') item.scope = 'workflow'; });
+      if (state === 'arriving') S.live = true;
+      if (state === 'older') olderEngine();
     }
     if (surface === 'detail') {
       S.current = detailPreset(state, $('kind').value);
@@ -146,25 +143,24 @@
       if (state === 'answered') { S.submitted = S.current.kind === 'approval' ? 'Approve once' : 'Send answer'; settle('Use staging, and postpone the Thursday release.'); }
       if (state === 'expired') { S.phase = 'expired'; }
       if (state === 'refused') { S.answer = 'Use staging, and postpone the Thursday release.'; S.phase = 'idle'; S.error = 'This request changed after you opened it. Review the current question, then send again.'; }
-      if (state === 'handed-live') { S.live = true; }
     }
     if (surface === 'notify') { S.notify = state; }
     if (surface === 'menubar') {
       S.menu = state;
       if (state === 'few') S.items = ['audience', 'schema'].map(id => byId(S.items, id));
-      if (state === 'empty') S.items = [];
-      if (state === 'older') S.items.forEach(item => { item.interaction = null; if (item.scope !== 'task') item.scope = 'workflow'; });
+      if (state === 'empty') S.items = ['region', 'links'].map(id => byId(S.items, id));
+      if (state === 'older') olderEngine();
     }
     syncControls();
     render();
   }
 
   function syncControls() {
-    $('kind').disabled = !(S.surface === 'detail') || $('state').value === 'recovery';
+    $('kind').disabled = !(S.surface === 'detail') || ['recovery', 'task-approval'].includes($('state').value);
     $('surface-hint').textContent = surfaceHints[$('surface').value] || '';
     const hasSubmitting = S.phase === 'submitting';
     ['deliver-accept', 'deliver-returned', 'deliver-changed', 'deliver-expired'].forEach(id => { $(id).disabled = !hasSubmitting; });
-    $('deliver-ended').disabled = !(S.live && S.current && mode(S.current) === 'waiting');
+    $('deliver-ended').disabled = !S.live;
   }
 
   function fillStates(surface, selected) {
@@ -176,11 +172,11 @@
 
   // Navigate by interacting inside the specimen (does not rebuild fixtures).
   function navigate(surface, current) {
-    S.surface = surface; S.current = current || null; S.phase = 'idle'; S.answer = ''; S.error = ''; S.notice = ''; S.detailExpanded = false; S.live = false;
+    S.surface = surface; S.current = current || null; S.phase = 'idle'; S.answer = ''; S.error = ''; S.notice = ''; S.detailExpanded = false; S.live = false; S.toast = null; S.arrivedId = null;
     $('surface').value = surface;
     if (surface === 'detail') {
       const m = current ? mode(current) : 'answerable';
-      const stateId = m === 'waiting' ? 'waiting' : m === 'unknown' || m === 'unavailable' ? 'unknown' : m === 'handed-over' ? 'handed-over' : m === 'older' || m === 'task-level' ? 'older' : current && current.kind === 'recovery' ? 'recovery' : 'answerable';
+      const stateId = m === 'task-monitor' ? 'task-approval' : m === 'handed-over' ? 'handed-over' : current && current.kind === 'recovery' ? 'recovery' : 'answerable';
       fillStates('detail', stateId);
       if (current && (current.kind === 'question' || current.kind === 'approval')) $('kind').value = current.kind;
       S.focus = 'detail-heading';
@@ -200,7 +196,7 @@
 
   // ---- Rendering -----------------------------------------------------------------------
   function sidebar() {
-    const count = S.items.length;
+    const count = vis().length;
     const badge = S.loading ? '' : count === 0 ? '' : `<span class="badge" aria-hidden="true">${S.unreadable ? `${count}+` : count}</span>`;
     const label = S.loading ? 'Needs you, loading' : count === 0 ? 'Needs you, nothing pending' : `Needs you, ${S.unreadable ? 'at least ' : ''}${count} pending`;
     const current = S.surface === 'list' || S.surface === 'detail';
@@ -223,44 +219,37 @@
     const long = r.rowText.length > 180;
     const open = !!S.expandedRows[r.id];
     const clamped = long && !open;
-    let guidance = '';
-    if (m === 'waiting') guidance = `<p class="nr-note">Waiting for ${esc(waitingFor(r))}. ${esc(r.interaction.reason)}</p>`;
-    if (m === 'unknown' || m === 'unavailable') guidance = `<p class="nr-note">Harflow could not confirm the caller ended, so it will not take over.</p>`;
-    if (m === 'older' || m === 'task-level') guidance = `<p class="nr-note">Answer through ${esc(r.by.name)}. This engine does not report who can answer here.</p>`;
-    const action = answerable(r) ? 'Answer' : 'View';
-    return `<li class="need-row${S.leavingId === r.id ? ' leaving' : ''}" data-row="${esc(r.id)}">
+    return `<li class="need-row${S.leavingId === r.id ? ' leaving' : ''}${S.arrivedId === r.id ? ' arrive' : ''}" data-row="${esc(r.id)}">
       <div class="nr-main">
         <div class="nr-top">${kindChip(r)}<button type="button" class="nr-title" data-act="open" data-id="${esc(r.id)}" data-fk="open-${esc(r.id)}">${esc(r.title)}</button></div>
         ${r.path.length > 1 ? pathHtml(r) : '<p class="nr-task">Task</p>'}
         <p class="nr-text${clamped ? ' clamped' : ''}">${esc(r.rowText)}</p>
         ${long ? `<button type="button" class="link" data-act="toggle-row" data-id="${esc(r.id)}" data-fk="more-${esc(r.id)}" aria-expanded="${open}">${open ? 'Show less' : 'Show more'}</button>` : ''}
-        <p class="nr-meta"><span>Started by ${esc(startedByLabel(r.by))}</span><span>Caller ${callerChip(r)}</span><span>${age(r.mins)}</span></p>
-        ${guidance}
+        <p class="nr-meta"><span>Started by ${esc(startedByLabel(r.by))}</span>${callerSeg(r)}<span>${age(r.mins)}</span></p>
       </div>
-      <div class="nr-side"><button type="button" data-act="open" data-id="${esc(r.id)}" aria-label="${action} ${esc(r.title)}">${action}</button></div>
+      <div class="nr-side"><button type="button" data-act="open" data-id="${esc(r.id)}" aria-label="Answer ${esc(r.title)}">Answer</button></div>
     </li>`;
   }
 
   function listPane() {
-    const n = S.items.length;
-    const head = `<header class="pane-head"><h2 id="list-heading" tabindex="-1" data-fk="list-heading">Needs you</h2><p>${S.loading ? 'Checking tasks and workflow runs…' : n === 0 ? 'Nothing needs you' : `${S.unreadable ? 'At least ' : ''}${n} ${n === 1 ? 'request' : 'requests'} from tasks and workflow runs`}</p></header>`;
+    const n = vis().length;
+    const head = `<header class="pane-head"><h2 id="list-heading" tabindex="-1" data-fk="list-heading">Needs you</h2><p>${S.loading ? 'Checking tasks and workflow runs…' : n === 0 ? 'Nothing needs you' : `${S.unreadable ? 'At least ' : ''}${n} ${n === 1 ? 'request' : 'requests'} you can answer`}</p></header>`;
     let body;
     if (S.loading) {
       body = `<div class="skeleton-list" role="status" aria-label="Loading requests" aria-busy="true">${[0, 1, 2].map(() => '<div class="skeleton-row"><span class="sk sk-a"></span><span class="sk sk-b"></span><span class="sk sk-c"></span></div>').join('')}</div>`;
     } else if (n === 0) {
-      body = `<div class="empty"><h3>Nothing needs you</h3><p>Approvals, questions and recovery checkpoints from any run appear here when they are waiting.</p></div>`;
+      body = `<div class="empty"><h3>Nothing needs you</h3><p>Approvals, questions and recovery checkpoints you can answer appear here, whoever started the run.</p></div>`;
     } else {
-      body = `<ul class="need-list" aria-label="Pending requests">${sorted(S.items).map(rowHtml).join('')}</ul>`;
+      body = `<ul class="need-list" aria-label="Pending requests">${sorted(vis()).map(rowHtml).join('')}</ul>`;
     }
-    const legacy = !S.loading && n > 0 && S.items.every(r => !r.interaction) && S.items.some(r => r.scope === 'workflow')
-      ? '<p class="banner-note" role="note">This engine does not report who can answer. These requests are read-only here; answer through the caller that started each run.</p>' : '';
+    const legacy = S.older ? '<p class="banner-note" role="note">This engine version cannot report workflow questions here. Only task approvals are listed.</p>' : '';
+    const note = S.notice ? `<p class="banner-note arrive" role="status">${esc(S.notice)}</p>` : '';
     const partial = S.unreadable ? `<div class="banner-note warn" role="status"><span>Could not read ${S.unreadable} runs. Showing the requests Harflow could read.</span><button type="button" class="link" data-act="retry" data-fk="retry">Try again</button></div>` : '';
-    return `<div class="pane-scroll">${head}${partial}${legacy}${body}</div>`;
+    return `<div class="pane-scroll">${head}${note}${partial}${legacy}${body}</div>`;
   }
 
   function requestCard(r) {
     const m = mode(r);
-    const can = answerable(r);
     const busy = S.phase === 'submitting';
     const long = r.kind === 'question' && r.text.length > 900;
     const text = r.kind === 'approval' ? '' :
@@ -268,11 +257,13 @@
     const approval = r.kind !== 'approval' ? '' : `<div class="approval-body"><strong class="action-title">${esc(r.action)}</strong><p>${esc(r.description)}</p><pre>${esc(r.command)}</pre><dl class="inputs">${r.inputs.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl></div>`;
     const recoveryHead = r.kind === 'recovery' ? '<h3 class="rec-title">Attempt limit reached</h3>' : '';
     const source = `${esc(kindLabel[r.kind])} · ${esc(lastSegment(r))}`;
-    const label = can ? `<p class="req-source">${source}</p>` : `<p class="req-source plain">${source} · Pending</p>`;
+    const label = `<p class="req-source">${source}</p>`;
     let controls = '';
-    if (can && S.phase !== 'answered' && S.phase !== 'expired') {
+    if (S.phase !== 'answered' && S.phase !== 'expired') {
       const owned = m === 'handed-over' || m === 'monitor-owned';
-      const handoverCopy = owned
+      const handoverCopy = m === 'task-monitor'
+        ? `<p class="handover-note">Harflow sends your decision to the engine in place of ${esc(r.by.name)}.</p>`
+        : owned
         ? `<p class="handover-note">Harflow owns this run, so you can answer here.${m === 'handed-over' ? ` ${esc(r.by.name)} can no longer answer it.` : ''}</p>`
         : `<p class="handover-note">${esc(r.by.name)} has ended. Answering hands this run to Harflow, and ${esc(r.by.name)} can no longer answer it. Harflow checks again when you send, and the engine may refuse.</p>`;
       if (r.kind === 'approval') {
@@ -283,37 +274,26 @@
       }
       if (busy) controls += `<p class="status-line" role="status">Submitting your ${r.kind === 'approval' ? 'decision' : 'answer'} to the engine…</p>`;
     }
-    let readOnly = '';
-    if (!can && S.phase !== 'expired' && S.phase !== 'answered') {
-      let title, body;
-      if (m === 'waiting') { title = `Waiting for ${r.by.name}`; body = `${r.by.name} is connected and can still answer. Harflow answers only after the caller has ended. ${r.interaction.reason}`; }
-      else if (m === 'unknown' || m === 'unavailable') { title = 'Caller status unknown'; body = `Harflow could not confirm that ${r.by.name} ended, so it will not take over this run. ${r.interaction.reason} Answer through the caller.`; }
-      else if (m === 'task-level') { title = 'Answer through the caller'; body = `This engine reports caller status for workflow runs only, so Harflow cannot tell whether ${r.by.name} has ended. Answer through the caller.`; }
-      else { title = 'Answer through the caller'; body = `This engine does not report who can answer, so this request is read-only here. Answer through ${r.by.name}.`; }
-      readOnly = `<div class="readonly"><strong>${esc(title)}</strong><p>${esc(body)}</p></div>`;
-    }
-    const unsent = S.unsent ? `<label class="field" for="unsent">Your unsent answer</label><textarea id="unsent" readonly>${esc(S.unsent)}</textarea>` : '';
     const error = S.error ? `<p class="error" role="alert">${esc(S.error)}</p>` : '';
     if (S.phase === 'answered') return settledCard(r);
     if (S.phase === 'expired') {
       return `<section class="need-card settled" aria-label="Request"><p class="req-source plain">${source} · Expired</p><p class="settled-title">This request is no longer pending</p><p class="muted">It expired before it was answered, or another responder answered it. Nothing was sent.</p></section>`;
     }
-    return `<section class="need-card${can ? ' pending' : ' readonly-card'}${S.leavingId === r.id ? ' leaving' : ''}" aria-label="Request">${label}${recoveryHead}${text}${approval}${r.kind === 'recovery' ? `<p class="muted">The run stopped after its configured attempts. The checkpoint stays as it is until an answer arrives.</p>` : ''}${error}${readOnly}${unsent}${controls}</section>`;
+    return `<section class="need-card pending${S.leavingId === r.id ? ' leaving' : ''}" aria-label="Request">${label}${recoveryHead}${text}${approval}${r.kind === 'recovery' ? `<p class="muted">The run stopped after its configured attempts. The checkpoint stays as it is until an answer arrives.</p>` : ''}${error}${controls}</section>`;
   }
 
   function settledCard(r) {
     const decision = S.submitted === 'Reject' ? 'Rejected' : r.kind === 'approval' ? 'Approved once' : r.kind === 'recovery' ? 'Resumed with answer' : 'Answered';
     const detail = r.kind === 'approval' ? '' : `<p class="settled-answer">${esc(S.answeredText)}</p>`;
-    return `<section class="need-card settled arrive" aria-label="Request"><p class="req-source plain">${esc(kindLabel[r.kind])} · ${esc(lastSegment(r))}</p><p class="settled-title">${decision} by Harflow</p>${detail}<p class="muted">Harflow now owns this run. ${esc(r.by.name)} can no longer answer it, and ${esc(r.title)} no longer needs you.</p></section>`;
+    return `<section class="need-card settled arrive" aria-label="Request"><p class="req-source plain">${esc(kindLabel[r.kind])} · ${esc(lastSegment(r))}</p><p class="settled-title">${decision} by Harflow</p>${detail}<p class="muted">${r.interaction ? `Harflow now owns this run. ${esc(r.by.name)} can no longer answer it, and ` : 'Harflow sent your decision to the engine, and '}${esc(r.title)} no longer needs you.</p></section>`;
   }
 
   function provenance(r) {
     const m = mode(r);
-    const owner = ['handed-over', 'monitor-owned'].includes(m) ? 'Harflow' : m === 'answerable' ? `${r.by.name} (ended; Harflow can take over)` : m === 'task-level' || m === 'older' ? 'Not reported by this engine' : 'Caller';
-    const rows = [
-      ['Run', r.title], ['Path', r.path.length > 1 ? r.path.join(' › ') : 'Task'], ['Started by', startedByLabel(r.by)],
-      ['Caller', `${callerLabel[callerStatus(r)]}${r.interaction ? '' : ' · not reported'}`], ['Owner', owner], ['Waiting since', age(r.mins)]
-    ];
+    const owner = m === 'task-monitor' ? 'Harflow responds for the caller' : m === 'answerable' ? `${r.by.name} (ended); Harflow takes over when you answer` : 'Harflow';
+    const rows = [['Run', r.title], ['Path', r.path.length > 1 ? r.path.join(' › ') : 'Task'], ['Started by', startedByLabel(r.by)]];
+    if (endedCaller(r)) rows.push(['Caller', 'Ended']);
+    rows.push(['Owner', owner], ['Waiting since', age(r.mins)]);
     if (r.interaction && r.interaction.reason) rows.push(['Engine note', r.interaction.reason]);
     if (r.interaction && r.interaction.handover) rows.push(['Handover', `${r.interaction.handover.when}. Previous owner: ${r.interaction.handover.previous}. ${r.interaction.handover.reason}`]);
     return `<section class="provenance" aria-labelledby="prov-title"><h3 id="prov-title">Provenance and ownership</h3><dl>${rows.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl></section>`;
@@ -329,7 +309,8 @@
 
   function windowHtml() {
     const pane = S.surface === 'detail' ? detailPane() : listPane();
-    return `<div class="win" style="width:${S.width}px"><div class="titlebar"><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="wtitle">Harflow</span></div><div class="split">${sidebar()}<section class="detail" aria-label="${S.surface === 'detail' ? 'Request detail' : 'Needs you'}">${pane}</section></div></div>`;
+    const toast = S.toast ? `<div class="banner-slot">${bannerHtml(byId(S.items, S.toast), 'The caller ended. You can answer now.')}</div>` : '';
+    return `<div class="win" style="width:${S.width}px"><div class="titlebar"><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="wtitle">Harflow</span></div><div class="split">${sidebar()}<section class="detail" aria-label="${S.surface === 'detail' ? 'Request detail' : 'Needs you'}">${pane}</section></div>${toast}</div>`;
   }
 
   function notifyTitle(r) { return `${kindLabel[r.kind]}: ${r.title}`; }
@@ -344,30 +325,30 @@
     if (S.notify === 'question') inner = bannerHtml(pick('target'));
     else if (S.notify === 'approval') inner = bannerHtml(pick('schema'));
     else if (S.notify === 'recovery') inner = bannerHtml(pick('audit'));
-    else if (S.notify === 'waiting') inner = bannerHtml(pick('links'), `Waiting for ${pick('links').by.name}`);
+    else if (S.notify === 'arrived') inner = bannerHtml(pick('links'), 'The caller ended. You can answer now.');
     else {
-      const group = ['schema', 'target', 'links'].map(pick);
-      inner = `<div class="stack"><span class="stack-layer l2" aria-hidden="true"></span><span class="stack-layer l1" aria-hidden="true"></span><button type="button" class="banner grouped" data-act="show-list" data-fk="banner-group"><img src="../assets/branding/app-icon-64.png" alt="" width="32" height="32"><span class="b-text"><span class="b-app">Harflow<span class="b-time">now</span></span><span class="b-title">3 requests need you</span><span class="b-body">${group.map(r => `${esc(notifyTitle(r))}${r.interaction.caller === 'alive' ? ' (waiting for ' + esc(r.by.name) + ')' : ''}`).join('<br>')}</span></span></button></div>`;
+      const group = ['schema', 'target', 'audit'].map(pick);
+      inner = `<div class="stack"><span class="stack-layer l2" aria-hidden="true"></span><span class="stack-layer l1" aria-hidden="true"></span><button type="button" class="banner grouped" data-act="show-list" data-fk="banner-group"><img src="../assets/branding/app-icon-64.png" alt="" width="32" height="32"><span class="b-text"><span class="b-app">Harflow<span class="b-time">now</span></span><span class="b-title">3 requests need you</span><span class="b-body">${group.map(r => `${esc(notifyTitle(r))}`).join('<br>')}</span></span></button></div>`;
     }
     return `<div class="desktop" style="width:${S.width}px"><div class="macbar" aria-hidden="true"><span>Finder</span><span class="macbar-r">Tue 10:42</span></div><div class="banner-slot">${inner}</div></div>`;
   }
 
   function menuRow(r) {
-    const status = callerStatus(r);
-    const sub = r.interaction ? `${callerLabel[status]} · ${esc(r.by.name)}` : `Answer through ${esc(r.by.name)}`;
+    const sub = endedCaller(r) ? `Ended · ${esc(r.by.name)}` : esc(startedByLabel(r.by));
     return `<li><button type="button" class="mb-row" data-act="open" data-id="${esc(r.id)}" data-fk="mb-${esc(r.id)}">${kindChip(r)}<span class="mb-text"><span class="mb-title">${esc(r.title)}</span><span class="mb-sub">${sub}</span></span></button></li>`;
   }
   function menubarHtml() {
-    const items = sorted(S.items);
+    const items = sorted(vis());
     const n = items.length;
     const shown = items.slice(0, MENU_LIMIT);
     const label = n ? `Harflow, ${n} ${n === 1 ? 'request needs' : 'requests need'} you` : 'Harflow';
     const section = n === 0
       ? '<p class="mb-empty">Nothing needs you</p>'
       : `<ul class="mb-list" aria-label="Needs you">${shown.map(menuRow).join('')}</ul>${n > shown.length ? `<button type="button" class="mb-all" data-act="show-list" data-fk="mb-all">Show all ${n}</button>` : ''}`;
+    const olderNote = S.older ? '<p class="mb-static">This engine version cannot report workflow questions here.</p>' : '';
     return `<div class="desktop menubar" style="width:${S.width}px"><div class="macbar"><span aria-hidden="true">Finder</span><span class="macbar-r"><span class="extra" role="img" aria-label="${esc(label)}"><img src="../assets/branding/menubarTemplate.png" alt="" width="16" height="16">${n ? `<b>${n}</b>` : ''}</span><span aria-hidden="true">Tue 10:42</span></span></div>
       <div class="popover" role="group" aria-label="Harflow menu-bar extra"><header><strong>2 running</strong><span>Connected</span></header>
-      <div class="mb-section"><p class="mb-label">Needs you${n ? ` · ${n}` : ''}</p>${section}</div>
+      <div class="mb-section"><p class="mb-label">Needs you${n ? ` · ${n}` : ''}</p>${section}${olderNote}</div>
       <div class="mb-section"><p class="mb-label">Running</p><p class="mb-static">Refactor settings screen</p><p class="mb-static">Triage support inbox</p></div>
       <footer><span>New session</span><span>Open Harflow</span></footer></div></div>`;
   }
@@ -388,7 +369,7 @@
     const r = S.current;
     if (!r || S.phase === 'submitting') return;
     if (decision === 'answer' && !S.answer.trim()) return;
-    S.phase = 'submitting'; S.error = ''; S.unsent = '';
+    S.phase = 'submitting'; S.error = '';
     S.submitted = decision === 'reject' ? 'Reject' : decision === 'approve' ? 'Approve once' : 'Send answer';
     announce('Submitting. Choose the engine response in the fixture controls.');
     render();
@@ -402,12 +383,16 @@
     S.leavingId = r.id; render();
     timer = setTimeout(finish, FADE_MS);
   }
+  // Refusal because the caller returned: the request leaves Needs you and the unsent answer is discarded.
   function resolveReturned() {
     const r = S.current; if (!r || S.phase !== 'submitting') return;
-    r.interaction.caller = 'alive'; r.interaction.available = false; r.interaction.reason = 'The caller process is running again.';
-    S.items.forEach(item => { if (item.id === r.id) item.interaction = r.interaction; });
-    S.phase = 'idle'; S.unsent = S.answer; S.error = `${r.by.name} returned before Harflow took over, so nothing was sent and the caller keeps ownership. Your answer is kept below.`;
-    announce('Refused. The caller returned.'); render();
+    const text = r.interaction
+      ? `${r.by.name} returned before Harflow took over, so it is answering ${r.title} again. The request left Needs you and your unsent answer was discarded.`
+      : `Harflow can no longer respond to ${r.title} for ${r.by.name}. The request left Needs you; answer it through the caller.`;
+    if (r.interaction) { r.interaction.caller = 'alive'; r.interaction.available = false; r.interaction.reason = 'The caller process is running again.'; }
+    else r.monitorResponse = false;
+    announce('Refused. The request left Needs you.');
+    navigate('list', null); S.notice = text; render();
   }
   function resolveChanged() {
     const r = S.current; if (!r || S.phase !== 'submitting') return;
@@ -419,11 +404,12 @@
     S.items = S.items.filter(item => item.id !== r.id);
     S.phase = 'expired'; announce('The request expired.'); S.focus = 'back'; render();
   }
+  // A waiting request becomes answerable: a row arrives, the badge increments, and a notification fires.
   function resolveEnded() {
-    const r = S.current; if (!r || !S.live || mode(r) !== 'waiting') return;
+    const r = byId(S.items, 'links'); if (!S.live || !r) return;
     r.interaction.caller = 'dead'; r.interaction.available = true; r.interaction.reason = 'The caller process is no longer running.';
-    S.live = false; S.notice = `${r.by.name} ended. Harflow can now take this request.`;
-    announce(S.notice); render();
+    S.live = false; S.arrivedId = r.id; S.toast = r.id;
+    announce(`${r.title} can now be answered. A notification was delivered.`); render();
   }
 
   function onClick(event) {

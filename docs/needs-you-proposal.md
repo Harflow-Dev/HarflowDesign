@@ -2,27 +2,36 @@
 
 Status: exploratory, not approved. Specimen: [features/needs-you.html](../features/needs-you.html), with [script](../features/needs-you.js) and [style](../features/needs-you.css). It is offline, uses invented deterministic fixtures, and never contacts an engine or sends an answer.
 
-Goal: show every pending user input in the Mac app, whoever started the run, and let the user answer when the engine confirms that is permitted.
+Goal: gather every pending input the user can act on now, whoever started the run, into one place.
+
+**Rule (owner, 2026-10-30):** Needs you lists only requests the user can answer now. A request the user cannot answer never appears in the list, the badge count, notifications, or the menu-bar section. Requests that wait for a connected caller, or whose caller cannot be identified, stay visible only in the run's own views (task Activity and the workflow run sidebar). This page does not redesign those views.
 
 ## Surfaces and state ids
 
 | Surface | State ids |
 |---|---|
-| Sidebar entry and list (`list`) | `populated`, `single`, `empty`, `loading`, `error` (partial results with a notice), `older` (no `interaction_state`) |
-| Request detail and answer (`detail`) | `answerable`, `handed-over`, `waiting`, `unknown`, `handed-live`, `submitting`, `answered`, `expired`, `refused`, `recovery`, `very-long`, `older`; Request kind control selects Question or Approval |
-| Notification (`notify`) | `question`, `approval`, `recovery`, `waiting`, `grouped` |
-| Menu-bar extra (`menubar`) | `populated` (shows 3 of 8), `few`, `empty`, `older` |
+| Sidebar entry and list (`list`) | `populated` (6), `single`, `empty` (excluded requests exist but none is answerable), `loading`, `error` (partial results with a notice), `arriving` (a waiting request becomes answerable), `older` (no `interaction_state`) |
+| Request detail and answer (`detail`) | `answerable`, `handed-over`, `task-approval`, `submitting`, `answered`, `expired`, `refused` (checkpoint changed), `recovery`, `very-long`; the Request kind control selects Question or Approval |
+| Notification (`notify`) | `question`, `approval`, `recovery`, `arrived` (a waiting request became answerable), `grouped` |
+| Menu-bar extra (`menubar`) | `populated` (3 of 6 plus Show all), `few`, `empty`, `older` |
 
-Controls outside the specimen: Surface, State, Request kind, Width (1000, 1200, 1440), Appearance (Light, Dark), Reduce Motion, Reset. Fixture buttons stand in for the engine (accept, refuse because the caller returned, refuse because the checkpoint changed, expire, caller ended). Reset restores the list surface, 1000 width, and all fixture data; it keeps Appearance and Reduce Motion as viewing preferences. No timers other than the 180 ms fade exist.
+Controls outside the specimen: Surface, State, Request kind, Width (1000, 1200, 1440), Appearance (Light, Dark), Reduce Motion, Reset. Fixture buttons stand in for the engine: accept, refuse because the caller returned, refuse because the checkpoint changed, request expired, caller ended. Reset restores the list surface, 1000 width, and all fixture data; it keeps Appearance and Reduce Motion as viewing preferences. The only timer is the 180 ms fade.
+
+The fixture holds eight requests; two are not answerable (a connected caller, an unidentifiable caller) and are present only to show they never appear.
 
 ## Design summary
 
-- A Needs you row sits in the sidebar's Overview group, above Statistics, with a count badge. The owner chose this placement on 2026-10-30. The row stays visible when nothing is pending (no badge) so the rows below do not shift. Selecting it shows a list in the detail pane, ordered oldest first. Each row shows the kind (Approval, Question, Recovery), run title, the path to the node (for example Release checklist > Choose deployment target, or three levels for a child workflow), who started it, caller status (Connected, Ended, Unknown), age, and the full request text. Text longer than about 180 characters is clamped to three lines with Show more.
-- Detail shows the full request, never truncated; text over about 900 characters is clamped to ten lines with Show more. Pending answerable requests use the existing approval card look: uniform warning outline and tint, no left stripe, always expanded, Approve once and Reject for approvals. Read-only and settled requests use the neutral card. A provenance block lists run, path, started by, caller, owner, age, engine note and any handover record.
-- Answering when the caller has ended states that the run passes to Harflow and the original caller can no longer answer, and that the engine rechecks on submit. A refusal keeps the typed answer. If the caller returned, the request becomes read-only and the unsent answer remains visible; if the checkpoint changed, the answer stays editable.
-- Answered requests fade out in 180 ms (immediate under Reduce Motion or the system setting), leave the list, and the badge count drops. The handed-over-live transition fades a status notice in with the same rule.
-- Notification banner: app icon, Harflow, title `<Kind>: <run title>`, body with the first line of the question or the approval action and target. Waiting-for-caller requests also notify, with a subtitle saying who they wait for. A grouped banner lists several. Selecting a banner opens that request, or the list for a group.
-- Menu-bar extra: a Needs you section with the count and up to 3 rows, Show all opens the list, and empty and older-engine variants.
+- Needs you is the first row of the sidebar's Overview group, above Statistics (placement owner-chosen, 2026-10-30; the group is followed by Workflows, Running, Today and Earlier). It stays visible when nothing is pending, without a badge, so the rows below do not shift. The badge counts answerable requests only.
+- Selecting it shows a list ordered oldest first. Each row shows the kind (Approval, Question, Recovery), run title, the path to the node (for example Release checklist > Choose deployment target, or three levels for a child workflow), who started it, the caller status "Ended" when a caller ended, age, and the full request text (clamped to three lines with Show more over about 180 characters).
+- Detail shows the full request, never truncated (over about 900 characters it is clamped to ten lines with Show more). Answerable requests use the existing approval card look: uniform warning outline and tint, no left stripe, always expanded, Approve once and Reject for approvals. Settled requests use the neutral card. A provenance block lists run, path, started by, caller (when ended), owner, age, engine note, and the handover record only when a handover happened. "Started by: Mac app" needs no extra label.
+- Answering after a caller ended states that the run passes to Harflow, the original caller can no longer answer, and the engine rechecks on submit.
+- Answered requests fade out in 180 ms (immediate under Reduce Motion or the system setting), leave the list, and the badge drops.
+- Refusal because the checkpoint changed keeps the typed answer and an error message. Refusal because the caller returned removes the request from Needs you, because it is no longer answerable here, and returns to the list with a status notice that the caller is answering it again. The unsent answer is discarded rather than shown, because it was written for a request Harflow can no longer answer; this is the simpler choice and keeps the notice short.
+- `arriving`: when a waiting request's caller ends, a row appears (fade, unless Reduce Motion), the badge increments, and a notification banner fires. The banner opens that request.
+- Notification banner: app icon, Harflow, title `<Kind>: <run title>`, body with the first line of the question or the approval action and target. The `arrived` banner adds a subtitle saying the caller ended. A grouped banner lists several answerable requests.
+- Menu-bar extra: a Needs you section with the count and up to 3 rows, Show all opens the list, and the empty section reads "Nothing needs you".
+- Older engine: workflow interactions cannot be shown as answerable, so they are excluded. Only task approvals answerable through the existing Monitor-response capability are listed, with a short notice that this engine version cannot report workflow questions here. The menu-bar `older` state follows the same rule.
+- Task approvals: answerable through the existing Monitor-response capability (HarflowMac #14) when the engine supports it; when it does not, they are excluded and not shown read-only. Their detail offers Approve once and Reject and does not claim a handover.
 
 ## Source basis
 
@@ -30,9 +39,9 @@ HarflowMac pinned at `da2f4cab79e5b9240b250857cbb783a3a83e16fe` (read-only):
 
 - `macos/HfFeatures/MainWindowFeature/Sources/MainWindowFeature/Sidebar/SidebarSection.swift` and `SidebarView.swift`: sections Running, Today and Earlier.
 - `macos/HfFeatures/MainWindowFeature/Sources/MainWindowFeature/Sidebar/SidebarListReconciler.swift`: the list starts with the Overview heading and the Statistics row (`overview:statistics`), then the Workflows header; Needs you is a new Overview row before Statistics.
-- `macos/HfFeatures/MainWindowFeature/Sources/MainWindowFeature/TaskDetail/CallerApprovalController.swift` and `CallerApprovalCard.swift`: current caller-owned approvals are read-only text unless the engine supports Monitor responses; the pending card look (warning fill and outline), Approve once, Reject.
+- `macos/HfFeatures/MainWindowFeature/Sources/MainWindowFeature/TaskDetail/CallerApprovalController.swift` and `CallerApprovalCard.swift`: caller approvals, `supportsMonitorResponseForCallerApprovals`, the pending card look (warning fill and outline), Approve once, Reject.
 - `macos/HfFeatures/MainWindowFeature/Sources/MainWindowFeature/Workflow/WorkflowModels.swift`: caller-controlled runs; `allowsMonitorControl` is false when `interaction_owner` is `caller`, and child runs defer to the root.
-- `macos/HfFeatures/MenuBarFeature/Sources/MenuBarFeature/`: the popover sections (running rows, recent items, workflow rows); the Needs you section is new.
+- `macos/HfFeatures/MenuBarFeature/Sources/MenuBarFeature/`: the popover sections; the Needs you section is new.
 - `macos/HfCore/HfRepository/Sources/HfRepository/FinishNotifier/`: existing finish notifications (title and body only).
 
 Engine contract: HarflowMCP 0.0.5, `docs/contracts.md` section "Caller loss and workflow interaction handover" and fixture `contracts/v1/ctl-workflow-interaction-handover.json`.
@@ -41,52 +50,50 @@ Engine contract: HarflowMCP 0.0.5, `docs/contracts.md` section "Caller loss and 
 
 Workflow status and detail carry `interaction_state` with `owner`, `caller_state`, `monitor_available`, `reason` and `handover`. Full text is in `input_question` and `pending_inputs`.
 
-| Specimen state | Engine fields |
+| Presentation | Engine fields |
 |---|---|
-| `answerable` | `owner: caller`, `caller_state: dead`, `monitor_available: true` |
-| `handed-over` | `owner: monitor` with a non-null `handover` (`timestamp`, `reason`, `previous_owner`, `responder`, `action`) |
-| Started in this app (list row Quarterly report draft) | `owner: monitor`, `handover: null` |
-| `waiting` and `handed-live` start | `caller_state: alive`; `monitor_available: false`; `reason` shown as the explanation. `handed-live` ends when a refresh reports `dead` with `monitor_available: true` |
-| `unknown` | `caller_state: unknown`; Harflow fails closed and does not take over |
-| Dead caller with `monitor_available: false` | Treated as read-only with the engine `reason` (handled in the specimen logic, not a separate state) |
-| `submitting`, `answered`, `refused`, `expired` | A mutation request and its result. Availability is advisory; the engine rechecks authority and the checkpoint on submit, so a refusal is expected to be possible. Refusal reasons are fixture wording, not engine strings |
-| `older` | `interaction_state` absent. Items are read-only with guidance to answer through the owning caller |
+| Answerable, listed | `owner: monitor`, or `caller_state: dead` with `monitor_available: true` |
+| `handed-over` | `owner: monitor` with a non-null `handover` (`timestamp`, `reason`, `previous_owner`, `responder`, `action`); the record is shown only then |
+| Mac-started run | `owner: monitor`, `handover: null`; no special label beyond "Started by: Mac app" |
+| Excluded everywhere | `caller_state: alive`, `caller_state: unknown`, or `caller_state: dead` with `monitor_available: false`. Unknown identity fails closed |
+| `arriving` / `arrived` | A refresh reports an excluded request as `caller_state: dead` with `monitor_available: true` |
+| Task approvals | No `interaction_state` (see below). Listed only when the engine supports Monitor responses for caller approvals (HarflowMac #14); otherwise excluded |
+| `older` | `interaction_state` absent: workflow interactions excluded; task approvals follow the Monitor-response rule |
+| `submitting`, `answered`, `refused`, `expired` | A mutation request and its result. Availability is advisory; the engine rechecks authority and the checkpoint on submit, so refusal is possible. Refusal wording is fixture text, not engine strings |
 | `recovery` | A recovery checkpoint with the attempt limit; consistent with the work-interaction recovery form (Answer, Additional attempts) |
-| Row scope Task | Task-level request; see below |
 
-Descendants inherit root authority after a handover, and a returning caller can no longer answer; the design says so in the answerable copy. Caller identity is established by the engine, never by the app. Process command lines are not exposed by the contract and are not shown.
+Descendants inherit root authority after a handover, and a returning caller can no longer answer; the answerable copy says so. Caller identity is established by the engine, never by the app. The contract exposes no process command lines and none are shown.
 
 ## Unsupported and deferred
 
-- Live-caller opt-in: the contract states no live-caller opt-in is implemented. The design does not draw an opted-in state; a connected caller always produces the read-only waiting state.
-- Task-level caller-loss handover: checked in the contract. `interaction_state` is defined for workflow status and detail projections only; no task projection carries it. The specimen therefore shows task-level requests with caller status Unknown, read-only, with guidance to answer through the caller (the Add retry to webhook client row). Whether existing Monitor responses for task caller approvals should make some of these answerable is an open question.
-- Real-time updates: the specimen has no polling. The native list needs a refresh policy; none is invented here.
-- Notification delivery rules, sound and badge behavior beyond the banner content.
+- Live-caller opt-in: the contract states none is implemented. No opted-in state is drawn; a connected caller's requests are never listed.
+- Task-level caller-loss handover: the contract defines `interaction_state` for workflow status and detail projections only, so no task projection reports caller loss. Task approvals therefore depend on the Monitor-response capability alone.
+- The waiting and unknown requests' own views (task Activity, workflow run sidebar) are not redesigned here.
+- Refresh and polling policy for the native list is not specified here.
+- Notification delivery rules beyond the banner content (sound, badge, grouping thresholds).
 
 ## Labels
 
 Existing glossary terms used: Workflow run, Task, Node, MCP client, Harflow. Labels invented for this proposal and not in `docs/terminology.md`:
 
 - Needs you (sidebar row, list title, menu-bar section)
-- Nothing needs you (empty state; mirrors the existing menu-bar phrase "Nothing running")
+- Nothing needs you (empty state; mirrors the menu-bar phrase "Nothing running")
 - Approval, Question, Recovery (request kinds)
-- Connected, Ended, Unknown (caller status)
-- Started by, Caller, Owner, Waiting since, Provenance and ownership
-- Waiting for <caller>, Caller status unknown, Answer through the caller
+- Ended (caller status), Started by, Caller, Owner, Waiting since, Provenance and ownership
 - Answer, Send answer, Resume with answer (Answer and Resume follow work-interaction; the combined button label is new)
-- Show all <count>, Open, View (row actions)
-- Notification subtitle "Waiting for <caller>" and group title "<n> requests need you"
+- Show all <count>, Answer (row action)
+- Notification subtitle "The caller ended. You can answer now." and group title "<n> requests need you"
 - Mac app, harflow-ctl and "Harflow task" as started-by values (harflow-ctl and Claude Code are real names; Mac app is a label)
 
-## Open questions for the owner
+## Decisions (owner, 2026-10-30)
 
-1. Resolved on 2026-10-30: Needs you is an Overview row above Statistics, not a badge on the Running header.
-2. Should waiting-for-caller requests count in the badge and notify at all? The specimen counts and notifies them, with explicit wording. The alternative is to count and notify only requests the user can act on.
-3. List order: oldest first as drawn, or answerable requests before read-only ones.
-4. Should the empty menu-bar section show "Nothing needs you" or be omitted?
-5. Menu-bar limit: 3 rows is a placeholder.
-6. Should task-level requests use the existing Monitor-response capability to become answerable when the engine supports it, or stay read-only until the contract adds task-level handover?
-7. Should an answer from a Mac-started run (owner Monitor from the start) be labeled differently from a taken-over run?
+1. Placement: Needs you is a row in the Overview group above Statistics, not a badge on Running.
+2. Needs you lists only requests the user can answer now. Waiting-for-caller and caller-unknown requests are excluded from the list, badge, notifications and menu-bar section, and remain only in the run's own views. Notifications fire only for answerable requests, including when a waiting request becomes answerable. A refusal because the caller returned removes the request from Needs you with a status notice.
+3. The list is ordered oldest first.
+4. The empty menu-bar section reads "Nothing needs you".
+5. The menu bar shows 3 rows, then Show all.
+6. Task-level caller approvals are answerable through the existing Monitor-response capability (HarflowMac #14) when the engine supports it; otherwise they are excluded, not shown read-only.
+7. There is no separate label for Mac-started runs; "Started by: Mac app" suffices. The handover record appears only when a handover happened.
 
 ## Browser approximations
 
@@ -94,4 +101,4 @@ The window, sidebar, notification banner and menu-bar popover are CSS approximat
 
 ## Verification performed
 
-JavaScript syntax check, the repository test suite, a scripted pass through every surface and state with no console errors, the answer, refusal, expiry, caller-ended, Reset and cross-surface navigation flows, and a visual check of Light and Dark in the browser pane. No native or VoiceOver checks were performed.
+JavaScript syntax check, the repository test suite, and a scripted pass through every surface and state with no console errors: answer, refusal (both kinds), expiry, caller-ended arrival, task approval, Reset and cross-surface navigation. The scripted pass also checked that no state shows a waiting or unknown request. No native, VoiceOver or full two-appearance visual review was performed.

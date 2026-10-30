@@ -152,3 +152,5 @@ dt { color: var(--secondaryText); } dd { margin: 0; overflow-wrap: anywhere; }
 .simulation h2, .notes h2 { font-size: 14px; } .simulation p, .notes p { font-size: 12px; }
 .fixture-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
 @media (max-width: 800px) { main { padding: 24px 12px; } .catalog-bar { padding: 12px; } }
+.win { position: relative; }
+.win .banner-slot { top: 52px; right: 20px; z-index: 2; }

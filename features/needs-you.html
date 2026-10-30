@@ -12,7 +12,7 @@
     <div class="intro">
       <p class="eyebrow">Exploratory, not approved</p>
       <h1>Show every pending input, whoever started the run.</h1>
-      <p>A Needs you entry gathers approvals, questions and recovery checkpoints from tasks and workflow runs, including nested child workflows and nodes. Harflow answers only when the engine reports that the caller has ended. These are deterministic fixtures; no engine is contacted and nothing is sent.</p>
+      <p>A Needs you entry gathers the approvals, questions and recovery checkpoints you can answer, from tasks and workflow runs, including nested child workflows and nodes. These are deterministic fixtures; no engine is contacted and nothing is sent.</p>
     </div>
     <section class="controls" aria-label="Design specimen controls">
       <label>Surface<select id="surface">
@@ -32,7 +32,7 @@
     <section class="specimen-scroll" aria-label="Native surface approximation" id="specimen" tabindex="-1"></section>
     <section class="simulation" aria-label="Fixture completion controls">
       <h2>Try the interaction</h2>
-      <p>These controls stand in for the engine and sit outside the app surface. Send an answer, then choose the engine&rsquo;s response. On the waiting state, deliver the caller ending to watch the request become answerable.</p>
+      <p>These controls stand in for the engine and sit outside the app surface. Send an answer, then choose the engine&rsquo;s response. On the Request arrives list state, deliver the caller ending to watch a request join the list.</p>
       <div class="fixture-actions">
         <button type="button" id="deliver-accept">Engine accepts</button>
         <button type="button" id="deliver-returned">Refuse: caller returned</button>
@@ -44,7 +44,7 @@
     </section>
     <section class="notes">
       <h2>Behavior under review</h2>
-      <p>Needs you lists every pending input the app can read, whoever started the run. Only requests whose caller the engine confirms ended, or that Harflow already owns, can be answered here. A request whose caller is connected is shown read-only and says who it is waiting for. Unknown caller identity fails closed. Answering hands the run to Harflow; the original caller can no longer answer it, and the engine may still refuse on submit.</p>
+      <p>Needs you lists only requests you can answer now, whoever started the run: those whose caller the engine confirms ended, those Harflow already owns, and task approvals Harflow can respond to. A request waiting for a connected caller, or whose caller cannot be identified, never appears here, in the badge, in notifications or in the menu bar; it stays in the run&rsquo;s own views. Answering hands the run to Harflow; the original caller can no longer answer it, and the engine may still refuse on submit.</p>
       <p>No opt-in for answering while the caller is connected exists in the engine, so none is drawn. Browser controls, materials, the notification banner and the menu-bar popover approximate native surfaces.</p>
       <p><a href="../docs/needs-you-proposal.md">Source basis, engine field mapping, deferred items and open questions</a></p>
     </section>
