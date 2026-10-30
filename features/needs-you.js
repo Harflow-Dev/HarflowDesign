@@ -72,7 +72,7 @@
     menubar: [['populated', 'Populated'], ['few', 'Two items'], ['empty', 'Empty'], ['older', 'Older engine']]
   };
   const surfaceHints = {
-    list: 'Sidebar row above Running, with the list in the detail pane. Select a title to open the request.',
+    list: 'Overview row above Statistics, with the list in the detail pane. Select a title to open the request.',
     detail: 'Full request, provenance and ownership. Use the Request kind control for Question or Approval states.',
     notify: 'A mock macOS banner. Waiting-for-caller requests also notify, and the banner says so. Select a banner to open the request.',
     menubar: `Menu-bar popover with up to ${MENU_LIMIT} requests. Show all opens the main window list.`
@@ -206,9 +206,11 @@
     const current = S.surface === 'list' || S.surface === 'detail';
     const stub = (name, tint) => `<li class="sb-row" aria-hidden="true"><span class="dot dot-${tint}"></span><span>${name}</span></li>`;
     return `<nav class="sidebar" aria-label="Sidebar">
-      <ul class="sb-list">
+      <p class="sb-label sb-label-first">Overview</p><ul class="sb-list">
         <li><button type="button" class="sb-row sb-needs" data-act="show-list" data-fk="sidebar-needs" ${current ? 'aria-current="page"' : ''} aria-label="${esc(label)}"><span class="sb-glyph" aria-hidden="true">!</span><span class="sb-name" aria-hidden="true">Needs you</span>${badge}</button></li>
+        <li class="sb-row" aria-hidden="true"><span class="sb-icon">▥</span><span>Statistics</span></li>
       </ul>
+      <p class="sb-label">Workflows</p><ul class="sb-list"><li class="sb-row" aria-hidden="true"><span class="sb-icon">⎇</span><span>Release checklist</span></li></ul>
       <p class="sb-label">Running</p><ul class="sb-list">${stub('Refactor settings screen', 'run')}${stub('Triage support inbox', 'run')}</ul>
       <p class="sb-label">Today</p><ul class="sb-list">${stub('Update release notes', 'done')}${stub('Fix flaky timeout test', 'done')}</ul>
       <p class="sb-label">Earlier</p><ul class="sb-list">${stub('Audit lockfile', 'done')}</ul>

@@ -17,7 +17,7 @@ Controls outside the specimen: Surface, State, Request kind, Width (1000, 1200, 
 
 ## Design summary
 
-- A Needs you row sits above Running in the sidebar with a count badge. Selecting it shows a list in the detail pane, ordered oldest first. Each row shows the kind (Approval, Question, Recovery), run title, the path to the node (for example Release checklist > Choose deployment target, or three levels for a child workflow), who started it, caller status (Connected, Ended, Unknown), age, and the full request text. Text longer than about 180 characters is clamped to three lines with Show more.
+- A Needs you row sits in the sidebar's Overview group, above Statistics, with a count badge. The owner chose this placement on 2026-10-30. The row stays visible when nothing is pending (no badge) so the rows below do not shift. Selecting it shows a list in the detail pane, ordered oldest first. Each row shows the kind (Approval, Question, Recovery), run title, the path to the node (for example Release checklist > Choose deployment target, or three levels for a child workflow), who started it, caller status (Connected, Ended, Unknown), age, and the full request text. Text longer than about 180 characters is clamped to three lines with Show more.
 - Detail shows the full request, never truncated; text over about 900 characters is clamped to ten lines with Show more. Pending answerable requests use the existing approval card look: uniform warning outline and tint, no left stripe, always expanded, Approve once and Reject for approvals. Read-only and settled requests use the neutral card. A provenance block lists run, path, started by, caller, owner, age, engine note and any handover record.
 - Answering when the caller has ended states that the run passes to Harflow and the original caller can no longer answer, and that the engine rechecks on submit. A refusal keeps the typed answer. If the caller returned, the request becomes read-only and the unsent answer remains visible; if the checkpoint changed, the answer stays editable.
 - Answered requests fade out in 180 ms (immediate under Reduce Motion or the system setting), leave the list, and the badge count drops. The handed-over-live transition fades a status notice in with the same rule.
@@ -28,7 +28,8 @@ Controls outside the specimen: Surface, State, Request kind, Width (1000, 1200, 
 
 HarflowMac pinned at `da2f4cab79e5b9240b250857cbb783a3a83e16fe` (read-only):
 
-- `macos/HfFeatures/MainWindowFeature/Sources/MainWindowFeature/Sidebar/SidebarSection.swift` and `SidebarView.swift`: sections Running, Today and Earlier; Needs you is a new row above them.
+- `macos/HfFeatures/MainWindowFeature/Sources/MainWindowFeature/Sidebar/SidebarSection.swift` and `SidebarView.swift`: sections Running, Today and Earlier.
+- `macos/HfFeatures/MainWindowFeature/Sources/MainWindowFeature/Sidebar/SidebarListReconciler.swift`: the list starts with the Overview heading and the Statistics row (`overview:statistics`), then the Workflows header; Needs you is a new Overview row before Statistics.
 - `macos/HfFeatures/MainWindowFeature/Sources/MainWindowFeature/TaskDetail/CallerApprovalController.swift` and `CallerApprovalCard.swift`: current caller-owned approvals are read-only text unless the engine supports Monitor responses; the pending card look (warning fill and outline), Approve once, Reject.
 - `macos/HfFeatures/MainWindowFeature/Sources/MainWindowFeature/Workflow/WorkflowModels.swift`: caller-controlled runs; `allowsMonitorControl` is false when `interaction_owner` is `caller`, and child runs defer to the root.
 - `macos/HfFeatures/MenuBarFeature/Sources/MenuBarFeature/`: the popover sections (running rows, recent items, workflow rows); the Needs you section is new.
@@ -79,7 +80,7 @@ Existing glossary terms used: Workflow run, Task, Node, MCP client, Harflow. Lab
 
 ## Open questions for the owner
 
-1. Should Needs you be a sidebar row above Running, as drawn, or a badge on the Running section header? A row gives a destination and survives an empty Running list.
+1. Resolved on 2026-10-30: Needs you is an Overview row above Statistics, not a badge on the Running header.
 2. Should waiting-for-caller requests count in the badge and notify at all? The specimen counts and notifies them, with explicit wording. The alternative is to count and notify only requests the user can act on.
 3. List order: oldest first as drawn, or answerable requests before read-only ones.
 4. Should the empty menu-bar section show "Nothing needs you" or be omitted?
