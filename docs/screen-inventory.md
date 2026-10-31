@@ -315,3 +315,7 @@ Native structure baseline: HarflowMac commit `bb82773e3126c2416b4c1dde87b25a1f82
 `macos/HfFeatures/MainWindowFeature/Sources/MainWindowFeature/TaskDetail/TaskDetailView.swift`,
 `Workflow/WorkflowView.swift` and `Workflow/WorkflowRecoveryForm.swift` in the same feature package.
 This reference refines those structures; it does not claim their historical controls already supported the proposed routes.
+
+## Resource slots proposal (#45)
+
+The standalone [Resource slots specimen](../features/resource-slots.html) explores full-width resource sections, current holders and ordered waiters. It is a proposal, not an approved implementation reference. The [proposal](resource-slots-proposal.md) records the selected image, source mapping, fixture states and outstanding native checks. Browser controls expose 1000, 1200 and 1440 point widths, appearance and motion. No engine is contacted.

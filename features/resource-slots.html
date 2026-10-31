@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Resource slots · Harflow proposal</title>
+  <link rel="stylesheet" href="../styles/tokens.css"><link rel="stylesheet" href="resource-slots.css">
+  <script src="resource-slots.js" defer></script>
+</head>
+<body>
+<header class="catalog-bar"><a href="../index.html">Harflow interface reference</a><span>Proposal · HarflowMac #45</span></header>
+<main>
+  <div class="intro"><p class="eyebrow">Design proposal</p><h1>See who holds a resource and who is waiting.</h1><p>Deterministic, read-only fixtures. No engine is contacted.</p></div>
+  <section class="controls" aria-label="Design specimen controls">
+    <label>State<select id="state">
+      <option value="populated">Populated</option><option value="loading">Loading</option><option value="empty">Empty</option><option value="disabled">Not enabled</option><option value="unsupported">Unsupported engine</option><option value="error">Unavailable</option><option value="refreshing">Refreshing retained snapshot</option><option value="refresh-error">Refresh error with snapshot</option><option value="cleanup-pending">Cleanup pending</option><option value="cleanup-running">Cleanup running</option><option value="cleanup-failed">Cleanup failed</option><option value="cleanup-uncertain">Cleanup uncertain</option><option value="service-unavailable">Service unavailable</option><option value="long">Long IDs and missing metadata</option><option value="workflow">Workflow and whole-task owners</option><option value="multi">Multiple holders and borrowed hold</option><option value="truncated">Truncated / overcommitted</option>
+    </select></label>
+    <label>Width<select id="width"><option>1000</option><option selected>1200</option><option>1440</option></select></label>
+    <label>Appearance<select id="theme"><option value="light">Light</option><option value="dark">Dark</option><option value="system">System</option></select></label>
+    <label>Motion<select id="motion"><option value="system">System</option><option value="reduce">Reduce Motion</option><option value="full">Full motion</option></select></label>
+    <button id="reset" type="button">Reset</button>
+  </section>
+  <section class="specimen-scroll" aria-label="Native surface approximation"><div id="specimen"></div></section>
+  <section class="simulation"><h2>Loading completion</h2><p>These fixture controls are outside the app surface.</p><div><button data-complete="populated">Populated</button> <button data-complete="empty">Empty</button> <button data-complete="error">Error</button></div><p id="announcement" role="status" aria-live="polite"></p></section>
+  <section class="notes"><p>Proposal only. The resource page has no search; the existing sidebar history search remains. <a href="../docs/resource-slots-proposal.md">Source basis, field mapping and limitations</a></p></section>
+</main>
+</body></html>

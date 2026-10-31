@@ -30,6 +30,11 @@ This glossary governs user-facing design copy. The terminology was requested dur
 | Recover | Continue the same run after a failure or an interruption, as in the run recovery options. Not the same as Run again. |
 | Execution (accounting) | One engine-accounted attempt or continuation segment, distinct from a message or repeated snapshot. |
 | Known token subtotal | Sum of qualified, disjoint execution totals; incomplete or unavailable contributions are disclosed separately. |
+| Resource (proposed) | Named, configured capacity shared by acquisitions. |
+| Slot (proposed) | One unit of a resource's capacity. |
+| Holder (proposed) | An owner with a reservation; a borrowed hold shares its parent reservation. |
+| Capacity (proposed) | Configured number of consuming reservations allowed for a resource. |
+| Waiting (proposed) | An acquisition queued for a resource, ordered first in, first out. |
 | Harflow | Application/product name. Historical source paths may retain older names where needed for accurate provenance. |
 
 ## Applying the glossary
