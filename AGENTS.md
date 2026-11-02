@@ -30,3 +30,5 @@ Refine features here before product implementation. Include relevant loading, em
 ## Validation
 
 Run JavaScript syntax checks, verify local links and pinned source paths, and inspect affected states in both appearances. Check keyboard access, readable labels, overflow, and deterministic reset. Use proportionate browser checks. Record actual evidence and outstanding native fidelity checks; do not claim unperformed verification.
+
+Migration work: see [docs/migration-plan.md](docs/migration-plan.md).
