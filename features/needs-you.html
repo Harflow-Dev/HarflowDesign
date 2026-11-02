@@ -35,7 +35,7 @@
       <p>These controls stand in for the engine and sit outside the app surface. Send an answer, then choose the engine&rsquo;s response. On the Request arrives list state, deliver the caller ending to watch a request join the list.</p>
       <div class="fixture-actions">
         <button type="button" id="deliver-accept">Engine accepts</button>
-        <button type="button" id="deliver-returned">Refuse: caller returned</button>
+        <button type="button" id="deliver-returned">Caller answers first / legacy caller returned</button>
         <button type="button" id="deliver-changed">Refuse: checkpoint changed</button>
         <button type="button" id="deliver-expired">Request expired</button>
         <button type="button" id="deliver-ended">Caller ended</button>
@@ -43,7 +43,7 @@
       <p id="live" role="status" aria-live="polite">Fixture controls are enabled when the matching state is reached.</p>
     </section>
     <section class="notes">
-      <h2>Behavior under review</h2>
+      <h2>Behavior under review</h2><p>The three detail states labelled exploratory #46 propose shared answering while the caller is alive. They do not alter the approved #30 states. See <a href="../docs/shared-answering.md">shared answering proposal</a>. In Shared answer, submit then choose Engine accepts or Caller answers first to compare both outcomes.</p>
       <p>Needs you lists only requests you can answer now, whoever started the run: those whose caller the engine confirms ended, those Harflow already owns, and task approvals Harflow can respond to. A request waiting for a connected caller, or whose caller cannot be identified, never appears here, in the badge, in notifications or in the menu bar; it stays in the run&rsquo;s own views. Answering hands the run to Harflow; the original caller can no longer answer it, and the engine may still refuse on submit.</p>
       <p>No opt-in for answering while the caller is connected exists in the engine, so none is drawn. Browser controls, materials, the notification banner and the menu-bar popover approximate native surfaces.</p>
       <p><a href="../docs/needs-you-proposal.md">Source basis, engine field mapping, deferred items and open questions</a></p>

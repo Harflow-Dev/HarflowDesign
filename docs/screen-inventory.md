@@ -319,3 +319,18 @@ This reference refines those structures; it does not claim their historical cont
 ## Resource slots proposal (#45)
 
 The standalone [Resource slots specimen](../features/resource-slots.html) explores full-width resource sections, current holders and ordered waiters. It is a proposal, not an approved implementation reference. The [proposal](resource-slots-proposal.md) records the selected image, source mapping, fixture states and outstanding native checks. Browser controls expose 1000, 1200 and 1440 point widths, appearance and motion. No engine is contacted.
+
+## Shared answering (#46)
+
+The standalone `features/work-interaction.html` and `features/needs-you.html` add
+`shared-answer`, `caller-answered` and `harflow-answered` states for HarflowMac #46.
+They show a first-answer-wins note, preserved draft after a caller-first answer,
+and caller/Harflow provenance, in Light and Dark. Existing approved states remain
+unchanged. See [shared answering](shared-answering.md) for interactions, source
+reference, capability gate and limits. The owner approved these additions on
+2026-11-02. Native Light/Dark captures were checked during implementation; browser
+fidelity and actual Notification Center delivery remain separate checks.
+
+## Shared answering and native notifications (approved #46)
+
+The owner approved `docs/shared-answering.md` and the shared-answer/caller-answered/harflow-answered states on 2026-11-02. Individual macOS notifications cover pending questions, approvals, recovery requests and answers, plus completed/failed tasks. See the standalone work-interaction and Needs you specimens. Hosted deployment and actual Notification Center delivery are verified separately.

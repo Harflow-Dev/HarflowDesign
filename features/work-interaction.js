@@ -3,6 +3,9 @@
   const LONG = 'Check the recovery evidence before continuing. Compare the ledger with yesterday\'s run, keep the exact figures, and do not retry a step that already finished. If a line is missing, say which one and stop.';
   let extras = [];
   let expanded = new Set();
+  let recoveryDraft = '';
+  let sharedOutcome = '';
+  const sharedStates = ['shared-answer', 'caller-answered', 'harflow-answered'];
 
   const captionFor = status => status === 'undeliverable' ? 'Undeliverable' : status === 'uncertain' ? 'Delivery uncertain' : status === 'delivered' ? '' : 'Queued';
   const pending = status => status === 'queued' || status === 'delivering';
@@ -70,8 +73,14 @@
     $('activity-title').textContent = surface === 'Orchestrator Activity' ? 'Orchestrator · Activity' : parallel ? 'Implementation · Activity' : 'Selected node · Activity';
     $('title').textContent = surface === 'Task' ? 'Continuity verification fixture' : surface;
     $('composer-label').textContent = surface === 'Orchestrator Activity' ? 'Message the orchestrator' : ['Node task', 'Parallel'].includes(surface) ? 'Message this node' : 'Message this task';
-    $('recovery').hidden = !['attention', 'child'].includes(state);
+    const shared = sharedStates.includes(state);
+    const outcome = sharedOutcome || (state === 'caller-answered' ? 'caller' : state === 'harflow-answered' ? 'monitor' : '');
+    $('recovery').hidden = !['attention', 'child'].includes(state) && !(shared && !outcome);
+    $('shared-note').hidden = !shared;
+    $('resume').disabled = $('retry').disabled = !shared || !recoveryDraft.trim();
+    $('recovery-answer').value = recoveryDraft;
     $('root').hidden = state !== 'child';
+    $('refusal').hidden = shared;
     $('refusal').textContent = state === 'child' ? 'Open the root workflow to request control of this child run.' : 'Original caller is alive. Harflow cannot resume this checkpoint.';
     const list = isRun ? [] : items();
     const queuedCount = list.filter(item => item.status === 'queued' || item.status === 'delivering').length;
@@ -82,7 +91,8 @@
     paint($('bubbles'), list);
     $('jump').hidden = state !== 'scrolled';
     $('jump').textContent = queuedCount === 1 ? 'Queued message' : 'Queued messages';
-    $('result').textContent = state === 'cancelled' ? 'Queued message cancelled.' : '';
+    $('result').textContent = state === 'cancelled' ? 'Queued message cancelled.' : shared && outcome ? (outcome === 'caller' ? 'Already answered by the caller · Use staging, and postpone the Thursday release.' : 'Answered in Harflow · ' + recoveryDraft) : '';
+    if (shared && outcome) $('history').innerHTML = `<p>${outcome === 'caller' ? 'Answered by the caller' : 'Answered in Harflow'} · 10:42</p><p>${esc(outcome === 'caller' ? 'Use staging, and postpone the Thursday release.' : recoveryDraft)}</p><details><summary>Your saved draft</summary><p>${esc(recoveryDraft)}</p></details>`;
     $('hint').textContent = state === 'unsupported' ? 'This engine does not support workflow messaging. Update the managed engine to use this action.' : state === 'loading' ? 'Checking message eligibility…' : 'Send queues the message. Send now requests immediate delivery; an engine refusal keeps it queued.';
     $('send').disabled = $('now').disabled = ['unsupported', 'loading'].includes(state) || isRun;
     $('continuity').textContent = state === 'long' ? 'Server restarted · Task still running. Supervision remains active while this longer continuity explanation wraps onto another line at narrow widths.' : 'Server restarted · Task still running';
@@ -122,12 +132,15 @@
   $('select-orchestrator').onclick = () => { $('surface').value = 'Orchestrator Activity'; render(); };
   $('select-node').onclick = () => { $('surface').value = 'Node task'; render(); };
   $('theme').onchange = () => { document.documentElement.dataset.theme = $('theme').value; };
-  $('surface').onchange = $('state').onchange = $('rows').onchange = $('width').onchange = () => { if ($('state').value !== 'ready') extras = []; render(); };
+  $('surface').onchange = $('rows').onchange = $('width').onchange = () => { render(); };
+  $('state').onchange = () => { extras = []; sharedOutcome = ''; recoveryDraft = sharedStates.includes($('state').value) ? 'Use preview, and keep the Thursday release.' : ''; render(); };
+  $('recovery-answer').oninput = () => { recoveryDraft = $('recovery-answer').value; $('resume').disabled = $('retry').disabled = !recoveryDraft.trim(); };
+  $('resume').onclick = $('retry').onclick = () => { sharedOutcome = 'monitor'; render(); };
   $('composer').onsubmit = event => { event.preventDefault(); queue(''); };
   $('now').onclick = () => queue('Send now isn\'t available. This operation can\'t be interrupted safely.');
   $('jump').onclick = () => { $('bubbles').scrollIntoView({ block: 'nearest' }); };
   $('notices').onclick = $('details').onclick = () => { $('result').textContent = 'Inspector: 2 notices; restart supervision remains active.'; };
   $('root').onclick = () => { $('result').textContent = 'Open the owning root workflow to request control.'; };
-  $('reset').onclick = () => { extras = []; expanded = new Set(); $('surface').value = 'Task'; $('state').value = 'ready'; $('rows').value = 'both'; $('width').value = '1200'; $('message').value = ''; render(); };
+  $('reset').onclick = () => { extras = []; expanded = new Set(); recoveryDraft = ''; sharedOutcome = ''; $('surface').value = 'Task'; $('state').value = 'ready'; $('rows').value = 'both'; $('width').value = '1200'; $('message').value = ''; render(); };
   render();
 })();

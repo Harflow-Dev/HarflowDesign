@@ -65,8 +65,8 @@
   
   const surfaceStates = {
     list: [['populated', 'Populated'], ['single', 'Single item'], ['empty', 'Empty'], ['loading', 'Loading'], ['error', 'Partial list error'], ['arriving', 'Request arrives'], ['older', 'Older engine']],
-    detail: [['answerable', 'Answerable'], ['handed-over', 'Already handed over'], ['task-approval', 'Task approval'], ['submitting', 'Submitting'], ['answered', 'Answered'], ['expired', 'Expired'], ['refused', 'Refused on submit'], ['recovery', 'Recovery checkpoint'], ['very-long', 'Very long text']],
-    notify: [['question', 'Question'], ['approval', 'Approval'], ['recovery', 'Recovery'], ['arrived', 'Became answerable'], ['grouped', 'Several grouped']],
+    detail: [['answerable', 'Answerable'], ['shared-answer', 'Shared answer · #46'], ['caller-answered', 'Caller answered first · #46'], ['harflow-answered', 'Harflow answered first · #46'], ['handed-over', 'Already handed over'], ['task-approval', 'Task approval'], ['submitting', 'Submitting'], ['answered', 'Answered'], ['expired', 'Expired'], ['refused', 'Refused on submit'], ['recovery', 'Recovery checkpoint'], ['very-long', 'Very long text']],
+    notify: [['question', 'Question'], ['approval', 'Approval'], ['recovery', 'Recovery'], ['arrived', 'Became answerable'], ['caller-answered', 'Caller answered · #46'], ['harflow-answered', 'Harflow answered · #46'], ['individual', 'Several individual · #46'], ['grouped', 'Several grouped (legacy)']],
     menubar: [['populated', 'Populated'], ['few', 'Two items'], ['empty', 'Empty'], ['older', 'Older engine']]
   };
   const surfaceHints = {
@@ -90,6 +90,7 @@
   function mode(r) {
     const i = r.interaction;
     if (!i) return r.scope === 'task' && r.monitorResponse ? 'task-monitor' : 'excluded';
+    if (i.responders && i.responders.includes('monitor')) return 'shared-answer';
     if (i.owner === 'monitor') return i.handover ? 'handed-over' : 'monitor-owned';
     return i.caller === 'dead' && i.available ? 'answerable' : 'excluded';
   }
@@ -111,6 +112,7 @@
   function detailPreset(state, kindValue) {
     const base = state === 'recovery' ? byId(makeItems(), 'audit') : state === 'task-approval' ? byId(makeItems(), 'webhook') : byId(makeItems(), kindValue === 'approval' ? 'schema' : 'target');
     const r = clone(base);
+    if (['shared-answer', 'caller-answered', 'harflow-answered'].includes(state)) { r.interaction = { owner: 'caller', caller: 'alive', available: true, responders: ['caller', 'monitor'], reason: '', handover: null }; }
     if (state === 'very-long') r.text = r.rowText = VERY_LONG_QUESTION;
     const i = r.interaction || {};
     if (state === 'handed-over') { i.owner = 'monitor'; i.handover = { when: '18 minutes ago', previous: 'Caller', reason: 'The caller process was no longer running.' }; i.reason = ''; }
@@ -139,6 +141,7 @@
     if (surface === 'detail') {
       S.current = detailPreset(state, $('kind').value);
       S.items = S.items.map(item => item.id === S.current.id ? S.current : item);
+      if (['caller-answered', 'harflow-answered'].includes(state)) { S.answer = 'Use preview, and keep the Thursday release.'; S.winner = state === 'caller-answered' ? 'caller' : 'monitor'; settle(S.current.kind === 'approval' ? (S.winner === 'caller' ? 'Rejected by the caller' : 'Approved once') : S.winner === 'caller' ? 'Use staging, and postpone the Thursday release.' : S.answer); }
       if (state === 'submitting') { S.phase = 'submitting'; S.answer = S.current.kind === 'approval' ? '' : 'Use staging, and postpone the Thursday release.'; S.submitted = S.current.kind === 'approval' ? 'Approve once' : 'Send answer'; }
       if (state === 'answered') { S.submitted = S.current.kind === 'approval' ? 'Approve once' : 'Send answer'; settle('Use staging, and postpone the Thursday release.'); }
       if (state === 'expired') { S.phase = 'expired'; }
@@ -261,7 +264,9 @@
     let controls = '';
     if (S.phase !== 'answered' && S.phase !== 'expired') {
       const owned = m === 'handed-over' || m === 'monitor-owned';
-      const handoverCopy = m === 'task-monitor'
+      const handoverCopy = m === 'shared-answer'
+        ? '<p class="handover-note">The original caller can also answer. Whichever answers first is used.</p>'
+        : m === 'task-monitor'
         ? `<p class="handover-note">Harflow sends your decision to the engine in place of ${esc(r.by.name)}.</p>`
         : owned
         ? `<p class="handover-note">Harflow owns this run, so you can answer here.${m === 'handed-over' ? ` ${esc(r.by.name)} can no longer answer it.` : ''}</p>`
@@ -283,6 +288,10 @@
   }
 
   function settledCard(r) {
+    if (mode(r) === 'shared-answer') {
+      const caller = S.winner === 'caller';
+      return `<section class="need-card settled arrive" aria-label="Request"><p class="settled-title">${caller ? 'Already answered by the caller' : 'Answered in Harflow'}</p><p class="settled-answer">${esc(S.answeredText)}</p><p class="muted">${caller ? 'Answered by the caller' : 'Answered in Harflow'} · 10:42. Later questions can still be answered from either place.</p><details><summary>Your saved draft</summary><p class="settled-answer">${esc(S.answer)}</p></details></section>`;
+    }
     const decision = S.submitted === 'Reject' ? 'Rejected' : r.kind === 'approval' ? 'Approved once' : r.kind === 'recovery' ? 'Resumed with answer' : 'Answered';
     const detail = r.kind === 'approval' ? '' : `<p class="settled-answer">${esc(S.answeredText)}</p>`;
     return `<section class="need-card settled arrive" aria-label="Request"><p class="req-source plain">${esc(kindLabel[r.kind])} · ${esc(lastSegment(r))}</p><p class="settled-title">${decision} by Harflow</p>${detail}<p class="muted">${r.interaction ? `Harflow now owns this run. ${esc(r.by.name)} can no longer answer it, and ` : 'Harflow sent your decision to the engine, and '}${esc(r.title)} no longer needs you.</p></section>`;
@@ -290,7 +299,7 @@
 
   function provenance(r) {
     const m = mode(r);
-    const owner = m === 'task-monitor' ? 'Harflow responds for the caller' : m === 'answerable' ? `${r.by.name} (ended); Harflow takes over when you answer` : 'Harflow';
+    const owner = m === 'shared-answer' ? 'Caller and Harflow may both answer' : m === 'task-monitor' ? 'Harflow responds for the caller' : m === 'answerable' ? `${r.by.name} (ended); Harflow takes over when you answer` : 'Harflow';
     const rows = [['Run', r.title], ['Path', r.path.length > 1 ? r.path.join(' › ') : 'Task'], ['Started by', startedByLabel(r.by)]];
     if (endedCaller(r)) rows.push(['Caller', 'Ended']);
     rows.push(['Owner', owner], ['Waiting since', age(r.mins)]);
@@ -313,7 +322,7 @@
     return `<div class="win" style="width:${S.width}px"><div class="titlebar"><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="wtitle">Harflow</span></div><div class="split">${sidebar()}<section class="detail" aria-label="${S.surface === 'detail' ? 'Request detail' : 'Needs you'}">${pane}</section></div>${toast}</div>`;
   }
 
-  function notifyTitle(r) { return `${kindLabel[r.kind]}: ${r.title}`; }
+  function notifyTitle(r) { return r.title.startsWith('Answered') ? r.title : `${kindLabel[r.kind]}: ${r.title}`; }
   function notifyBody(r) { return r.kind === 'approval' ? r.rowText : firstLine(r.text); }
   function bannerHtml(r, subtitle) {
     return `<button type="button" class="banner" data-act="open" data-id="${esc(r.id)}" data-fk="banner-${esc(r.id)}"><img src="../assets/branding/app-icon-64.png" alt="" width="32" height="32"><span class="b-text"><span class="b-app">Harflow<span class="b-time">now</span></span><span class="b-title">${esc(notifyTitle(r))}</span>${subtitle ? `<span class="b-sub">${esc(subtitle)}</span>` : ''}<span class="b-body">${esc(notifyBody(r))}</span></span></button>`;
@@ -325,6 +334,12 @@
     if (S.notify === 'question') inner = bannerHtml(pick('target'));
     else if (S.notify === 'approval') inner = bannerHtml(pick('schema'));
     else if (S.notify === 'recovery') inner = bannerHtml(pick('audit'));
+    else if (['caller-answered', 'harflow-answered'].includes(S.notify)) {
+      const caller = S.notify === 'caller-answered';
+      const r = { ...pick('target'), title: caller ? 'Answered by the caller' : 'Answered in Harflow', text: 'Use staging, and postpone the Thursday release.' };
+      inner = bannerHtml(r, 'Release checklist · 10:42');
+    }
+    else if (S.notify === 'individual') inner = ['schema', 'target', 'audit'].map(id => bannerHtml(pick(id))).join('');
     else if (S.notify === 'arrived') inner = bannerHtml(pick('links'), 'The caller ended. You can answer now.');
     else {
       const group = ['schema', 'target', 'audit'].map(pick);
@@ -377,7 +392,7 @@
 
   function resolveAccept() {
     const r = S.current; if (!r || S.phase !== 'submitting') return;
-    const answerText = S.answer;
+    const answerText = r.kind === 'approval' ? S.submitted : S.answer;
     const finish = () => { S.leavingId = null; settle(answerText); S.focus = 'back'; announce('Answer accepted. The request left Needs you.'); render(); };
     if (reduced()) { finish(); return; }
     S.leavingId = r.id; render();
@@ -386,6 +401,7 @@
   // Refusal because the caller returned: the request leaves Needs you and the unsent answer is discarded.
   function resolveReturned() {
     const r = S.current; if (!r || S.phase !== 'submitting') return;
+    if (mode(r) === 'shared-answer') { S.winner = 'caller'; settle(r.kind === 'approval' ? 'Rejected by the caller' : 'Use staging, and postpone the Thursday release.'); announce('Already answered by the caller. Your draft is kept.'); render(); return; }
     const text = r.interaction
       ? `${r.by.name} returned before Harflow took over, so it is answering ${r.title} again. The request left Needs you and your unsent answer was discarded.`
       : `Harflow can no longer respond to ${r.title} for ${r.by.name}. The request left Needs you; answer it through the caller.`;

@@ -72,3 +72,7 @@ The [task-continuity specimen](features/task-continuity.html) records HarflowMac
 approved direction (owner approval in the issue on 2026-10-28). It includes running,
 restart, supervision loss, diagnostic history, completed and unsupported states; see
 [task continuity](docs/task-continuity.md). Browser and native verification remain separate.
+
+The [shared-answering proposal](docs/shared-answering.md) for HarflowMac #46 adds
+approved Shared answer, Caller answered first and Harflow answered first states
+to the existing Messages/recovery and Needs you specimens (owner approval on 2026-11-02).
