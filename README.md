@@ -42,10 +42,21 @@ Cloudflare Pages publishes `main` through its GitHub integration. The intended p
 Pages configuration: framework **None**, production branch **main**, output directory **dist**, and build command:
 
 ```sh
-for file in scripts/*.js features/*.js; do node --check "$file" || exit 1; done; node --test --test-skip-pattern='^registry source links resolve in the pinned HarflowMac tree$' tests/catalog.test.mjs && mkdir -p dist && cp index.html dist/ && cp -R scripts styles assets docs features dist/
+sh ci/build-site.sh
 ```
 
-Set the Pages build environment variable `NODE_VERSION` to `24`. Pages reruns validation before publishing, so a failed catalog suite blocks that deployment independently of GitHub Actions. Only the staged site directories are published; repository metadata, tests, CI configuration, and local editor projects are excluded.
+The script checks JavaScript syntax, runs the standalone catalog and v2 test suites, and stages `dist/` with the root page, `scripts`, `styles`, `assets`, `docs`, `features` and `v2`. The owner updates the build command in the Pages dashboard; GitHub Actions runs the same script. Set the Pages build environment variable `NODE_VERSION` to `24`. Pages reruns validation before publishing, so a failed suite blocks that deployment independently of GitHub Actions. Only the staged site directories are published; repository metadata, tests, CI configuration, and local editor projects are excluded.
+
+## Harflow Desktop redesign (v2)
+
+`v2/` is the interface reference for the redesigned Harflow Desktop client, published at `design.harflow.dev/v2`. Open `v2/index.html` (offline, or through `python3 -m http.server 8080` and `http://localhost:8080/v2/`). It holds 30 screen states and the design system components, each rendered at native size in System, Light or Dark appearance. The catalog chrome (`hdc-` classes in `v2/styles/catalog.css`) is separate from the specimens, which use the `hd-` design system unchanged.
+
+- `v2/scripts/registry.js`: families, states and approval status.
+- `v2/scripts/screens-*.js`: one script per family with the screen templates; `components.js`: component previews; `catalog.js`: navigation and appearance.
+- `v2/styles/tokens.css`, `bundle.css`: the design system tokens and components, copied as-is.
+- `v2/docs/`: screen inventory, terminology and the approval record.
+
+Deep links use `#family/state/theme`, for example `#workflow-editor/node-selected/dark`. The appearance preference is stored in this browser under `hf-v2-appearance`. The v2 site is self-contained: it imports nothing from the root `styles/` or `scripts/`, and uses only relative paths. At the end of the migration, `v2/` moves to the root and the current root moves to `/v1`; both moves are plain folder moves.
 
 The approved [loading-handoff motion rule](docs/loading-handoff.md) is previewable at
 `#foundations/skeleton-crossfade/light` and `/dark`, with populated, empty, error and

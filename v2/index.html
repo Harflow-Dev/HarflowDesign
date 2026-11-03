@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Harflow Desktop · Interface reference</title>
+<link rel="icon" type="image/png" sizes="32x32" href="assets/branding/app-icon-32.png">
+<link rel="icon" type="image/png" sizes="64x64" href="assets/branding/app-icon-64.png">
+<link rel="apple-touch-icon" href="assets/branding/app-icon-128.png">
+<link rel="stylesheet" href="styles/tokens.css">
+<link rel="stylesheet" href="styles/bundle.css">
+<link rel="stylesheet" href="styles/catalog.css">
+</head>
+<body>
+<div class="hdc-app">
+  <header class="hdc-header">
+    <a class="hdc-brand" href="#new-task/default">
+      <img class="hdc-brand__icon" src="assets/branding/app-icon-64.png" srcset="assets/branding/app-icon-128.png 2x" alt="" width="32" height="32">
+      <span class="hdc-brand__name">Harflow Desktop · Interface reference</span>
+    </a>
+    <div class="hdc-controls">
+      <label class="hdc-field">State
+        <select id="hdc-state-picker"></select>
+      </label>
+      <div class="hdc-theme" id="hdc-theme" role="group" aria-label="Appearance">
+        <button type="button" class="hdc-theme__item" data-appearance="system" aria-pressed="false" title="System, follows this computer">System</button>
+        <button type="button" class="hdc-theme__item" data-appearance="light" aria-pressed="false" title="Light">Light</button>
+        <button type="button" class="hdc-theme__item" data-appearance="dark" aria-pressed="false" title="Dark">Dark</button>
+      </div>
+    </div>
+  </header>
+  <aside class="hdc-nav">
+    <nav id="hdc-nav" aria-label="Screen families"></nav>
+  </aside>
+  <main class="hdc-main">
+    <div class="hdc-intro">
+      <p class="hdc-eyebrow" id="hdc-eyebrow"></p>
+      <h1 class="hdc-title" id="hdc-title"></h1>
+      <p class="hdc-description" id="hdc-description"></p>
+      <p class="hdc-approval" id="hdc-approval"></p>
+    </div>
+    <div class="hdc-stage" id="hdc-stage" tabindex="0" aria-label="Scrollable interface specimen">
+      <div class="hdc-specimen" id="hdc-specimen"></div>
+    </div>
+    <p class="hdc-caption" id="hdc-caption"></p>
+  </main>
+  <footer class="hdc-footer">
+    <a href="docs/screen-inventory.md">Screen inventory</a>
+    <a href="docs/terminology.md">Terminology</a>
+    <a href="docs/approval.md">Approval</a>
+    <span class="hdc-footer__note">Deterministic mock data · No engine connection</span>
+  </footer>
+</div>
+<div class="hdc-sr" id="hdc-live" role="status" aria-live="polite"></div>
+<script src="scripts/registry.js"></script>
+<script src="scripts/screens-new-task.js"></script>
+<script src="scripts/screens-needs-you.js"></script>
+<script src="scripts/screens-workflows.js"></script>
+<script src="scripts/screens-workflow-editor.js"></script>
+<script src="scripts/screens-task.js"></script>
+<script src="scripts/screens-parallel-group.js"></script>
+<script src="scripts/screens-workflow-run.js"></script>
+<script src="scripts/screens-resources.js"></script>
+<script src="scripts/screens-statistics.js"></script>
+<script src="scripts/screens-settings.js"></script>
+<script src="scripts/screens-menu-bar.js"></script>
+<script src="scripts/screens-app-states.js"></script>
+<script src="scripts/components.js"></script>
+<script src="scripts/catalog.js"></script>
+</body>
+</html>

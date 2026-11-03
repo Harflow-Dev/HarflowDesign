@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add the Harflow Desktop interface reference as a self-contained `v2/` site (`v2/index.html`): 30 screen states in 12 families (new task, Needs you, workflows, workflow editor, task, parallel group, workflow run, resources, statistics, settings, menu bar, app states) and 29 design system components, each with System, Light and Dark appearance, deep links of the form `#family/state/theme`, and docs for the screen inventory, terminology and approval. Approved by the owner on 2026-11-03 from the Harflow Desktop Redesign canvas version 1793668079-d8d9 and design system version 1793668064-9e04. The site build moves to `ci/build-site.sh`, which also runs the new `tests/v2.test.mjs`.
+
 - Propose a Statistics shimmer skeleton (`statistics/loading`) and the empty, error, unsupported and refreshing handoff states for HarflowMac #41. The time range and filters are shimmer blocks. Each block has one highlight inside its shape, and the chart has no second sweep across the bars. Not approved.
 
 - Approve queued messages as pinned transcript bubbles, replacing the strip above the composer, in the work-interaction reference for HarflowMac #42. Approved by the owner on 2026-10-29.
