@@ -228,3 +228,18 @@ test('generated documentation is escaped and offline', () => {
     assert.ok(!/https?:\/\//.test(source.replace(/xmlns="[^"]*"/g, '')), `${name} has no external URL`);
   }
 });
+
+test('every standalone strip starts with the locked orchestrator', () => {
+  let strips = 0;
+  for (const key of keys) {
+    const html = HFV2.templates[key] || '';
+    const parts = html.split('<div class="hd-standalone__nodes">').slice(1);
+    for (const part of parts) {
+      strips += 1;
+      assert.match(part, /^<button type="button" class="hd-node hd-node--orchestrator[ "]/, key + ': strip must start with the orchestrator');
+      assert.match(part.slice(0, 400), /hd-i-lock/, key + ': orchestrator card must show the lock');
+      assert.equal((part.match(/hd-node--orchestrator/g) || []).length, 1, key + ': exactly one orchestrator per strip');
+    }
+  }
+  assert.ok(strips >= 8, 'expected the editor, run and component strips');
+});

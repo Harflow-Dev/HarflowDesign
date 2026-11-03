@@ -383,6 +383,8 @@ a.hd-seg__item{display:inline-flex;align-items:center;text-decoration:none}
 .hd-node--ondemand{position:relative;width:200px;padding:8px 10px;gap:4px;cursor:pointer}
 .hd-node--ondemand .hd-node__kind{display:flex;align-items:center;gap:4px}
 .hd-node--idle{opacity:.7}
+.hd-node--orchestrator{position:relative;width:200px;padding:8px 10px;gap:4px;cursor:pointer}
+.hd-node--orchestrator .hd-node__kind{display:flex;align-items:center;gap:4px}
 .hd-standalone{flex:none}
 
 /* ---- Icons: <span class="hd-i hd-i-<name>" aria-hidden="true"></span>; 16px, takes currentColor ---- */

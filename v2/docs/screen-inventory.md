@@ -19,7 +19,7 @@ Migration intent and unresolved coverage are tracked in the [migration coverage 
 | Workflows | Empty | `workflows/empty` | No workflows yet and the next step |
 | Workflows | Run workflow | `workflows/run` | Task (required), Goal (optional), repository, orchestrator override |
 | Workflow editor | Node selected | `workflow-editor/node-selected` | Left-to-right canvas, standalone on-demand nodes, node inspector |
-| Workflow editor | Orchestrator settings | `workflow-editor/orchestrator` | Orchestrator harness, model and access in the inspector |
+| Workflow editor | Orchestrator settings | `workflow-editor/orchestrator` | Locked orchestrator selected in the Standalone strip; harness, model and access in the inspector |
 | Workflow editor | Edit with agent | `workflow-editor/edit-with-agent` | Agent proposal on the canvas, builder activity in the right pane |
 | Task | Running | `task/running` | Slim top bar, transcript with collapsed and expanded tool calls, follow-up composer |
 | Task | Waiting for approval | `task/approval` | Inline approval card in the transcript |
@@ -51,6 +51,7 @@ Migration intent and unresolved coverage are tracked in the [migration coverage 
 - Workflow graphs flow left to right. Connections use the HarflowMac connector style: orthogonal routes with 10px rounded corners and an open chevron arrowhead; loop-back edges are dashed.
 - Edit with agent shows the builder conversation in a right-side activity pane, like a run's side pane, not in a bottom split; the canvas centres on the proposed change.
 - Standalone on-demand nodes are node cards shown in the editor and on runs; tapping one inspects its calls.
+- The Standalone strip always starts with the orchestrator, locked: it cannot be removed and has no connections. Selecting it in the editor opens the orchestrator settings.
 - A parallel group is one flat sidebar row with the parallel icon. Its lanes are on its page. It is started only through MCP.
 - Approvals and questions are answered inline (transcript, Needs you, menu bar), never in popups.
 - The System / Light / Dark toggle sits in the sidebar footer. The collapsed rail shows one button that cycles through the three.

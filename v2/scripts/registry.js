@@ -95,7 +95,7 @@
           {
             "id": "orchestrator",
             "title": "Orchestrator settings",
-            "description": "Orchestrator harness, model and access settings in the inspector.",
+            "description": "The locked orchestrator selected in the Standalone strip, with its harness, model and access settings in the inspector.",
             "approval": "approved"
           },
           {

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Show the locked orchestrator as the first card of every Standalone strip in the `v2/` workflow editor and run screens; selecting it opens the orchestrator settings.
+
 - Add the design system foundations (colour, typography, spacing, radius and size, elevation), the brand book and the full component guidelines to the `v2/` interface reference, so the repository alone holds the complete design system.
 
 - Add the Harflow Desktop interface reference as a self-contained `v2/` site (`v2/index.html`): 30 screen states in 12 families (new task, Needs you, workflows, workflow editor, task, parallel group, workflow run, resources, statistics, settings, menu bar, app states) and 29 design system components, each with System, Light and Dark appearance, deep links of the form `#family/state/theme`, and docs for the screen inventory, terminology and approval. Approved by the owner on 2026-11-03 from the Harflow Desktop Redesign canvas version 1793668079-d8d9 and design system version 1793668064-9e04. The site build moves to `ci/build-site.sh`, which also runs the new `tests/v2.test.mjs`.
