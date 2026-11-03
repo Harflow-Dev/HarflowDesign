@@ -51,6 +51,7 @@ Recorded by [S03](../../../HarflowMCP/docs/migration-receipts/S03.md) against Ha
 | Workflow editor: canvas, node types (agent roles, child workflow, parallel start/end, on-demand), connections and conditions, inspector, orchestrator settings and limits, fallback harnesses, undo/redo, copy/paste | Accepted | `workflow-editor/node-selected`, `workflow-editor/orchestrator`; gap G-EDITOR |
 | Edit with agent | Accepted | `workflow-editor/edit-with-agent` at `34c3b05` |
 | Generate a workflow with the builder agent | Accepted (S03) | Gap G-GENERATE |
+| Delete a workflow, with confirmation (native: editor More actions) | Accepted (S03) | Gap G-WORKFLOW-MENU |
 | Workflow run graph and parallel view, node and on-demand inspection, pause, resume, cancel, recover | Accepted | `workflow-run/*` |
 | Workflow node/orchestrator messages and revise goal | Proposed | Included in plan v1 scope; gap G-RUN-ACTIONS |
 | Parallel group lanes, per-lane composer, Cancel all | Accepted | `parallel-group/lanes` |
@@ -88,9 +89,9 @@ Recorded by [S03](../../../HarflowMCP/docs/migration-receipts/S03.md) against Ha
 | Former task Activity/Summary/Prompt tabs | Accepted | Right-pane tabs remain |
 | Council | Accepted | Never shown; also absent from native source |
 | Task inspector panel and its Technical info section | Accepted (S03) | Enforcement truth stays required elsewhere (Keep row above) |
-| Workflow rename, delete and duplicate in the client | Accepted (S03) | `workflow-save`/`workflow-delete` and MCP `save_workflow`/`delete_workflow` remain; the client offers no in-app way to rename or delete a workflow |
+| Duplicate a workflow (native: editor More actions) | Accepted (S03) | Users copy a definition outside the client if needed; engine operations are unchanged |
 | Builder-session "Always allow Harflow tools" shortcut | Proposed | Builder approvals go through ordinary inline approvals |
-| Exploratory-only legacy proposals never shipped natively: starring (#7), sidebar context menus and delete (#8), task rename (#4), standalone node reordering (#1), workflow setup/teardown (#21), readiness (MCP#18), store-recovery proposal states (#12), header appearance control (#6) | Proposed | Not in the native baseline; tickets stay open and unchanged as post-v1 backlog |
+| Exploratory-only legacy proposals never shipped natively: starring (#7), sidebar context menus and delete (#8), task and workflow rename (#4; native has no rename of a saved workflow), standalone node reordering (#1), workflow setup/teardown (#21), readiness (MCP#18), store-recovery proposal states (#12), header appearance control (#6) | Proposed | Not in the native baseline; tickets stay open and unchanged as post-v1 backlog |
 
 ### Deferred (accepted plan D12; not shown in the v1 client)
 
@@ -118,6 +119,7 @@ For a required retained or approved simplified feature, create missing states in
 | G-DIFF | Task changed files and diff | CONTRACT + DESIGN — S04 / S17 | Terminal outcome exposes working-tree status and committed diff statistics; no full unified diff/content public read was found. Decide a bounded public read with provenance or approve a limited presentation; no direct Git or private engine access. |
 | G-OVERFLOW | Task overflow menu with Cancel, Copy resume command, Copy task ID | DESIGN — S10-Gxx / S16 | No takeover entry while takeover is deferred. |
 | G-EDITOR | Editor validation, conflicts, missing child references, proposal loading/failure | DESIGN — S10-Gxx / S20 | Approve recoverable states preserving unsaved edits and explicit proposal review. |
+| G-WORKFLOW-MENU | Workflow overflow menu with Delete and its confirmation | DESIGN — S10-Gxx / S20 | Native confirmation states that existing run snapshots remain available; no Duplicate or Rename entry. |
 | G-GENERATE | Generate workflow with agent | DESIGN — S10-Gxx / S20 | New-workflow entry, description form and builder progress, consistent with `34c3b05`. |
 | G-RUN-ACTIONS | Workflow node/orchestrator messages and revise goal | DESIGN — S10-Gxx / S21 | Not drawn in the approved run states. |
 | G-HISTORY | History paging, retention, reconnect and read-only unavailable | DESIGN + CONTRACT — S04 / S17 | Audit bounded reads, cursors and retention; approve loss, reconnect and unavailable presentations. |
