@@ -20,7 +20,7 @@ Migration intent and unresolved coverage are tracked in the [migration coverage 
 | Workflows | Run workflow | `workflows/run` | Task (required), Goal (optional), repository, orchestrator override |
 | Workflow editor | Node selected | `workflow-editor/node-selected` | Left-to-right canvas, standalone on-demand nodes, node inspector |
 | Workflow editor | Orchestrator settings | `workflow-editor/orchestrator` | Orchestrator harness, model and access in the inspector |
-| Workflow editor | Edit with agent | `workflow-editor/edit-with-agent` | Agent proposal reviewed on the canvas before it is applied |
+| Workflow editor | Edit with agent | `workflow-editor/edit-with-agent` | Agent proposal on the canvas, builder activity in the right pane |
 | Task | Running | `task/running` | Slim top bar, transcript with collapsed and expanded tool calls, follow-up composer |
 | Task | Waiting for approval | `task/approval` | Inline approval card in the transcript |
 | Task | Done, changes pane | `task/done` | Summary and the right pane with changed files and diff |
@@ -47,6 +47,7 @@ Migration intent and unresolved coverage are tracked in the [migration coverage 
 - The Workflows list shows no run status. The same workflow can run concurrently; runs appear only in the sidebar under Running and Recent work.
 - Run workflow collects Task (required) and Goal (optional), plus the repository and an orchestrator override.
 - Workflow graphs flow left to right. Connections use the HarflowMac connector style: orthogonal routes with 10px rounded corners and an open chevron arrowhead; loop-back edges are dashed.
+- Edit with agent shows the builder conversation in a right-side activity pane, like a run's side pane, not in a bottom split; the canvas centres on the proposed change.
 - Standalone on-demand nodes are node cards shown in the editor and on runs; tapping one inspects its calls.
 - A parallel group is one flat sidebar row with the parallel icon. Its lanes are on its page. It is started only through MCP.
 - Approvals and questions are answered inline (transcript, Needs you, menu bar), never in popups.

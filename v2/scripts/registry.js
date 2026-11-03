@@ -101,7 +101,7 @@
           {
             "id": "edit-with-agent",
             "title": "Edit with agent",
-            "description": "An agent proposal reviewed on the canvas before it is applied.",
+            "description": "An agent proposal on the canvas, with the builder activity in the right pane, reviewed before it is applied.",
             "approval": "approved"
           }
         ]
