@@ -9,6 +9,8 @@ Approved material:
 
 Owner-requested change after approval, 2026-11-03: workflow connections use the HarflowMac connector style (orthogonal routes with 10px rounded corners, an open chevron arrowhead, 1.5px tertiary stroke; loop-back edges dashed), with wider node spacing in the editor at 65% zoom. Current sources: canvas version 1793668765-556b and design system version 1793668753-d733.
 
+Owner-requested change after approval, 2026-11-03: Edit with agent shows the builder conversation in a right-side activity pane instead of a bottom split (commit `34c3b0576e221d17b1096136db6c5d0fbb4c5000`, state `#workflow-editor/edit-with-agent`). The owner confirmed this amendment as approved during migration session S03.
+
 ## Citing this design
 
 Implementations cite the HarflowDesign commit that contains the specimen, the file path, and the state, for example:

@@ -53,6 +53,10 @@ references gate macOS E0; later platform adaptations follow their own gates.
 - [ ] C0-DS-04 Record parity-ledger decisions for sidebar proposals and other
       uncertain scope; do not treat an open ticket as automatic inclusion.
 
+S03 records the approval inventory (B0-DS-01) and the capability disposition
+ledger in [v2/docs/migration-coverage.md](../v2/docs/migration-coverage.md),
+pending acceptance of its receipt.
+
 ## E0 / I0 — visual handoff
 
 - [ ] E0-DS-01 Supply approved references and tokens to the shared client with
