@@ -49,7 +49,7 @@ The script checks JavaScript syntax, runs the standalone catalog and v2 test sui
 
 ## Harflow Desktop redesign (v2)
 
-`v2/` is the interface reference for the redesigned Harflow Desktop client, published at `design.harflow.dev/v2`. Open `v2/index.html` (offline, or through `python3 -m http.server 8080` and `http://localhost:8080/v2/`). It holds 30 screen states and the design system components, each rendered at native size in System, Light or Dark appearance. The catalog chrome (`hdc-` classes in `v2/styles/catalog.css`) is separate from the specimens, which use the `hd-` design system unchanged.
+`v2/` is the interface reference for the redesigned Harflow Desktop client, published at `design.harflow.dev/v2`. Open `v2/index.html` (offline, or through `python3 -m http.server 8080` and `http://localhost:8080/v2/`). It holds 30 screen states and the complete design system (brand book, foundations, and every component with its guidelines), each rendered at native size in System, Light or Dark appearance. The catalog chrome (`hdc-` classes in `v2/styles/catalog.css`) is separate from the specimens, which use the `hd-` design system unchanged.
 
 - `v2/scripts/registry.js`: families, states and approval status.
 - `v2/scripts/screens-*.js`: one script per family with the screen templates; `components.js`: component previews; `catalog.js`: navigation and appearance.

@@ -18,6 +18,7 @@
     stage: document.getElementById('hdc-stage'),
     specimen: document.getElementById('hdc-specimen'),
     caption: document.getElementById('hdc-caption'),
+    doc: document.getElementById('hdc-doc'),
     live: document.getElementById('hdc-live')
   };
 
@@ -161,6 +162,9 @@
       els.specimen.style.minHeight = '';
       els.specimen.innerHTML = html;
     }
+    var guide = HFV2.componentDocs && HFV2.componentDocs[key];
+    els.doc.innerHTML = guide || '';
+    els.doc.hidden = !guide;
     els.stage.scrollLeft = 0;
     els.stage.scrollTop = 0;
 

@@ -277,6 +277,98 @@
         ]
       },
       {
+        "id": "brand",
+        "title": "Brand",
+        "description": "The brand book of the Harflow Desktop design system: principles, the brand mark, appearance, voice, visual foundations, layout and iconography.",
+        "states": [
+          {
+            "id": "principles",
+            "title": "Principles",
+            "description": "The design principles: minimal, quiet surfaces, one accent, mid-grey dark mode and status as glyph plus word.",
+            "approval": "approved"
+          },
+          {
+            "id": "brand-mark",
+            "title": "Brand mark",
+            "description": "The violet app icon, the CSS brand mark and the monochrome menu bar glyph, at several sizes on both appearances.",
+            "approval": "approved"
+          },
+          {
+            "id": "appearance",
+            "title": "Appearance",
+            "description": "System, Light and Dark, and where the appearance toggle sits.",
+            "approval": "approved"
+          },
+          {
+            "id": "content-fundamentals",
+            "title": "Content fundamentals",
+            "description": "Voice, button wording, the closed status vocabulary, time formats, access levels, terminology and sample content.",
+            "approval": "approved"
+          },
+          {
+            "id": "visual-foundations",
+            "title": "Visual foundations",
+            "description": "Colour roles, type styles, spacing, radius and elevation rules.",
+            "approval": "approved"
+          },
+          {
+            "id": "layout",
+            "title": "Layout",
+            "description": "Fixed sizes of the sidebar, rail, content column, right pane, title bar and rows.",
+            "approval": "approved"
+          },
+          {
+            "id": "iconography",
+            "title": "Iconography",
+            "description": "The 16px stroke icon set, drawn as CSS masks, and how to mark it up.",
+            "approval": "approved"
+          },
+          {
+            "id": "using-the-components",
+            "title": "Using the components",
+            "description": "How the plain HTML components use tokens, classes and real elements.",
+            "approval": "approved"
+          },
+          {
+            "id": "not-in-this-system",
+            "title": "Not in this system",
+            "description": "What the design system leaves out.",
+            "approval": "approved"
+          }
+        ]
+      },
+      {
+        "id": "foundations",
+        "title": "Foundations",
+        "description": "Every design token with its value and usage: colour, typography, spacing, radius, sizes and elevation.",
+        "states": [
+          {
+            "id": "colour",
+            "title": "Colour",
+            "description": "Every colour token with a live swatch, its light and dark values and its usage.",
+            "approval": "approved"
+          },
+          {
+            "id": "typography",
+            "title": "Typography",
+            "description": "Font families and every text style, each rendered as a live sample.",
+            "approval": "approved"
+          },
+          {
+            "id": "spacing-radius",
+            "title": "Spacing, radius and size",
+            "description": "Spacing steps, corner radii and fixed layout sizes drawn from the tokens.",
+            "approval": "approved"
+          },
+          {
+            "id": "elevation",
+            "title": "Elevation",
+            "description": "The shadow tokens on sample cards, with usage.",
+            "approval": "approved"
+          }
+        ]
+      },
+      {
         "id": "components",
         "title": "Components",
         "description": "The Harflow Desktop design system components as used by the screens. Every class is prefixed hd-.",

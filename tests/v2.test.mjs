@@ -148,3 +148,83 @@ test('v2 contains no claude.ai reference', () => {
     assert.ok(!/claude\.ai/i.test(read(file)), `${path.relative(root, file)} mentions claude.ai`);
   }
 });
+
+const tokensCss = read(path.join(v2, 'styles', 'tokens.css'));
+const cssTokens = [...tokensCss.matchAll(/^\s*(--[a-z0-9-]+):\s*([^;]+);/gm)].map(m => ({ name: m[1], value: m[2].trim() }));
+const foundationsSource = read(path.join(v2, 'scripts', 'foundations.js'));
+const foundationKeys = keys.filter(key => key.startsWith('foundations/'));
+const foundationHtml = foundationKeys.map(key => HFV2.templates[key]).join('\n');
+const componentKeys = keys.filter(key => key.startsWith('components/'));
+
+test('brand and foundations families precede components and have templates', () => {
+  const ids = HFV2.registry.families.map(family => family.id);
+  assert.equal(ids.indexOf('brand') + 1, ids.indexOf('foundations'));
+  assert.equal(ids.indexOf('foundations') + 1, ids.indexOf('components'));
+  assert.equal(foundationKeys.map(key => key.split('/')[1]).join(), 'colour,typography,spacing-radius,elevation');
+  const brand = keys.filter(key => key.startsWith('brand/'));
+  assert.ok(brand.length >= 9);
+  for (const key of [...brand, ...foundationKeys]) {
+    assert.ok(HFV2.templates[key].trim().length > 100, `${key} has content`);
+    assert.ok(HFV2.componentMeta[key], `${key} renders at component width`);
+  }
+});
+
+test('every token of tokens.css appears on the foundations pages', () => {
+  assert.ok(cssTokens.length >= 60);
+  for (const { name } of cssTokens) {
+    const pattern = new RegExp(`${name}(?![a-z0-9-])`);
+    assert.ok(pattern.test(foundationHtml), `${name} is documented`);
+  }
+});
+
+test('colour and shadow values shown match tokens.css', () => {
+  const colour = HFV2.templates['foundations/colour'] + HFV2.templates['foundations/elevation'];
+  const light = tokensCss.split('[data-theme="dark"]')[0];
+  const dark = tokensCss.split('[data-theme="dark"]')[1].split(':root {')[0];
+  for (const block of [light, dark]) {
+    for (const [, name, value] of block.matchAll(/^\s*(--(?!font|space|radius|sidebar|rail|content|pane|titlebar|row)[a-z0-9-]+):\s*([^;]+);/gm)) {
+      assert.ok(colour.includes(`<code>${value.trim()}</code>`), `${name} value ${value} is shown`);
+    }
+  }
+});
+
+test('var() references in foundations.js are defined in tokens.css', () => {
+  const defined = new Set(cssTokens.map(t => t.name));
+  const markup = foundationsSource.replace(/<code>[\s\S]*?<\/code>/g, '');
+  const used = [...markup.matchAll(/var\((--[a-z0-9-]+)/g)].map(m => m[1]);
+  assert.ok(used.length > 50);
+  for (const name of used) assert.ok(defined.has(name), `${name} is defined`);
+});
+
+test('every component except the cover has full guideline text', () => {
+  assert.ok(HFV2.componentDocs);
+  for (const key of componentKeys) {
+    if (key === 'components/cover') {
+      assert.equal(HFV2.componentDocs[key], undefined);
+      continue;
+    }
+    const doc = HFV2.componentDocs[key];
+    assert.equal(typeof doc, 'string', `${key} has guidelines`);
+    assert.match(doc, /<h3>Anatomy<\/h3>/, `${key} guidelines include the anatomy`);
+    assert.ok(!doc.includes('{{'), `${key} guidelines have no placeholder`);
+  }
+  for (const key of Object.keys(HFV2.componentDocs)) assert.ok(routeSet.has(key), `${key} is a registered route`);
+});
+
+test('catalog renders guidelines into the hdc-doc region', () => {
+  const html = read(path.join(v2, 'index.html'));
+  assert.match(html, /id="hdc-doc"[^>]*\bhidden\b/);
+  assert.ok(html.indexOf('scripts/foundations.js') < html.indexOf('scripts/catalog.js'));
+  assert.ok(html.indexOf('scripts/component-docs.js') < html.indexOf('scripts/catalog.js'));
+  const catalog = read(path.join(v2, 'scripts', 'catalog.js'));
+  assert.ok(catalog.includes('HFV2.componentDocs'));
+  assert.ok(catalog.includes('els.doc.hidden'));
+});
+
+test('generated documentation is escaped and offline', () => {
+  for (const name of ['foundations.js', 'component-docs.js']) {
+    const source = read(path.join(v2, 'scripts', name));
+    assert.ok(!/<script|javascript:|onerror=|onclick=/i.test(source), `${name} has no active markup`);
+    assert.ok(!/https?:\/\//.test(source.replace(/xmlns="[^"]*"/g, '')), `${name} has no external URL`);
+  }
+});

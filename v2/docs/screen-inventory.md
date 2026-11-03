@@ -40,7 +40,9 @@ Migration intent and unresolved coverage are tracked in the [migration coverage 
 | App states | First run, setup | `app-states/setup` | Runtime preparation and harness registration |
 | App states | Loading | `app-states/loading` | Connecting to the engine |
 | App states | Engine not running | `app-states/engine-error` | Unreachable engine with the fix |
-| Components | One state per component | `components/<name>` | Design system components, starting with the cover |
+| Brand | One state per brand book section | `brand/<section>` | Principles, brand mark, appearance, content fundamentals, visual foundations, layout, iconography, using the components, not in this system |
+| Foundations | Colour, typography, spacing-radius, elevation | `foundations/<name>` | Every design token with light and dark values and usage |
+| Components | One state per component | `components/<name>` | Design system components, starting with the cover; each shows its full guideline text below the preview |
 
 ## Decisions recorded from the owner's feedback rounds
 

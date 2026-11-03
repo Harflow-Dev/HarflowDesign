@@ -11,6 +11,8 @@ Owner-requested change after approval, 2026-11-03: workflow connections use the 
 
 Owner-requested change after approval, 2026-11-03: Edit with agent shows the builder conversation in a right-side activity pane instead of a bottom split (commit `34c3b0576e221d17b1096136db6c5d0fbb4c5000`, state `#workflow-editor/edit-with-agent`). The owner confirmed this amendment as approved during migration session S03.
 
+The foundations, the brand book and the component guidelines (`foundations/`, `brand/` and the guideline text under each `components/` preview) come from the same approved design system. The design system was republished on 2026-11-04 as version 1793748053-8785 with unchanged content.
+
 ## Citing this design
 
 Implementations cite the HarflowDesign commit that contains the specimen, the file path, and the state, for example:
