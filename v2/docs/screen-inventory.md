@@ -4,6 +4,8 @@ Interface reference for the redesigned Harflow Desktop client. Open `v2/index.ht
 
 All states below were approved by the owner on 2026-11-03. See [approval.md](approval.md) for the versions and the way implementations cite them. Dark appearance is covered by the appearance toggle, not by separate states.
 
+Migration intent and unresolved coverage are tracked in the [migration coverage ledger](migration-coverage.md).
+
 ## Families and states
 
 | Family | State | Route | Shows |

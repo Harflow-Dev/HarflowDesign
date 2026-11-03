@@ -9,6 +9,10 @@ implementation. Inputs are the reviewed parity ledger and current source;
 outputs identify approved designs by exact commit, path and state. Do not
 invent approvals or make unrelated backlog polish a migration blocker.
 
+## Redesign target and intent
+
+The approved baseline is [HarflowDesign v2 at commit `3643d083700be4032c93237813b573d04bab6ab1`](https://github.com/Harflow-Dev/HarflowDesign/tree/3643d083700be4032c93237813b573d04bab6ab1/v2), including the owner-approved Mac connector amendment. Consult the optional workspace [coverage and intent ledger](../../HarflowDesign/v2/docs/migration-coverage.md); it is not a build dependency. Own the approved v2 baseline and per-feature gap loop; new required states need explicit owner approval. Missing required states need a v2 design and explicit owner approval with exact commit, path and state before dependent implementation. Approval of visuals does not authorize new authority, public contract changes, backends or deferred features. Core execution safety and observability remain required.
+
 ## Dispatch and boundaries
 
 Work only on the assigned item. Read the workspace AGENTS.md, this repository's AGENTS.md if present, and
@@ -22,10 +26,9 @@ completion. Repository builds and tests must not depend on sibling checkouts.
 The optional [workspace coordination index](../../HARFLOW_MIGRATION_CHECKLIST.md)
 uses B0 (baseline), C0 (contracts and design), E0 (client and Electron on
 Python), R0 (Rust parity), I0 (integrated stack), and O0 (owner cutover and
-publication). It is not a build dependency. Freeze and qualify the reproducible
-existing baseline without waiting for open feature tickets. Review v1 scope in a
-parity ledger, including proposed sidebar additions, instead of assuming tickets
-or UI polish are migration requirements without an accepted ledger decision. All boxes below are deliberately unchecked;
+publication). It is not a build dependency. Freeze and qualify the reproducible existing baseline without waiting for open
+feature tickets. Use the v2 intent ledger to decide retained and simplified scope;
+legacy UI parity and open tickets do not independently mandate inclusion. All boxes below are deliberately unchecked;
 scaffolds alone do not establish completion. Early-use gates and defaults remain
 subject to evidence and explicit authorization for root registration. Use fresh
 Rust state; archive historical task, run and event records rather than importing
@@ -40,7 +43,7 @@ references gate macOS E0; later platform adaptations follow their own gates.
 - [ ] B0-DS-01 Inventory source-derived, exploratory and explicitly approved
       screens and record missing or inconsistent approval evidence.
 - [ ] C0-DS-01 Record approved token source and exact commit, path and state for
-      each accepted v1 feature; identify decisions still needed from the owner.
+      each retained or approved simplified v2 feature; identify decisions still needed from the owner.
 - [ ] C0-DS-02 Adapt approved designs for macOS, including window chrome, tray
       and notifications, before the macOS E0 gate.
 - [ ] I0-DS-02 Adapt approved Linux and Windows designs before their respective
