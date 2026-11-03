@@ -44,7 +44,7 @@ All states below were approved by the owner on 2026-11-03. See [approval.md](app
 
 - The Workflows list shows no run status. The same workflow can run concurrently; runs appear only in the sidebar under Running and Recent work.
 - Run workflow collects Task (required) and Goal (optional), plus the repository and an orchestrator override.
-- Workflow graphs flow left to right.
+- Workflow graphs flow left to right. Connections use the HarflowMac connector style: orthogonal routes with 10px rounded corners and an open chevron arrowhead; loop-back edges are dashed.
 - Standalone on-demand nodes are node cards shown in the editor and on runs; tapping one inspects its calls.
 - A parallel group is one flat sidebar row with the parallel icon. Its lanes are on its page. It is started only through MCP.
 - Approvals and questions are answered inline (transcript, Needs you, menu bar), never in popups.

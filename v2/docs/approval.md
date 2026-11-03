@@ -7,6 +7,8 @@ Approved material:
 - Harflow Desktop Redesign canvas, version 1793668079-d8d9: every screen and state in [screen-inventory.md](screen-inventory.md).
 - Harflow Desktop design system, version 1793668064-9e04: the components family and the tokens in `v2/styles/`.
 
+Owner-requested change after approval, 2026-11-03: workflow connections use the HarflowMac connector style (orthogonal routes with 10px rounded corners, an open chevron arrowhead, 1.5px tertiary stroke; loop-back edges dashed), with wider node spacing in the editor at 65% zoom. Current sources: canvas version 1793668765-556b and design system version 1793668753-d733.
+
 ## Citing this design
 
 Implementations cite the HarflowDesign commit that contains the specimen, the file path, and the state, for example:
