@@ -132,7 +132,10 @@
     }
   }
 
+  var specimenCleanup = null;
+
   function render() {
+    if (specimenCleanup) { specimenCleanup(); specimenCleanup = null; }
     var parsed = parseHash(window.location.hash);
     if (!parsed) {
       var fallback = HFV2.registry.defaultRoute.split('/');
@@ -162,6 +165,9 @@
       els.specimen.style.minHeight = '';
       els.specimen.innerHTML = html;
     }
+    if (current.family === 'd2b-proposal' && HFV2.d2bProposal) {
+      specimenCleanup = HFV2.d2bProposal.mount(els.specimen, current.state);
+    }
     var guide = HFV2.componentDocs && HFV2.componentDocs[key];
     els.doc.innerHTML = guide || '';
     els.doc.hidden = !guide;
@@ -175,7 +181,10 @@
     els.approval.textContent = state.approval === 'approved'
       ? 'Approved by ' + approval.by + ' on ' + approval.date + ' · canvas ' + approval.canvas + ' · design system ' + approval.designSystem
       : 'Not approved';
-    els.caption.textContent = 'Specimen at native size (' + (meta ? meta.width + ' wide' : '1280 × 800') + '). Appearance: ' +
+    var specimenSize = current.family === 'd2b-proposal'
+      ? 'app frame 1280 × 800 or minimum 1000 × 620 via Size; catalogue controls outside the app'
+      : (meta ? meta.width + ' wide' : '1280 × 800');
+    els.caption.textContent = 'Specimen at native size (' + specimenSize + '). Appearance: ' +
       (current.override ? current.override + ' (this view only)' : preference) + (mode === 'system' ? ', currently ' + resolved : '') + '.';
     document.title = state.title + ' · ' + family.title + ' · Harflow Desktop · Interface reference';
 

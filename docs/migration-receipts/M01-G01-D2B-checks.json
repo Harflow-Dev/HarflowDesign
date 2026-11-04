@@ -1,0 +1,962 @@
+{
+  "stage": "M01-G01-D2B",
+  "date": "2026-11-05 Asia/Jakarta",
+  "base": "9cfe4ce81789ed87c7ee40c10802ff0e3b2c7552",
+  "status": "exploratory proposal prepared; owner approval/native acceptance/product cutover outstanding",
+  "source_test_document_sha256": {
+    "v2/index.html": "63b7ed0cfce624aa461c56a2f46442dc9f3e7a34e6c4ed3623f837f9964e1aa1",
+    "v2/scripts/catalog.js": "596db8d06d5ffb6f69a673d96285e1c0270e533ea609df2880fc137d9c7a108f",
+    "v2/scripts/registry.js": "97f0a1aa5bc5189fdec6c17ac5124c06e91d90760229425c669224e40d0e05c1",
+    "v2/scripts/screens-d2b-proposal.js": "3495aa4fefbedf1b97f8b55b78b568bff21f787ba34675d4b0fb14bb4857b5be",
+    "v2/scripts/d2b-proposal.js": "2f565a940b33beea77771468c5516a3d6a4ec9401b40f71ff9180f63caff5681",
+    "v2/styles/d2b-proposal.css": "2126f4bfed40356b811beec0d62d4a82dc1f5ab0172316481d24997844efaceb",
+    "tests/d2b-proposal.test.mjs": "7c2bb1a72d80178092e24faaf955222b9e17c0db49ef4d4e31c2d9f0148ddf83",
+    "v2/docs/d2b-observation-proposal.md": "fecbc93db5167ebb698f2f2a52843efa84446fe0249d644ddd151876c8cd8d50"
+  },
+  "protected_tracker_sha256": {
+    "docs/migration-plan.md": "d744411a70ac93b00c82f04e58918acb6f7fac2797194bb1accb35b190e992d3",
+    "docs/migration-sessions.md": "02dcc7868a1ecbd35b657b46d82f0c7ddfa0283a60bbb5ea2c2a2cef098f7c21",
+    "v2/docs/migration-coverage.md": "ec9dafe333b7698c1e6587d9ac78113e025c4b8debb773d61e0c733357c29154"
+  },
+  "approved_baseline_unchanged_sha256": {
+    "v2/docs/approval.md": "3acd217f377a9ccab20aea67b832664f52ef41cf28304ad5afd757c8e5a778da",
+    "v2/docs/screen-inventory.md": "1a6c3b701608fe002bca6adef7cafad452821082294c890634046045896f8e83",
+    "v2/styles/tokens.css": "831ad89069d6c20d5ca9f5cfa2db598298780edf8ac689f3edd4f8d74d6d66ff",
+    "v2/styles/bundle.css": "5a4060be570552932b9dfb2aa05fe350a5c9d0041626ee838f941c7d56cf7649",
+    "v2/scripts/screens-task.js": "3dbc745cbe1391c034a93316f8ded0aacb18d9ff2c82cc94618011292609fe48"
+  },
+  "product_source_unchanged": {
+    "HarflowMac_HEAD": "cd80fd1df1162953f5749bc3dc03ac4345e83668",
+    "product_tests_or_builds_run": false,
+    "both_private_readers_still_active": true
+  },
+  "validation": {
+    "node_version": "v25.7.0",
+    "CI_node24": "not run; no installation",
+    "combined_tests": {
+      "command": "node --test tests/catalog.test.mjs tests/v2.test.mjs tests/d2b-proposal.test.mjs",
+      "exit_code": 0,
+      "tests": 266,
+      "passed": 266,
+      "failed": 0,
+      "skipped": 0,
+      "log_path": "/private/tmp/m01-g01-d2b-tests-final.log",
+      "log_sha256": "bb28eaaa8e8bd7a7bdb4a657bd90377b867f3f43bc4a19529dea4de8a03a32cc",
+      "proposal_tests": 24,
+      "native_source_path_catalog_test": "included; existing pinned Git source read only"
+    },
+    "syntax": {
+      "command": "for file in scripts/*.js features/*.js v2/scripts/*.js; do node --check \"$file\" || exit 1; done",
+      "exit_code": 0,
+      "files": 54
+    },
+    "whitespace": {
+      "command": "git diff --check",
+      "exit_code": 0
+    },
+    "proposal_local_links": [
+      {
+        "from": "v2/docs/d2b-observation-proposal.md",
+        "link": "../index.html#d2b-proposal/observed/light",
+        "exists": true
+      },
+      {
+        "from": "v2/docs/d2b-observation-proposal.md",
+        "link": "../index.html#d2b-proposal/partial/dark",
+        "exists": true
+      },
+      {
+        "from": "v2/docs/d2b-observation-proposal.md",
+        "link": "../index.html#d2b-proposal/capacity/light",
+        "exists": true
+      },
+      {
+        "from": "v2/docs/d2b-observation-proposal.md",
+        "link": "../index.html#d2b-proposal/events/dark",
+        "exists": true
+      },
+      {
+        "from": "docs/migration-receipts/M01-G01-D2B.md",
+        "link": "../../v2/docs/d2b-observation-proposal.md",
+        "exists": true
+      },
+      {
+        "from": "docs/migration-receipts/M01-G01-D2B.md",
+        "link": "M01-G01-D2B-checks.json",
+        "exists": true
+      }
+    ]
+  },
+  "browser": {
+    "surface": "in-app browser; loopback-only offline mock server",
+    "reference_and_minimum": [
+      {
+        "state": "observed",
+        "appearance": "light",
+        "reference": {
+          "app": {
+            "height": 800,
+            "width": 1280
+          },
+          "approval": "Not approved",
+          "boundary": "Captured activity caught up\nLoad earlierNew activity \u00b7 show",
+          "facts": "Captured activity facts\n\n2 tool calls observed\n\nObserved in available captured history traversed from its beginning to the current boundary; this does not prove complete execution capture.\n\nTask snapshot\n\nStatus: Done \u00b7 independent of captured activity\n\nCaptured activity\n\nPublic normalized events \u00b7 bounded record window\n\nTool result \u00b7 normalized record\nRecovered transcript\n\nSeparate recovery source. Not used for captured activity totals.\n\nRecovered message",
+          "font": "14px",
+          "request": "Original request\n\nVerified stored request \u00b7 complete\n\nFind and fix the slot release race. Keep notification under the lock. Add a deterministic regression. Preserve unrelated edits. Report the exact focused validation result and any remaining uncertainty before concluding.\nCopy original request",
+          "rows": 3,
+          "theme": "light"
+        },
+        "minimum": {
+          "app": {
+            "height": 620,
+            "width": 1000
+          },
+          "font": "14px",
+          "overflow": [
+            {
+              "client": 1000,
+              "name": "hd-app hd-d2b-app",
+              "scroll": 1000
+            },
+            {
+              "client": 401,
+              "name": "hd-scroll hd-d2b-history",
+              "scroll": 401
+            },
+            {
+              "client": 304,
+              "name": "hd-scroll hd-d2b-facts",
+              "scroll": 304
+            }
+          ]
+        }
+      },
+      {
+        "state": "observed",
+        "appearance": "dark",
+        "reference": {
+          "app": {
+            "height": 800,
+            "width": 1280
+          },
+          "approval": "Not approved",
+          "boundary": "Captured activity caught up\nLoad earlierNew activity \u00b7 show",
+          "facts": "Captured activity facts\n\n2 tool calls observed\n\nObserved in available captured history traversed from its beginning to the current boundary; this does not prove complete execution capture.\n\nTask snapshot\n\nStatus: Done \u00b7 independent of captured activity\n\nCaptured activity\n\nPublic normalized events \u00b7 bounded record window\n\nTool result \u00b7 normalized record\nRecovered transcript\n\nSeparate recovery source. Not used for captured activity totals.\n\nRecovered message",
+          "font": "14px",
+          "request": "Original request\n\nVerified stored request \u00b7 complete\n\nFind and fix the slot release race. Keep notification under the lock. Add a deterministic regression. Preserve unrelated edits. Report the exact focused validation result and any remaining uncertainty before concluding.\nCopy original request",
+          "rows": 3,
+          "theme": "dark"
+        },
+        "minimum": {
+          "app": {
+            "height": 620,
+            "width": 1000
+          },
+          "font": "14px",
+          "overflow": [
+            {
+              "client": 1000,
+              "name": "hd-app hd-d2b-app",
+              "scroll": 1000
+            },
+            {
+              "client": 401,
+              "name": "hd-scroll hd-d2b-history",
+              "scroll": 401
+            },
+            {
+              "client": 304,
+              "name": "hd-scroll hd-d2b-facts",
+              "scroll": 304
+            }
+          ]
+        }
+      },
+      {
+        "state": "loading",
+        "appearance": "light",
+        "reference": {
+          "app": {
+            "height": 800,
+            "width": 1280
+          },
+          "approval": "Not approved",
+          "boundary": "Loading captured history",
+          "facts": "Captured activity facts\n\nLoading tool activity\n\nCapture coverage is insufficient for a tool count.\n\nTask snapshot\n\nStatus: Running \u00b7 independent of captured activity\n\nCaptured activity\n\nPublic normalized events \u00b7 bounded record window\n\nNo records available in this view.\n\nRecovered transcript\n\nSeparate recovery source. Not used for captured activity totals.\n\nRecovered message",
+          "font": "14px",
+          "request": "Original request \u00b7 loading",
+          "rows": 0,
+          "theme": "light"
+        },
+        "minimum": {
+          "app": {
+            "height": 620,
+            "width": 1000
+          },
+          "font": "14px",
+          "overflow": [
+            {
+              "client": 1000,
+              "name": "hd-app hd-d2b-app",
+              "scroll": 1000
+            },
+            {
+              "client": 416,
+              "name": "hd-scroll hd-d2b-history",
+              "scroll": 416
+            },
+            {
+              "client": 304,
+              "name": "hd-scroll hd-d2b-facts",
+              "scroll": 304
+            }
+          ]
+        }
+      },
+      {
+        "state": "loading",
+        "appearance": "dark",
+        "reference": {
+          "app": {
+            "height": 800,
+            "width": 1280
+          },
+          "approval": "Not approved",
+          "boundary": "Loading captured history",
+          "facts": "Captured activity facts\n\nLoading tool activity\n\nCapture coverage is insufficient for a tool count.\n\nTask snapshot\n\nStatus: Running \u00b7 independent of captured activity\n\nCaptured activity\n\nPublic normalized events \u00b7 bounded record window\n\nNo records available in this view.\n\nRecovered transcript\n\nSeparate recovery source. Not used for captured activity totals.\n\nRecovered message",
+          "font": "14px",
+          "request": "Original request \u00b7 loading",
+          "rows": 0,
+          "theme": "dark"
+        },
+        "minimum": {
+          "app": {
+            "height": 620,
+            "width": 1000
+          },
+          "font": "14px",
+          "overflow": [
+            {
+              "client": 1000,
+              "name": "hd-app hd-d2b-app",
+              "scroll": 1000
+            },
+            {
+              "client": 416,
+              "name": "hd-scroll hd-d2b-history",
+              "scroll": 416
+            },
+            {
+              "client": 304,
+              "name": "hd-scroll hd-d2b-facts",
+              "scroll": 304
+            }
+          ]
+        }
+      },
+      {
+        "state": "partial",
+        "appearance": "light",
+        "reference": {
+          "app": {
+            "height": 800,
+            "width": 1280
+          },
+          "approval": "Not approved",
+          "boundary": "History incomplete \u00b7 capture gap\nLoad earlier",
+          "facts": "Captured activity facts\n\nTool activity unavailable\n\nCapture coverage is insufficient for a tool count.\n\nTask snapshot\n\nStatus: Done \u00b7 independent of captured activity\n\nCaptured activity\n\nPublic normalized events \u00b7 bounded record window\n\nTool result \u00b7 normalized record\nUnsupported record \u00b7 public stub\nRecord ordering\nRecovered transcript\n\nSeparate recovery source. Not used for captured activity totals.\n\nRecovered message",
+          "font": "14px",
+          "request": "Partial request\n\nBounded prefix \u00b7 truncated\n\nFind and fix the slot release race. Keep notification under the \nCopy displayed textRead more",
+          "rows": 3,
+          "theme": "light"
+        },
+        "minimum": {
+          "app": {
+            "height": 620,
+            "width": 1000
+          },
+          "font": "14px",
+          "overflow": [
+            {
+              "client": 1000,
+              "name": "hd-app hd-d2b-app",
+              "scroll": 1000
+            },
+            {
+              "client": 401,
+              "name": "hd-scroll hd-d2b-history",
+              "scroll": 401
+            },
+            {
+              "client": 304,
+              "name": "hd-scroll hd-d2b-facts",
+              "scroll": 304
+            }
+          ]
+        }
+      },
+      {
+        "state": "partial",
+        "appearance": "dark",
+        "reference": {
+          "app": {
+            "height": 800,
+            "width": 1280
+          },
+          "approval": "Not approved",
+          "boundary": "History incomplete \u00b7 capture gap\nLoad earlier",
+          "facts": "Captured activity facts\n\nTool activity unavailable\n\nCapture coverage is insufficient for a tool count.\n\nTask snapshot\n\nStatus: Done \u00b7 independent of captured activity\n\nCaptured activity\n\nPublic normalized events \u00b7 bounded record window\n\nTool result \u00b7 normalized record\nUnsupported record \u00b7 public stub\nRecord ordering\nRecovered transcript\n\nSeparate recovery source. Not used for captured activity totals.\n\nRecovered message",
+          "font": "14px",
+          "request": "Partial request\n\nBounded prefix \u00b7 truncated\n\nFind and fix the slot release race. Keep notification under the \nCopy displayed textRead more",
+          "rows": 3,
+          "theme": "dark"
+        },
+        "minimum": {
+          "app": {
+            "height": 620,
+            "width": 1000
+          },
+          "font": "14px",
+          "overflow": [
+            {
+              "client": 1000,
+              "name": "hd-app hd-d2b-app",
+              "scroll": 1000
+            },
+            {
+              "client": 401,
+              "name": "hd-scroll hd-d2b-history",
+              "scroll": 401
+            },
+            {
+              "client": 304,
+              "name": "hd-scroll hd-d2b-facts",
+              "scroll": 304
+            }
+          ]
+        }
+      },
+      {
+        "state": "unavailable",
+        "appearance": "light",
+        "reference": {
+          "app": {
+            "height": 800,
+            "width": 1280
+          },
+          "approval": "Not approved",
+          "boundary": "Captured history unavailable \u00b7 the read could not be completed",
+          "facts": "Captured activity facts\n\nTool activity unavailable\n\nCapture coverage is insufficient for a tool count.\n\nTask snapshot\n\nStatus: Done \u00b7 independent of captured activity\n\nCaptured activity\n\nPublic normalized events \u00b7 bounded record window\n\nNo records available in this view.\n\nRecovered transcript\n\nSeparate recovery source. Not used for captured activity totals.\n\nRecovered message",
+          "font": "14px",
+          "request": "Original request unavailable\n\nThe original request could not be read.\n\nRetry request read",
+          "rows": 0,
+          "theme": "light"
+        },
+        "minimum": {
+          "app": {
+            "height": 620,
+            "width": 1000
+          },
+          "font": "14px",
+          "overflow": [
+            {
+              "client": 1000,
+              "name": "hd-app hd-d2b-app",
+              "scroll": 1000
+            },
+            {
+              "client": 416,
+              "name": "hd-scroll hd-d2b-history",
+              "scroll": 416
+            },
+            {
+              "client": 319,
+              "name": "hd-scroll hd-d2b-facts",
+              "scroll": 319
+            }
+          ]
+        }
+      },
+      {
+        "state": "unavailable",
+        "appearance": "dark",
+        "reference": {
+          "app": {
+            "height": 800,
+            "width": 1280
+          },
+          "approval": "Not approved",
+          "boundary": "Captured history unavailable \u00b7 the read could not be completed",
+          "facts": "Captured activity facts\n\nTool activity unavailable\n\nCapture coverage is insufficient for a tool count.\n\nTask snapshot\n\nStatus: Done \u00b7 independent of captured activity\n\nCaptured activity\n\nPublic normalized events \u00b7 bounded record window\n\nNo records available in this view.\n\nRecovered transcript\n\nSeparate recovery source. Not used for captured activity totals.\n\nRecovered message",
+          "font": "14px",
+          "request": "Original request unavailable\n\nThe original request could not be read.\n\nRetry request read",
+          "rows": 0,
+          "theme": "dark"
+        },
+        "minimum": {
+          "app": {
+            "height": 620,
+            "width": 1000
+          },
+          "font": "14px",
+          "overflow": [
+            {
+              "client": 1000,
+              "name": "hd-app hd-d2b-app",
+              "scroll": 1000
+            },
+            {
+              "client": 416,
+              "name": "hd-scroll hd-d2b-history",
+              "scroll": 416
+            },
+            {
+              "client": 319,
+              "name": "hd-scroll hd-d2b-facts",
+              "scroll": 319
+            }
+          ]
+        }
+      },
+      {
+        "state": "integrity-failed",
+        "appearance": "light",
+        "reference": {
+          "app": {
+            "height": 800,
+            "width": 1280
+          },
+          "approval": "Not approved",
+          "boundary": "History incomplete \u00b7 capture gap\nLoad earlier",
+          "facts": "Captured activity facts\n\nTool activity unavailable\n\nCapture coverage is insufficient for a tool count.\n\nTask snapshot\n\nStatus: Done \u00b7 independent of captured activity\n\nCaptured activity\n\nPublic normalized events \u00b7 bounded record window\n\nTool result \u00b7 normalized record\nUnsupported record \u00b7 public stub\nRecord ordering\nRecovered transcript\n\nSeparate recovery source. Not used for captured activity totals.\n\nRecovered message",
+          "font": "14px",
+          "request": "Original request \u00b7 integrity check failed\n\nContent withheld because integrity verification failed.\n\nRetry request read",
+          "rows": 3,
+          "theme": "light"
+        },
+        "minimum": {
+          "app": {
+            "height": 620,
+            "width": 1000
+          },
+          "font": "14px",
+          "overflow": [
+            {
+              "client": 1000,
+              "name": "hd-app hd-d2b-app",
+              "scroll": 1000
+            },
+            {
+              "client": 416,
+              "name": "hd-scroll hd-d2b-history",
+              "scroll": 416
+            },
+            {
+              "client": 304,
+              "name": "hd-scroll hd-d2b-facts",
+              "scroll": 304
+            }
+          ]
+        }
+      },
+      {
+        "state": "integrity-failed",
+        "appearance": "dark",
+        "reference": {
+          "app": {
+            "height": 800,
+            "width": 1280
+          },
+          "approval": "Not approved",
+          "boundary": "History incomplete \u00b7 capture gap\nLoad earlier",
+          "facts": "Captured activity facts\n\nTool activity unavailable\n\nCapture coverage is insufficient for a tool count.\n\nTask snapshot\n\nStatus: Done \u00b7 independent of captured activity\n\nCaptured activity\n\nPublic normalized events \u00b7 bounded record window\n\nTool result \u00b7 normalized record\nUnsupported record \u00b7 public stub\nRecord ordering\nRecovered transcript\n\nSeparate recovery source. Not used for captured activity totals.\n\nRecovered message",
+          "font": "14px",
+          "request": "Original request \u00b7 integrity check failed\n\nContent withheld because integrity verification failed.\n\nRetry request read",
+          "rows": 3,
+          "theme": "dark"
+        },
+        "minimum": {
+          "app": {
+            "height": 620,
+            "width": 1000
+          },
+          "font": "14px",
+          "overflow": [
+            {
+              "client": 1000,
+              "name": "hd-app hd-d2b-app",
+              "scroll": 1000
+            },
+            {
+              "client": 416,
+              "name": "hd-scroll hd-d2b-history",
+              "scroll": 416
+            },
+            {
+              "client": 304,
+              "name": "hd-scroll hd-d2b-facts",
+              "scroll": 304
+            }
+          ]
+        }
+      },
+      {
+        "state": "reconnecting",
+        "appearance": "light",
+        "reference": {
+          "app": {
+            "height": 800,
+            "width": 1280
+          },
+          "approval": "Not approved",
+          "boundary": "Reconnecting \u00b7 cached history is not current\nRetry history read",
+          "facts": "Captured activity facts\n\nTool activity unavailable\n\nCapture coverage is insufficient for a tool count.\n\nTask snapshot\n\nStatus: Running \u00b7 independent of captured activity\n\nCaptured activity\n\nPublic normalized events \u00b7 bounded record window\n\nTool result \u00b7 normalized record\nRecovered transcript\n\nSeparate recovery source. Not used for captured activity totals.\n\nRecovered message",
+          "font": "14px",
+          "request": "Original request\n\nVerified stored request \u00b7 complete\n\nFind and fix the slot release race. Keep notification under the lock. Add a deterministic regression. Preserve unrelated edits. Report the exact focused validation result and any remaining uncertainty before concluding.\nCopy original request",
+          "rows": 3,
+          "theme": "light"
+        },
+        "minimum": {
+          "app": {
+            "height": 620,
+            "width": 1000
+          },
+          "font": "14px",
+          "overflow": [
+            {
+              "client": 1000,
+              "name": "hd-app hd-d2b-app",
+              "scroll": 1000
+            },
+            {
+              "client": 401,
+              "name": "hd-scroll hd-d2b-history",
+              "scroll": 401
+            },
+            {
+              "client": 304,
+              "name": "hd-scroll hd-d2b-facts",
+              "scroll": 304
+            }
+          ]
+        }
+      },
+      {
+        "state": "reconnecting",
+        "appearance": "dark",
+        "reference": {
+          "app": {
+            "height": 800,
+            "width": 1280
+          },
+          "approval": "Not approved",
+          "boundary": "Reconnecting \u00b7 cached history is not current\nRetry history read",
+          "facts": "Captured activity facts\n\nTool activity unavailable\n\nCapture coverage is insufficient for a tool count.\n\nTask snapshot\n\nStatus: Running \u00b7 independent of captured activity\n\nCaptured activity\n\nPublic normalized events \u00b7 bounded record window\n\nTool result \u00b7 normalized record\nRecovered transcript\n\nSeparate recovery source. Not used for captured activity totals.\n\nRecovered message",
+          "font": "14px",
+          "request": "Original request\n\nVerified stored request \u00b7 complete\n\nFind and fix the slot release race. Keep notification under the lock. Add a deterministic regression. Preserve unrelated edits. Report the exact focused validation result and any remaining uncertainty before concluding.\nCopy original request",
+          "rows": 3,
+          "theme": "dark"
+        },
+        "minimum": {
+          "app": {
+            "height": 620,
+            "width": 1000
+          },
+          "font": "14px",
+          "overflow": [
+            {
+              "client": 1000,
+              "name": "hd-app hd-d2b-app",
+              "scroll": 1000
+            },
+            {
+              "client": 401,
+              "name": "hd-scroll hd-d2b-history",
+              "scroll": 401
+            },
+            {
+              "client": 304,
+              "name": "hd-scroll hd-d2b-facts",
+              "scroll": 304
+            }
+          ]
+        }
+      },
+      {
+        "state": "capacity",
+        "appearance": "light",
+        "reference": {
+          "app": {
+            "height": 800,
+            "width": 1280
+          },
+          "approval": "Not approved",
+          "boundary": "This view reached its limit. Your reading position is kept.\n\nLoading current activity replaces the rows in this view. Execution continues independently.\n\nLoad current activity",
+          "facts": "Captured activity facts\n\n2 tool calls observed\n\nObserved in available captured history traversed from its beginning to the current boundary; this does not prove complete execution capture.\n\nTask snapshot\n\nStatus: Running \u00b7 independent of captured activity\n\nCaptured activity\n\nPublic normalized events \u00b7 bounded record window\n\nTool result \u00b7 normalized record\nRecovered transcript\n\nSeparate recovery source. Not used for captured activity totals.\n\nRecovered message",
+          "font": "14px",
+          "request": "Original request\n\nVerified stored request \u00b7 complete\n\nFind and fix the slot release race. Keep notification under the lock. Add a deterministic regression. Preserve unrelated edits. Report the exact focused validation result and any remaining uncertainty before concluding.\nCopy original request",
+          "rows": 3,
+          "theme": "light"
+        },
+        "minimum": {
+          "app": {
+            "height": 620,
+            "width": 1000
+          },
+          "font": "14px",
+          "overflow": [
+            {
+              "client": 1000,
+              "name": "hd-app hd-d2b-app",
+              "scroll": 1000
+            },
+            {
+              "client": 401,
+              "name": "hd-scroll hd-d2b-history",
+              "scroll": 401
+            },
+            {
+              "client": 304,
+              "name": "hd-scroll hd-d2b-facts",
+              "scroll": 304
+            }
+          ]
+        }
+      },
+      {
+        "state": "capacity",
+        "appearance": "dark",
+        "reference": {
+          "app": {
+            "height": 800,
+            "width": 1280
+          },
+          "approval": "Not approved",
+          "boundary": "This view reached its limit. Your reading position is kept.\n\nLoading current activity replaces the rows in this view. Execution continues independently.\n\nLoad current activity",
+          "facts": "Captured activity facts\n\n2 tool calls observed\n\nObserved in available captured history traversed from its beginning to the current boundary; this does not prove complete execution capture.\n\nTask snapshot\n\nStatus: Running \u00b7 independent of captured activity\n\nCaptured activity\n\nPublic normalized events \u00b7 bounded record window\n\nTool result \u00b7 normalized record\nRecovered transcript\n\nSeparate recovery source. Not used for captured activity totals.\n\nRecovered message",
+          "font": "14px",
+          "request": "Original request\n\nVerified stored request \u00b7 complete\n\nFind and fix the slot release race. Keep notification under the lock. Add a deterministic regression. Preserve unrelated edits. Report the exact focused validation result and any remaining uncertainty before concluding.\nCopy original request",
+          "rows": 3,
+          "theme": "dark"
+        },
+        "minimum": {
+          "app": {
+            "height": 620,
+            "width": 1000
+          },
+          "font": "14px",
+          "overflow": [
+            {
+              "client": 1000,
+              "name": "hd-app hd-d2b-app",
+              "scroll": 1000
+            },
+            {
+              "client": 401,
+              "name": "hd-scroll hd-d2b-history",
+              "scroll": 401
+            },
+            {
+              "client": 304,
+              "name": "hd-scroll hd-d2b-facts",
+              "scroll": 304
+            }
+          ]
+        }
+      },
+      {
+        "state": "events",
+        "appearance": "light",
+        "reference": {
+          "app": {
+            "height": 800,
+            "width": 1280
+          },
+          "approval": "Not approved",
+          "boundary": "History incomplete \u00b7 unsupported record retained in Events\nLoad earlier",
+          "facts": "Captured activity facts\n\nTool activity unavailable\n\nCapture coverage is insufficient for a tool count.\n\nTask snapshot\n\nStatus: Done \u00b7 independent of captured activity\n\nCaptured activity\n\nPublic normalized events \u00b7 bounded record window\n\nTool result \u00b7 normalized record\nUnsupported record \u00b7 public stub\nRecord ordering\nRecovered transcript\n\nSeparate recovery source. Not used for captured activity totals.\n\nRecovered message",
+          "font": "14px",
+          "request": "Original request\n\nVerified stored request \u00b7 complete\n\nFind and fix the slot release race. Keep notification under the lock. Add a deterministic regression. Preserve unrelated edits. Report the exact focused validation result and any remaining uncertainty before concluding.\nCopy original request",
+          "rows": 3,
+          "theme": "light"
+        },
+        "minimum": {
+          "app": {
+            "height": 620,
+            "width": 1000
+          },
+          "font": "14px",
+          "overflow": [
+            {
+              "client": 1000,
+              "name": "hd-app hd-d2b-app",
+              "scroll": 1000
+            },
+            {
+              "client": 401,
+              "name": "hd-scroll hd-d2b-history",
+              "scroll": 401
+            },
+            {
+              "client": 304,
+              "name": "hd-scroll hd-d2b-facts",
+              "scroll": 304
+            }
+          ]
+        }
+      },
+      {
+        "state": "events",
+        "appearance": "dark",
+        "reference": {
+          "app": {
+            "height": 800,
+            "width": 1280
+          },
+          "approval": "Not approved",
+          "boundary": "History incomplete \u00b7 unsupported record retained in Events\nLoad earlier",
+          "facts": "Captured activity facts\n\nTool activity unavailable\n\nCapture coverage is insufficient for a tool count.\n\nTask snapshot\n\nStatus: Done \u00b7 independent of captured activity\n\nCaptured activity\n\nPublic normalized events \u00b7 bounded record window\n\nTool result \u00b7 normalized record\nUnsupported record \u00b7 public stub\nRecord ordering\nRecovered transcript\n\nSeparate recovery source. Not used for captured activity totals.\n\nRecovered message",
+          "font": "14px",
+          "request": "Original request\n\nVerified stored request \u00b7 complete\n\nFind and fix the slot release race. Keep notification under the lock. Add a deterministic regression. Preserve unrelated edits. Report the exact focused validation result and any remaining uncertainty before concluding.\nCopy original request",
+          "rows": 3,
+          "theme": "dark"
+        },
+        "minimum": {
+          "app": {
+            "height": 620,
+            "width": 1000
+          },
+          "font": "14px",
+          "overflow": [
+            {
+              "client": 1000,
+              "name": "hd-app hd-d2b-app",
+              "scroll": 1000
+            },
+            {
+              "client": 401,
+              "name": "hd-scroll hd-d2b-history",
+              "scroll": 401
+            },
+            {
+              "client": 304,
+              "name": "hd-scroll hd-d2b-facts",
+              "scroll": 304
+            }
+          ]
+        }
+      }
+    ],
+    "interactions": [
+      {
+        "asciiOnly": true,
+        "check": "bounded-read-more-keyboard",
+        "copyOriginalButtons": 0,
+        "focusIsRequest": true,
+        "readMoreButtons": 0,
+        "textLength": 128
+      },
+      {
+        "check": "copy-feedback",
+        "message": "Copied displayed mock request text."
+      },
+      {
+        "check": "inline-original",
+        "body": "Original request\n\nComplete stored request\n\nFind and fix the slot release race. Keep notification under the lock. Add a deterministic regression. Preserve unrelated edits. Report the exact focused validation result and any remaining uncertainty before concluding.\nCopy original request"
+      },
+      {
+        "check": "minimum-prepend-anchor",
+        "before": {
+          "client": 259,
+          "id": "anchor",
+          "offset": 19,
+          "requestOpen": true,
+          "scroll": 543,
+          "toolOpen": true,
+          "top": 87
+        },
+        "after": {
+          "app": {
+            "height": 620,
+            "width": 1000
+          },
+          "client": 259,
+          "focus": "History incomplete \u00b7 capture gap",
+          "id": "anchor",
+          "message": "Earlier captured rows loaded. Reading position retained.",
+          "offset": 106,
+          "requestOpen": true,
+          "scroll": 585,
+          "toolOpen": true,
+          "top": 42
+        },
+        "qualification": "Diagnostic only: measurement preceded pointer auto-scroll to activation control; use keyboard-prepend-relative-anchor instead."
+      },
+      {
+        "check": "keyboard-prepend-relative-anchor",
+        "before": {
+          "focus": "Load earlier",
+          "id": "anchor",
+          "offset": 106,
+          "scrollTop": 0
+        },
+        "after": {
+          "focus": "History incomplete \u00b7 capture gap",
+          "id": "anchor",
+          "offset": 106,
+          "requestOpen": true,
+          "scrollTop": 42,
+          "toolOpen": true
+        }
+      },
+      {
+        "check": "resize-visible-row-anchor",
+        "before": {
+          "client": 483,
+          "id": "earlier",
+          "offset": 41,
+          "scroll": 522,
+          "top": 39
+        },
+        "after": {
+          "client": 259,
+          "focus": "size",
+          "id": "earlier",
+          "offset": 41,
+          "scroll": 585,
+          "toolOpen": true,
+          "top": 39
+        }
+      },
+      {
+        "check": "capacity-explicit-window-rebase",
+        "keptObservedCount": true,
+        "boundary": "Current activity window \u00b7 earlier rows outside this view\nLoad earlier",
+        "focus": ""
+      },
+      {
+        "check": "source-reset-does-not-qualify-totals",
+        "facts": "Captured activity facts\n\nTool activity unavailable\n\nCapture coverage is insufficient for a tool count.\n\nTask snapshot\n\nStatus: Running \u00b7 independent of captured activity\n\nCaptured activity\n\nPublic normalized events \u00b7 bounded record window\n\nTool result \u00b7 normalized record\nUnsupported record \u00b7 public stub\nRecord ordering\nRecovered transcript\n\nSeparate recovery source. Not used for captured activity totals.\n\nRecovered message",
+        "selection": null
+      },
+      {
+        "check": "reconnect-retry-keeps-gap",
+        "boundary": "History incomplete \u00b7 capture gap\nLoad earlier",
+        "status": "Running",
+        "message": "Mock read reconnected. Cached rows retained; a history gap remains. Task execution was not restarted."
+      },
+      {
+        "check": "earlier-after-rebase-renders-admitted-row",
+        "beforeRows": 1,
+        "afterRows": 2,
+        "earlierVisible": true,
+        "keptSummary": true
+      },
+      {
+        "check": "normalized-stub-and-order",
+        "stub": "Unsupported record \u00b7 public stub\n{\n  \"format\": \"harflow.event\",\n  \"v\": 1,\n  \"product\": \"harflow\",\n  \"product_version\": \"0.0.8\",\n  \"seq\": 7,\n  \"observed_at\": \"2026-11-04T10:00:00Z\",\n  \"kind\": \"future_kind\",\n  \"truncated\": true,\n  \"oversized\": true,\n  \"bytes\": 20000\n}\n\nNo tool summary is inferred from this record.",
+        "order": "Record ordering\n[\n  {\n    \"kind\": \"assistant_text\",\n    \"seq\": 7\n  },\n  {\n    \"kind\": \"future_kind\",\n    \"seq\": 7\n  },\n  {\n    \"kind\": \"assistant_text\",\n    \"seq\": 6\n  }\n]\n\nDuplicate and regressing sequence values remain in observed order.",
+        "recoveryLabel": true
+      },
+      {
+        "appFont": "14px",
+        "check": "static-loading-style",
+        "skeletons": [
+          {
+            "animation": "none",
+            "transition": "0s"
+          },
+          {
+            "animation": "none",
+            "transition": "0s"
+          }
+        ]
+      },
+      {
+        "check": "keyboard-selector-order",
+        "focus": "history",
+        "outline": "solid",
+        "outlineWidth": "2px"
+      },
+      {
+        "check": "narrow-catalogue-scroll",
+        "result": {
+          "app": 1000,
+          "focus": "hdc-stage",
+          "font": "14px",
+          "stage": {
+            "client": 671,
+            "left": 30,
+            "scroll": 1312
+          },
+          "viewport": 1000
+        }
+      },
+      {
+        "check": "qualified-zero-rejects-known-tools",
+        "facts": "Captured activity facts\n\nTool activity unavailable\n\nCapture coverage is insufficient for a tool count.\n\nTask snapshot\n\nStatus: Running \u00b7 independent of captured activity\n\nCaptured activity\n\nPublic normalized events \u00b7 bounded record window\n\nTool result \u00b7 normalized record\nRecovered transcript\n\nSeparate recovery source. Not used for captured activity totals.\n\nRecovered message",
+        "selection": "unavailable"
+      },
+      {
+        "check": "qualified-zero-tool-free-fixture",
+        "facts": "Captured activity facts\n\nNo tool calls observed in the available captured history\n\nObserved in available captured history traversed from its beginning to the current boundary; this does not prove complete execution capture.\n\nTask snapshot\n\nStatus: Running \u00b7 independent of captured activity\n\nCaptured activity\n\nPublic normalized events \u00b7 bounded record window\n\nNo records available in this view.\n\nRecovered transcript\n\nSeparate recovery source. Not used for captured activity totals.\n\nRecovered message",
+        "rows": 0
+      }
+    ],
+    "evidence_jpg_sha256": {
+      "/private/tmp/m01-g01-d2b-evidence/baseline-task-dark.jpg": "398d487cb6b59293232d967d1d7017136ce831ad706dfd6625c4706ec796c121",
+      "/private/tmp/m01-g01-d2b-evidence/baseline-task-light.jpg": "99e2a9505682503bf0a97bd5b45070cfa81df22d9ac34d1bc08201a64a5e3ad5",
+      "/private/tmp/m01-g01-d2b-evidence/capacity-dark.jpg": "21c4b43a2aced2d2ece17fbbc3dfb6e4977c997e7a1fc23db05356b94a1afd1f",
+      "/private/tmp/m01-g01-d2b-evidence/capacity-light.jpg": "fdc262f20a09fd7aa2a4dea3a02a1d04f46d170919dad2041a3a836e631f7dc2",
+      "/private/tmp/m01-g01-d2b-evidence/capacity-minimum-light.jpg": "0f6d8888a9cb9aeb7bf5b84b75a049e9a45beb563846043fced07e9da9a7bf97",
+      "/private/tmp/m01-g01-d2b-evidence/events-dark.jpg": "fcc468da8e83ec4f0d15e1f14480e3bc1b16838dbcf3d561657571aefc53053f",
+      "/private/tmp/m01-g01-d2b-evidence/events-expanded-dark.jpg": "e8d96fbcef29d032ee69d5d8c6e3181261a6a1dd1c17222b69c81600392ed933",
+      "/private/tmp/m01-g01-d2b-evidence/events-light.jpg": "9b32c27dff619cca6be576d687f2bd43b77ba1cdcb9d97e03307200e44780926",
+      "/private/tmp/m01-g01-d2b-evidence/integrity-failed-dark.jpg": "937f560370dec28cfb27e6b3416eba1118fb9c60f0621be9bea16756846f0416",
+      "/private/tmp/m01-g01-d2b-evidence/integrity-failed-light.jpg": "d3191d4a76087c0d00eaf68eaa0a78b921f9fda139f1dc7ce4d10eec2ff59319",
+      "/private/tmp/m01-g01-d2b-evidence/loading-dark.jpg": "b3331dc3ab5091941cf4e70ed7b7773a45c9ca6f8f5c9758e32c9ee43be0a2f3",
+      "/private/tmp/m01-g01-d2b-evidence/loading-light.jpg": "7bc4b51255a9fec25548de98e184a4b5bbf37e4137c647b2a28d4a24e6f3f7dd",
+      "/private/tmp/m01-g01-d2b-evidence/minimum-anchored-dark.jpg": "e5d3ae9934d0b5cd15a1a4ca1c733bf52f9cdf7de6541e6aa8dc626865c7f7a2",
+      "/private/tmp/m01-g01-d2b-evidence/narrow-scroll-dark.jpg": "198cfff38b5d49eb321a1bf92397cf365e391ad72d9d80e923aeadc73ec04b34",
+      "/private/tmp/m01-g01-d2b-evidence/observed-dark.jpg": "deb519db3398d5dcb4f1f9f798e03d9b2d9e91524bcc79c4763c10a13d58c0b8",
+      "/private/tmp/m01-g01-d2b-evidence/observed-light.jpg": "a0ee67ff2169a8062a7097ff3528bc05b8c4df59060ce88f3370ead70b55f060",
+      "/private/tmp/m01-g01-d2b-evidence/partial-dark.jpg": "4870bcc97869c4a2d5064f4a49d9f6bec4566cb0d2d202fb97ac588147d2bb83",
+      "/private/tmp/m01-g01-d2b-evidence/partial-light.jpg": "65a6771e7daad1c86c52fb5f8dcc4b550323cbe88872d73228b6702403433422",
+      "/private/tmp/m01-g01-d2b-evidence/partial-minimum-dark.jpg": "a834ce00f0aceceaac2cd72ef9b54ff9bfa1e529e6a050c565ba389e79676dba",
+      "/private/tmp/m01-g01-d2b-evidence/qualified-zero-light.jpg": "7b4032927e918a1d7cf26f9468313b8060d933d67ed04e544bb9040e08b5bed4",
+      "/private/tmp/m01-g01-d2b-evidence/reconnecting-dark.jpg": "7baca227fee0e0054f4725ebc283172630faeab3317926db597c6a4ee8f9ab87",
+      "/private/tmp/m01-g01-d2b-evidence/reconnecting-light.jpg": "eb243c1afb8fd9b574cab8948e34ce1980a41a17e40df8a503130227c86fafcc",
+      "/private/tmp/m01-g01-d2b-evidence/unavailable-dark.jpg": "4ec60ce25bd590727871b97df947158ee227319904115947973e4a444b76a7b7",
+      "/private/tmp/m01-g01-d2b-evidence/unavailable-light.jpg": "345bb28bc639b29e20dfc3f1457e6cda4ae5af56d2d0170d93eac5dc8c72660a"
+    },
+    "visual_review": "All16 default captures plus minimum2, expandedEvents and narrow screenshot independently inspected; corrected partial-dark repaint verified.",
+    "capture_diagnostic": "Initial partial-dark image was stale Light frame despite fresh DOM. Replaced via post-action getAXState/getScreenshot painted-frame boundary; final Dark caption and approval context independently verified.",
+    "hosted_baseline": "Opened https://design.harflow.dev/v2/#task/done/light; visible composition and approval metadata agree with local baseline; exact hosted deployment commit not verified.",
+    "clipboard_fallback_denial": "source reviewed; denied-permission path not forced in browser",
+    "native_VoiceOver_pixel_Performance": "not qualified",
+    "Reduce_Motion": "static loading/no animation/0s transition inspected; native system preference not exercised"
+  },
+  "review": {
+    "plan": "independent plan approved for proposal preparation only",
+    "final_rounds": 3,
+    "source_visual": "approved no remaining blockers; not owner approval",
+    "record_accuracy": "Approved: final source, all16 visual states/minimum records, corrected Dark capture, test/syntax results and frozen/protected/artifact hashes independently verified."
+  },
+  "remaining_owner_decisions": [
+    "qualified observed/unavailable/zero totals and independent snapshot facts",
+    "original-request states/provenance/copy/read-more behavior",
+    "inline history health/reconnect/capacity/terminal evidence",
+    "source/window/occurrence identity and reading-position/rebase behavior",
+    "normalized Events/stubs and recovery provenance"
+  ],
+  "authorization_boundaries": {
+    "local_proposal_commit": true,
+    "push": false,
+    "hosted_publication": false,
+    "product_code": false,
+    "runtime_install_selection_execution": false,
+    "provider_registration": false,
+    "M04": false,
+    "owner_visual_approval": false
+  }
+}

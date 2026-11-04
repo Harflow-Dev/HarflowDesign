@@ -277,6 +277,61 @@
         ]
       },
       {
+        "id": "d2b-proposal",
+        "title": "D2B observation proposal",
+        "description": "Exploratory missing-state proposal for owner review. No production implementation or approval is implied.",
+        "states": [
+          {
+            "id": "observed",
+            "title": "Observed captured activity",
+            "description": "A qualified observed summary beside the current activity window; original request provenance remains explicit.",
+            "approval": "exploratory"
+          },
+          {
+            "id": "loading",
+            "title": "Loading observations",
+            "description": "Independent request and captured activity reads; missing totals are never shown as zero.",
+            "approval": "exploratory"
+          },
+          {
+            "id": "partial",
+            "title": "Incomplete captured history",
+            "description": "Known loss and partial request text retain their qualifications.",
+            "approval": "exploratory"
+          },
+          {
+            "id": "unavailable",
+            "title": "Observation unavailable",
+            "description": "A read refusal or unsupported capability is separate from task execution status.",
+            "approval": "exploratory"
+          },
+          {
+            "id": "integrity-failed",
+            "title": "Request integrity failure",
+            "description": "Questionable assignment text is withheld while independent task facts remain visible.",
+            "approval": "exploratory"
+          },
+          {
+            "id": "reconnecting",
+            "title": "Reconnect and source change",
+            "description": "Cached rows retain reading position; a changed source requires an explicit new view.",
+            "approval": "exploratory"
+          },
+          {
+            "id": "capacity",
+            "title": "Reading window at capacity",
+            "description": "Keep the current rows and position; independently qualified summary facts can remain available.",
+            "approval": "exploratory"
+          },
+          {
+            "id": "events",
+            "title": "Normalized and recovered sources",
+            "description": "Public normalized records and stubs retain file order, with a separate recovery source.",
+            "approval": "exploratory"
+          }
+        ]
+      },
+      {
         "id": "brand",
         "title": "Brand",
         "description": "The brand book of the Harflow Desktop design system: principles, the brand mark, appearance, voice, visual foundations, layout and iconography.",
