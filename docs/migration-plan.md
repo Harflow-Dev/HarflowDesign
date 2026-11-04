@@ -2,7 +2,8 @@
 
 Dispatchable work packages: [migration sessions](migration-sessions.md).
 
-Status: planned, 2026-11-02. All work items remain unverified.
+Status: reconciled 2026-11-04. Delivered evidence and outstanding acceptance are
+distinguished below; aggregate migration gates remain pending.
 
 Own the Git-backed design source and approved state references, not product
 implementation. Inputs are the reviewed parity ledger and current source;
@@ -28,8 +29,8 @@ uses B0 (baseline), C0 (contracts and design), E0 (client and Electron on
 Python), R0 (Rust parity), I0 (integrated stack), and O0 (owner cutover and
 publication). It is not a build dependency. Freeze and qualify the reproducible existing baseline without waiting for open
 feature tickets. Use the v2 intent ledger to decide retained and simplified scope;
-legacy UI parity and open tickets do not independently mandate inclusion. All boxes below are deliberately unchecked;
-scaffolds alone do not establish completion. Early-use gates and defaults remain
+legacy UI parity and open tickets do not independently mandate inclusion. Unchecked items retain outstanding acceptance or contributions; checked items
+record the bounded evidence stated below, not blanket gate acceptance. Early-use gates and defaults remain
 subject to evidence and explicit authorization for root registration. Use fresh
 Rust state; archive historical task, run and event records rather than importing
 them. Import only definitions, configuration and preferences, with an explicit
@@ -55,7 +56,9 @@ references gate macOS E0; later platform adaptations follow their own gates.
 
 S03 records the approval inventory (B0-DS-01) and the capability disposition
 ledger in [v2/docs/migration-coverage.md](../v2/docs/migration-coverage.md),
-pending acceptance of its receipt.
+pending acceptance of its receipt. This inventory contribution is delivered;
+S10 and required missing-state approvals remain pending. S04 follow-up implements
+the recorded diff/history/statistics read gaps, but does not supply those designs.
 
 ## E0 / I0 — visual handoff
 

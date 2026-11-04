@@ -116,19 +116,32 @@ For a required retained or approved simplified feature, create missing states in
 | G-APPROVAL-STATES | Approval/checkpoint stale, expiry and shared responder | DESIGN — S10-Gxx / S19 | Approve inline failure and refresh states that refuse obsolete decisions across surfaces. |
 | G-APPROVAL-WORDING | "Approve for this task" wording | DESIGN — S10-Gxx / S19 | Decided in S03: relabel to exact-action approval; no task-wide authority and no new contract. Separate from global MCP allowlist settings. |
 | G-ALLOWLIST | MCP approval settings | CAPABILITY — S05 / S15 | Existing `harflow-ctl mcp-allowlist --backend --allow|--remove --json` supports human-only edits to future-session configuration with backend-specific restrictions; expose only supported narrow authority. See `HarflowMCP/docs/harness-permissions.md`. |
-| G-DIFF | Task changed files and diff | CONTRACT + DESIGN — S04 / S17 | Terminal outcome exposes working-tree status and committed diff statistics; no full unified diff/content public read was found. Decide a bounded public read with provenance or approve a limited presentation; no direct Git or private engine access. |
+| G-DIFF | Task changed files and diff | CONTRACT + DESIGN — S04 / S17 | S04 follow-up implements `task-changes.v1`: stored bounded committed-range and working-tree diffs with provenance and non-authorship attribution. Contract read gap delivered, receipt acceptance pending. Design incomplete, not_captured and unmerged_unknown states; retain capture limits. No direct Git or private engine access. |
 | G-OVERFLOW | Task overflow menu with Cancel, Copy resume command, Copy task ID | DESIGN — S10-Gxx / S16 | No takeover entry while takeover is deferred. |
 | G-EDITOR | Editor validation, conflicts, missing child references, proposal loading/failure | DESIGN — S10-Gxx / S20 | Approve recoverable states preserving unsaved edits and explicit proposal review. |
 | G-WORKFLOW-MENU | Workflow overflow menu with Delete and its confirmation | DESIGN — S10-Gxx / S20 | Native confirmation states that existing run snapshots remain available; no Duplicate or Rename entry. |
 | G-GENERATE | Generate workflow with agent | DESIGN — S10-Gxx / S20 | New-workflow entry, description form and builder progress, consistent with `34c3b05`. |
 | G-RUN-ACTIONS | Workflow node/orchestrator messages and revise goal | DESIGN — S10-Gxx / S21 | Not drawn in the approved run states. |
-| G-HISTORY | History paging, retention, reconnect and read-only unavailable | DESIGN + CONTRACT — S04 / S17 | Audit bounded reads, cursors and retention; approve loss, reconnect and unavailable presentations. |
+| G-HISTORY | History paging, retention, reconnect and read-only unavailable | DESIGN + CONTRACT — S04 / S17 | S04 delivers bounded event/prompt reads, cursor and retention semantics; follow-up adds recorded-task successor discovery and live workflow node activity. Contract read gaps delivered, receipt acceptance pending. Loss, reconnect and unavailable design states remain open. |
 | G-RESOURCES | Resource over-limit, permission, not-enabled and unsupported responses | DESIGN — S10-Gxx / S22 | Distinct safe responses without new capacity tiers. |
-| G-STATS | Statistics empty, error and incomplete; unsupported metrics | DESIGN + CONTRACT — S04 / S22 | Compare All time, success rate, median duration and cost with `statistics-page`; mark unsupported metrics. |
+| G-STATS | Statistics empty, error and incomplete; unsupported metrics | DESIGN + CONTRACT — S04 / S22 | Follow-up adds cost, coverage and observed model with provenance; null remains unknown, not zero. All-time history beyond retention remains unavailable; success rate/median require a complete generation client-side. Empty, error, incomplete and unsupported presentations still need design approval. |
 | G-TRANSPORT | Engine startup and transport | CONTRACT + DESIGN — S05 / S15 | The Start engine, ECONNREFUSED and `engine.sock` specimen is mock content. Design honest unavailable/recovery states over the public CLI lifecycle; no hidden file or socket access. |
 | G-HARNESS | Harness menu gating | CAPABILITY — S05 / S15 | Decided in S03: list engine-reported harnesses gated by capability cells; E0 qualification covers Claude, Codex and Vibe; other harnesses carry no E0 qualification claim. |
 | G-PLATFORM | macOS window chrome, tray, notifications | DESIGN — S10 (C0-DS-02) | Linux and Windows adaptations follow before X01/X02. |
 | G-ADAPTIVE | Keyboard, narrow windows, Reduce Motion and focus | DESIGN — S10-Gxx / S12–S24 | Approve adaptive and interaction states, then validate production pixels and accessibility. |
+
+## Contract receipt reconciliation — 2026-11-04
+
+[S04](../../../HarflowMCP/docs/migration-receipts/S04.md) and its
+[follow-up](../../../HarflowMCP/docs/migration-receipts/S04-gaps.md) supersede the
+initial no-diff/no-cost/missing-successor/live-activity audit findings below.
+Follow-up code identity: `73182381fb597a7ff4664fc230dd006c20c31d8f`;
+canonical manifest: `06094a8f210130d0794afe3913d66c853baf8d43c9022fd3140e22ebfe0aacaa`.
+Delivery is not owner receipt acceptance, release or client adoption. No required
+design state or Proposed/Undecided disposition is accepted by this reconciliation.
+The follow-up records 898 targeted passes/1 skip, six path-sensitive runtime-loader
+failures in its extracted-copy full run, and 14/14 loader checks in the primary
+checkout. These historical checks were not rerun here.
 
 ## Initial interface audit provenance
 
