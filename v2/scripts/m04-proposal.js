@@ -4,7 +4,8 @@
   var lastRoute, lastState;
   function create(route) {
     var s = { route: route, draft: '', repository: 'HarflowMCP', harness: 'Claude Code', model: 'Opus 5.5', qualification: 'ready', revision: 0, status: 'idle', effort: 'default', turns: '12', approvals: 'harness', access: 'write_in_repo', enforcement: 'supported', advanced: route === 'advanced', collapsed: route === 'shell-collapsed', narrow: route === 'shell-narrow', runtime: 'qualified', listing: 'ready', selected: 'retry-budget', rows: ['retry-budget','events-reader'], fixtures: false, remembered: {} };
-    if (route.indexOf('composer-')===0 || route==='advanced') s.draft='Review the delivery queue';
+    if (route.indexOf('composer-')===0 || route==='advanced' || route==='advanced-closed') s.draft='Review the delivery queue';
+    if(route==='advanced-closed')s.effort='high';
     if (/composer-(loading|unqualified)/.test(route)) s.qualification = route.endsWith('loading') ? 'checking' : 'unqualified';
     if (route === 'composer-invalid') { s.draft = 'Review the delivery queue'; s.turns = '0'; s.advanced = true; }
     if (/composer-(starting|refused|unknown)/.test(route)) { s.draft = 'Review the delivery queue'; s.status = route.split('-')[1]; }
@@ -13,17 +14,19 @@
     if (route.indexOf('runtime-') === 0) { s.runtime = route.slice(8); s.listing = 'pending'; if (s.runtime === 'listing') s.runtime = 'qualified'; }
     return s;
   }
+  function customized(s){return s.effort!=='default'||s.turns!=='12'||s.approvals!=='harness';}
+  function optionsOpen(s,open){s.advanced=!!open;}
   function models(harness){return {'Claude Code':['Default','Opus 5.5','Sonnet 5.5'],'Codex':['Default','gpt-6-astra'],'Mistral Vibe':['Default']}[harness] || ['Default'];}
   function problem(s) {
     if (!s.draft.trim()) return 'Describe a task to continue.';
-    if (s.qualification !== 'ready') return 'Choose a qualified harness and model.';
-    if (!['default','low','medium','high','xhigh'].includes(s.effort) || (s.harness === 'Mistral Vibe' && s.effort !== 'default')) return 'This harness does not support the requested effort. Review Advanced.';
+    if (!['default','low','medium','high','xhigh'].includes(s.effort) || (s.harness === 'Mistral Vibe' && s.effort !== 'default')) return 'This harness does not support the requested effort. Review task options.';
     if (s.turns && (!/^\d+$/.test(s.turns) || +s.turns < 1 || !Number.isSafeInteger(+s.turns))) return 'Enter a whole number above 0, or leave it empty for the default.';
-    if (s.turns && s.harness === 'Codex') return 'This harness does not support a turn limit. Clear it in Advanced.';
+    if (s.turns && s.harness === 'Codex') return 'This harness does not support a turn limit. Clear it in task options.';
     if (!models(s.harness).includes(s.model)) return s.harness==='Mistral Vibe'?'Vibe uses its configured model. Select Default before continuing.':'The requested model is unavailable for this harness. Choose a supported model.';
     if(s.enforcement!=='supported') return 'Required permission enforcement is '+s.enforcement+'. Review the selection before starting.';
-    if (s.approvals === 'caller' && (s.harness !== 'Claude Code' || s.turns || !['write_in_repo','publish'].includes(s.access))) return 'Caller approvals require a supported harness, repository write access and an empty turn limit. Review Advanced.';
+    if (s.approvals === 'caller' && (s.harness !== 'Claude Code' || s.turns || !['write_in_repo','publish'].includes(s.access))) return 'Caller approvals require a supported harness, repository write access and an empty turn limit. Review task options.';
     if (s.status === 'created') return 'Task already created.';
+    if (s.qualification !== 'ready') return 'Choose a qualified harness and model.';
     if (s.runtime !== 'qualified') return 'Set up the required runtime first.';
     if (s.status === 'starting') return 'Starting task…';
     if (s.status === 'unknown') return 'The outcome is unknown. Review Recent work before starting again.';
@@ -95,23 +98,39 @@
       function options(values,current){var all=values.slice();if(!all.includes(current))all.push(current);return all.map(function(v){return '<option value="'+esc(v)+'"'+(v===current?' selected':'')+'>'+esc(v)+(values.includes(v)?'':' — unavailable for this harness')+'</option>';}).join('');}
       function pill(label,icon,content){return '<details class="hd-m04-picker"><summary class="hd-pill"><span class="hd-i hd-i-'+icon+'" aria-hidden="true"></span><span class="hd-pill__label">'+esc(label)+'</span><span class="hd-i hd-i-chevron-down" aria-hidden="true"></span></summary><div class="hd-menu hd-m04-picker-menu">'+content+'</div></details>';}
       function field(label,key,values){return '<label class="hd-m04-menu-field">'+label+'<select data-m04-field="'+key+'"'+(locked?' disabled':'')+'>'+options(values,s[key])+'</select></label>';}
-      bar.innerHTML=pill(s.repository,'folder',field('Repository / recent folders','repository',['HarflowMCP','HarflowDesign','Unavailable folder']))+pill(s.harness+' · '+s.model,'harness',field('Harness','harness',['Claude Code','Codex','Mistral Vibe','Unavailable harness'])+field('Model','model',models(s.harness)))+pill({'read_only':'Read only','write_in_repo':'Can edit this repo','publish':'Can publish','unrestricted':'Broad access'}[s.access],'shield','<label class="hd-m04-menu-field">Access<select data-m04-field="access"'+(locked?' disabled':'')+'>'+['read_only','write_in_repo','publish','unrestricted'].map(function(v){return '<option value="'+v+'"'+(s.access===v?' selected':'')+'>'+({'read_only':'Read only','write_in_repo':'Can edit this repo','publish':'Can publish','unrestricted':'Broad access'})[v]+'</option>';}).join('')+'</select></label>')+'<span class="hd-composer__spacer"></span><button type="submit" class="hd-composer__send" aria-label="Start task"'+(problem(s)||s.status==='created'?' disabled':'')+'><span class="hd-i hd-i-arrow-up" aria-hidden="true"></span></button>';
+      bar.innerHTML='<span class="hd-m04-options-anchor"><button type="button" class="hd-btn hd-btn--icon hd-m04-options-trigger" data-m04="options" aria-label="More task options" title="More task options" aria-expanded="'+s.advanced+'" aria-controls="m04-task-options" aria-describedby="m04-options-description"><span class="hd-i hd-i-plus" aria-hidden="true"></span><span class="hd-m04-options-dot"'+(customized(s)?'':' hidden')+' aria-hidden="true"></span><span class="hd-sr" id="m04-options-description">'+(customized(s)?'Customized options':'Default options')+'</span></button></span>'+pill(s.repository,'folder',field('Repository / recent folders','repository',['HarflowMCP','HarflowDesign','Unavailable folder']))+pill(s.harness+' · '+s.model,'harness',field('Harness','harness',['Claude Code','Codex','Mistral Vibe','Unavailable harness'])+field('Model','model',models(s.harness)))+pill({'read_only':'Read only','write_in_repo':'Can edit this repo','publish':'Can publish','unrestricted':'Broad access'}[s.access],'shield','<label class="hd-m04-menu-field">Access<select data-m04-field="access"'+(locked?' disabled':'')+'>'+['read_only','write_in_repo','publish','unrestricted'].map(function(v){return '<option value="'+v+'"'+(s.access===v?' selected':'')+'>'+({'read_only':'Read only','write_in_repo':'Can edit this repo','publish':'Can publish','unrestricted':'Broad access'})[v]+'</option>';}).join('')+'</select></label>')+'<span class="hd-composer__spacer"></span><button type="submit" class="hd-composer__send" aria-label="Start task"'+(problem(s)||s.status==='created'?' disabled':'')+'><span class="hd-i hd-i-arrow-up" aria-hidden="true"></span></button>';
 
       var wrap=app.querySelector('.hd-composer').parentElement;
       var oldCaption=wrap.querySelector('p'); if(oldCaption) oldCaption.remove();
-      wrap.insertAdjacentHTML('beforeend','<details class="hd-m04-advanced"'+(s.advanced?' open':'')+'><summary>Advanced</summary><div class="hd-m04-actions"><label>Effort<select data-m04-field="effort"'+(locked?' disabled':'')+'>'+['default','low','medium','high','xhigh','unsupported'].map(function(x){return '<option'+(s.effort===x?' selected':'')+'>'+x+'</option>';}).join('')+'</select></label><label>Turn limit<input class="hd-input" data-m04-field="turns" type="text" inputmode="numeric" value="'+esc(s.turns)+'"'+(locked?' disabled':'')+'></label><label>Approvals<select data-m04-field="approvals"'+(locked?' disabled':'')+'><option value="harness">Harness managed</option><option value="caller"'+(s.approvals==='caller'?' selected':'')+'>Caller approvals (supported harness only)</option></select></label></div><p class="caption">Permission preview: '+esc({'read_only':'Read only','write_in_repo':'Repository write','publish':'Publish access','unrestricted':'Broad access'}[s.access])+' · enforcement '+esc(s.enforcement)+'. '+(s.enforcement==='supported'?'The selected harness reports support for the requested access; this is not an OS sandbox guarantee.':'Required enforcement is not confirmed; Start is blocked.')+'</p><p class="caption">Harness qualification: '+esc(s.qualification)+'. Unsupported requested choices stay visible for review.</p></details><div class="hd-m04-status" role="status">'+esc(s.status==='refused'?'Start was refused. Review the settings and try again.':s.status==='created'?'Task created.':problem(s)||'Ready to start · '+s.model)+'</div><div class="hd-m04-actions">'+(s.status==='unknown'?button('Review Recent work','recent'):s.status==='refused'?button('Review settings','settings'):'')+'</div>');
+      bar.querySelector('.hd-m04-options-anchor').insertAdjacentHTML('beforeend','<div id="m04-task-options" class="hd-menu hd-m04-options-popover" role="group" aria-label="Task options"'+(s.advanced?'':' hidden')+'><strong>Task options</strong><div class="hd-m04-actions"><label>Effort<select data-m04-field="effort"'+(locked?' disabled':'')+'>'+['default','low','medium','high','xhigh','unsupported'].map(function(x){return '<option'+(s.effort===x?' selected':'')+'>'+x+'</option>';}).join('')+'</select></label><label>Turn limit<input class="hd-input" data-m04-field="turns" type="text" inputmode="numeric" value="'+esc(s.turns)+'"'+(locked?' disabled':'')+'></label><label>Approvals<select data-m04-field="approvals"'+(locked?' disabled':'')+'><option value="harness">Harness managed</option><option value="caller"'+(s.approvals==='caller'?' selected':'')+'>Caller approvals (supported harness only)</option></select></label></div><p class="caption">Permission preview: '+esc({'read_only':'Read only','write_in_repo':'Repository write','publish':'Publish access','unrestricted':'Broad access'}[s.access])+' · enforcement '+esc(s.enforcement)+'. '+(s.enforcement==='supported'?'The selected harness reports support for the requested access; this is not an OS sandbox guarantee.':'Required enforcement is not confirmed; Start is blocked.')+'</p><p class="caption" data-m04-qualification>Harness qualification: '+esc(s.qualification)+'. Unsupported requested choices stay visible for review.</p></div>');
+      wrap.insertAdjacentHTML('beforeend','<div class="hd-m04-status" role="status">'+esc(s.status==='refused'?'Start was refused. Review the settings and try again.':s.status==='created'?'Task created.':problem(s)||'Ready to start · '+s.model)+'</div><div class="hd-m04-actions">'+(s.status==='unknown'?button('Review Recent work','recent'):s.status==='refused'?button('Review settings','settings'):'')+'</div>');
       app.querySelector('.hd-scroll').classList.add('hd-m04-compose-area');
+      syncOptions();
     }
+    function syncOptions(){
+      var trigger=frame.querySelector('[data-m04="options"]'), popup=frame.querySelector('#m04-task-options');
+      if(!trigger||!popup)return;
+      var hint=popup.querySelector('[data-m04-qualification]');if(hint)hint.textContent='Harness qualification: '+s.qualification+'. Unsupported requested choices stay visible for review.';
+      trigger.setAttribute('aria-expanded',String(s.advanced));popup.hidden=!s.advanced;
+      if(s.advanced){var scroll=frame.querySelector('.hd-scroll');var boundary=scroll?scroll.getBoundingClientRect().top:frame.getBoundingClientRect().top;var available=trigger.getBoundingClientRect().top-boundary-16;popup.style.maxHeight=Math.max(64,Math.min(400,available))+'px';}
+      trigger.querySelector('.hd-m04-options-dot').hidden=!customized(s);
+      trigger.querySelector('.hd-sr').textContent=customized(s)?'Customized options':'Default options';
+      var send=frame.querySelector('[type="submit"]');if(send)send.disabled=!!problem(s);
+      var status=frame.querySelector('.hd-m04-status');if(status)status.textContent=s.status==='refused'?'Start was refused. Review the settings and try again.':problem(s)||'Ready to start · '+s.model;
+    }
+    function closeOptions(focus){if(!s.advanced)return;optionsOpen(s,false);syncOptions();if(focus){var trigger=frame.querySelector('[data-m04="options"]');if(trigger)trigger.focus();}}
+    function keydown(e){if(e.key==='Escape'&&s.advanced){e.preventDefault();closeOptions(true);}}
+    function outside(e){if(s.advanced&&!host.querySelector('.hd-m04-options-anchor')?.contains(e.target))closeOptions(false);}
     function input(e) {
       var key=e.target.dataset.m04Field;if(!['draft','turns'].includes(key))return;
       if(['starting','unknown','created'].includes(s.status))return;
       if(key==='draft')s.draft=e.target.value;else select(s,key,e.target.value);
-      var send=frame.querySelector('[type="submit"]');if(send)send.disabled=!!problem(s);
-      var status=frame.querySelector('.hd-m04-status');if(status)status.textContent=s.status==='refused'?'Start was refused. Review the settings and try again.':problem(s)||'Ready to start · '+s.model;
+      syncOptions();
     }
 
-    function change(e) { var key=e.target.dataset.m04Field; if(!key || key==='draft')return;if(key==='turns' && s.turns===e.target.value)return; if(key==='size')s.narrow=e.target.value==='minimum'; else if(key==='repository'||key==='harness'||key==='model'||key==='access'||key==='effort'||key==='turns'||key==='approvals') select(s,key,e.target.value); else if(!['starting','unknown','created'].includes(s.status)) s[key]=e.target.value; render(); }
+    function change(e) { var key=e.target.dataset.m04Field; if(!key || key==='draft')return;if(key==='turns' && s.turns===e.target.value)return;if(['effort','turns','approvals'].includes(key)){select(s,key,e.target.value);syncOptions();return;} if(key==='size')s.narrow=e.target.value==='minimum'; else if(key==='repository'||key==='harness'||key==='model'||key==='access'||key==='effort'||key==='turns'||key==='approvals') select(s,key,e.target.value); else if(!['starting','unknown','created'].includes(s.status)) s[key]=e.target.value; render(); }
     function click(e) { var b=e.target.closest('[data-m04]'); if(!b)return; var a=b.dataset.m04;
+      if(a==='options'){optionsOpen(s,!s.advanced);syncOptions();if(s.advanced&&e.detail===0){var first=frame.querySelector('#m04-task-options select');if(first)first.focus();}return;}
       if(a==='reset'){s=create(route);lastState=s;} if(a==='collapse')s.collapsed=!s.collapsed;
       if(a==='qualified')qualify(s,s.revision,s.repository==='Unavailable folder'||s.harness==='Unavailable harness'?'unqualified':'ready');
       if(a==='unqualified')qualify(s,s.revision,'unqualified');
@@ -124,10 +143,11 @@
       if(a==='older'){location.hash='#m04-proposal/history-older/'+(host.getAttribute('data-theme')||'light');return;} render();
     }
     function submit(e){if(e.target.matches('.hd-composer')){e.preventDefault();start(s);render();}}
-    function toggle(e){if(e.target.matches('.hd-m04-advanced'))s.advanced=e.target.open;if(e.target.matches('.hd-m04-fixtures'))s.fixtures=e.target.open;}
+    function toggle(e){if(e.target.matches('.hd-m04-fixtures'))s.fixtures=e.target.open;}
     host.addEventListener('input',input);host.addEventListener('change',change);host.addEventListener('click',click);host.addEventListener('submit',submit);host.addEventListener('toggle',toggle,true);
+    host.addEventListener('keydown',keydown);document.addEventListener('click',outside);
     render();
-    return function(){disposed=true;host.removeEventListener('input',input);host.removeEventListener('change',change);host.removeEventListener('click',click);host.removeEventListener('submit',submit);host.removeEventListener('toggle',toggle,true);};
+    return function(){disposed=true;host.removeEventListener('keydown',keydown);document.removeEventListener('click',outside);host.removeEventListener('input',input);host.removeEventListener('change',change);host.removeEventListener('click',click);host.removeEventListener('submit',submit);host.removeEventListener('toggle',toggle,true);};
   }
-  H.m04Proposal={mount:mount,model:{create:create,problem:problem,select:select,qualify:qualify,start:start,settle:settle,history:history,listing:listing}};
+  H.m04Proposal={mount:mount,model:{create:create,customized:customized,optionsOpen:optionsOpen,problem:problem,select:select,qualify:qualify,start:start,settle:settle,history:history,listing:listing}};
 })();

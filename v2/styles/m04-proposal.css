@@ -13,10 +13,6 @@
 .hd-m04-window--minimum .hd-m04-compose-area{padding-top:48px!important}
 .hd-m04-proposal .hd-composer__bar{flex-wrap:wrap;gap:8px}
 .hd-m04-choice{flex-direction:column;align-items:flex-start;gap:4px}
-.hd-m04-advanced{padding:12px 16px;border:1px solid var(--border);border-radius:var(--radius-lg);background:var(--surface)}
-.hd-m04-advanced summary{cursor:pointer;color:var(--text-secondary)}
-.hd-m04-advanced .hd-m04-actions{margin-top:12px}
-.hd-m04-advanced input{width:64px}
 .hd-m04-status{min-height:18px;color:var(--text-secondary);font-size:13px}
 .hd-m04-gate{max-width:620px;margin:120px auto;padding:32px;display:flex;flex-direction:column;gap:16px}
 .hd-m04-gate h1,.hd-m04-gate p{margin:0}
@@ -42,3 +38,23 @@
 .hd-m04-proposal .hd-sidebar>.hd-sidebar__top,.hd-m04-proposal .hd-sidebar>.hd-nav,.hd-m04-proposal .hd-sidebar>.hd-sidebar__foot{flex-shrink:0}
 .hd-m04-proposal .hd-section__head{flex-shrink:0}
 .hd-m04-proposal .hd-sidebar>.hd-section--fill>.hd-section__list{flex:1 1 auto}
+/* Task options are anchored above the bottom-left composer button. */
+.hd-m04-options-anchor{position:relative;display:inline-flex;align-self:center}
+.hd-m04-options-trigger{position:relative}
+.hd-m04-options-dot{position:absolute;right:3px;top:3px;width:5px;height:5px;border-radius:var(--radius-full);background:var(--accent)}
+.hd-m04-options-popover{box-sizing:border-box;position:absolute;bottom:calc(100% + 8px);left:0;width:360px;z-index:10;padding:16px;display:flex;flex-direction:column;gap:12px;max-height:400px;overflow-y:auto;box-shadow:var(--shadow-popover)}
+.hd-m04-options-popover .hd-m04-actions{align-items:flex-start;flex-direction:column;gap:12px}
+.hd-m04-options-popover label{width:100%;justify-content:space-between}
+.hd-m04-options-popover input{width:110px}
+.hd-m04-options-popover p{margin:0;color:var(--text-secondary);line-height:1.5}
+.hd-m04-options-popover[hidden],.hd-m04-options-dot[hidden]{display:none!important}
+.hd-m04-proposal .hd-m04-options-popover{box-sizing:border-box!important}
+.hd-m04-proposal .hd-m04-options-popover>*{flex-shrink:0}
+.hd-m04-options-popover label{display:grid;grid-template-columns:72px minmax(0,1fr);gap:8px;align-items:center;min-width:0}
+.hd-m04-options-popover label select,.hd-m04-options-popover label input{min-width:0;width:100%;max-width:100%;box-sizing:border-box}
+.hd-m04-options-popover{overflow-x:hidden}
+/* Match the existing app's slim activity scrollbar treatment. */
+.hd-m04-options-popover{scrollbar-width:thin;scrollbar-color:var(--text-secondary) transparent}
+.hd-m04-options-popover::-webkit-scrollbar{width:6px;height:6px;background:transparent}
+.hd-m04-options-popover::-webkit-scrollbar-track{background:transparent}
+.hd-m04-options-popover::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--text-secondary) 72%,transparent);border-radius:999px}

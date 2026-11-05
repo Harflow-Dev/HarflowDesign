@@ -403,8 +403,14 @@
           },
           {
             "id": "advanced",
-            "title": "Advanced options",
+            "title": "Task options · Open",
             "description": "Retained supported controls with truthful enforcement limits.",
+            "approval": "proposed"
+          },
+          {
+            "id": "advanced-closed",
+            "title": "Task options · Closed",
+            "description": "Customized task options retained behind the bottom-left plus button.",
             "approval": "proposed"
           },
           {
