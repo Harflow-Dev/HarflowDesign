@@ -337,6 +337,151 @@
         ]
       },
       {
+        "id": "m04-proposal",
+        "title": "M04 native entry proposal",
+        "description": "Proposed shell, composer, history and runtime entry states for owner review. Deterministic browser fixtures only; no native or runtime implementation.",
+        "states": [
+          {
+            "id": "shell",
+            "title": "Shell \u00b7 Expanded",
+            "description": "Native shell adaptation of the approved composer.",
+            "approval": "proposed"
+          },
+          {
+            "id": "shell-collapsed",
+            "title": "Shell \u00b7 Collapsed rail",
+            "description": "Native collapsed rail and accessible navigation.",
+            "approval": "proposed"
+          },
+          {
+            "id": "shell-narrow",
+            "title": "Shell \u00b7 Minimum window",
+            "description": "Minimum-size composition without font scaling.",
+            "approval": "proposed"
+          },
+          {
+            "id": "composer-loading",
+            "title": "Composer \u00b7 Checking options",
+            "description": "Readiness is pending; the draft remains editable.",
+            "approval": "proposed"
+          },
+          {
+            "id": "composer-ready",
+            "title": "Composer \u00b7 Ready",
+            "description": "Qualified, valid selections allow an explicit start.",
+            "approval": "proposed"
+          },
+          {
+            "id": "composer-unqualified",
+            "title": "Composer \u00b7 Unavailable options",
+            "description": "Unsupported or unqualified selections cannot start.",
+            "approval": "proposed"
+          },
+          {
+            "id": "composer-invalid",
+            "title": "Composer \u00b7 Validation",
+            "description": "Invalid input and requested options need correction.",
+            "approval": "proposed"
+          },
+          {
+            "id": "composer-starting",
+            "title": "Composer \u00b7 Starting",
+            "description": "One in-flight start retains the draft and prevents duplicates.",
+            "approval": "proposed"
+          },
+          {
+            "id": "composer-refused",
+            "title": "Composer \u00b7 Refused",
+            "description": "A definitive refusal preserves the draft for review.",
+            "approval": "proposed"
+          },
+          {
+            "id": "composer-unknown",
+            "title": "Composer \u00b7 Outcome unknown",
+            "description": "Unknown outcome preserves uncertainty without automatic retry.",
+            "approval": "proposed"
+          },
+          {
+            "id": "advanced",
+            "title": "Advanced options",
+            "description": "Retained supported controls with truthful enforcement limits.",
+            "approval": "proposed"
+          },
+          {
+            "id": "history-empty",
+            "title": "History \u00b7 Empty",
+            "description": "No running or recent work in the available listing.",
+            "approval": "proposed"
+          },
+          {
+            "id": "history-loading",
+            "title": "History \u00b7 Loading",
+            "description": "Initial listing has no fabricated work rows.",
+            "approval": "proposed"
+          },
+          {
+            "id": "history-older",
+            "title": "History \u00b7 Loading older",
+            "description": "Older-page loading retains already loaded rows.",
+            "approval": "proposed"
+          },
+          {
+            "id": "history-error",
+            "title": "History \u00b7 Read failure",
+            "description": "Failed reads preserve loaded work and offer explicit retry.",
+            "approval": "proposed"
+          },
+          {
+            "id": "history-reconnecting",
+            "title": "History \u00b7 Reconnecting",
+            "description": "Reconnect preserves identity and uncertainty.",
+            "approval": "proposed"
+          },
+          {
+            "id": "history-retained",
+            "title": "History \u00b7 Retained selection",
+            "description": "A selected identity remains stable across retention changes.",
+            "approval": "proposed"
+          },
+          {
+            "id": "runtime-checking",
+            "title": "Runtime \u00b7 Checking",
+            "description": "Runtime readiness is not yet established.",
+            "approval": "proposed"
+          },
+          {
+            "id": "runtime-install-required",
+            "title": "Runtime \u00b7 Installation required",
+            "description": "Explicit runtime installation is required before creation.",
+            "approval": "proposed"
+          },
+          {
+            "id": "runtime-update-required",
+            "title": "Runtime \u00b7 Update required",
+            "description": "Installed and required versions remain distinct.",
+            "approval": "proposed"
+          },
+          {
+            "id": "runtime-installing",
+            "title": "Runtime \u00b7 Preparing",
+            "description": "Local fixture of preparation progress; no downloads occur.",
+            "approval": "proposed"
+          },
+          {
+            "id": "runtime-failed",
+            "title": "Runtime \u00b7 Failure and retry",
+            "description": "A retained diagnostic requires explicit retry.",
+            "approval": "proposed"
+          },
+          {
+            "id": "runtime-listing",
+            "title": "Runtime \u00b7 Ready, listing pending",
+            "description": "Qualified runtime and first-list connection are independent.",
+            "approval": "proposed"
+          }
+        ]
+      },
+      {
         "id": "brand",
         "title": "Brand",
         "description": "The brand book of the Harflow Desktop design system: principles, the brand mark, appearance, voice, visual foundations, layout and iconography.",

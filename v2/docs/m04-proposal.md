@@ -1,0 +1,58 @@
+# M04 proposal review
+
+Status: **Proposed; not approved.** The owner selected the progressive Advanced direction for this proposal only. These fixtures do not approve native implementation, runtime qualification, acquisition, installation or execution. No engine, provider or network operations run here.
+
+## Reference and scope
+
+Design baseline: `227da87ade53fd30af7a3e28776258c1bd72c72c`. The approved `new-task/default`, `new-task/harness-menu` and `new-task/sidebar-collapsed` templates last changed at `24958cfb155cc1149b527aba725d90931068abd0` (contained in approved `3643d083700be4032c93237813b573d04bab6ab1`). The mounted sidebar is cloned directly from those templates; `history-older`, `history-error`, `history-reconnecting` and `history-retained` reuse the existing `task/done` main unchanged. No M05 transcript redesign is included.
+
+Native behavioral evidence: HarflowMac `dadef6e465a0856d2262d5694c6a76c9fb231f15`, with D2B `3b0e0c4d516b5e8d655cfe8a5c024fe5c7cb0eb8`:
+
+- `macos/HfFeatures/MainWindowFeature/Sources/MainWindowFeature/NewSession/NewSessionVM.swift`: request snapshot equality and qualification before run; backend-specific effort/model/turn support; caller approvals require supported backend, write access and empty turn limit; stale backend discovery results are discarded.
+- `docs/managed-runtime.md`: reuse checks, explicit installation/update, retained failure, preserved generations, and runtime readiness independent from successful task listing.
+
+This proposal adds presentation and mock policy; it does not establish new ctl semantics. The initial write-in-repository authority follows the approved composer pill; the proposed interactive access menu also offers read-only, publish and Broad access (`unrestricted`) choices, matching the four native freedom levels. Broad access remains explicit requested authority and does not imply an OS enforcement guarantee; caller approvals are blocked for it, matching NewSessionVM. The caller-approval fixture offers Claude Code only with write/publish access and an empty turn limit. This is explicit mock capability data, not a claim that every installed Claude version supports it. Codex app-server caller approvals remain deferred and blocked. Capability fixtures must be reviewed against the exact future engine before implementation. The pinned `macos/HfFoundation/HfUI/Sources/HfUI/Style/Style.swift` BackendStyle table supports low/medium/high/xhigh effort for Claude and Codex; NewSessionVM hides effort for Vibe. This fixture follows that subset; unsupported requested choices remain visible and block Start. Vibe requires Default model and manages its real model in its own configuration. Turn limits accept positive whole numbers or blank, following NewSessionVM parsedTurnLimit; there is no proposed maximum of 100. The JavaScript fixture refuses numbers beyond its exact integer representation rather than silently changing the request. Empty turn limit means no requested cap.
+
+## Review boards and routes
+
+All routes are in `#m04-proposal/<state>/light` or `/dark`.
+
+| Board | Proposed states |
+|---|---|
+| Shell | `shell`, `shell-collapsed`, `shell-narrow` |
+| Composer | `composer-loading`, `composer-ready`, `composer-unqualified`, `composer-invalid`, `composer-starting`, `composer-refused`, `composer-unknown` |
+| Advanced | `advanced` |
+| History | `history-empty`, `history-loading`, `history-older`, `history-error`, `history-reconnecting`, `history-retained` |
+| Runtime | `runtime-checking`, `runtime-install-required`, `runtime-update-required`, `runtime-installing`, `runtime-failed`, `runtime-listing` |
+
+Five board links, frame selector and reset stay visible **outside** the native app frame. Deterministic completion/simulation controls are inside the catalog-only, initially collapsed Fixture controls disclosure. Controls are board-specific: runtime/listing simulations appear only on runtime routes; qualification, start outcomes and enforcement appear only on shell/composer/Advanced routes. History uses its explicit retry action. Reference frame is 1280 × 800; minimum is 1000 × 620, with horizontal catalog overflow and no font scaling. Existing tokens, icons, branding and sidebar footer remain canonical. Native titlebar, window dragging, traffic lights, SF rendering, directory menus, native popovers and accessibility behavior remain browser approximations; this fixture does not operate host windows. The topbar reserves native chrome space and names the current context. The visible catalog annotation identifies the OS-control fidelity gap; no browser control pretends to operate a native window.
+
+## Interaction and proposed persistence
+
+Type a draft to enable Start only with valid options and a qualified selection. Repository, harness and model changes invalidate qualification immediately; only a matching request revision can resolve it. Canonical rounded pills open anchored repository/recent-folder, combined harness/model and access menus; labeled native select controls inside approximate directory and platform popovers. Unavailable selections demonstrate explicit refusal to qualify. The catalog's Qualification ready/unavailable buttons represent cached outcomes, never provider qualification. Open Advanced to review effort, turn limit, approval authority and permission enforcement. Supported fixture enforcement means the requested policy is reported supported, not an OS sandbox guarantee. Unknown or unsupported required enforcement blocks Start. Fixture controls switch those explicit capability outcomes. Harness-specific model menus offer Claude Opus/Sonnet, Codex gpt-6-astra, and Default; Vibe offers Default only. A prior unsupported model remains visible and blocks Start until explicitly changed, even after qualification. Turn edits immediately validate and invalidate qualification without waiting for blur; the entered value survives appearance changes. Invalid/unsupported choices never silently fall back. Every request option change invalidates qualification; refusal/unknown outcome evidence remains retained until an explicit review/reset action.
+
+Start is single flight. Catalog completion controls explicitly resolve created/refused/unknown outcomes; there are no arbitrary timers. Definitive refusal retains the draft and offers Review settings. Unknown outcome retains and locks the submitted draft and settings, blocks retry, and offers Review Recent work without asserting whether a task exists. That action navigates to a known history fixture; it does not invent an API confirmation. Created is terminal in the fixture and blocks duplicate starts.
+
+Proposed per-repository remembered choices: harness, model, access, effort, turn limit and approvals are remembered **after a valid Start** in this mounted mock, and restored on repository selection. Unsupported restored selections remain requested and block Start. Remembered choices are in-memory only, not localStorage, native preferences or task authority. Reset fixture and route changes clear all draft, selection, remembered choices and pending outcomes. Appearance changes on the same route preserve those values. Collapsing/expanding the sidebar and changing the frame preserve the draft. Owner review must decide whether and when the native product persists these choices.
+
+History loading/empty, older-page failure and reconnect states preserve already-loaded rows where present. The selected identity remains stable even when absent from the retained page. `history-retained` retains the approved completed main identity `retry-budget` while the visible retained page contains only `events-reader`. Row identities retain their original title mapping. Older/loading-error/reconnecting states keep that same selected main; the New task navigation item is inactive. Retry older work navigates explicitly to its fixture route; it does not invent successor-discovery or transcript behavior. No search, filters or old task-level tabs are restored.
+
+Runtime fixtures show checking, explicit install/update, progress, retained failure, retry and qualified-but-first-list-pending. Catalog Runtime ready/failure and Listing ready/failed buttons independently resolve those fixture axes. Listing failure leaves runtime qualified and offers Retry loading work, never installation. Install and Update only change the local fixture to progress. Engine versions installed 0.0.7 / required 0.0.8 are **proposed example values**, not a product pin decision. Runtime onboarding is distinct from harness qualification, MCP registration and M11 settings.
+
+## Acceptance evidence to collect
+
+| Area | Acceptance target | Current evidence |
+|---|---|---|
+| Light / Dark | All 23 states readable; canonical contrast and footer retained | All 23 routes mounted in Light and Dark; no console warnings/errors; representative visual checks |
+| Keyboard | Native selects, details, fields and buttons reachable; visible focus; no duplicate starts | Enter activates collapse/expand; labeled fields and immediate invalid-turn blocking checked; full keyboard traversal pending |
+| Accessibility | Explicit labels, status announcements, disabled Start, stable selected identity | Semantic markup; VoiceOver/native checks pending |
+| Reduce Motion | Instant fixture swaps; no required animation | Scoped reduced-motion rule; browser review pending |
+| Narrow | 1000 × 620 frame, wrapping 8px actions, scrollable content without scaling | 1000 × 620 Advanced inspected in Dark; Running remains separate and Recent scrolls; no horizontal app overflow |
+| Reset / appearance | Route/reset clear fixture; appearance preserves current draft | Reset restores 1280 × 800; edited turn value survives appearance change; model regressions cover retained state |
+| Native fidelity | Source pinned; operating window/menu/AX fidelity checked in native app later | No native execution authorized or performed |
+
+Integration: load `screens-m04-proposal.js` and `m04-proposal.js` before catalog startup, plus `m04-proposal.css`. Register `HFV2.m04ProposalStates` under one `m04-proposal` family as Proposed. After template rendering call `HFV2.m04Proposal.mount(specimen, state)` and call its returned cleanup before replacing the specimen. Add `.hdc-specimen--m04` only for this family; it permits auto-height/visible overflow so catalog controls stay outside `.hd-m04-window`. Templates resolve canonical markup at mount, never during alphabetical script loading.
+
+## Proposal validation receipt
+
+Local validation: 292/292 design tests and syntax checks passed. Independent bounded review found one model-pairing issue, fixed and re-reviewed with no remaining actionable findings. Browser checks verified all 46 route/appearance combinations mount as Not approved, representative Advanced reference/minimum frames, immediate invalid-turn blocking, appearance retention, keyboard sidebar toggle, reset and retained history identity. Native window, VoiceOver, full keyboard traversal and Reduce Motion preference qualification remain pending. No runtime execution or native M04 implementation occurred. The hosted design site has not been updated by this proposal.
