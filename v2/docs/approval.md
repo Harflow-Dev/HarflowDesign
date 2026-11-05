@@ -22,3 +22,13 @@ Implementations cite the HarflowDesign commit that contains the specimen, the fi
 - State: `#workflow-editor/node-selected` (add `/light` or `/dark` to pin an appearance).
 
 Record any deviation from the specimen next to the citation. Approval covers the design direction and the states listed here; it does not establish native pixel fidelity.
+
+## M04 native entry direction — 2026-11-05
+
+The owner approved the M04 visual direction after requesting the bottom-left + task-options popover and a softer slim scrollbar. The final scrollbar uses the existing tertiary token at 72% for both standard and WebKit paths.
+
+Approval covers all 24 `m04-proposal` states in Light and Dark: `shell`, `shell-collapsed`, `shell-narrow`, `composer-loading`, `composer-ready`, `composer-unqualified`, `composer-invalid`, `composer-starting`, `composer-refused`, `composer-unknown`, `advanced`, `advanced-closed`, `history-empty`, `history-loading`, `history-older`, `history-error`, `history-reconnecting`, `history-retained`, `runtime-checking`, `runtime-install-required`, `runtime-update-required`, `runtime-installing`, `runtime-failed` and `runtime-listing`.
+
+Sources: `v2/scripts/screens-m04-proposal.js`, `v2/scripts/m04-proposal.js` and `v2/styles/m04-proposal.css`; behavior and scope are recorded in [m04-proposal.md](m04-proposal.md). Implementation citations must pin the eventual HarflowDesign commit containing these final files and the exact route/appearance. No future commit hash is asserted here.
+
+This approval covers the visual direction and local interaction design. It does not establish native pixel fidelity, runtime qualification, engine version adoption, production capability enforcement, persistence policy acceptance, M03/M04 migration acceptance or permission to install, execute or publish runtime artifacts. Browser approximations and deferred native/runtime verification remain explicit.

@@ -338,152 +338,153 @@
       },
       {
         "id": "m04-proposal",
-        "title": "M04 native entry proposal",
-        "description": "Proposed shell, composer, history and runtime entry states for owner review. Deterministic browser fixtures only; no native or runtime implementation.",
+        "title": "M04 native entry direction",
+        "approval": {"by": "owner", "date": "2026-11-05", "reference": "M04 visual direction; native and runtime qualification separate"},
+        "description": "Owner-approved visual direction (2026-11-05) for shell, composer, history and runtime entry states. Deterministic browser fixtures only; no native or runtime implementation.",
         "states": [
           {
             "id": "shell",
             "title": "Shell \u00b7 Expanded",
             "description": "Native shell adaptation of the approved composer.",
-            "approval": "proposed"
+            "approval": "approved"
           },
           {
             "id": "shell-collapsed",
             "title": "Shell \u00b7 Collapsed rail",
             "description": "Native collapsed rail and accessible navigation.",
-            "approval": "proposed"
+            "approval": "approved"
           },
           {
             "id": "shell-narrow",
             "title": "Shell \u00b7 Minimum window",
             "description": "Minimum-size composition without font scaling.",
-            "approval": "proposed"
+            "approval": "approved"
           },
           {
             "id": "composer-loading",
             "title": "Composer \u00b7 Checking options",
             "description": "Readiness is pending; the draft remains editable.",
-            "approval": "proposed"
+            "approval": "approved"
           },
           {
             "id": "composer-ready",
             "title": "Composer \u00b7 Ready",
             "description": "Qualified, valid selections allow an explicit start.",
-            "approval": "proposed"
+            "approval": "approved"
           },
           {
             "id": "composer-unqualified",
             "title": "Composer \u00b7 Unavailable options",
             "description": "Unsupported or unqualified selections cannot start.",
-            "approval": "proposed"
+            "approval": "approved"
           },
           {
             "id": "composer-invalid",
             "title": "Composer \u00b7 Validation",
             "description": "Invalid input and requested options need correction.",
-            "approval": "proposed"
+            "approval": "approved"
           },
           {
             "id": "composer-starting",
             "title": "Composer \u00b7 Starting",
             "description": "One in-flight start retains the draft and prevents duplicates.",
-            "approval": "proposed"
+            "approval": "approved"
           },
           {
             "id": "composer-refused",
             "title": "Composer \u00b7 Refused",
             "description": "A definitive refusal preserves the draft for review.",
-            "approval": "proposed"
+            "approval": "approved"
           },
           {
             "id": "composer-unknown",
             "title": "Composer \u00b7 Outcome unknown",
             "description": "Unknown outcome preserves uncertainty without automatic retry.",
-            "approval": "proposed"
+            "approval": "approved"
           },
           {
             "id": "advanced",
             "title": "Task options · Open",
             "description": "Retained supported controls with truthful enforcement limits.",
-            "approval": "proposed"
+            "approval": "approved"
           },
           {
             "id": "advanced-closed",
             "title": "Task options · Closed",
             "description": "Customized task options retained behind the bottom-left plus button.",
-            "approval": "proposed"
+            "approval": "approved"
           },
           {
             "id": "history-empty",
             "title": "History \u00b7 Empty",
             "description": "No running or recent work in the available listing.",
-            "approval": "proposed"
+            "approval": "approved"
           },
           {
             "id": "history-loading",
             "title": "History \u00b7 Loading",
             "description": "Initial listing has no fabricated work rows.",
-            "approval": "proposed"
+            "approval": "approved"
           },
           {
             "id": "history-older",
             "title": "History \u00b7 Loading older",
             "description": "Older-page loading retains already loaded rows.",
-            "approval": "proposed"
+            "approval": "approved"
           },
           {
             "id": "history-error",
             "title": "History \u00b7 Read failure",
             "description": "Failed reads preserve loaded work and offer explicit retry.",
-            "approval": "proposed"
+            "approval": "approved"
           },
           {
             "id": "history-reconnecting",
             "title": "History \u00b7 Reconnecting",
             "description": "Reconnect preserves identity and uncertainty.",
-            "approval": "proposed"
+            "approval": "approved"
           },
           {
             "id": "history-retained",
             "title": "History \u00b7 Retained selection",
             "description": "A selected identity remains stable across retention changes.",
-            "approval": "proposed"
+            "approval": "approved"
           },
           {
             "id": "runtime-checking",
             "title": "Runtime \u00b7 Checking",
             "description": "Runtime readiness is not yet established.",
-            "approval": "proposed"
+            "approval": "approved"
           },
           {
             "id": "runtime-install-required",
             "title": "Runtime \u00b7 Installation required",
             "description": "Explicit runtime installation is required before creation.",
-            "approval": "proposed"
+            "approval": "approved"
           },
           {
             "id": "runtime-update-required",
             "title": "Runtime \u00b7 Update required",
             "description": "Installed and required versions remain distinct.",
-            "approval": "proposed"
+            "approval": "approved"
           },
           {
             "id": "runtime-installing",
             "title": "Runtime \u00b7 Preparing",
             "description": "Local fixture of preparation progress; no downloads occur.",
-            "approval": "proposed"
+            "approval": "approved"
           },
           {
             "id": "runtime-failed",
             "title": "Runtime \u00b7 Failure and retry",
             "description": "A retained diagnostic requires explicit retry.",
-            "approval": "proposed"
+            "approval": "approved"
           },
           {
             "id": "runtime-listing",
             "title": "Runtime \u00b7 Ready, listing pending",
             "description": "Qualified runtime and first-list connection are independent.",
-            "approval": "proposed"
+            "approval": "approved"
           }
         ]
       },

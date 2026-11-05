@@ -1,6 +1,6 @@
 # M04 proposal review
 
-Status: **Proposed; not approved.** The owner selected the bottom-left + task-options popover revision for this proposal; native implementation remains deferred. These fixtures do not approve native implementation, runtime qualification, acquisition, installation or execution. No engine, provider or network operations run here.
+Status: **Owner-approved visual direction, 2026-11-05.** The owner approved the M04 proposal after the requested bottom-left + task-options popover and softer slim scrollbar correction. Approval covers all 24 catalog states in Light and Dark, including the customized closed options state. It does not establish native pixel fidelity, engine/runtime qualification or migration acceptance. Native implementation and runtime execution remain separate work; no engine, provider or network operations run in these fixtures.
 
 ## Reference and scope
 
@@ -17,7 +17,7 @@ This proposal adds presentation and mock policy; it does not establish new ctl s
 
 All routes are in `#m04-proposal/<state>/light` or `/dark`.
 
-| Board | Proposed states |
+| Board | Approved visual states |
 |---|---|
 | Shell | `shell`, `shell-collapsed`, `shell-narrow` |
 | Composer | `composer-loading`, `composer-ready`, `composer-unqualified`, `composer-invalid`, `composer-starting`, `composer-refused`, `composer-unknown` |
@@ -51,7 +51,7 @@ Runtime fixtures show checking, explicit install/update, progress, retained fail
 | Reset / appearance | Route/reset clear fixture; appearance preserves current draft | Reset restores 1280 × 800; edited turn value survives appearance change; model regressions cover retained state |
 | Native fidelity | Source pinned; operating window/menu/AX fidelity checked in native app later | No native execution authorized or performed |
 
-Integration: load `screens-m04-proposal.js` and `m04-proposal.js` before catalog startup, plus `m04-proposal.css`. Register `HFV2.m04ProposalStates` under one `m04-proposal` family as Proposed. After template rendering call `HFV2.m04Proposal.mount(specimen, state)` and call its returned cleanup before replacing the specimen. Add `.hdc-specimen--m04` only for this family; it permits auto-height/visible overflow so catalog controls stay outside `.hd-m04-window`. Templates resolve canonical markup at mount, never during alphabetical script loading.
+Integration: load `screens-m04-proposal.js` and `m04-proposal.js` before catalog startup, plus `m04-proposal.css`. Register `HFV2.m04ProposalStates` under one `m04-proposal` family as Approved. After template rendering call `HFV2.m04Proposal.mount(specimen, state)` and call its returned cleanup before replacing the specimen. Add `.hdc-specimen--m04` only for this family; it permits auto-height/visible overflow so catalog controls stay outside `.hd-m04-window`. Templates resolve canonical markup at mount, never during alphabetical script loading.
 
 ## Proposal validation receipt
 
@@ -59,4 +59,6 @@ Local validation: 292/292 design tests and syntax checks passed. Independent bou
 
 ### Plus-button revision validation
 
-The separate Advanced card is replaced by the bottom-left More task options button. The open and customized closed routes remain Proposed. After the revision, 295/295 design tests passed; final option-description change passed the 21 scoped proposal tests and syntax check. Independent bounded review found no blocking issues; its accessible indicator suggestion was addressed with aria-describedby. Browser checks covered open/closed Light, minimum Dark geometry, no horizontal popup overflow, thin scrollbar, keyboard Enter/Escape, outside dismissal retaining prompt focus, and errors remaining visible with the popup closed. No native or runtime execution occurred.
+The separate Advanced card is replaced by the bottom-left More task options button. The open and customized closed routes are included in the owner-approved visual direction dated 2026-11-05. After the revision, 295/295 design tests passed; final option-description change passed the 21 scoped proposal tests and syntax check. Independent bounded review found no blocking issues; its accessible indicator suggestion was addressed with aria-describedby. Browser checks covered open/closed Light, minimum Dark geometry, no horizontal popup overflow, thin scrollbar, keyboard Enter/Escape, outside dismissal retaining prompt focus, and errors remaining visible with the popup closed. No native or runtime execution occurred.
+
+Approval source: the owner explicitly approved continuing after the requested scrollbar softness correction on 2026-11-05. The final scrollbar uses the existing tertiary token at 72% for both standard and WebKit paths. Approval record: [approval.md](approval.md). Commit citation must use the eventual HarflowDesign commit containing this final specimen; no uncreated commit hash is claimed.
