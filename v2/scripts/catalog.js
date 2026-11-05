@@ -161,7 +161,8 @@
       els.specimen.style.minHeight = meta.height + 'px';
       els.specimen.innerHTML = '<div data-theme="' + resolved + '" style="background: var(--bg); color: var(--text);">' + html + '</div>';
     } else {
-      els.specimen.className = 'hdc-specimen';
+      els.specimen.className = current.family === 'd2b-proposal'
+        ? 'hdc-specimen hdc-specimen--d2b' : 'hdc-specimen';
       els.specimen.style.minHeight = '';
       els.specimen.innerHTML = html;
     }
@@ -177,9 +178,9 @@
     els.eyebrow.textContent = 'Harflow Desktop / ' + family.title;
     els.title.textContent = state.title;
     els.description.textContent = state.description;
-    var approval = HFV2.registry.approval;
+    var approval = family.approval || HFV2.registry.approval;
     els.approval.textContent = state.approval === 'approved'
-      ? 'Approved by ' + approval.by + ' on ' + approval.date + ' · canvas ' + approval.canvas + ' · design system ' + approval.designSystem
+      ? 'Approved by ' + approval.by + ' on ' + approval.date + (approval.reference ? ' · ' + approval.reference : ' · canvas ' + approval.canvas + ' · design system ' + approval.designSystem)
       : 'Not approved';
     var specimenSize = current.family === 'd2b-proposal'
       ? 'app frame 1280 × 800 or minimum 1000 × 620 via Size; catalogue controls outside the app'

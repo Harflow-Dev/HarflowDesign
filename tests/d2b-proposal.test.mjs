@@ -173,7 +173,7 @@ test('new activity is admitted explicitly and leaves the retained anchor intact'
   assert.equal(after.rows.length, before.rows.length + 1);
 });
 
-test('proposal templates cover eight exploratory states with accessible local observation surfaces', () => {
+test('proposal templates cover eight focused states with accessible local observation surfaces', () => {
   vm.runInContext(script('screens-d2b-proposal.js'), context);
   const keys = Object.keys(context.HFV2.templates);
   assert.deepEqual(keys.sort(), ['capacity', 'events', 'integrity-failed', 'loading', 'observed', 'partial', 'reconnecting', 'unavailable'].map(name => `d2b-proposal/${name}`).sort());
@@ -244,14 +244,25 @@ test('native size controls preserve independent observations, retained position 
   }
 });
 
-test('proposal approval remains exploratory in catalog metadata and unapproved in catalog controls', () => {
+test('D2B owner approval is scoped to its family and preserves the earlier catalog approval', () => {
   vm.runInContext(script('registry.js'), context);
   const family = context.HFV2.registry.families.find(item => item.id === 'd2b-proposal');
   assert.ok(family);
   assert.equal(family.states.length, 8);
-  assert.ok(family.states.every(item => item.approval === 'exploratory'));
+  assert.ok(family.states.every(item => item.approval === 'approved'));
+  assert.equal(family.approval.date, '2026-11-05');
+  assert.equal(family.approval.by, 'the owner');
+  assert.match(family.approval.reference, /D2B observation states/);
+  assert.equal(family.approval.canvas, undefined, 'family approval uses its explicit reference');
+  const registry = context.HFV2.registry;
+  assert.equal(registry.approval.date, '2026-11-03');
+  assert.equal(registry.approval.canvas, '1793668079-d8d9');
+  assert.equal(registry.approval.designSystem, '1793668064-9e04');
+  const task = registry.families.find(item => item.id === 'task');
+  assert.ok(task.states.every(item => item.approval === 'approved'));
+  assert.equal(task.approval, undefined, 'task family keeps the original catalog approval');
   assert.match(script('d2b-proposal.js'), /Proposal controls · catalog only/);
-  assert.match(script('d2b-proposal.js'), /Deterministic mock · unapproved/);
+  assert.match(script('d2b-proposal.js'), /Deterministic mock · design reference/);
 });
 
 test('consumer rebase cannot erase capture loss or admit sound totals after an unknown source', () => {
@@ -338,5 +349,38 @@ test('known captured tool evidence rejects contradictory zero even in a forged v
     const forged = api.activityView({ ...model, summaryCoverage: 'empty' });
     assert.equal(forged.toolCount, null, name);
     assert.equal(forged.count, 'Tool activity unavailable', name);
+  }
+});
+
+test('proposal sidebar preserves the canonical task navigation and appearance while adapting only its active fixture', () => {
+  const sidebarContext = vm.createContext({ window: {} });
+  sidebarContext.window = sidebarContext;
+  for (const name of ['registry.js', 'screens-task.js', 'screens-d2b-proposal.js', 'd2b-proposal.js']) vm.runInContext(script(name), sidebarContext);
+  const H = sidebarContext.HFV2;
+  const activeRow = /<a class="hd-task-row[^"]*is-active[^"]*"[\s\S]*?<\/a>/;
+  const normalizeActive = html => html.replace(activeRow, '<active-task-fixture>');
+  for (const name of ['observed', 'loading', 'reconnecting', 'capacity']) {
+    const model = H.d2bProposal.createState(name);
+    const canonical = H.templates[model.status === 'Running' ? 'task/running' : 'task/done'].match(/<aside class="hd-sidebar"[\s\S]*?<\/aside>/)[0];
+    for (const [selection, resolved] of [['light', 'light'], ['dark', 'dark'], ['system', 'light'], ['system', 'dark']]) {
+      const sidebar = H.d2bProposal.sidebarForState(model, selection, resolved);
+      assert.equal(normalizeActive(sidebar), normalizeActive(H.fill(canonical.replace('href="#new"', 'href="#new-task/default"'), selection, resolved)), `${name}/${selection}/${resolved} preserves canonical sidebar outside active row`);
+      assert.match(sidebar, /href="#new-task\/default"/);
+      assert.doesNotMatch(sidebar, /href="#new"/);
+      assert.equal((sidebar.match(/<aside class="hd-sidebar"/g) || []).length, 1);
+      assert.equal((sidebar.match(/is-active/g) || []).length, 1);
+      const active = sidebar.match(activeRow)[0];
+      assert.match(active, new RegExp(`href="#d2b-proposal/${name}"`));
+      assert.match(active, />Fix slot release test</);
+      for (const label of ['Running', 'Recent work', 'Settings', 'Appearance']) assert.ok(sidebar.includes(label), label);
+      for (const icon of ['plus', 'hand', 'workflow', 'gauge', 'chart', 'settings']) assert.ok(sidebar.includes(`hd-i-${icon}`), icon);
+      for (const mode of ['System', 'Light', 'Dark']) assert.ok(sidebar.includes(`aria-pressed="${String(selection === mode.toLowerCase())}" aria-label="${mode}"`), `${selection}/${mode}`);
+      assert.ok(!sidebar.includes('{{'), 'sidebar has no theme placeholders');
+      const filledTemplate = H.fill(H.templates[`d2b-proposal/${name}`], selection, resolved);
+      assert.ok(!filledTemplate.includes('{{'), 'proposal host has no theme placeholders');
+      for (const mode of ['system', 'light', 'dark']) assert.ok(filledTemplate.includes(`data-${mode}-on="${String(selection === mode)}"`), `${mode} selection survives host fill`);
+      assert.equal((filledTemplate.match(/data-d2b-sidebar/g) || []).length, 1);
+      assert.doesNotMatch(filledTemplate, /<aside class="hd-sidebar"/, 'proposal template has one mount placeholder instead of a duplicate static sidebar');
+    }
   }
 });

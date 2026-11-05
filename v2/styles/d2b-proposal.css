@@ -1,4 +1,4 @@
-/* Unapproved proposal; native specimen remains 1280 × 800. */
+/* Owner-approved direction; browser specimen remains 1280 × 800. */
 .hd-d2b{min-width:1280px;color:var(--text);font-family:var(--font-sans);font-size:14px;line-height:22px}
 .hdc-d2b-controls{display:flex;align-items:center;gap:var(--space-3);padding:var(--space-3);background:var(--surface-sunken);border-bottom:1px solid var(--border);font-size:12px}
 .hdc-d2b-controls label{display:flex;gap:var(--space-2);align-items:center}
@@ -35,3 +35,9 @@
 .hd-d2b-facts hr{border:0;border-top:1px solid var(--border);margin:var(--space-4) 0}
 
 .hd-d2b-row details[open] .hd-d2b-tool-chevron{transform:rotate(90deg)}
+
+.hd-d2b [data-d2b-sidebar]{display:contents}
+.hd-d2b-actions{gap:var(--space-2);flex-wrap:wrap;margin-top:var(--space-2)}
+
+/* Catalogue controls sit outside the full native frame; do not clip its footer. */
+.hdc-specimen--d2b{height:auto;min-height:0}

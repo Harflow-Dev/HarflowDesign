@@ -1,0 +1,632 @@
+{
+  "stage": "M01-G01-D2B-owner-corrections",
+  "date": "2026-11-05 Asia/Jakarta",
+  "base": "ba10e2d659dbdf6fbf759c9c9b6165fff9d9cd38",
+  "status": "owner direction approved with two requested corrections applied; native/product implementation separate",
+  "owned_input_sha256": {
+    "v2/scripts/d2b-proposal.js": "8afd0f3c0cc118512019665b80d7f54fa362ace85f95439b301d553708f52fcf",
+    "v2/scripts/screens-d2b-proposal.js": "49c87afb0b515ebd204658db4d469859d831e5755a62f8a6b9a19a6223a32c94",
+    "v2/styles/d2b-proposal.css": "9937412bd45137f67ffebc9795eca3c5a1f00390c5763c71249b1b5db6d99705",
+    "v2/scripts/registry.js": "5f0dea3babbda8bca64a8065f951b7653d0b14c9f3082a9378c23f66105ae9dc",
+    "v2/scripts/catalog.js": "af7aad47c57f35e1c071592fcfa2c395d2a57c935389ba93b7a1c0d53a20a36d",
+    "tests/d2b-proposal.test.mjs": "e1c7b056a95fce1a119b64ed59c09a816bcb8f0c31fba734cd4a4704370cdca2",
+    "v2/docs/d2b-observation-proposal.md": "7e12fe2886ac0f6086a2e6e84e82ef023d79563de1857ab5a5e9524cba1e251d",
+    "v2/docs/d2b-observation-approval.md": "10ae5fe4071f3abe6d1227f62d7ae0360bed95528ef03e0b25e892739e990ab4"
+  },
+  "protected_tracker_sha256": {
+    "docs/migration-plan.md": "d744411a70ac93b00c82f04e58918acb6f7fac2797194bb1accb35b190e992d3",
+    "docs/migration-sessions.md": "02dcc7868a1ecbd35b657b46d82f0c7ddfa0283a60bbb5ea2c2a2cef098f7c21",
+    "v2/docs/migration-coverage.md": "ec9dafe333b7698c1e6587d9ac78113e025c4b8debb773d61e0c733357c29154"
+  },
+  "approved_baseline_unchanged_sha256": {
+    "v2/scripts/screens-task.js": "3dbc745cbe1391c034a93316f8ded0aacb18d9ff2c82cc94618011292609fe48",
+    "v2/styles/tokens.css": "831ad89069d6c20d5ca9f5cfa2db598298780edf8ac689f3edd4f8d74d6d66ff",
+    "v2/styles/bundle.css": "5a4060be570552932b9dfb2aa05fe350a5c9d0041626ee838f941c7d56cf7649",
+    "v2/docs/approval.md": "3acd217f377a9ccab20aea67b832664f52ef41cf28304ad5afd757c8e5a778da",
+    "v2/docs/screen-inventory.md": "1a6c3b701608fe002bca6adef7cafad452821082294c890634046045896f8e83"
+  },
+  "tests": {
+    "command": "node --test tests/catalog.test.mjs tests/v2.test.mjs tests/d2b-proposal.test.mjs",
+    "exit_code": 0,
+    "passed": 267,
+    "failed": 0,
+    "skipped": 0,
+    "proposal_cases": 25,
+    "log_sha256": "f5f87dd4200d21c6c206f53bcf271a481590e2b720d578bc70434fad3d0380c9"
+  },
+  "browser": [
+    {
+      "state": "observed",
+      "theme": "light",
+      "result": {
+        "approval": "Approved by the owner on 2026-11-05 \u00b7 D2B observation states \u00b7 requested corrections applied",
+        "buttonGap": 8,
+        "footerInside": true,
+        "gap": "8px",
+        "nav": [
+          "New task",
+          "Needs you",
+          "Workflows",
+          "Resources",
+          "Statistics",
+          "Settings"
+        ],
+        "sections": [
+          "Running 2",
+          "Recent work"
+        ],
+        "sidebarCount": 1,
+        "themeSelected": [
+          "Light"
+        ],
+        "wrap": "wrap",
+        "minimum": {
+          "buttonGap": 8,
+          "font": "14px",
+          "footerInside": true,
+          "height": 620,
+          "width": 1000
+        }
+      }
+    },
+    {
+      "state": "observed",
+      "theme": "dark",
+      "result": {
+        "approval": "Approved by the owner on 2026-11-05 \u00b7 D2B observation states \u00b7 requested corrections applied",
+        "buttonGap": 8,
+        "footerInside": true,
+        "gap": "8px",
+        "nav": [
+          "New task",
+          "Needs you",
+          "Workflows",
+          "Resources",
+          "Statistics",
+          "Settings"
+        ],
+        "sections": [
+          "Running 2",
+          "Recent work"
+        ],
+        "sidebarCount": 1,
+        "themeSelected": [
+          "Dark"
+        ],
+        "wrap": "wrap",
+        "minimum": {
+          "buttonGap": 8,
+          "font": "14px",
+          "footerInside": true,
+          "height": 620,
+          "width": 1000
+        }
+      }
+    },
+    {
+      "state": "reconnecting",
+      "theme": "light",
+      "result": {
+        "approval": "Approved by the owner on 2026-11-05 \u00b7 D2B observation states \u00b7 requested corrections applied",
+        "buttonGap": null,
+        "footerInside": true,
+        "gap": "8px",
+        "nav": [
+          "New task",
+          "Needs you",
+          "Workflows",
+          "Resources",
+          "Statistics",
+          "Settings"
+        ],
+        "sections": [
+          "Running 2",
+          "Recent work"
+        ],
+        "sidebarCount": 1,
+        "themeSelected": [
+          "Light"
+        ],
+        "wrap": "wrap",
+        "minimum": {
+          "buttonGap": null,
+          "font": "14px",
+          "footerInside": true,
+          "height": 620,
+          "width": 1000
+        }
+      }
+    },
+    {
+      "state": "reconnecting",
+      "theme": "dark",
+      "result": {
+        "approval": "Approved by the owner on 2026-11-05 \u00b7 D2B observation states \u00b7 requested corrections applied",
+        "buttonGap": null,
+        "footerInside": true,
+        "gap": "8px",
+        "nav": [
+          "New task",
+          "Needs you",
+          "Workflows",
+          "Resources",
+          "Statistics",
+          "Settings"
+        ],
+        "sections": [
+          "Running 2",
+          "Recent work"
+        ],
+        "sidebarCount": 1,
+        "themeSelected": [
+          "Dark"
+        ],
+        "wrap": "wrap",
+        "minimum": {
+          "buttonGap": null,
+          "font": "14px",
+          "footerInside": true,
+          "height": 620,
+          "width": 1000
+        }
+      }
+    }
+  ],
+  "controls": {
+    "systemCheck": {
+      "hostSystem": "true",
+      "resolved": "dark",
+      "selected": "System"
+    },
+    "navigationCheck": {
+      "url": "http://localhost:8768/v2/index.html#settings/general",
+      "approval": "Approved by the owner on 2026-11-03 \u00b7 canvas 1793668079-d8d9 \u00b7 design system 1793668064-9e04"
+    },
+    "focusCheck": {
+      "focused": "New activity \u00b7 show",
+      "outline": "2px"
+    }
+  },
+  "new_task_navigation": {
+    "url": "http://localhost:8768/v2/index.html#new-task/default/light",
+    "title": "Default"
+  },
+  "screenshots_sha256": {
+    "/private/tmp/d2b-owner-corrections/corrected-light.jpg": "866ffc7cc69721a1e50a9d2bc28c8ae155084eeab392789cf4d024a24696d5e4",
+    "/private/tmp/d2b-owner-corrections/corrected-dark.jpg": "c79cba7fa97dad8ee08024a341112d1d5a1be3ca95fb33e30ef2d0d06d9c1821"
+  },
+  "review": "Final source, visual and record accuracy approved; both owner corrections, clipping-safe visible footer, navigation, scoped approval and267passingtests independently verified.",
+  "not_performed": [
+    "product implementation/private-reader cutover",
+    "native pixel/AX qualification",
+    "runtime selection/install",
+    "push or hosted publication"
+  ],
+  "syntax": {
+    "all_54_javascript_files": "node --check exit0",
+    "whitespace": "git diff --check exit0"
+  },
+  "request_action_browser": {
+    "requestActionGap": 8,
+    "requestCapFocus": {
+      "focusInRequest": true,
+      "fullCopyButtons": 0
+    }
+  },
+  "footer_visibility": [
+    {
+      "state": "observed",
+      "theme": "light",
+      "size": "reference",
+      "result": {
+        "app": {
+          "height": 800,
+          "width": 1280
+        },
+        "buttonGap": 8,
+        "controls": [
+          {
+            "height": 32,
+            "hit": true,
+            "insideClip": true,
+            "name": "Settings",
+            "width": 140
+          },
+          {
+            "height": 24,
+            "hit": true,
+            "insideClip": true,
+            "name": "System",
+            "width": 28
+          },
+          {
+            "height": 24,
+            "hit": true,
+            "insideClip": true,
+            "name": "Light",
+            "width": 28
+          },
+          {
+            "height": 24,
+            "hit": true,
+            "insideClip": true,
+            "name": "Dark",
+            "width": 28
+          }
+        ],
+        "footer": {
+          "display": "flex",
+          "height": 41,
+          "opacity": "1",
+          "visibility": "visible",
+          "width": 248
+        },
+        "insideApp": true,
+        "insideCatalogFrame": true
+      }
+    },
+    {
+      "state": "observed",
+      "theme": "light",
+      "size": "minimum",
+      "result": {
+        "app": {
+          "height": 620,
+          "width": 1000
+        },
+        "buttonGap": 8,
+        "controls": [
+          {
+            "height": 32,
+            "hit": true,
+            "insideClip": true,
+            "name": "Settings",
+            "width": 140
+          },
+          {
+            "height": 24,
+            "hit": true,
+            "insideClip": true,
+            "name": "System",
+            "width": 28
+          },
+          {
+            "height": 24,
+            "hit": true,
+            "insideClip": true,
+            "name": "Light",
+            "width": 28
+          },
+          {
+            "height": 24,
+            "hit": true,
+            "insideClip": true,
+            "name": "Dark",
+            "width": 28
+          }
+        ],
+        "footer": {
+          "display": "flex",
+          "height": 41,
+          "opacity": "1",
+          "visibility": "visible",
+          "width": 248
+        },
+        "insideApp": true,
+        "insideCatalogFrame": true
+      }
+    },
+    {
+      "state": "observed",
+      "theme": "dark",
+      "size": "reference",
+      "result": {
+        "app": {
+          "height": 800,
+          "width": 1280
+        },
+        "buttonGap": 8,
+        "controls": [
+          {
+            "height": 32,
+            "hit": true,
+            "insideClip": true,
+            "name": "Settings",
+            "width": 140
+          },
+          {
+            "height": 24,
+            "hit": true,
+            "insideClip": true,
+            "name": "System",
+            "width": 28
+          },
+          {
+            "height": 24,
+            "hit": true,
+            "insideClip": true,
+            "name": "Light",
+            "width": 28
+          },
+          {
+            "height": 24,
+            "hit": true,
+            "insideClip": true,
+            "name": "Dark",
+            "width": 28
+          }
+        ],
+        "footer": {
+          "display": "flex",
+          "height": 41,
+          "opacity": "1",
+          "visibility": "visible",
+          "width": 248
+        },
+        "insideApp": true,
+        "insideCatalogFrame": true
+      }
+    },
+    {
+      "state": "observed",
+      "theme": "dark",
+      "size": "minimum",
+      "result": {
+        "app": {
+          "height": 620,
+          "width": 1000
+        },
+        "buttonGap": 8,
+        "controls": [
+          {
+            "height": 32,
+            "hit": true,
+            "insideClip": true,
+            "name": "Settings",
+            "width": 140
+          },
+          {
+            "height": 24,
+            "hit": true,
+            "insideClip": true,
+            "name": "System",
+            "width": 28
+          },
+          {
+            "height": 24,
+            "hit": true,
+            "insideClip": true,
+            "name": "Light",
+            "width": 28
+          },
+          {
+            "height": 24,
+            "hit": true,
+            "insideClip": true,
+            "name": "Dark",
+            "width": 28
+          }
+        ],
+        "footer": {
+          "display": "flex",
+          "height": 41,
+          "opacity": "1",
+          "visibility": "visible",
+          "width": 248
+        },
+        "insideApp": true,
+        "insideCatalogFrame": true
+      }
+    },
+    {
+      "state": "reconnecting",
+      "theme": "light",
+      "size": "reference",
+      "result": {
+        "app": {
+          "height": 800,
+          "width": 1280
+        },
+        "buttonGap": null,
+        "controls": [
+          {
+            "height": 32,
+            "hit": true,
+            "insideClip": true,
+            "name": "Settings",
+            "width": 140
+          },
+          {
+            "height": 24,
+            "hit": true,
+            "insideClip": true,
+            "name": "System",
+            "width": 28
+          },
+          {
+            "height": 24,
+            "hit": true,
+            "insideClip": true,
+            "name": "Light",
+            "width": 28
+          },
+          {
+            "height": 24,
+            "hit": true,
+            "insideClip": true,
+            "name": "Dark",
+            "width": 28
+          }
+        ],
+        "footer": {
+          "display": "flex",
+          "height": 41,
+          "opacity": "1",
+          "visibility": "visible",
+          "width": 248
+        },
+        "insideApp": true,
+        "insideCatalogFrame": true
+      }
+    },
+    {
+      "state": "reconnecting",
+      "theme": "light",
+      "size": "minimum",
+      "result": {
+        "app": {
+          "height": 620,
+          "width": 1000
+        },
+        "buttonGap": null,
+        "controls": [
+          {
+            "height": 32,
+            "hit": true,
+            "insideClip": true,
+            "name": "Settings",
+            "width": 140
+          },
+          {
+            "height": 24,
+            "hit": true,
+            "insideClip": true,
+            "name": "System",
+            "width": 28
+          },
+          {
+            "height": 24,
+            "hit": true,
+            "insideClip": true,
+            "name": "Light",
+            "width": 28
+          },
+          {
+            "height": 24,
+            "hit": true,
+            "insideClip": true,
+            "name": "Dark",
+            "width": 28
+          }
+        ],
+        "footer": {
+          "display": "flex",
+          "height": 41,
+          "opacity": "1",
+          "visibility": "visible",
+          "width": 248
+        },
+        "insideApp": true,
+        "insideCatalogFrame": true
+      }
+    },
+    {
+      "state": "reconnecting",
+      "theme": "dark",
+      "size": "reference",
+      "result": {
+        "app": {
+          "height": 800,
+          "width": 1280
+        },
+        "buttonGap": null,
+        "controls": [
+          {
+            "height": 32,
+            "hit": true,
+            "insideClip": true,
+            "name": "Settings",
+            "width": 140
+          },
+          {
+            "height": 24,
+            "hit": true,
+            "insideClip": true,
+            "name": "System",
+            "width": 28
+          },
+          {
+            "height": 24,
+            "hit": true,
+            "insideClip": true,
+            "name": "Light",
+            "width": 28
+          },
+          {
+            "height": 24,
+            "hit": true,
+            "insideClip": true,
+            "name": "Dark",
+            "width": 28
+          }
+        ],
+        "footer": {
+          "display": "flex",
+          "height": 41,
+          "opacity": "1",
+          "visibility": "visible",
+          "width": 248
+        },
+        "insideApp": true,
+        "insideCatalogFrame": true
+      }
+    },
+    {
+      "state": "reconnecting",
+      "theme": "dark",
+      "size": "minimum",
+      "result": {
+        "app": {
+          "height": 620,
+          "width": 1000
+        },
+        "buttonGap": null,
+        "controls": [
+          {
+            "height": 32,
+            "hit": true,
+            "insideClip": true,
+            "name": "Settings",
+            "width": 140
+          },
+          {
+            "height": 24,
+            "hit": true,
+            "insideClip": true,
+            "name": "System",
+            "width": 28
+          },
+          {
+            "height": 24,
+            "hit": true,
+            "insideClip": true,
+            "name": "Light",
+            "width": 28
+          },
+          {
+            "height": 24,
+            "hit": true,
+            "insideClip": true,
+            "name": "Dark",
+            "width": 28
+          }
+        ],
+        "footer": {
+          "display": "flex",
+          "height": 41,
+          "opacity": "1",
+          "visibility": "visible",
+          "width": 248
+        },
+        "insideApp": true,
+        "insideCatalogFrame": true
+      }
+    }
+  ],
+  "canonical_frame_after_navigation": {
+    "approval": "Approved by the owner on 2026-11-03 \u00b7 canvas 1793668079-d8d9 \u00b7 design system 1793668064-9e04",
+    "className": "hdc-specimen",
+    "height": 800
+  },
+  "diagnostic": "Earlier observed/reconnecting captures had a clipped sidebar footer; initial insideApp geometry was insufficient. Qualified final captures corrected-light/dark plus native-and-catalogue clip checks and positive visible control hit tests supersede those diagnostic images."
+}

@@ -1,6 +1,6 @@
 # D2B public observation states — owner review proposal
 
-**Exploratory / not approved.** M01-G01-D2B design preparation, 2026-11-05. No product implementation, private-reader removal, M04 start or hosted publication is authorized by this document. Rendering, tests and a local commit establish a reviewable proposal, not owner approval.
+**Owner-approved direction, with requested corrections applied.** On 2026-11-05 the owner said “looks good” and requested spacing between Load earlier/New activity and the correct v2 sidebar. The corrected reference reuses the canonical approved sidebar and an 8px wrapping action gap. See [the scoped approval record](d2b-observation-approval.md). This approves the design direction; it does not establish native fidelity, product acceptance or authorization to start D2B implementation, M04 or publication.
 
 ## Grounding and scope
 
@@ -14,8 +14,8 @@ Revision3 retains the task transcript and right-pane Changes/Artifacts/Events, r
 
 - Put **Original request** in a disclosure at the start of the transcript. This is the sole assignment presentation in the focused specimen, not a second task tab. Do not duplicate it as a synthetic initial-message bubble. Historical messages remain distinct unless identity/provenance establishes an actual duplicate; never deduplicate by approximate text.
 - Put history loading, loss, reconnect and reading-window notices **inline above retained captured rows**. Task execution status remains independent.
-- Use the retained **Events right pane** for captured-activity provenance, bounded normalized records and separately labelled recovered material. A compact “Captured activity facts” group can show qualified observed counts; snapshot facts remain separately sourced. This is an Events proposal, not a restored task Inspector or a new statistics dashboard. Detailed Changes/diff design is outside this packet.
-- Keep fixture selectors, size controls, unapproved labels and implementation explanations in the **catalogue**, outside the native app frame.
+- Use the retained **Events right pane** for captured-activity provenance, bounded normalized records and separately labelled recovered material. A compact “Captured activity facts” group can show qualified observed counts; snapshot facts remain separately sourced. This is an Events design, not a restored task Inspector or a new statistics dashboard. Detailed Changes/diff design is outside this packet.
+- Keep fixture selectors, size controls, approval/review labels and implementation explanations in the **catalogue**, outside the native app frame.
 
 ## 1. Qualified facts and totals
 
@@ -92,7 +92,7 @@ Show **Recovered transcript** as another source with its own qualification. It i
 
 ## Review routes and appearances
 
-Every route is explicitly exploratory and supports `/light` and `/dark`:
+Every route carries the scoped 2026-11-05 owner approval and supports `/light` and `/dark`:
 
 | Route suffix under `d2b-proposal/` | Main review purpose |
 | --- | --- |
@@ -117,11 +117,11 @@ Browser font/material/control rendering approximates SwiftUI. Native VoiceOver, 
 
 ## Proposed tracker ledger entry (do not apply automatically)
 
-G-HISTORY / M03-D2B: missing-state proposal prepared, owner approval pending. Candidate reference is this proposal's immutable commit, `v2/scripts/screens-d2b-proposal.js`, `v2/scripts/d2b-proposal.js`, `v2/styles/d2b-proposal.css`, eight route/appearance pairs above, and this semantic table. Existing approved states remain unchanged. Do not mark G-HISTORY closed or M03 delivered from this proposal.
+G-HISTORY / M03-D2B: direction approved by owner on 2026-11-05, requested button-spacing/sidebar corrections applied; native/product cutover acceptance remains pending. Candidate reference is this proposal's immutable commit, `v2/scripts/screens-d2b-proposal.js`, `v2/scripts/d2b-proposal.js`, `v2/styles/d2b-proposal.css`, eight route/appearance pairs above, and this semantic table. Existing approved states remain unchanged. Do not mark G-HISTORY closed or M03 delivered from this proposal.
 
 ## Bounded implementation acceptance brief — after approval only
 
-1. Obtain explicit owner decisions on all five families and any requested amendments. Record immutable commit/path/state/appearance, approved copy/actions and native exceptions. Selection of a screenshot alone is not blanket contract acceptance.
+1. Use the scoped owner-approved direction and its two applied corrections. Pin the immutable corrected commit/path/state/appearance; commission a bounded D2B implementation assignment separately. Native exceptions and any later semantic amendments require their own disposition. Design approval is not blanket contract or native acceptance.
 2. Replace BOTH production activity EventFileTailer/EventPages/LineTail and cumulative-summary LineTail scans together. Retain D2A single lineage, coverage-qualified counts, strict normalized payload interpretation, source epochs, exact lease ownership, cancellation and queued-delivery fences. Preserve activity/summary lease roles and runtime reacquisition; no private/MCP fallback or automatic runtime pin change.
 3. Adopt typed prompt provenance and eliminate unsafe String?/display_prompt-as-assignment fallback. Update no-tools proof, occurrence-scoped IDs/anchors and raw pane source/label with the actual data cutover. Keep independent snapshot facts and separately labelled recovery.
 4. Test loss/empty/unknown/finality, duplicate/regressing sequences, gap-preserving retries, capacities and explicit rebase, prepend/new/focus, runtime ABA and stale results/publications. Verify changed UI through isolated fixtures, both appearances, keyboard/focus and actual minimum window. Run required serialized guarded native integration and Release/strict-bundle gates on final source. Do not inherit a blanket waiver from the historical M03-C viewport exception.

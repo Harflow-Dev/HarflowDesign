@@ -160,11 +160,26 @@
       return '<option'+(v===value?' selected':'')+'>'+v+'</option>';
     }).join('');
   }
+  // One canonical sidebar source; only the selected fixture row is adapted.
+  function sidebarForState(state, selection, resolved) {
+    var key = state.status === 'Running' ? 'task/running' : 'task/done';
+    var template = H.templates && H.templates[key];
+    if (!template || typeof H.fill !== 'function') return '';
+    var match = template.match(/<aside class="hd-sidebar"[\s\S]*?<\/aside>/);
+    if (!match) return '';
+    var sidebar = match[0].replace('href="#new"', 'href="#new-task/default"').replace(/<a class="hd-task-row[^"]*is-active[^"]*"[\s\S]*?<\/a>/, function (row) {
+      return row.replace(/href="[^"]*"/, 'href="#d2b-proposal/' + esc(state.name) + '"')
+        .replace(/(<span class="hd-task-row__title">)[\s\S]*?(<\/span>)/, '$1Fix slot release test$2');
+    });
+    return H.fill(sidebar, selection, resolved);
+  }
   function mount(root,name) {
     var host=root.matches && root.matches('.hd-d2b')?root:root.querySelector('.hd-d2b');
     if(!host)return function() {
     };
     var s=createState(name||host.dataset.d2bState), disposed=false;
+    var selection = host.dataset.systemOn === 'true' ? 'system' : host.dataset.darkOn === 'true' ? 'dark' : 'light';
+    host.querySelector('[data-d2b-sidebar]').innerHTML = sidebarForState(s, selection, host.dataset.theme);
     function q(sel) {
       return host.querySelector(sel);
     }
@@ -233,13 +248,13 @@
       '>Minimum 1000 × 620</option></select></label><label>Request <select data-variant="request">'+options(variants.request,
       s.request)+'</select></label><label>History <select data-variant="history">'+options(variants.history,
       s.history)+'</select></label><label>Totals <select data-variant="summaryCoverage">'+options(variants.summaryCoverage,
-      s.summaryCoverage)+'</select></label><span>Deterministic mock · unapproved</span>';
+      s.summaryCoverage)+'</select></label><span>Deterministic mock · design reference</span>';
       q('[data-d2b-status]').innerHTML='<span class="hd-badge">'+(s.status==='Done'?'<span class="hd-glyph hd-glyph--done" aria-hidden="true"><span class="hd-i hd-i--sm hd-i-check"></span></span>':'<span class="hd-glyph hd-glyph--running" aria-hidden="true"></span>') +
       s.status+'</span>';
       q('[data-d2b-request]').innerHTML='<details data-disclosure="request" class="hd-d2b-request" open><summary>'+r.title +
       '</summary>'+ (r.text?'<p class="hd-muted">'+r.integrity+'</p><pre tabindex="0" data-copy-text>'+esc(r.text)+'</pre>' +
-      button('copy-request',r.copy)+(['truncated','unverified'].indexOf(s.request)>=0&&s.maxBytes<128?button('read-more',
-      'Read more'):'')+(['truncated','unverified'].indexOf(s.request)>=0&&s.maxBytes===128?'<p class="hd-muted">View limit reached. Full request remains unavailable in this view.</p>':''):(s.request==='loading'?'<div class="hd-d2b-skeleton" aria-label="Loading request"></div>':'<p class="' +
+      '<span class="hd-row hd-d2b-actions">'+button('copy-request',r.copy)+(['truncated','unverified'].indexOf(s.request)>=0&&s.maxBytes<128?button('read-more',
+      'Read more'):'')+(['truncated','unverified'].indexOf(s.request)>=0&&s.maxBytes===128?'</span><p class="hd-muted">View limit reached. Full request remains unavailable in this view.</p>':'</span>'):(s.request==='loading'?'<div class="hd-d2b-skeleton" aria-label="Loading request"></div>':'<p class="' +
       (s.request==='integrity-failed'?'hd-d2b-error':'hd-muted')+'">'+(s.request==='integrity-failed'?'Content withheld because integrity verification failed.':'The original request could not be read.') +
       '</p>'+button('retry-request','Retry request read')))+'</details>';
       var actions='';
@@ -249,7 +264,7 @@
       if(s.history==='capacity'||s.history==='reset') actions+='<p>Loading current activity replaces the rows in this view. Execution continues independently.</p>' +
       button('rebase','Load current activity');
       if(s.history==='observed'&&!s.fresh)actions+=button('new','New activity · show');
-      q('[data-d2b-boundary]').innerHTML='<div class="hd-d2b-boundary"><strong>'+a.title+'</strong>'+actions+'</div>';
+      q('[data-d2b-boundary]').innerHTML='<div class="hd-d2b-boundary"><strong>'+a.title+'</strong>'+'<div class="hd-row hd-d2b-actions">'+actions+'</div></div>';
       var earlierRow=s.older?'<article class="hd-d2b-row hd-msg-agent" data-row="earlier"><strong>Earlier captured activity</strong><p>Read slot release implementation.</p></article>':'';
       var rows=s.currentWindow?earlierRow+'<article class="hd-d2b-row hd-msg-agent" data-row="new">' +
         '<strong>Current activity window</strong>' +
@@ -382,6 +397,6 @@
   }
   H.d2bProposal= {
     mount:mount,createState:createState,transition:transition,requestView:requestView,activityView:activityView,
-    variants:variants,rowKey:rowKey
+    variants:variants,rowKey:rowKey,sidebarForState:sidebarForState
   };
 })();
