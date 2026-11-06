@@ -2,9 +2,39 @@
   'use strict';
   var H = window.HFV2 = window.HFV2 || {};
   var lastRoute, lastState;
+  // Owner-approved centered-composer amendment (2026-11-06): six review routes,
+  // approved separately from the 2026-11-05 M04 baseline direction.
+  // The prompt grows from one visual line to a six-line cap, measured from real
+  // scrollHeight so soft-wrapped lines count, then scrolls inside the textarea.
+  var AMENDMENT_LINE_CAP = 6;
+  var AMENDMENT_DRAFTS = {
+    'amendment-empty': '',
+    'amendment-ready': 'Review the delivery queue',
+    'amendment-growing': 'Review the delivery queue for the nightly dependency audit, summarize each failure with its owning workflow and the failing node, and open a follow-up task that covers the two harnesses still reporting unsupported effort levels. Include the run number in each summary.',
+    'amendment-capped': 'Review the nightly dependency audit results for the HarflowMCP repository and prepare a short written digest. For each failed run, name the owning workflow, the failing node, the harness and model that reported it, and the turn where the failure appeared. Separate genuine regressions from known upstream flakes by checking the two most recent audited revisions side by side. Where a fix is obvious, open a follow-up task that names the repository, quotes the failing node, and lists the affected workflows so the next reviewer can start immediately. Do not start any code changes yourself. Post the finished digest with one line per failure, a short overall conclusion, and the follow-up task link, so the queue can be triaged before the next nightly run.',
+    'amendment-options': 'Review the delivery queue',
+    'amendment-unknown': 'Review the nightly dependency audit results for the HarflowMCP repository and prepare a short written digest. For each failed run, name the owning workflow, the failing node, the harness and model that reported it, and the turn where the failure appeared. Separate genuine regressions from known upstream flakes by checking the two most recent audited revisions side by side. Where a fix is obvious, open a follow-up task that names the repository, quotes the failing node, and lists the affected workflows so the next reviewer can start immediately. Do not start any code changes yourself. Post the finished digest with one line per failure, a short overall conclusion, and the follow-up task link, so the queue can be triaged before the next nightly run.'
+  };
+  function isAmendment(route) { return route.indexOf('amendment-') === 0; }
+  function promptOneLineHeight(lineHeight, verticalExtra) { return lineHeight + verticalExtra; }
+  function promptCapHeight(lineHeight, verticalExtra) { return lineHeight * AMENDMENT_LINE_CAP + verticalExtra; }
+  // Amendment only: the scrollable compose area clips the popover, so its height
+  // is bounded to that viewport intersected with the specimen frame. The 16px
+  // margin keeps the existing 8px popover gap plus 8px breathing room on the
+  // chosen side; the newer 400px popover cap and no artificial minimum remain.
+  function amendmentPopupMetrics(anchor, viewport, frame) {
+    var top = Math.max(viewport.top, frame.top), bottom = Math.min(viewport.bottom, frame.bottom);
+    var above = anchor.top - top - 16, below = bottom - anchor.bottom - 16;
+    return { above: above, below: below, belowWins: below > above, maxHeight: Math.max(0, Math.min(400, Math.max(above, below))) };
+  }
   function create(route) {
     var s = { route: route, draft: '', repository: 'HarflowMCP', harness: 'Claude Code', model: 'Opus 5.5', qualification: 'ready', revision: 0, status: 'idle', effort: 'default', turns: '12', approvals: 'harness', access: 'write_in_repo', enforcement: 'supported', advanced: route === 'advanced', collapsed: route === 'shell-collapsed', narrow: route === 'shell-narrow', runtime: 'qualified', listing: 'ready', selected: 'retry-budget', rows: ['retry-budget','events-reader'], fixtures: false, remembered: {} };
     if (route.indexOf('composer-')===0 || route==='advanced' || route==='advanced-closed') s.draft='Review the delivery queue';
+    if (isAmendment(route)) {
+      s.draft = AMENDMENT_DRAFTS[route] !== undefined ? AMENDMENT_DRAFTS[route] : '';
+      if (route === 'amendment-options') s.advanced = true;
+      if (route === 'amendment-unknown') s.status = 'unknown';
+    }
     if(route==='advanced-closed')s.effort='high';
     if (/composer-(loading|unqualified)/.test(route)) s.qualification = route.endsWith('loading') ? 'checking' : 'unqualified';
     if (route === 'composer-invalid') { s.draft = 'Review the delivery queue'; s.turns = '0'; s.advanced = true; }
@@ -49,6 +79,7 @@
     var host = root.matches && root.matches('.hd-m04-proposal') ? root : root.querySelector('.hd-m04-proposal');
     if (!host) return function () {};
     var s = lastRoute === route && lastState ? lastState : create(route), disposed = false;
+    var amendment = isAmendment(route);
     lastRoute = route; lastState = s;
     var frame = host.querySelector('.hd-m04-window'), catalog = host.querySelector('.hd-m04-catalog');
     function template(key) { var box = document.createElement('div'); box.innerHTML = H.fill ? H.fill(H.templates[key], host.getAttribute('data-theme') || 'light', host.getAttribute('data-theme') || 'light') : H.templates[key]; return box; }
@@ -57,10 +88,33 @@
       var theme = host.getAttribute('data-theme') || 'light';
       var runtimeBoard=route.indexOf('runtime-')===0, historyBoard=route.indexOf('history-')===0;
       var controls=runtimeBoard ? button('Runtime failure','runtime-failure')+button('Runtime ready','runtime-ready')+button('Listing ready','listing-ready')+button('Listing failed','listing-failed') : historyBoard ? '' : button('Qualification ready','qualified')+button('Qualification unavailable','unqualified')+button('Complete: created','created',s.status!=='starting')+button('Complete: refused','refused',s.status!=='starting')+button('Complete: unknown','unknown',s.status!=='starting')+button('Enforcement supported','enforcement-supported')+button('Enforcement unknown','enforcement-unknown')+button('Enforcement unsupported','enforcement-unsupported');
-      catalog.innerHTML = '<div class="hd-m04-actions"><strong>Approved direction · M04 review</strong>' + ['shell','composer-ready','advanced','history-retained','runtime-checking'].map(function (id) { return '<a href="#m04-proposal/' + id + '/' + theme + '">' + ({shell:'Shell','composer-ready':'Composer',advanced:'Advanced','history-retained':'History','runtime-checking':'Runtime'})[id] + '</a>'; }).join('') + '<label>Frame <select data-m04-field="size"><option value="reference"' + (!s.narrow?' selected':'') + '>1280 × 800</option><option value="minimum"' + (s.narrow?' selected':'') + '>1000 × 620</option></select></label>' + button('Reset fixture','reset') + '</div><p>Local preview · appearance preserves draft · route changes reset · Reduce Motion: instant changes. Native titlebar and OS controls are browser approximations.</p><details class="hd-m04-fixtures"'+(s.fixtures?' open':'')+'><summary>Fixture controls</summary><div class="hd-m04-actions">' + controls + '</div></details>';
+      var boards = amendment
+        ? [['amendment-empty','Empty'],['amendment-ready','One line'],['amendment-growing','Growing'],['amendment-capped','Capped'],['amendment-options','Options open'],['amendment-unknown','Unknown']]
+        : [['shell','Shell'],['composer-ready','Composer'],['advanced','Advanced'],['history-retained','History'],['runtime-checking','Runtime']];
+      var boardLinks = boards.map(function (board) { return '<a href="#m04-proposal/' + board[0] + '/' + theme + '">' + board[1] + '</a>'; }).join('')
+        + (amendment ? '<a href="#m04-proposal/composer-ready/' + theme + '">Baseline (approved 2026-11-05)</a>' : '<a href="#m04-proposal/amendment-ready/' + theme + '">Centered composer (amendment)</a>');
+      var notice = amendment
+        ? 'Approved amendment (owner, 2026-11-06), separate from the M04 baseline approval of 2026-11-05; the 2026-11-06 sidebar body-scroll correction applies to all M04 routes. Local preview · appearance preserves draft · route changes reset · Reduce Motion: instant changes. Native titlebar and OS controls are browser approximations; native validation is pending.'
+        : 'Local preview · appearance preserves draft · route changes reset · Reduce Motion: instant changes. Native titlebar and OS controls are browser approximations.';
+      catalog.innerHTML = '<div class="hd-m04-actions"><strong>' + (amendment ? 'Approved amendment · Centered composer · Owner 2026-11-06' : 'Approved direction · M04 review') + '</strong>' + boardLinks + '<label>Frame <select data-m04-field="size"><option value="reference"' + (!s.narrow?' selected':'') + '>1280 × 800</option><option value="minimum"' + (s.narrow?' selected':'') + '>1000 × 620</option></select></label>' + button('Reset fixture','reset') + '</div><p>' + notice + '</p><details class="hd-m04-fixtures"'+(s.fixtures?' open':'')+'><summary>Fixture controls</summary><div class="hd-m04-actions">' + controls + '</div></details>';
       var base = template(s.collapsed ? 'new-task/sidebar-collapsed' : 'new-task/default');
       var app = base.querySelector('.hd-app'); app.removeAttribute('style'); app.classList.add('hd-m04-app'); app.setAttribute('data-theme',theme);
       frame.classList.toggle('hd-m04-window--minimum',s.narrow); frame.replaceChildren(app);
+      // Owner correction: nav, Running and Recent work scroll together as one
+      // bounded body; the sidebar header and the Settings/appearance footer
+      // stay fixed. The wrapper is mounted before the branch manipulations so
+      // history rows, the runtime gate and the collapsed rail keep working
+      // through descendant selectors.
+      var sidebarHost = app.querySelector('.hd-sidebar');
+      if (sidebarHost) {
+        var scrollBody = document.createElement('div');
+        scrollBody.className = 'hd-m04-sidebar-scroll';
+        var bodyNodes = Array.from(sidebarHost.children).filter(function (node) { return node.matches('.hd-nav,.hd-section'); });
+        if (bodyNodes.length) {
+          sidebarHost.insertBefore(scrollBody, bodyNodes[0]);
+          bodyNodes.forEach(function (node) { scrollBody.appendChild(node); });
+        }
+      }
       var main = app.querySelector('.hd-main');
       var topbar=main.querySelector('.hd-topbar'); if(topbar)topbar.innerHTML='<span class="caption hd-faint">'+esc(route.indexOf('runtime-')===0?'Harflow · Setup':s.repository+' · New task')+'</span><span class="hd-topbar__spacer"></span>';
       if(route==='history-empty'||route==='history-loading'){var running=app.querySelector('[aria-label="Running"]');if(running){running.querySelector('.hd-section__list').textContent=route==='history-loading'?'Loading running work…':'No running work';var count=running.querySelector('.hd-section__count');if(count)count.textContent=route==='history-loading'?'':'0';}}
@@ -105,14 +159,49 @@
       bar.querySelector('.hd-m04-options-anchor').insertAdjacentHTML('beforeend','<div id="m04-task-options" class="hd-menu hd-m04-options-popover" role="group" aria-label="Task options"'+(s.advanced?'':' hidden')+'><strong>Task options</strong><div class="hd-m04-actions"><label>Effort<select data-m04-field="effort"'+(locked?' disabled':'')+'>'+['default','low','medium','high','xhigh','unsupported'].map(function(x){return '<option'+(s.effort===x?' selected':'')+'>'+x+'</option>';}).join('')+'</select></label><label>Turn limit<input class="hd-input" data-m04-field="turns" type="text" inputmode="numeric" value="'+esc(s.turns)+'"'+(locked?' disabled':'')+'></label><label>Approvals<select data-m04-field="approvals"'+(locked?' disabled':'')+'><option value="harness">Harness managed</option><option value="caller"'+(s.approvals==='caller'?' selected':'')+'>Caller approvals (supported harness only)</option></select></label></div><p class="caption">Permission preview: '+esc({'read_only':'Read only','write_in_repo':'Repository write','publish':'Publish access','unrestricted':'Broad access'}[s.access])+' · enforcement '+esc(s.enforcement)+'. '+(s.enforcement==='supported'?'The selected harness reports support for the requested access; this is not an OS sandbox guarantee.':'Required enforcement is not confirmed; Start is blocked.')+'</p><p class="caption" data-m04-qualification>Harness qualification: '+esc(s.qualification)+'. Unsupported requested choices stay visible for review.</p></div>');
       wrap.insertAdjacentHTML('beforeend','<div class="hd-m04-status" role="status">'+esc(s.status==='refused'?'Start was refused. Review the settings and try again.':s.status==='created'?'Task created.':problem(s)||'Ready to start · '+s.model)+'</div><div class="hd-m04-actions">'+(s.status==='unknown'?button('Review Recent work','recent'):s.status==='refused'?button('Review settings','settings'):'')+'</div>');
       app.querySelector('.hd-scroll').classList.add('hd-m04-compose-area');
+      if (amendment) {
+        // Override the baseline rows=3 and min-height:44px with a compact
+        // one-visual-line prompt, then size it from real content.
+        textarea.rows = 1;
+        sizePrompt();
+      }
       syncOptions();
+    }
+    // Amendment routes only: grow the prompt from actual scrollHeight so soft
+    // wrapped lines count, and cap it at six visible lines with box-sizing and
+    // textarea padding/border accounted for. The prompt scrolls past the cap,
+    // so the caret and selection stay visible.
+    function sizePrompt() {
+      if (!amendment) return;
+      var input = frame.querySelector('.hd-composer__input');
+      if (!input) return;
+      var style = window.getComputedStyle(input);
+      var lineHeight = parseFloat(style.lineHeight) || 22;
+      var verticalExtra = (parseFloat(style.paddingTop) || 0) + (parseFloat(style.paddingBottom) || 0) + (parseFloat(style.borderTopWidth) || 0) + (parseFloat(style.borderBottomWidth) || 0);
+      var cap = promptCapHeight(lineHeight, verticalExtra);
+      input.style.height = 'auto';
+      var wanted = input.scrollHeight;
+      input.style.height = Math.min(wanted, cap) + 'px';
+      input.style.overflowY = wanted > cap ? 'auto' : 'hidden';
     }
     function syncOptions(){
       var trigger=frame.querySelector('[data-m04="options"]'), popup=frame.querySelector('#m04-task-options');
       if(!trigger||!popup)return;
       var hint=popup.querySelector('[data-m04-qualification]');if(hint)hint.textContent='Harness qualification: '+s.qualification+'. Unsupported requested choices stay visible for review.';
       trigger.setAttribute('aria-expanded',String(s.advanced));popup.hidden=!s.advanced;
-      if(s.advanced){var scroll=frame.querySelector('.hd-scroll');var boundary=scroll?scroll.getBoundingClientRect().top:frame.getBoundingClientRect().top;var available=trigger.getBoundingClientRect().top-boundary-16;popup.style.maxHeight=Math.max(64,Math.min(400,available))+'px';}
+      if(s.advanced){
+        if(amendment){
+          // Amendment only: pick above or below by the space actually available
+          // inside the clipping compose-area viewport (intersected with the
+          // outer frame), with no artificial minimum height.
+          var area=frame.querySelector('.hd-m04-compose-area');
+          var metrics=amendmentPopupMetrics(trigger.getBoundingClientRect(), area?area.getBoundingClientRect():frame.getBoundingClientRect(), frame.getBoundingClientRect());
+          popup.classList.toggle('hd-m04-options-popover--below', metrics.belowWins);
+          popup.style.maxHeight=metrics.maxHeight+'px';
+        } else {
+          var scroll=frame.querySelector('.hd-scroll');var boundary=scroll?scroll.getBoundingClientRect().top:frame.getBoundingClientRect().top;var available=trigger.getBoundingClientRect().top-boundary-16;popup.style.maxHeight=Math.max(64,Math.min(400,available))+'px';
+        }
+      }
       trigger.querySelector('.hd-m04-options-dot').hidden=!customized(s);
       trigger.querySelector('.hd-sr').textContent=customized(s)?'Customized options':'Default options';
       var send=frame.querySelector('[type="submit"]');if(send)send.disabled=!!problem(s);
@@ -124,8 +213,9 @@
     function input(e) {
       var key=e.target.dataset.m04Field;if(!['draft','turns'].includes(key))return;
       if(['starting','unknown','created'].includes(s.status))return;
-      if(key==='draft')s.draft=e.target.value;else select(s,key,e.target.value);
+      if (key==='draft')s.draft=e.target.value;else select(s,key,e.target.value);
       syncOptions();
+      sizePrompt();
     }
 
     function change(e) { var key=e.target.dataset.m04Field; if(!key || key==='draft')return;if(key==='turns' && s.turns===e.target.value)return;if(['effort','turns','approvals'].includes(key)){select(s,key,e.target.value);syncOptions();return;} if(key==='size')s.narrow=e.target.value==='minimum'; else if(key==='repository'||key==='harness'||key==='model'||key==='access'||key==='effort'||key==='turns'||key==='approvals') select(s,key,e.target.value); else if(!['starting','unknown','created'].includes(s.status)) s[key]=e.target.value; render(); }
@@ -146,8 +236,24 @@
     function toggle(e){if(e.target.matches('.hd-m04-fixtures'))s.fixtures=e.target.open;}
     host.addEventListener('input',input);host.addEventListener('change',change);host.addEventListener('click',click);host.addEventListener('submit',submit);host.addEventListener('toggle',toggle,true);
     host.addEventListener('keydown',keydown);document.addEventListener('click',outside);
+    // Amendment only: prompt wrapping depends on the width, not the height, so
+    // the observer triggers solely on a width change and batches into one RAF.
+    // Sizing changes the textarea height only, which cannot feed back into the
+    // observer; the frame itself keeps a fixed size.
+    var widthObserver=null, widthRaf=0;
+    if (amendment && typeof ResizeObserver==='function') {
+      var lastWidth=frame.getBoundingClientRect().width;
+      widthObserver=new ResizeObserver(function(){
+        if(disposed)return;
+        var width=frame.getBoundingClientRect().width;
+        if(width===lastWidth)return;
+        lastWidth=width;
+        if(!widthRaf)widthRaf=window.requestAnimationFrame(function(){widthRaf=0;if(!disposed)sizePrompt();});
+      });
+      widthObserver.observe(frame);
+    }
     render();
-    return function(){disposed=true;host.removeEventListener('keydown',keydown);document.removeEventListener('click',outside);host.removeEventListener('input',input);host.removeEventListener('change',change);host.removeEventListener('click',click);host.removeEventListener('submit',submit);host.removeEventListener('toggle',toggle,true);};
+    return function(){disposed=true;host.removeEventListener('keydown',keydown);document.removeEventListener('click',outside);host.removeEventListener('input',input);host.removeEventListener('change',change);host.removeEventListener('click',click);host.removeEventListener('submit',submit);host.removeEventListener('toggle',toggle,true);if(widthRaf)window.cancelAnimationFrame(widthRaf);if(widthObserver)widthObserver.disconnect();};
   }
-  H.m04Proposal={mount:mount,model:{create:create,customized:customized,optionsOpen:optionsOpen,problem:problem,select:select,qualify:qualify,start:start,settle:settle,history:history,listing:listing}};
+  H.m04Proposal={mount:mount,model:{create:create,customized:customized,optionsOpen:optionsOpen,problem:problem,select:select,qualify:qualify,start:start,settle:settle,history:history,listing:listing,isAmendment:isAmendment,amendmentPopupMetrics:amendmentPopupMetrics,promptOneLineHeight:promptOneLineHeight,promptCapHeight:promptCapHeight,amendmentDrafts:AMENDMENT_DRAFTS}};
 })();

@@ -4,10 +4,17 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 const context = {window:{}};
 vm.createContext(context);
-for (const name of ['m04-proposal.js','screens-m04-proposal.js']) vm.runInContext(fs.readFileSync(new URL('../v2/scripts/'+name,import.meta.url),'utf8'),context);
+for (const name of ['registry.js','m04-proposal.js','screens-m04-proposal.js']) vm.runInContext(fs.readFileSync(new URL('../v2/scripts/'+name,import.meta.url),'utf8'),context);
 const H=context.window.HFV2, M=H.m04Proposal.model;
 const ready=()=>{const s=M.create('composer-ready');s.draft='Review the queue';return s;};
-test('all 24 proposal routes register without DOM or canonical templates',()=>{assert.equal(H.m04ProposalStates.length,24);assert.equal(Object.keys(H.templates).length,24);assert.ok(H.m04ProposalStates.every(x=>x.approved && x.status==='Approved'));});
+test('all 24 approved baseline routes register without DOM or canonical templates',()=>{
+  assert.equal(H.m04ProposalStates.length,24);
+  assert.ok(H.m04ProposalStates.every(x=>x.approved && x.status==='Approved'));
+  for(const x of H.m04ProposalStates){
+    assert.equal(typeof H.templates['m04-proposal/'+x.id],'string');
+    assert.ok(!H.templates['m04-proposal/'+x.id].includes('hd-m04-amendment'),'baseline route '+x.id+' is not amendment-scoped');
+  }
+});
 test('blank, stale and unqualified requests never start',()=>{const s=M.create('shell');assert.equal(M.start(s),false);s.draft='Review';M.select(s,'repository','HarflowDesign');M.qualify(s,0,'ready');assert.equal(M.start(s),false);M.qualify(s,s.revision,'unqualified');assert.equal(M.start(s),false);M.qualify(s,s.revision,'ready');assert.equal(M.start(s),true);});
 test('single flight and unknown outcomes retain draft and block retries',()=>{const s=ready();assert.equal(M.start(s),true);assert.equal(M.start(s),false);M.settle(s,'unknown');assert.equal(s.draft,'Review the queue');M.select(s,'repository','HarflowDesign');assert.equal(s.repository,'HarflowMCP');assert.equal(M.start(s),false);M.settle(s,'created');assert.equal(s.status,'unknown');});
 test('definitive refusal can be reviewed; created tasks cannot duplicate',()=>{const s=ready();M.start(s);M.settle(s,'refused');assert.equal(s.draft,'Review the queue');assert.equal(M.start(s),true);M.settle(s,'created');assert.equal(M.start(s),false);});
@@ -33,3 +40,99 @@ test('turn edits immediately invalidate qualification and retain the typed value
 test('task options toggle preserves draft and authority without changing qualification',()=>{const s=ready();s.effort='high';s.approvals='caller';const revision=s.revision;M.optionsOpen(s,true);M.optionsOpen(s,false);assert.equal(s.advanced,false);assert.equal(s.draft,'Review the queue');assert.equal(s.effort,'high');assert.equal(s.approvals,'caller');assert.equal(s.revision,revision);assert.equal(M.customized(s),true);});
 test('closed customized route and open options route share the same valid composer',()=>{const open=M.create('advanced'),closed=M.create('advanced-closed');assert.equal(open.advanced,true);assert.equal(closed.advanced,false);assert.equal(M.customized(closed),true);assert.equal(M.problem(open),'');assert.equal(M.problem(closed),'');});
 test('invalid options remain actionable when task options are closed',()=>{const s=ready();M.select(s,'turns','0');M.optionsOpen(s,false);assert.match(M.problem(s),/whole number above 0/);assert.equal(M.start(s),false);});
+
+// Owner-approved centered-composer amendment routes (2026-11-06): separate
+// provenance from the approved baseline, with the same state, reset and lock behavior.
+test('amendment routes are separate and approved by the owner on 2026-11-06',()=>{
+  assert.equal(H.m04AmendmentStates.length,6);
+  const baseline=new Set(H.m04ProposalStates.map(x=>'m04-proposal/'+x.id));
+  for(const x of H.m04AmendmentStates){
+    const key='m04-proposal/'+x.id;
+    assert.ok(!baseline.has(key),'route '+key+' does not overlap the approved baseline');
+    assert.equal(x.approved,true);
+    assert.equal(x.status,'Approved');
+    assert.match(x.description,/Owner-approved centered-composer amendment/);
+    assert.match(x.description,/2026-11-06/);
+    assert.match(x.description,/2026-11-05/,'the amendment approval is recorded separately from the baseline approval');
+    assert.doesNotMatch(x.description,/Not approved/);
+    assert.match(H.templates[key],/hd-m04-amendment/);
+    assert.doesNotMatch(H.templates[key],/Approved/);
+  }
+});
+test('registry approves all 30 M04 states with the six amendment states on separate provenance',()=>{
+  const family=H.registry.families.find(f=>f.id==='m04-proposal');
+  const approved=family.states.filter(s=>s.approval==='approved');
+  assert.equal(approved.length,30,'24 baseline states plus the six now-approved amendment states');
+  const amendment=family.states.filter(s=>s.id.startsWith('amendment-'));
+  assert.equal(amendment.length,6,'the six amendment states stay separate routes');
+  assert.ok(amendment.every(s=>s.approval==='approved'));
+  assert.ok(amendment.every(s=>/Owner-approved centered-composer amendment \(2026-11-06, separate from the M04 baseline approval of 2026-11-05\)/.test(s.description)));
+  assert.ok(family.states.filter(s=>!s.id.startsWith('amendment-')).every(s=>s.approval==='approved'));
+  assert.match(family.description,/owner-approved \(2026-11-06\) as a separate change/);
+  assert.match(family.description,/scrolls as one bounded area/,'the owner sidebar correction is documented for the whole M04 family');
+  assert.doesNotMatch(family.description,/are not approved/);
+});
+test('amendment fixtures cover centered empty, one line, growth and the six-line cap',()=>{
+  assert.equal(M.isAmendment('amendment-capped'),true);
+  assert.equal(M.isAmendment('composer-ready'),false);
+  assert.equal(M.isAmendment('runtime-failed'),false);
+  const empty=M.create('amendment-empty');
+  assert.equal(empty.draft,'');
+  const one=M.create('amendment-ready');
+  assert.equal(one.draft,'Review the delivery queue');
+  assert.equal(M.problem(one),'');
+  const growing=M.create('amendment-growing');
+  const capped=M.create('amendment-capped');
+  assert.ok(growing.draft.length>one.draft.length,'growing fixture adds visual lines');
+  assert.ok(capped.draft.length>growing.draft.length,'capped fixture exceeds the growing fixture');
+  assert.equal(capped.status,'idle');
+  const options=M.create('amendment-options');
+  assert.equal(options.advanced,true,'options route opens the task options popover');
+});
+test('prompt floor and cap count six visible 22px lines plus padding',()=>{
+  assert.equal(M.promptOneLineHeight(22,4),26);
+  assert.equal(M.promptCapHeight(22,4),136);
+  assert.equal(M.promptCapHeight(22,0),132);
+});
+test('amendment reset clears draft state, remembered choices and outcome',()=>{
+  const s=M.create('amendment-growing');
+  s.effort='high';s.turns='7';
+  assert.equal(M.start(s),true);
+  M.settle(s,'refused');
+  const fresh=M.create('amendment-growing');
+  assert.equal(fresh.effort,'default');
+  assert.equal(fresh.turns,'12');
+  assert.equal(fresh.status,'idle');
+  assert.equal(fresh.draft,M.amendmentDrafts['amendment-growing']);
+  assert.equal(Object.keys(fresh.remembered).length,0);
+});
+test('centered unknown outcome retains the draft, blocks retry and locks selections',()=>{
+  const s=M.create('amendment-unknown');
+  assert.equal(s.status,'unknown');
+  assert.equal(s.draft,M.amendmentDrafts['amendment-unknown']);
+  assert.equal(M.start(s),false,'unknown outcome blocks a retry start');
+  M.select(s,'repository','HarflowDesign');
+  assert.equal(s.repository,'HarflowMCP','locked selections refuse changes');
+  assert.equal(s.draft,M.amendmentDrafts['amendment-unknown'],'draft survives the lock');
+  const settled=()=>{const t=M.create('amendment-empty');t.draft='Review';M.start(t);M.settle(t,'unknown');return t;};
+  const t=settled();
+  assert.equal(t.status,'unknown');
+  assert.equal(M.start(t),false);
+});
+test('amendment popup height is bounded by the clipping compose-area viewport',()=>{
+  // Regression geometry from the minimum-frame browser review: anchor bar at
+  // 390..422, compose-area viewport starting at 68 below the topbar, frame 0..620.
+  const anchor={top:390,bottom:422}, area={top:68,bottom:620}, frame={top:0,bottom:620};
+  const bounded=M.amendmentPopupMetrics(anchor,area,frame);
+  assert.equal(bounded.maxHeight,306);
+  assert.equal(bounded.belowWins,false,'the popover opens above with more space there');
+  // The frame-only bound measured 374 because it counted the space the scroll
+  // viewport clips away; the corrected bound never claims space above area top.
+  assert.equal(M.amendmentPopupMetrics(anchor,frame,frame).maxHeight,374);
+  assert.ok(bounded.maxHeight<374,'space hidden behind the topbar is no longer claimed');
+  assert.ok(anchor.top-8-bounded.maxHeight>=area.top+8,'popup top stays inside the viewport with the 8px gap');
+  // Below wins when the anchor sits near the viewport top; the 400px cap holds.
+  const low=M.amendmentPopupMetrics({top:120,bottom:152},area,frame);
+  assert.equal(low.belowWins,true);
+  assert.equal(low.maxHeight,Math.min(400,620-152-16));
+});

@@ -340,7 +340,7 @@
         "id": "m04-proposal",
         "title": "M04 native entry direction",
         "approval": {"by": "owner", "date": "2026-11-05", "reference": "M04 visual direction; native and runtime qualification separate"},
-        "description": "Owner-approved visual direction (2026-11-05) for shell, composer, history and runtime entry states. Deterministic browser fixtures only; no native or runtime implementation.",
+        "description": "Owner-approved visual direction (2026-11-05) for shell, composer, history and runtime entry states. The six amendment states below are owner-approved (2026-11-06) as a separate change, not part of the baseline approval. Owner correction (2026-11-06): the M04 sidebar body (navigation, Running, Recent work) scrolls as one bounded area with the header and Settings/appearance footer fixed, and applies to every M04 route. Deterministic browser fixtures only; no native or runtime implementation; native validation pending.",
         "states": [
           {
             "id": "shell",
@@ -484,6 +484,42 @@
             "id": "runtime-listing",
             "title": "Runtime \u00b7 Ready, listing pending",
             "description": "Qualified runtime and first-list connection are independent.",
+            "approval": "approved"
+          },
+          {
+            "id": "amendment-empty",
+            "title": "Amendment \u00b7 Centered, empty",
+            "description": "Owner-approved centered-composer amendment (2026-11-06, separate from the M04 baseline approval of 2026-11-05): the greeting, composer, status and help group centered in the New task area, with the prompt compact at one visual line.",
+            "approval": "approved"
+          },
+          {
+            "id": "amendment-ready",
+            "title": "Amendment \u00b7 Centered, one line ready",
+            "description": "Owner-approved centered-composer amendment (2026-11-06, separate from the M04 baseline approval of 2026-11-05): a one-line ready draft with valid, qualified selections in the centered layout.",
+            "approval": "approved"
+          },
+          {
+            "id": "amendment-growing",
+            "title": "Amendment \u00b7 Centered, growing",
+            "description": "Owner-approved centered-composer amendment (2026-11-06, separate from the M04 baseline approval of 2026-11-05): the prompt grows to roughly three soft-wrapped visual lines as the draft is typed.",
+            "approval": "approved"
+          },
+          {
+            "id": "amendment-capped",
+            "title": "Amendment \u00b7 Centered, capped at six lines",
+            "description": "Owner-approved centered-composer amendment (2026-11-06, separate from the M04 baseline approval of 2026-11-05): past six visible lines the prompt stops growing and scrolls with the existing soft slim scrollbar.",
+            "approval": "approved"
+          },
+          {
+            "id": "amendment-options",
+            "title": "Amendment \u00b7 Centered, options open",
+            "description": "Owner-approved centered-composer amendment (2026-11-06, separate from the M04 baseline approval of 2026-11-05): task options open from the centered composer, placed above or below by the space actually available.",
+            "approval": "approved"
+          },
+          {
+            "id": "amendment-unknown",
+            "title": "Amendment \u00b7 Centered, outcome unknown",
+            "description": "Owner-approved centered-composer amendment (2026-11-06, separate from the M04 baseline approval of 2026-11-05): an unknown start outcome locks the retained draft and selections inside the centered layout.",
             "approval": "approved"
           }
         ]

@@ -31,13 +31,24 @@
 .hd-m04-fixtures .hd-m04-actions{padding-top:8px}
 .hd-m04-proposal .hd-topbar{padding-left:24px}
 .hd-m04-proposal .hd-composer{overflow:visible}
-/* Preserve section boundaries at the native minimum; only the history list scrolls. */
-.hd-m04-proposal .hd-sidebar>.hd-section:not(.hd-section--fill){flex-shrink:0}
-.hd-m04-proposal .hd-sidebar>.hd-section--fill{min-height:0;overflow:hidden}
-.hd-m04-proposal .hd-sidebar>.hd-section--fill>.hd-section__list{min-height:0;overflow-y:auto}
-.hd-m04-proposal .hd-sidebar>.hd-sidebar__top,.hd-m04-proposal .hd-sidebar>.hd-nav,.hd-m04-proposal .hd-sidebar>.hd-sidebar__foot{flex-shrink:0}
-.hd-m04-proposal .hd-section__head{flex-shrink:0}
-.hd-m04-proposal .hd-sidebar>.hd-section--fill>.hd-section__list{flex:1 1 auto}
+/* Owner correction: the whole sidebar body — nav, Running and Recent work —
+   scrolls as one bounded area with a soft slim scrollbar; the header and the
+   Settings/appearance footer stay fixed as direct sidebar children. */
+.hd-m04-proposal .hd-m04-sidebar-scroll{flex:1 1 auto;min-height:0;overflow-y:auto}
+/* The runtime-setup branch empties the body; a hidden empty wrapper keeps the
+   gate between the fixed header and footer as before. */
+.hd-m04-proposal .hd-m04-sidebar-scroll:empty{display:none}
+.hd-m04-proposal .hd-sidebar>.hd-sidebar__top,.hd-m04-proposal .hd-sidebar>.hd-sidebar__foot{flex-shrink:0}
+/* Inside the single scrolling body sections and lists keep natural heights;
+   the catalog's fill section no longer fills or scrolls on its own, so task
+   rows keep the canonical 32px height and the loading row its 28px. */
+.hd-m04-proposal .hd-m04-sidebar-scroll .hd-section--fill{flex:none}
+.hd-m04-proposal .hd-m04-sidebar-scroll .hd-section--fill>.hd-section__list{overflow:visible}
+/* Same soft slim scrollbar treatment as the options popover and capped prompt. */
+.hd-m04-proposal .hd-m04-sidebar-scroll{scrollbar-width:thin;scrollbar-color:color-mix(in srgb,var(--text-tertiary) 72%,transparent) transparent}
+.hd-m04-proposal .hd-m04-sidebar-scroll::-webkit-scrollbar{width:6px;background:transparent}
+.hd-m04-proposal .hd-m04-sidebar-scroll::-webkit-scrollbar-track{background:transparent}
+.hd-m04-proposal .hd-m04-sidebar-scroll::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--text-tertiary) 72%,transparent);border-radius:999px}
 /* Task options are anchored above the bottom-left composer button. */
 .hd-m04-options-anchor{position:relative;display:inline-flex;align-self:center}
 .hd-m04-options-trigger{position:relative}
@@ -58,3 +69,26 @@
 .hd-m04-options-popover::-webkit-scrollbar{width:6px;height:6px;background:transparent}
 .hd-m04-options-popover::-webkit-scrollbar-track{background:transparent}
 .hd-m04-options-popover::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--text-tertiary) 72%,transparent);border-radius:999px}
+/* Owner-approved centered-composer amendment (2026-11-06), recorded separately
+   from the 2026-11-05 M04 baseline approval. Every rule is scoped to the new
+   hd-m04-amendment root of the m04-proposal/amendment-* routes, so the 24
+   baseline routes above render unchanged. */
+.hd-m04-amendment .hd-m04-compose-area{padding:var(--space-6)!important}
+/* Natural flex auto margins center the whole greeting/composer/status group;
+   when it cannot fit (minimum frame at the six-line cap) the margins collapse
+   to zero, so the top is never clipped and the area scrolls normally. */
+.hd-m04-amendment .hd-m04-compose-area>*{margin-top:auto;margin-bottom:auto}
+/* One visual line at the existing 22px line-height plus the 2px paddings;
+   overrides the baseline rows=3 sizing and the 44px minimum. The height is
+   then set from scrollHeight by the script, capped at six lines. */
+.hd-m04-amendment .hd-composer__input{box-sizing:border-box;min-height:26px;height:26px;overflow-y:hidden}
+/* Amendment only: the task options popover opens above by default and below
+   when more space is available there; height is bounded by the script to the
+   space actually available, with no artificial minimum. */
+.hd-m04-amendment .hd-m04-options-popover--below{top:calc(100% + 8px);bottom:auto}
+/* The capped prompt scrolls with the same soft slim scrollbar treatment;
+   the scrollbar only paints once the six-line cap starts scrolling. */
+.hd-m04-amendment .hd-composer__input{scrollbar-width:thin;scrollbar-color:color-mix(in srgb,var(--text-tertiary) 72%,transparent) transparent}
+.hd-m04-amendment .hd-composer__input::-webkit-scrollbar{width:6px;background:transparent}
+.hd-m04-amendment .hd-composer__input::-webkit-scrollbar-track{background:transparent}
+.hd-m04-amendment .hd-composer__input::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--text-tertiary) 72%,transparent);border-radius:999px}
