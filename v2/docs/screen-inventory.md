@@ -48,6 +48,7 @@ Migration intent and unresolved coverage are tracked in the [migration coverage 
 
 - The Workflows list shows no run status. The same workflow can run concurrently; runs appear only in the sidebar under Running and Recent work.
 - Run workflow collects Task (required) and Goal (optional), plus the repository and an orchestrator override.
+- Every canvas shows the zoom control at its bottom-right corner: minus, the current scale, and plus. The editor is drawn at 65%. A run graph drawn at 70% shows 70%. A canvas drawn at full size shows 100%.
 - Workflow graphs flow left to right. Connections use the HarflowMac connector style: orthogonal routes with 10px rounded corners and an open chevron arrowhead; loop-back edges are dashed.
 - Edit with agent shows the builder conversation in a right-side activity pane, like a run's side pane, not in a bottom split; the canvas centres on the proposed change.
 - Standalone on-demand nodes are node cards shown in the editor and on runs; tapping one inspects its calls.

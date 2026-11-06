@@ -780,7 +780,7 @@
           {
             "id": "node-tray",
             "title": "Node tray",
-            "description": "Node tray is the editor's bottom tray of draggable node chips, with the zoom control and the Standalone strip. Use it for: In the workflow editor, over the canvas, to add nodes by dragging; The zoom control sits at a canvas corner; the Standalone strip sits between the top bar and the canvas.",
+            "description": "Node tray is the editor's bottom tray of draggable node chips, shown with the zoom control and the Standalone strip. Use it for: In the workflow editor, over the canvas, to add nodes by dragging; The zoom control sits at the bottom-right corner of every canvas, in the editor and on a run. The Standalone strip sits between the top bar and the canvas.",
             "approval": "approved"
           },
           {
@@ -792,7 +792,7 @@
           {
             "id": "workflow-node",
             "title": "Workflow node",
-            "description": "Workflow node is a step on the workflow canvas, connected to others by edges. Use it for: The workflow editor and run view.",
+            "description": "Workflow node is a step on the workflow canvas, connected to others by edges. Use it for: The workflow editor and run view. The canvas includes the zoom control at its bottom-right.",
             "approval": "approved"
           }
         ]

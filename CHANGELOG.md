@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Show the zoom control at the bottom-right of every `v2/` canvas. Workflow run graphs drawn at 70% read 70%; the recovery graph and the workflow-node specimen, drawn at full size, read 100%. The editor stays at 65%.
+
 - Show the locked orchestrator as the first card of every Standalone strip in the `v2/` workflow editor and run screens; selecting it opens the orchestrator settings.
 
 - Add the design system foundations (colour, typography, spacing, radius and size, elevation), the brand book and the full component guidelines to the `v2/` interface reference, so the repository alone holds the complete design system.

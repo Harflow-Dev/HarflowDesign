@@ -919,6 +919,7 @@ FAILED tests/test_slots.py::test_release_frees_slot
     <div class="hd-node hd-node--terminal" style="left:620px;top:372px"><span class="hd-port hd-port--in" aria-hidden="true"></span>
       <div class="hd-node__head"><span class="hd-i hd-i--sm hd-i-flag" aria-hidden="true"></span>End</div>
     </div>
+    <div class="hd-zoom" role="group" aria-label="Zoom" style="position:absolute;right:var(--space-4);bottom:var(--space-4);"><button type="button" class="hd-btn hd-btn--ghost hd-btn--sm" aria-label="Zoom out">&#8722;</button><span style="padding:0 6px;">100%</span><button type="button" class="hd-btn hd-btn--ghost hd-btn--sm" aria-label="Zoom in">+</button></div>
   </div>
   <div class="hd-col" style="padding:var(--space-4);gap:var(--space-3)">
     <div class="caption hd-faint">On-demand nodes. Editor, then run states: called, not called, running</div>
