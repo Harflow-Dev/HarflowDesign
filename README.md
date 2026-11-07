@@ -13,7 +13,7 @@ Open `index.html` (it redirects to `v2/index.html`) or `v2/index.html` in a brow
 python3 -m http.server 8080
 ```
 
-Then open `http://localhost:8080`. No dependencies, build, account, engine, or sibling checkout are required, and everything works under `file://`. Interactions use deterministic mock data. The appearance preference (System, Light, Dark) is stored in this browser under `hf-v2-appearance`.
+Then open `http://localhost:8080`. Serve from this repository folder as the server root: served from a parent folder, the root redirector sends paths such as `/HarflowDesign/…` to `archive/v1`. No dependencies, build, account, engine, or sibling checkout are required, and everything works under `file://`. Interactions use deterministic mock data. The appearance preference (System, Light, Dark) is stored in this browser under `hf-v2-appearance`.
 
 The root `index.html` is a redirector. With no hash it opens `v2/index.html`. With a hash it opens the archived catalog with that hash, because root hashes used to be v1 routes. On the hosted site it also forwards the old v1 paths (`/features/…`, `/scripts/…`, `/styles/…`, `/assets/…` and the v1 documents) to `archive/v1/`; `_redirects` maps the same paths for the hosting layer.
 

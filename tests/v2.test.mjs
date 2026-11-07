@@ -517,8 +517,11 @@ test('string literals in the strip builders carry no process names', () => {
 
 test('only the overview and decision boards may navigate to documents from a specimen', () => {
   const catalog = read(path.join(v2, 'scripts', 'catalog.js'));
-  assert.match(catalog, /current\.family === 'overview' \|\| current\.family === 'records'\) window\.location\.href = href/);
-  assert.ok(catalog.indexOf('event.preventDefault()') < catalog.indexOf('window.location.href = href'), 'links are always intercepted first');
+  assert.match(catalog, /documentPage\) window\.location\.href = href/);
+  assert.match(catalog, /documentPage = current\.family === 'overview' \|\| current\.family === 'records'/);
+  assert.match(catalog, /event\.button !== 0 \|\| event\.metaKey \|\| event\.ctrlKey \|\| event\.shiftKey \|\| event\.altKey\)\) return;/, 'modified clicks on document links are left to the browser');
+  assert.ok(catalog.indexOf('event.metaKey') < catalog.indexOf('event.preventDefault()'), 'the modifier check precedes interception');
+  assert.ok(catalog.indexOf('event.preventDefault()') < catalog.indexOf('window.location.href = href'), 'other links are intercepted first');
   for (const key of Object.keys(HFV2.templates).filter(k => k !== 'overview/areas')) {
     for (const [, href] of HFV2.templates[key].matchAll(/href="([^"]*)"/g)) assert.ok(href.startsWith('#'), `${key} links to ${href}`);
   }

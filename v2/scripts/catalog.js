@@ -276,10 +276,13 @@
     var link = event.target.closest('a');
     if (link) {
       var href = link.getAttribute('href') || '';
+      var documentPage = current.family === 'overview' || current.family === 'records';
+      // Modified or non-primary clicks on document links keep the browser's behaviour (new tab, new window).
+      if (href.charAt(0) !== '#' && documentPage && (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey)) return;
       event.preventDefault();
       // Only the overview and the decision boards link to documents; app specimens never navigate.
       if (href.charAt(0) !== '#') {
-        if (current.family === 'overview' || current.family === 'records') window.location.href = href;
+        if (documentPage) window.location.href = href;
         return;
       }
       var parsed = parseHash(href);
