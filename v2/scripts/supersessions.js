@@ -38,5 +38,15 @@
   HFV2.routeRedirects = {};
   HFV2.retired.forEach(function (entry) { HFV2.routeRedirects[entry.route] = entry.redirect; });
 
-  HFV2.pendingRedraw = [];
+  // Centered redraws awaiting owner approval. Both states stay listed. On sign-off the pair moves into
+  // RETIRED above, the earlier state, its templates and guides are removed, and a redirect that already
+  // targets the earlier state is repointed to the redraw.
+  HFV2.pendingRedraw = [
+    { older: 'new-task/composer-loading', newer: 'new-task/centered-loading' },
+    { older: 'new-task/composer-unqualified', newer: 'new-task/centered-unqualified' },
+    { older: 'new-task/composer-invalid', newer: 'new-task/centered-invalid' },
+    { older: 'new-task/composer-starting', newer: 'new-task/centered-starting' },
+    { older: 'new-task/composer-refused', newer: 'new-task/centered-refused' },
+    { older: 'new-task/options-closed', newer: 'new-task/centered-options-closed' }
+  ];
 })();

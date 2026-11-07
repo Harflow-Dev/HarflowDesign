@@ -15,7 +15,20 @@
     'amendment-options': 'Review the delivery queue',
     'amendment-unknown': 'Review the nightly dependency audit results for the HarflowMCP repository and prepare a short written digest. For each failed run, name the owning workflow, the failing node, the harness and model that reported it, and the turn where the failure appeared. Separate genuine regressions from known upstream flakes by checking the two most recent audited revisions side by side. Where a fix is obvious, open a follow-up task that names the repository, quotes the failing node, and lists the affected workflows so the next reviewer can start immediately. Do not start any code changes yourself. Post the finished digest with one line per failure, a short overall conclusion, and the follow-up task link, so the queue can be triaged before the next nightly run.'
   };
-  function isAmendment(route) { return route.indexOf('amendment-') === 0; }
+  // Provisional centered redraws of six bottom-layout composer states. Each mount copies the fixture of
+  // its source mount; only the layout differs.
+  var REDRAW_SOURCES = {
+    'centered-loading': 'composer-loading',
+    'centered-unqualified': 'composer-unqualified',
+    'centered-invalid': 'composer-invalid',
+    'centered-starting': 'composer-starting',
+    'centered-refused': 'composer-refused',
+    'centered-options-closed': 'advanced-closed'
+  };
+  function has(map, key) { return Object.prototype.hasOwnProperty.call(map, key); }
+  function isRedraw(route) { return has(REDRAW_SOURCES, route); }
+  // The centered layout: the six approved amendment mounts and the six provisional redraws.
+  function isAmendment(route) { return has(AMENDMENT_DRAFTS, route) || isRedraw(route); }
   function promptOneLineHeight(lineHeight, verticalExtra) { return lineHeight + verticalExtra; }
   function promptCapHeight(lineHeight, verticalExtra) { return lineHeight * AMENDMENT_LINE_CAP + verticalExtra; }
   // Amendment only: the scrollable compose area clips the popover, so its height
@@ -28,6 +41,7 @@
     return { above: above, below: below, belowWins: below > above, maxHeight: Math.max(0, Math.min(400, Math.max(above, below))) };
   }
   function create(route) {
+    if (isRedraw(route)) { var copy = create(REDRAW_SOURCES[route]); copy.route = route; return copy; }
     var s = { route: route, draft: '', repository: 'HarflowMCP', harness: 'Claude Code', model: 'Opus 5.5', qualification: 'ready', revision: 0, status: 'idle', effort: 'default', turns: '12', approvals: 'harness', access: 'write_in_repo', enforcement: 'supported', advanced: route === 'advanced', collapsed: route === 'shell-collapsed', narrow: route === 'shell-narrow', runtime: 'qualified', listing: 'ready', selected: 'retry-budget', rows: ['retry-budget','events-reader'], fixtures: false, remembered: {} };
     if (route.indexOf('composer-')===0 || route==='advanced' || route==='advanced-closed') s.draft='Review the delivery queue';
     if (isAmendment(route)) {
@@ -91,12 +105,15 @@
       // Strip links point at current states only. The earlier composer and Advanced links now open the
       // centered composer states that replaced them.
       var boards = amendment
-        ? [['amendment-empty','Empty'],['amendment-ready','One line'],['amendment-growing','Growing'],['amendment-capped','Capped'],['amendment-options','Options open'],['amendment-unknown','Unknown']]
+        ? (isRedraw(route)
+          ? [['centered-loading','Loading'],['centered-unqualified','Unavailable'],['centered-invalid','Validation'],['centered-starting','Starting'],['centered-refused','Refused'],['centered-options-closed','Options closed']]
+          : [['amendment-empty','Empty'],['amendment-ready','One line'],['amendment-growing','Growing'],['amendment-capped','Capped'],['amendment-options','Options open'],['amendment-unknown','Unknown']])
         : [['shell','Shell'],['amendment-ready','Composer'],['amendment-options','Advanced'],['history-retained','History'],['runtime-checking','Runtime']];
       var boardLinks = boards.map(function (board) { return '<a href="#' + H.routeFor('m04', board[0]) + '/' + theme + '">' + board[1] + '</a>'; }).join('');
       var strips = H.catalogStrips.m04;
-      var notice = amendment ? strips.centeredNotice : strips.baselineNotice;
-      catalog.innerHTML = '<div class="hd-m04-actions"><strong>' + (amendment ? strips.centeredHeading : strips.baselineHeading) + '</strong>' + boardLinks + '<label>Frame <select data-m04-field="size"><option value="reference"' + (!s.narrow?' selected':'') + '>1280 × 800</option><option value="minimum"' + (s.narrow?' selected':'') + '>1000 × 620</option></select></label>' + button('Reset fixture','reset') + '</div><p>' + notice + '</p><details class="hd-m04-fixtures"'+(s.fixtures?' open':'')+'><summary>Fixture controls</summary><div class="hd-m04-actions">' + controls + '</div></details>';
+      var notice = isRedraw(route) ? strips.provisionalNotice : amendment ? strips.centeredNotice : strips.baselineNotice;
+      var heading = isRedraw(route) ? strips.provisionalHeading : amendment ? strips.centeredHeading : strips.baselineHeading;
+      catalog.innerHTML = '<div class="hd-m04-actions"><strong>' + heading + '</strong>' + boardLinks + '<label>Frame <select data-m04-field="size"><option value="reference"' + (!s.narrow?' selected':'') + '>1280 × 800</option><option value="minimum"' + (s.narrow?' selected':'') + '>1000 × 620</option></select></label>' + button('Reset fixture','reset') + '</div><p>' + notice + '</p><details class="hd-m04-fixtures"'+(s.fixtures?' open':'')+'><summary>Fixture controls</summary><div class="hd-m04-actions">' + controls + '</div></details>';
       var base = template(s.collapsed ? 'new-task/sidebar-collapsed' : 'new-task/default');
       var app = base.querySelector('.hd-app'); app.removeAttribute('style'); app.classList.add('hd-m04-app'); app.setAttribute('data-theme',theme);
       frame.classList.toggle('hd-m04-window--minimum',s.narrow); frame.replaceChildren(app);
@@ -255,5 +272,5 @@
     render();
     return function(){disposed=true;host.removeEventListener('keydown',keydown);document.removeEventListener('click',outside);host.removeEventListener('input',input);host.removeEventListener('change',change);host.removeEventListener('click',click);host.removeEventListener('submit',submit);host.removeEventListener('toggle',toggle,true);if(widthRaf)window.cancelAnimationFrame(widthRaf);if(widthObserver)widthObserver.disconnect();};
   }
-  H.m04Proposal={mount:mount,model:{create:create,customized:customized,optionsOpen:optionsOpen,problem:problem,select:select,qualify:qualify,start:start,settle:settle,history:history,listing:listing,isAmendment:isAmendment,amendmentPopupMetrics:amendmentPopupMetrics,promptOneLineHeight:promptOneLineHeight,promptCapHeight:promptCapHeight,amendmentDrafts:AMENDMENT_DRAFTS}};
+  H.m04Proposal={mount:mount,model:{create:create,customized:customized,optionsOpen:optionsOpen,problem:problem,select:select,qualify:qualify,start:start,settle:settle,history:history,listing:listing,isAmendment:isAmendment,isRedraw:isRedraw,redrawSources:REDRAW_SOURCES,amendmentPopupMetrics:amendmentPopupMetrics,promptOneLineHeight:promptOneLineHeight,promptCapHeight:promptCapHeight,amendmentDrafts:AMENDMENT_DRAFTS}};
 })();

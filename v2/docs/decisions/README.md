@@ -50,6 +50,26 @@ The templates that other states clone (`task/running`, `task/done`, `task/failed
 
 Open (QA): whether `task/activity-sources` is redirected to `task/events-populated`, or kept while the transcript states are redrawn without the Events side pane. Until the owner decides, the state stays as it is.
 
+## Provisional redraws
+
+Six composer states are drawn only in the bottom layout. The owner asked for centered redraws with the same content and copy (Q3, 2026-11-08). The redraws are provisional and need owner approval; they carry no approval date. Each earlier state stays listed, labelled "Earlier layout; centered redraw awaiting owner approval", with a link to its redraw. The pairs are in `HFV2.pendingRedraw` (`v2/scripts/supersessions.js`).
+
+| Earlier state | Provisional redraw |
+| --- | --- |
+| `new-task/composer-loading` | `new-task/centered-loading` |
+| `new-task/composer-unqualified` | `new-task/centered-unqualified` |
+| `new-task/composer-invalid` | `new-task/centered-invalid` |
+| `new-task/composer-starting` | `new-task/centered-starting` |
+| `new-task/composer-refused` | `new-task/centered-refused` |
+| `new-task/options-closed` | `new-task/centered-options-closed` |
+
+On sign-off, a pair moves into the retired designs table above: the earlier state, its templates and its guides are removed, and a redirect that already targets the earlier state is repointed to the redraw.
+
+Open design questions for the redraws:
+
+- `new-task/centered-invalid` opens the task options popover, as its source does. Where it sits in the centered layout follows the placement rule of `new-task/centered-options` (above or below, by the space available), and at the minimum frame the available space is smaller. The owner decides whether that is acceptable.
+- Whether the open harness pill (the retired `new-task/harness-menu`) is drawn in the centered layout.
+
 ## By screen
 
 Each screen links here from the overview. The decision that covers it is listed first.

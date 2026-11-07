@@ -68,7 +68,7 @@ test('registry routes are unique and every descriptor resolves to a template, gu
     }
   }
   const mountIds = {
-    m04: [...HFV2.m04ProposalStates, ...HFV2.m04AmendmentStates].map(x => x.id),
+    m04: [...HFV2.m04ProposalStates, ...HFV2.m04AmendmentStates, ...HFV2.m04RedrawStates].map(x => x.id),
     m05: HFV2.m05ProposalStates.map(x => x.id)
   };
   for (const d of descriptors.filter(x => x.renderer)) {
@@ -646,4 +646,65 @@ test('strip links of the m04 renderer point at current states, never at retired 
   assert.ok(!/baselineLink|centeredLink/.test(source));
   const overviewMounts = read_('m05-proposal.js').match(/routeFor\('m05', '[a-z-]+'\)/g) || [];
   for (const call of overviewMounts) assert.ok(routeSet.has(HFV2.routeFor('m05', call.match(/'m05', '([a-z-]+)'/)[1])), call);
+});
+
+// ---- Provisional centered redraws ----
+
+const pending = HFV2.pendingRedraw;
+const REDRAW_ROUTES = ['new-task/centered-loading', 'new-task/centered-unqualified', 'new-task/centered-invalid', 'new-task/centered-starting', 'new-task/centered-refused', 'new-task/centered-options-closed'];
+const stateOfRoute = route => { const [f, s] = route.split('/'); return [HFV2.findFamily(f), HFV2.findState(HFV2.findFamily(f), s)]; };
+
+test('six centered redraws are provisional, carry no approval date and link to their earlier layout', () => {
+  assert.deepEqual(Array.from(pending, pair => pair.newer), REDRAW_ROUTES);
+  assert.deepEqual(Array.from(pending, pair => pair.older), [
+    'new-task/composer-loading', 'new-task/composer-unqualified', 'new-task/composer-invalid', 'new-task/composer-starting', 'new-task/composer-refused', 'new-task/options-closed'
+  ]);
+  for (const { older, newer } of pending) {
+    assert.ok(routeSet.has(older) && routeSet.has(newer), `${older} and ${newer} exist`);
+    const [family, state] = stateOfRoute(newer);
+    const [, earlier] = stateOfRoute(older);
+    assert.equal(state.status, 'provisional');
+    assert.equal(state.redrawOf, older);
+    assert.equal(state.approval, undefined, `${newer} has no approval`);
+    assert.equal(HFV2.approvalLine(family, state), 'Provisional · needs owner approval');
+    assert.ok(!/\d{4}-\d{2}-\d{2}/.test(HFV2.approvalLine(family, state)), 'no approval date');
+    assert.equal(earlier.status, 'approved', `${older} stays listed and approved until the owner decides`);
+    assert.ok(!earlier.hidden);
+    assert.ok(!(older in redirects) && !(newer in redirects) && !(newer in aliases));
+    const d = HFV2.describe(newer);
+    assert.equal(d.renderer, 'm04');
+    assert.equal(d.templateKey, `m04-proposal/${d.mount}`);
+    assert.match(HFV2.templates[d.templateKey], /hd-m04-amendment/, 'drawn in the centered layout');
+  }
+  assert.equal(new Set(pending.map(pair => pair.newer)).size, pending.length);
+});
+
+test('provisional redraw strips say so, with no approval date and no approved-amendment wording', () => {
+  const strips = HFV2.catalogStrips.m04;
+  assert.equal(strips.provisionalHeading, 'Provisional · needs owner approval');
+  assert.match(strips.provisionalNotice, /^Provisional · needs owner approval\./);
+  for (const text of [strips.provisionalHeading, strips.provisionalNotice]) {
+    assert.ok(!/\d{4}-\d{2}-\d{2}/.test(text), 'no date');
+    assert.ok(!/Approved|Owner 20/.test(text), 'no approval wording');
+  }
+});
+
+test('the catalog labels earlier layouts that await a redraw and links the pair both ways', () => {
+  const catalog = read(path.join(v2, 'scripts', 'catalog.js'));
+  assert.match(catalog, /Earlier layout; centered redraw awaiting owner approval/);
+  assert.match(catalog, /pendingRedrawOf/);
+  assert.match(catalog, /redrawsOf/);
+  const overview = HFV2.templates['overview/areas'];
+  assert.ok(overview.includes('Redraws awaiting approval'));
+  for (const { older, newer } of pending) assert.ok(overview.includes(`<a href="#${older}">`) && overview.includes(`<a href="#${newer}">`));
+  const decisions = read(path.join(v2, 'docs', 'decisions', 'README.md'));
+  for (const { older, newer } of pending) assert.ok(decisions.includes(`\`${older}\``) && decisions.includes(`\`${newer}\``), `${older} and ${newer} are recorded`);
+});
+
+test('a redirect target is never retired by a later sign-off without repointing the redirect', () => {
+  // Rule for a redraw sign-off: when an older state that is already a redirect target is retired, its
+  // redirect is repointed to the redraw. Until then no pending older state may be a redirect key.
+  const targets = new Set(Object.values(redirects));
+  for (const key of Object.keys(redirects)) assert.ok(!targets.has(key), `${key} is both a redirect key and a target`);
+  for (const { older } of pending) assert.ok(!(older in redirects));
 });

@@ -60,9 +60,13 @@ test('amendment routes are separate and approved by the owner on 2026-11-06',()=
   }
 });
 const m04States=()=>H.registry.families.flatMap(f=>f.states.filter(s=>s.source&&s.source.renderer==='m04').map(s=>Object.assign({route:f.id+'/'+s.id},s)));
-test('registry approves all 27 entry states with the six centered composer states on separate provenance',()=>{
-  const all=m04States();
-  assert.equal(all.length,27,'21 baseline states plus the six now-approved centered composer states');
+test('registry lists 27 approved entry states and six provisional centered redraws on separate provenance',()=>{
+  const registered=m04States();
+  assert.equal(registered.length,33,'21 baseline states, the six approved centered composer states and six provisional redraws');
+  const provisional=registered.filter(s=>s.status==='provisional');
+  assert.equal(provisional.length,6);
+  const all=registered.filter(s=>s.status!=='provisional');
+  assert.equal(all.length,27);
   assert.ok(all.every(s=>s.status==='approved'));
   const centered=all.filter(s=>s.source.mount.startsWith('amendment-'));
   assert.equal(centered.length,6,'the six centered composer states stay separate routes');
@@ -140,4 +144,45 @@ test('amendment popup height is bounded by the clipping compose-area viewport',(
   const low=M.amendmentPopupMetrics({top:120,bottom:152},area,frame);
   assert.equal(low.belowWins,true);
   assert.equal(low.maxHeight,Math.min(400,620-152-16));
+});
+
+// Provisional centered redraws of six bottom-layout composer states: the same fixture, a different layout.
+const REDRAWS={'centered-loading':'composer-loading','centered-unqualified':'composer-unqualified','centered-invalid':'composer-invalid','centered-starting':'composer-starting','centered-refused':'composer-refused','centered-options-closed':'advanced-closed'};
+test('each centered redraw has the model of its source apart from the route',()=>{
+  assert.deepEqual(Object.assign({},M.redrawSources),REDRAWS);
+  assert.deepEqual(Array.from(H.m04RedrawStates,x=>x.id).sort(),Object.keys(REDRAWS).sort());
+  for(const [redraw,source] of Object.entries(REDRAWS)){
+    const a=M.create(redraw),b=M.create(source);
+    assert.equal(a.route,redraw);
+    assert.deepEqual(Object.assign({},a,{route:b.route,remembered:{}}),Object.assign({},b,{remembered:{}}),redraw+' copies '+source);
+    assert.notEqual(a.remembered,b.remembered,'fixtures do not share state');
+    assert.equal(M.problem(a),M.problem(b));
+    assert.equal(M.isAmendment(redraw),true,redraw+' uses the centered layout');
+    assert.equal(M.isRedraw(redraw),true);
+    assert.equal(M.isAmendment(source),false,source+' keeps the bottom layout');
+    assert.equal(M.isRedraw(source),false);
+  }
+  assert.equal(M.create('centered-invalid').advanced,true,'the validation redraw opens the task options');
+  assert.equal(M.create('centered-options-closed').effort,'high');
+  assert.equal(M.create('centered-starting').status,'starting');
+});
+test('redraw routes are not approved amendments and keep no amendment draft',()=>{
+  for(const redraw of Object.keys(REDRAWS)){
+    assert.equal(M.amendmentDrafts[redraw],undefined);
+    assert.ok(!H.m04AmendmentStates.some(x=>x.id===redraw));
+    assert.equal(M.create(redraw).draft,'Review the delivery queue');
+    assert.match(H.templates['m04-proposal/'+redraw],/hd-m04-amendment/);
+    assert.doesNotMatch(H.templates['m04-proposal/'+redraw],/Approved/);
+  }
+  assert.equal(M.create('centered-loading').draft,M.create('composer-loading').draft);
+  assert.equal(M.isAmendment('amendment-ready'),true);
+});
+test('redraw descriptions and strips carry no approval',()=>{
+  for(const x of H.m04RedrawStates)assert.equal(x.approved,false);
+  const states=m04States().filter(s=>s.status==='provisional');
+  for(const s of states){
+    assert.equal(s.approval,undefined);
+    assert.equal(s.approvalNote,'Provisional · needs owner approval');
+    assert.doesNotMatch(s.description,/Owner-approved|approved/i);
+  }
 });

@@ -9,6 +9,10 @@
   // (hd-m04-amendment); the 24 baseline states are unchanged.
   var amendmentIds = ['amendment-empty','amendment-ready','amendment-growing','amendment-capped','amendment-options','amendment-unknown'];
   H.m04AmendmentStates = amendmentIds.map(function (id) { return { id: id, title: id.replace(/-/g, ' '), description: 'Owner-approved centered-composer amendment (2026-11-06, separate from the M04 baseline approval of 2026-11-05): ' + id.replace(/-/g, ' ') + ' review fixture.', status: 'Approved', approved: true }; });
+  // Provisional centered redraws of six bottom-layout composer states (not approved). The fixture of each
+  // comes from its source mount, named in m04-proposal.js.
+  var redrawIds = ['centered-loading','centered-unqualified','centered-invalid','centered-starting','centered-refused','centered-options-closed'];
+  H.m04RedrawStates = redrawIds.map(function (id) { return { id: id, title: id.replace(/-/g, ' '), description: 'Provisional centered redraw: ' + id.replace(/-/g, ' ') + ' review fixture.', status: 'Provisional', approved: false }; });
   var T = H.templates = H.templates || {};
   // Labels of the catalog-only strip above the app frame. The Node test scans them for process names.
   var STRIPS = (H.catalogStrips = H.catalogStrips || {}).m04 = {
@@ -17,10 +21,12 @@
     baselineHeading: 'Approved direction · 2026-11-05',
     centeredHeading: 'Approved amendment · Centered composer · Owner 2026-11-06',
     baselineNotice: 'Local preview · appearance preserves draft · route changes reset · Reduce Motion: instant changes. Native titlebar and OS controls are browser approximations.',
+    provisionalHeading: 'Provisional · needs owner approval',
+    provisionalNotice: 'Provisional · needs owner approval. Centered redraw of the earlier composer layout with the same content. Local preview · appearance preserves draft · route changes reset · Reduce Motion: instant changes. Native titlebar and OS controls are browser approximations.',
     centeredNotice: 'Approved amendment (owner, 2026-11-06), separate from the 2026-11-05 approval; the 2026-11-06 sidebar body-scroll correction applies to every entry, composer and sidebar state. Local preview · appearance preserves draft · route changes reset · Reduce Motion: instant changes. Native titlebar and OS controls are browser approximations; native validation is pending.'
   };
   ids.forEach(function (id) { T['m04-proposal/' + id] = '<div class="hd-m04-proposal" data-theme="{{theme}}"><div class="hd-m04-catalog" aria-label="' + STRIPS.baselineLabel + '"></div><div class="hd-m04-window"></div></div>'; });
-  amendmentIds.forEach(function (id) { T['m04-proposal/' + id] = '<div class="hd-m04-proposal hd-m04-amendment" data-theme="{{theme}}"><div class="hd-m04-catalog" aria-label="' + STRIPS.centeredLabel + '"></div><div class="hd-m04-window"></div></div>'; });
+  amendmentIds.concat(redrawIds).forEach(function (id) { T['m04-proposal/' + id] = '<div class="hd-m04-proposal hd-m04-amendment" data-theme="{{theme}}"><div class="hd-m04-catalog" aria-label="' + STRIPS.centeredLabel + '"></div><div class="hd-m04-window"></div></div>'; });
 
   // Routes: [renderer id, family, state, group, title, description]. The renderer id stays the template key.
   var ROWS = [
@@ -50,18 +56,36 @@
     ["amendment-growing", "new-task", "centered-growing", "Composer", "Centered composer · Growing", "Owner-approved centered-composer amendment (2026-11-06, separate from the 2026-11-05 entry direction): the prompt grows to roughly three soft-wrapped visual lines as the draft is typed."],
     ["amendment-capped", "new-task", "centered-capped", "Composer", "Centered composer · Capped at six lines", "Owner-approved centered-composer amendment (2026-11-06, separate from the 2026-11-05 entry direction): past six visible lines the prompt stops growing and scrolls with the existing soft slim scrollbar."],
     ["amendment-options", "new-task", "centered-options", "Task options", "Centered composer · Options open", "Owner-approved centered-composer amendment (2026-11-06, separate from the 2026-11-05 entry direction): task options open from the centered composer, placed above or below by the space actually available."],
-    ["amendment-unknown", "new-task", "centered-unknown", "Composer", "Centered composer · Outcome unknown", "Owner-approved centered-composer amendment (2026-11-06, separate from the 2026-11-05 entry direction): an unknown start outcome locks the retained draft and selections inside the centered layout."]
+    ["amendment-unknown", "new-task", "centered-unknown", "Composer", "Centered composer · Outcome unknown", "Owner-approved centered-composer amendment (2026-11-06, separate from the 2026-11-05 entry direction): an unknown start outcome locks the retained draft and selections inside the centered layout."],
+    ["centered-loading", "new-task", "centered-loading", "Composer", "Centered composer · Checking options", "Readiness is pending; the draft remains editable.", "composer-loading"],
+    ["centered-unqualified", "new-task", "centered-unqualified", "Composer", "Centered composer · Unavailable options", "Unsupported or unqualified selections cannot start.", "composer-unqualified"],
+    ["centered-invalid", "new-task", "centered-invalid", "Composer", "Centered composer · Validation", "Invalid input and requested options need correction.", "composer-invalid"],
+    ["centered-starting", "new-task", "centered-starting", "Composer", "Centered composer · Starting", "One in-flight start retains the draft and prevents duplicates.", "composer-starting"],
+    ["centered-refused", "new-task", "centered-refused", "Composer", "Centered composer · Refused", "A definitive refusal preserves the draft for review.", "composer-refused"],
+    ["centered-options-closed", "new-task", "centered-options-closed", "Task options", "Centered composer · Task options closed", "Customized task options retained behind the bottom-left plus button.", "advanced-closed"]
   ];
   var APPROVAL = {
     baseline: { by: 'the owner', date: '2026-11-05', decision: 'Entry visual direction · native and runtime qualification separate' },
     centered: { by: 'the owner', date: '2026-11-06', decision: 'Centered composer amendment · separate from the 2026-11-05 entry direction' }
   };
+  var ROUTE_OF = {};
+  ROWS.forEach(function (row) { ROUTE_OF[row[0]] = row[1] + '/' + row[2]; });
   ROWS.forEach(function (row) {
     var id = row[0];
-    H.registerState(row[1], {
-      id: row[2], title: row[4], description: row[5], group: row[3] || undefined, status: 'approved',
-      approval: id.indexOf('amendment-') === 0 ? APPROVAL.centered : APPROVAL.baseline,
+    var redraw = redrawIds.indexOf(id) >= 0;
+    var state = {
+      id: row[2], title: row[4], description: redraw ? row[5] + ' Centered redraw of the earlier layout.' : row[5], group: row[3] || undefined,
       source: { template: 'm04-proposal/' + id, renderer: 'm04', mount: id, guide: 'm04-proposal/' + id }
-    });
+    };
+    if (redraw) {
+      // Not approved: no approval date, and a link to the earlier layout it redraws.
+      state.status = 'provisional';
+      state.approvalNote = STRIPS.provisionalHeading;
+      state.redrawOf = ROUTE_OF[row[6]];
+    } else {
+      state.status = 'approved';
+      state.approval = amendmentIds.indexOf(id) >= 0 ? APPROVAL.centered : APPROVAL.baseline;
+    }
+    H.registerState(row[1], state);
   });
 })();

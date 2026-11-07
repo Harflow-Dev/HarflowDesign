@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add six provisional centered redraws of the bottom-layout composer states (`new-task/centered-loading`, `centered-unqualified`, `centered-invalid`, `centered-starting`, `centered-refused`, `centered-options-closed`), with the same fixtures as their sources. They are not approved: their strip reads "Provisional · needs owner approval". Each earlier layout stays listed with a link to its redraw (`HFV2.pendingRedraw`).
+
 - Retire nine superseded `v2/` states on the owner's answers of 2026-11-08: `task/running`, `task/done`, `task/failed`, `new-task/default`, `new-task/sidebar-collapsed`, `new-task/harness-menu`, `new-task/composer-ready`, `new-task/composer-unknown` and `new-task/options-open`. They leave navigation and their routes redirect to the replacement states (`routeRedirects`). The "Earlier design" note and the awaiting-decision label are removed, and the overview lists the replaced designs. `task/activity-sources` is unchanged pending an owner decision.
 
 - Archive the v1 catalog at `archive/v1/` (with its documents) and make the root `index.html` a redirector: no hash opens `v2/index.html`, a hash opens the archived catalog with that hash, and the old v1 paths forward to `archive/v1/` (`_redirects` on the hosted site). The build script runs every test file and stages `archive` and `_redirects`.
