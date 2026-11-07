@@ -1,5 +1,7 @@
-// Families and states of the Harflow Desktop interface reference.
-// Route format: family/state. Every state has a template in HFV2.templates.
+// Areas, families and states of the Harflow Desktop interface reference.
+// Route format: family/state. A state is rendered from its template, by the renderer named in its
+// `source`; states without a `source` render the template with their own route as the key.
+// Screen scripts add their states with HFV2.registerState; supersessions.js marks superseded states.
 (function () {
   'use strict';
   var HFV2 = (window.HFV2 = window.HFV2 || {});
@@ -10,795 +12,744 @@
       "canvas": "1793668079-d8d9",
       "designSystem": "1793668064-9e04"
     },
-    "defaultRoute": "new-task/default",
+    "defaultRoute": "overview/areas",
+    "areas": [
+      {
+        "id": "start-work",
+        "title": "Start work"
+      },
+      {
+        "id": "task",
+        "title": "Task"
+      },
+      {
+        "id": "attention",
+        "title": "Attention"
+      },
+      {
+        "id": "workflows",
+        "title": "Workflows"
+      },
+      {
+        "id": "capacity",
+        "title": "Capacity and usage"
+      },
+      {
+        "id": "settings",
+        "title": "Settings and setup"
+      },
+      {
+        "id": "design-system",
+        "title": "Design system"
+      }
+    ],
     "families": [
+      {
+        "id": "overview",
+        "title": "Overview",
+        "area": null,
+        "description": "The areas of the product, the screens in each, how many current states each screen has and the decision behind it.",
+        "states": [
+          {
+            "id": "areas",
+            "title": "Areas and screens",
+            "description": "Every area with its screens, their current states and where each decision is recorded.",
+            "status": "record",
+            "approvalNote": "Index of the current design · not a design state"
+          }
+        ]
+      },
       {
         "id": "new-task",
         "title": "New task",
-        "description": "The landing view: a greeting, the composer with its option pills, and the sidebar that lists running and recent work.",
+        "area": "start-work",
+        "groups": [
+          "Entry",
+          "Composer",
+          "Task options"
+        ],
+        "description": "Starting a task: the greeting, the composer with its option pills and the task options.",
         "states": [
           {
             "id": "default",
             "title": "Default",
             "description": "Greeting and composer with repository, harness and model, and access level pills.",
-            "approval": "approved"
+            "status": "approved",
+            "group": "Entry"
           },
           {
             "id": "harness-menu",
             "title": "Harness menu open",
             "description": "The harness and model pill opened to choose a harness and then a model.",
-            "approval": "approved"
+            "status": "approved",
+            "group": "Entry"
           },
           {
             "id": "sidebar-collapsed",
             "title": "Sidebar collapsed",
             "description": "The 56px icon rail with the Needs you dot and a running count on New task.",
-            "approval": "approved"
+            "status": "approved",
+            "group": "Entry"
           }
         ]
       },
       {
-        "id": "needs-you",
-        "title": "Needs you",
-        "description": "Every request that waits for the person, answered inline.",
-        "states": [
-          {
-            "id": "waiting",
-            "title": "Waiting items",
-            "description": "Approvals and a question from tasks and workflow runs, each answerable in place.",
-            "approval": "approved"
-          },
-          {
-            "id": "empty",
-            "title": "Empty",
-            "description": "Nothing waits for the person.",
-            "approval": "approved"
-          }
-        ]
-      },
-      {
-        "id": "workflows",
-        "title": "Workflows",
-        "description": "The workflow list and the Run workflow sheet.",
-        "states": [
-          {
-            "id": "list",
-            "title": "List",
-            "description": "Workflows with node count, Edit and Run. No run status is shown.",
-            "approval": "approved"
-          },
-          {
-            "id": "empty",
-            "title": "Empty",
-            "description": "No workflows yet, with the next step.",
-            "approval": "approved"
-          },
-          {
-            "id": "run",
-            "title": "Run workflow",
-            "description": "Task (required), Goal (optional), repository and orchestrator override.",
-            "approval": "approved"
-          }
-        ]
-      },
-      {
-        "id": "workflow-editor",
-        "title": "Workflow editor",
-        "description": "The canvas editor, flowing left to right, with the inspector for the selected node.",
-        "states": [
-          {
-            "id": "node-selected",
-            "title": "Node selected",
-            "description": "A node selected on the canvas with its inspector open.",
-            "approval": "approved"
-          },
-          {
-            "id": "orchestrator",
-            "title": "Orchestrator settings",
-            "description": "The locked orchestrator selected in the Standalone strip, with its harness, model and access settings in the inspector.",
-            "approval": "approved"
-          },
-          {
-            "id": "edit-with-agent",
-            "title": "Edit with agent",
-            "description": "An agent proposal on the canvas, with the builder activity in the right pane, reviewed before it is applied.",
-            "approval": "approved"
-          }
-        ]
+        "id": "sidebar",
+        "title": "Sidebar",
+        "area": "start-work",
+        "groups": [
+          "Layout",
+          "Recent work"
+        ],
+        "description": "The navigation column expanded, collapsed to the icon rail and at the minimum window, with Running and Recent work and their loading, failure and reconnecting states. Owner correction (2026-11-06): the sidebar body (navigation, Running, Recent work) scrolls as one bounded area with the header and the Settings and appearance footer fixed, in every layout.",
+        "states": []
       },
       {
         "id": "task",
         "title": "Task",
-        "description": "Task detail: a slim top bar, the transcript, inline approvals and the composer.",
+        "area": "task",
+        "groups": [
+          "Status",
+          "Actions",
+          "Top bar",
+          "Transcript",
+          "Changes",
+          "Events",
+          "Artifacts",
+          "Layout"
+        ],
+        "description": "Task detail: a slim top bar, the transcript, inline approvals and the composer, with every status, the actions menu, the changes, events and artifacts panes and the adaptive layout.",
         "states": [
           {
             "id": "running",
             "title": "Running",
             "description": "A running task with expanded and collapsed tool calls and a follow-up composer.",
-            "approval": "approved"
+            "status": "approved",
+            "group": "Status"
           },
           {
             "id": "approval",
             "title": "Waiting for approval",
             "description": "An approval card in the transcript, answered inline.",
-            "approval": "approved"
+            "status": "approved",
+            "group": "Status"
           },
           {
             "id": "done",
             "title": "Done, changes pane",
             "description": "A finished task with the summary and the changes pane open.",
-            "approval": "approved"
+            "status": "approved",
+            "group": "Status"
           },
           {
             "id": "failed",
             "title": "Failed",
             "description": "A failed task with the fact and the fix.",
-            "approval": "approved"
+            "status": "approved",
+            "group": "Status"
           }
         ]
       },
       {
         "id": "parallel-group",
         "title": "Parallel group",
+        "area": "task",
         "description": "One flat sidebar row with the parallel icon; its page shows the lanes.",
         "states": [
           {
             "id": "lanes",
             "title": "Lanes",
             "description": "Agents side by side, each in its own lane with its own composer. Started only through MCP.",
-            "approval": "approved"
+            "status": "approved"
           }
         ]
       },
       {
-        "id": "workflow-run",
-        "title": "Workflow run",
-        "description": "A workflow run as a graph, as parallel lanes, and its recovery and on-demand states.",
+        "id": "needs-you",
+        "title": "Needs you",
+        "area": "attention",
+        "description": "Every request that waits for the person, answered inline.",
         "states": [
           {
-            "id": "graph-needs-you",
-            "title": "Graph, needs you",
-            "description": "Run graph flowing left to right with a node that needs the person.",
-            "approval": "approved"
+            "id": "waiting",
+            "title": "Waiting items",
+            "description": "Approvals and a question from tasks and workflow runs, each answerable in place.",
+            "status": "approved"
           },
           {
-            "id": "parallel",
-            "title": "Parallel view",
-            "description": "The run's agents as lanes with their transcripts.",
-            "approval": "approved"
-          },
-          {
-            "id": "recovery",
-            "title": "Paused, recovery",
-            "description": "A paused run with a failed node and the recovery actions.",
-            "approval": "approved"
-          },
-          {
-            "id": "on-demand",
-            "title": "On-demand node selected",
-            "description": "A standalone on-demand node selected on a run to inspect its calls.",
-            "approval": "approved"
-          }
-        ]
-      },
-      {
-        "id": "resources",
-        "title": "Resources",
-        "description": "Concurrency capacity per harness.",
-        "states": [
-          {
-            "id": "slots",
-            "title": "Slots",
-            "description": "Slots in use per harness, the tasks holding them, and tasks waiting for a slot.",
-            "approval": "approved"
-          }
-        ]
-      },
-      {
-        "id": "statistics",
-        "title": "Statistics",
-        "description": "Usage over a time range.",
-        "states": [
-          {
-            "id": "overview",
-            "title": "Overview",
-            "description": "Headline numbers, tasks per day, and a per-harness breakdown.",
-            "approval": "approved"
-          }
-        ]
-      },
-      {
-        "id": "settings",
-        "title": "Settings",
-        "description": "Appearance, behaviour, runtime and harness management.",
-        "states": [
-          {
-            "id": "general",
-            "title": "General",
-            "description": "Appearance, behaviour toggles, runtime and task store.",
-            "approval": "approved"
-          },
-          {
-            "id": "harnesses",
-            "title": "Harnesses",
-            "description": "Registration, install state and qualification for each harness.",
-            "approval": "approved"
-          },
-          {
-            "id": "mcp-approvals",
-            "title": "MCP approvals",
-            "description": "Global tool approvals listed and managed inline.",
-            "approval": "approved"
+            "id": "empty",
+            "title": "Empty",
+            "description": "Nothing waits for the person.",
+            "status": "approved"
           }
         ]
       },
       {
         "id": "menu-bar",
         "title": "Menu bar",
+        "area": "attention",
         "description": "The menu bar popover and its monochrome template glyph.",
         "states": [
           {
             "id": "busy",
             "title": "Busy",
             "description": "Running work and requests answered inline from the popover.",
-            "approval": "approved"
+            "status": "approved"
           },
           {
             "id": "empty",
             "title": "Nothing running",
             "description": "No tasks yet, with the way to open Harflow.",
-            "approval": "approved"
+            "status": "approved"
+          }
+        ]
+      },
+      {
+        "id": "workflows",
+        "title": "Workflows",
+        "area": "workflows",
+        "description": "The workflow list and the Run workflow sheet.",
+        "states": [
+          {
+            "id": "list",
+            "title": "List",
+            "description": "Workflows with node count, Edit and Run. No run status is shown.",
+            "status": "approved"
+          },
+          {
+            "id": "empty",
+            "title": "Empty",
+            "description": "No workflows yet, with the next step.",
+            "status": "approved"
+          },
+          {
+            "id": "run",
+            "title": "Run workflow",
+            "description": "Task (required), Goal (optional), repository and orchestrator override.",
+            "status": "approved"
+          }
+        ]
+      },
+      {
+        "id": "workflow-editor",
+        "title": "Workflow editor",
+        "area": "workflows",
+        "description": "The canvas editor, flowing left to right, with the inspector for the selected node.",
+        "states": [
+          {
+            "id": "node-selected",
+            "title": "Node selected",
+            "description": "A node selected on the canvas with its inspector open.",
+            "status": "approved"
+          },
+          {
+            "id": "orchestrator",
+            "title": "Orchestrator settings",
+            "description": "The locked orchestrator selected in the Standalone strip, with its harness, model and access settings in the inspector.",
+            "status": "approved"
+          },
+          {
+            "id": "edit-with-agent",
+            "title": "Edit with agent",
+            "description": "The changes the agent suggests on the canvas, with the builder activity in the right pane, reviewed before they are applied.",
+            "status": "approved"
+          }
+        ]
+      },
+      {
+        "id": "workflow-run",
+        "title": "Workflow run",
+        "area": "workflows",
+        "description": "A workflow run as a graph, as parallel lanes, and its recovery and on-demand states.",
+        "states": [
+          {
+            "id": "graph-needs-you",
+            "title": "Graph, needs you",
+            "description": "Run graph flowing left to right with a node that needs the person.",
+            "status": "approved"
+          },
+          {
+            "id": "parallel",
+            "title": "Parallel view",
+            "description": "The run's agents as lanes with their transcripts.",
+            "status": "approved"
+          },
+          {
+            "id": "recovery",
+            "title": "Paused, recovery",
+            "description": "A paused run with a failed node and the recovery actions.",
+            "status": "approved"
+          },
+          {
+            "id": "on-demand",
+            "title": "On-demand node selected",
+            "description": "A standalone on-demand node selected on a run to inspect its calls.",
+            "status": "approved"
+          }
+        ]
+      },
+      {
+        "id": "resources",
+        "title": "Resources",
+        "area": "capacity",
+        "description": "Concurrency capacity per harness.",
+        "states": [
+          {
+            "id": "slots",
+            "title": "Slots",
+            "description": "Slots in use per harness, the tasks holding them, and tasks waiting for a slot.",
+            "status": "approved"
+          }
+        ]
+      },
+      {
+        "id": "statistics",
+        "title": "Statistics",
+        "area": "capacity",
+        "description": "Usage over a time range.",
+        "states": [
+          {
+            "id": "overview",
+            "title": "Overview",
+            "description": "Headline numbers, tasks per day, and a per-harness breakdown.",
+            "status": "approved"
+          }
+        ]
+      },
+      {
+        "id": "settings",
+        "title": "Settings",
+        "area": "settings",
+        "description": "Appearance, behaviour, runtime and harness management.",
+        "states": [
+          {
+            "id": "general",
+            "title": "General",
+            "description": "Appearance, behaviour toggles, runtime and task store.",
+            "status": "approved"
+          },
+          {
+            "id": "harnesses",
+            "title": "Harnesses",
+            "description": "Registration, install state and qualification for each harness.",
+            "status": "approved"
+          },
+          {
+            "id": "mcp-approvals",
+            "title": "MCP approvals",
+            "description": "Global tool approvals listed and managed inline.",
+            "status": "approved"
           }
         ]
       },
       {
         "id": "app-states",
         "title": "App states",
+        "area": "settings",
         "description": "First run, loading and engine failure.",
         "states": [
           {
             "id": "setup",
             "title": "First run, setup",
             "description": "Preparing the runtime and registering Harflow with the harnesses.",
-            "approval": "approved"
+            "status": "approved"
           },
           {
             "id": "loading",
             "title": "Loading",
             "description": "Connecting to the engine.",
-            "approval": "approved"
+            "status": "approved"
           },
           {
             "id": "engine-error",
             "title": "Engine not running",
             "description": "The engine cannot be reached, with the fix.",
-            "approval": "approved"
+            "status": "approved"
           }
         ]
       },
       {
-        "id": "d2b-proposal",
-        "title": "D2B observation proposal",
-        "description": "Owner-approved observation-state direction with the requested spacing and canonical sidebar corrections. Native implementation and fidelity remain separate.",
-        "approval": {
-          "date": "2026-11-05",
-          "by": "the owner",
-          "reference": "D2B observation states · requested corrections applied"
-        },
-        "states": [
-          {
-            "id": "observed",
-            "title": "Observed captured activity",
-            "description": "A qualified observed summary beside the current activity window; original request provenance remains explicit.",
-            "approval": "approved"
-          },
-          {
-            "id": "loading",
-            "title": "Loading observations",
-            "description": "Independent request and captured activity reads; missing totals are never shown as zero.",
-            "approval": "approved"
-          },
-          {
-            "id": "partial",
-            "title": "Incomplete captured history",
-            "description": "Known loss and partial request text retain their qualifications.",
-            "approval": "approved"
-          },
-          {
-            "id": "unavailable",
-            "title": "Observation unavailable",
-            "description": "A read refusal or unsupported capability is separate from task execution status.",
-            "approval": "approved"
-          },
-          {
-            "id": "integrity-failed",
-            "title": "Request integrity failure",
-            "description": "Questionable assignment text is withheld while independent task facts remain visible.",
-            "approval": "approved"
-          },
-          {
-            "id": "reconnecting",
-            "title": "Reconnect and source change",
-            "description": "Cached rows retain reading position; a changed source requires an explicit new view.",
-            "approval": "approved"
-          },
-          {
-            "id": "capacity",
-            "title": "Reading window at capacity",
-            "description": "Keep the current rows and position; independently qualified summary facts can remain available.",
-            "approval": "approved"
-          },
-          {
-            "id": "events",
-            "title": "Normalized and recovered sources",
-            "description": "Public normalized records and stubs retain file order, with a separate recovery source.",
-            "approval": "approved"
-          }
-        ]
+        "id": "harness-runtime",
+        "title": "Harness runtime",
+        "area": "settings",
+        "description": "Checking, installing and updating the managed runtime before work can start, and the first connection to the work listing.",
+        "states": []
       },
       {
-        "id": "m04-proposal",
-        "title": "M04 native entry direction",
-        "approval": {"by": "owner", "date": "2026-11-05", "reference": "M04 visual direction; native and runtime qualification separate"},
-        "description": "Owner-approved visual direction (2026-11-05) for shell, composer, history and runtime entry states. The six amendment states below are owner-approved (2026-11-06) as a separate change, not part of the baseline approval. Owner correction (2026-11-06): the M04 sidebar body (navigation, Running, Recent work) scrolls as one bounded area with the header and Settings/appearance footer fixed, and applies to every M04 route. Deterministic browser fixtures only; no native or runtime implementation; native validation pending.",
-        "states": [
-          {
-            "id": "shell",
-            "title": "Shell \u00b7 Expanded",
-            "description": "Native shell adaptation of the approved composer.",
-            "approval": "approved"
-          },
-          {
-            "id": "shell-collapsed",
-            "title": "Shell \u00b7 Collapsed rail",
-            "description": "Native collapsed rail and accessible navigation.",
-            "approval": "approved"
-          },
-          {
-            "id": "shell-narrow",
-            "title": "Shell \u00b7 Minimum window",
-            "description": "Minimum-size composition without font scaling.",
-            "approval": "approved"
-          },
-          {
-            "id": "composer-loading",
-            "title": "Composer \u00b7 Checking options",
-            "description": "Readiness is pending; the draft remains editable.",
-            "approval": "approved"
-          },
-          {
-            "id": "composer-ready",
-            "title": "Composer \u00b7 Ready",
-            "description": "Qualified, valid selections allow an explicit start.",
-            "approval": "approved"
-          },
-          {
-            "id": "composer-unqualified",
-            "title": "Composer \u00b7 Unavailable options",
-            "description": "Unsupported or unqualified selections cannot start.",
-            "approval": "approved"
-          },
-          {
-            "id": "composer-invalid",
-            "title": "Composer \u00b7 Validation",
-            "description": "Invalid input and requested options need correction.",
-            "approval": "approved"
-          },
-          {
-            "id": "composer-starting",
-            "title": "Composer \u00b7 Starting",
-            "description": "One in-flight start retains the draft and prevents duplicates.",
-            "approval": "approved"
-          },
-          {
-            "id": "composer-refused",
-            "title": "Composer \u00b7 Refused",
-            "description": "A definitive refusal preserves the draft for review.",
-            "approval": "approved"
-          },
-          {
-            "id": "composer-unknown",
-            "title": "Composer \u00b7 Outcome unknown",
-            "description": "Unknown outcome preserves uncertainty without automatic retry.",
-            "approval": "approved"
-          },
-          {
-            "id": "advanced",
-            "title": "Task options · Open",
-            "description": "Retained supported controls with truthful enforcement limits.",
-            "approval": "approved"
-          },
-          {
-            "id": "advanced-closed",
-            "title": "Task options · Closed",
-            "description": "Customized task options retained behind the bottom-left plus button.",
-            "approval": "approved"
-          },
-          {
-            "id": "history-empty",
-            "title": "History \u00b7 Empty",
-            "description": "No running or recent work in the available listing.",
-            "approval": "approved"
-          },
-          {
-            "id": "history-loading",
-            "title": "History \u00b7 Loading",
-            "description": "Initial listing has no fabricated work rows.",
-            "approval": "approved"
-          },
-          {
-            "id": "history-older",
-            "title": "History \u00b7 Loading older",
-            "description": "Older-page loading retains already loaded rows.",
-            "approval": "approved"
-          },
-          {
-            "id": "history-error",
-            "title": "History \u00b7 Read failure",
-            "description": "Failed reads preserve loaded work and offer explicit retry.",
-            "approval": "approved"
-          },
-          {
-            "id": "history-reconnecting",
-            "title": "History \u00b7 Reconnecting",
-            "description": "Reconnect preserves identity and uncertainty.",
-            "approval": "approved"
-          },
-          {
-            "id": "history-retained",
-            "title": "History \u00b7 Retained selection",
-            "description": "A selected identity remains stable across retention changes.",
-            "approval": "approved"
-          },
-          {
-            "id": "runtime-checking",
-            "title": "Runtime \u00b7 Checking",
-            "description": "Runtime readiness is not yet established.",
-            "approval": "approved"
-          },
-          {
-            "id": "runtime-install-required",
-            "title": "Runtime \u00b7 Installation required",
-            "description": "Explicit runtime installation is required before creation.",
-            "approval": "approved"
-          },
-          {
-            "id": "runtime-update-required",
-            "title": "Runtime \u00b7 Update required",
-            "description": "Installed and required versions remain distinct.",
-            "approval": "approved"
-          },
-          {
-            "id": "runtime-installing",
-            "title": "Runtime \u00b7 Preparing",
-            "description": "Local fixture of preparation progress; no downloads occur.",
-            "approval": "approved"
-          },
-          {
-            "id": "runtime-failed",
-            "title": "Runtime \u00b7 Failure and retry",
-            "description": "A retained diagnostic requires explicit retry.",
-            "approval": "approved"
-          },
-          {
-            "id": "runtime-listing",
-            "title": "Runtime \u00b7 Ready, listing pending",
-            "description": "Qualified runtime and first-list connection are independent.",
-            "approval": "approved"
-          },
-          {
-            "id": "amendment-empty",
-            "title": "Amendment \u00b7 Centered, empty",
-            "description": "Owner-approved centered-composer amendment (2026-11-06, separate from the M04 baseline approval of 2026-11-05): the greeting, composer, status and help group centered in the New task area, with the prompt compact at one visual line.",
-            "approval": "approved"
-          },
-          {
-            "id": "amendment-ready",
-            "title": "Amendment \u00b7 Centered, one line ready",
-            "description": "Owner-approved centered-composer amendment (2026-11-06, separate from the M04 baseline approval of 2026-11-05): a one-line ready draft with valid, qualified selections in the centered layout.",
-            "approval": "approved"
-          },
-          {
-            "id": "amendment-growing",
-            "title": "Amendment \u00b7 Centered, growing",
-            "description": "Owner-approved centered-composer amendment (2026-11-06, separate from the M04 baseline approval of 2026-11-05): the prompt grows to roughly three soft-wrapped visual lines as the draft is typed.",
-            "approval": "approved"
-          },
-          {
-            "id": "amendment-capped",
-            "title": "Amendment \u00b7 Centered, capped at six lines",
-            "description": "Owner-approved centered-composer amendment (2026-11-06, separate from the M04 baseline approval of 2026-11-05): past six visible lines the prompt stops growing and scrolls with the existing soft slim scrollbar.",
-            "approval": "approved"
-          },
-          {
-            "id": "amendment-options",
-            "title": "Amendment \u00b7 Centered, options open",
-            "description": "Owner-approved centered-composer amendment (2026-11-06, separate from the M04 baseline approval of 2026-11-05): task options open from the centered composer, placed above or below by the space actually available.",
-            "approval": "approved"
-          },
-          {
-            "id": "amendment-unknown",
-            "title": "Amendment \u00b7 Centered, outcome unknown",
-            "description": "Owner-approved centered-composer amendment (2026-11-06, separate from the M04 baseline approval of 2026-11-05): an unknown start outcome locks the retained draft and selections inside the centered layout.",
-            "approval": "approved"
-          }
-        ]
+        "id": "records",
+        "title": "Decision boards",
+        "area": null,
+        "hidden": true,
+        "description": "Boards that compare the options behind a decision and record the one chosen. They are records, not design states.",
+        "states": []
       },
       {
         "id": "brand",
         "title": "Brand",
+        "area": "design-system",
         "description": "The brand book of the Harflow Desktop design system: principles, the brand mark, appearance, voice, visual foundations, layout and iconography.",
         "states": [
           {
             "id": "principles",
             "title": "Principles",
             "description": "The design principles: minimal, quiet surfaces, one accent, mid-grey dark mode and status as glyph plus word.",
-            "approval": "approved"
+            "status": "approved"
           },
           {
             "id": "brand-mark",
             "title": "Brand mark",
             "description": "The violet app icon, the CSS brand mark and the monochrome menu bar glyph, at several sizes on both appearances.",
-            "approval": "approved"
+            "status": "approved"
           },
           {
             "id": "appearance",
             "title": "Appearance",
             "description": "System, Light and Dark, and where the appearance toggle sits.",
-            "approval": "approved"
+            "status": "approved"
           },
           {
             "id": "content-fundamentals",
             "title": "Content fundamentals",
             "description": "Voice, button wording, the closed status vocabulary, time formats, access levels, terminology and sample content.",
-            "approval": "approved"
+            "status": "approved"
           },
           {
             "id": "visual-foundations",
             "title": "Visual foundations",
             "description": "Colour roles, type styles, spacing, radius and elevation rules.",
-            "approval": "approved"
+            "status": "approved"
           },
           {
             "id": "layout",
             "title": "Layout",
             "description": "Fixed sizes of the sidebar, rail, content column, right pane, title bar and rows.",
-            "approval": "approved"
+            "status": "approved"
           },
           {
             "id": "iconography",
             "title": "Iconography",
             "description": "The 16px stroke icon set, drawn as CSS masks, and how to mark it up.",
-            "approval": "approved"
+            "status": "approved"
           },
           {
             "id": "using-the-components",
             "title": "Using the components",
             "description": "How the plain HTML components use tokens, classes and real elements.",
-            "approval": "approved"
+            "status": "approved"
           },
           {
             "id": "not-in-this-system",
             "title": "Not in this system",
             "description": "What the design system leaves out.",
-            "approval": "approved"
+            "status": "approved"
           }
         ]
       },
       {
         "id": "foundations",
         "title": "Foundations",
+        "area": "design-system",
         "description": "Every design token with its value and usage: colour, typography, spacing, radius, sizes and elevation.",
         "states": [
           {
             "id": "colour",
             "title": "Colour",
             "description": "Every colour token with a live swatch, its light and dark values and its usage.",
-            "approval": "approved"
+            "status": "approved"
           },
           {
             "id": "typography",
             "title": "Typography",
             "description": "Font families and every text style, each rendered as a live sample.",
-            "approval": "approved"
+            "status": "approved"
           },
           {
             "id": "spacing-radius",
             "title": "Spacing, radius and size",
             "description": "Spacing steps, corner radii and fixed layout sizes drawn from the tokens.",
-            "approval": "approved"
+            "status": "approved"
           },
           {
             "id": "elevation",
             "title": "Elevation",
             "description": "The shadow tokens on sample cards, with usage.",
-            "approval": "approved"
+            "status": "approved"
           }
         ]
       },
       {
         "id": "components",
         "title": "Components",
+        "area": "design-system",
         "description": "The Harflow Desktop design system components as used by the screens. Every class is prefixed hd-.",
         "states": [
           {
             "id": "cover",
             "title": "Cover",
             "description": "The design system cover: a sidebar slab with satellite shapes, the Needs you dot and the violet blossom app icon.",
-            "approval": "approved"
+            "status": "approved"
           },
           {
             "id": "button",
             "title": "Button",
             "description": "Button triggers an action; four styles and two sizes cover every command in the app. Use it for: Primary: the one main action in a view (Run, Approve); Secondary: other actions beside it (Reject, Keep running); Ghost: low-emphasis actions (Edit, Take over in terminal).",
-            "approval": "approved"
+            "status": "approved"
           },
           {
             "id": "menu",
             "title": "Menu",
             "description": "Menu is a small popover list for choosing an option or running an action. Use it for: Opened from a pill or an overflow button; Not for navigation; use the sidebar or Tabs.",
-            "approval": "approved"
+            "status": "approved"
           },
           {
             "id": "pill",
             "title": "Pill",
             "description": "Pill is a compact option chip: the composer choices and the workflow chip. Use it for: Composer options along the bottom edge: folder, harness plus model, access level; The accent pill shows the selected workflow in the Run composer; Each pill with a chevron opens a Menu.",
-            "approval": "approved"
+            "status": "approved"
           },
           {
             "id": "theme-toggle",
             "title": "Theme toggle",
             "description": "Theme toggle switches the app appearance between System, Light and Dark. Use it for: In the sidebar footer, beside Settings; In the collapsed rail, use the single cycling button instead of the group.",
-            "approval": "approved"
+            "status": "approved"
           },
           {
             "id": "changed-files",
             "title": "Changed files",
             "description": "Changed files lists files changed by a task and shows a diff. Use it for: The Changes tab of the right pane.",
-            "approval": "approved"
+            "status": "approved"
           },
           {
             "id": "slot-meter",
             "title": "Slot meter",
             "description": "Slot meter shows how much of a harness's concurrency capacity is in use. Use it for: The Resources page: one meter per harness.",
-            "approval": "approved"
+            "status": "approved"
           },
           {
             "id": "stat-tile",
             "title": "Stat tile",
             "description": "Stat tile shows one headline number with a label and a note. Use it for: Statistics page, in a `hd-grid--4` (or 3, 2).",
-            "approval": "approved"
+            "status": "approved"
           },
           {
             "id": "workflow-row",
             "title": "Workflow row",
             "description": "Workflow row is one workflow in the Workflows list, with its node count and Edit and Run actions. It shows no run status: the same workflow can run several times at once, and those runs appear in the sidebar under Running and Recent work. Use it for: The Workflows page and any list of saved workflows.",
-            "approval": "approved"
+            "status": "approved"
           },
           {
             "id": "banner",
             "title": "Banner",
             "description": "Banner reports an error or a warning inline, with an action to fix it. Use it for: Engine or harness problems; limits reached.",
-            "approval": "approved"
+            "status": "approved"
           },
           {
             "id": "empty-state",
             "title": "Empty state",
             "description": "Empty state explains an empty view and offers the next step. Use it for: No Needs you items, no workflows, no results.",
-            "approval": "approved"
+            "status": "approved"
           },
           {
             "id": "skeleton",
             "title": "Skeleton",
             "description": "Skeleton is a placeholder shape shown while content loads. Use it for: Lists and text blocks that load asynchronously.",
-            "approval": "approved"
+            "status": "approved"
           },
           {
             "id": "icons",
             "title": "Icons",
             "description": "Icons is the set of 39 stroke icons, drawn as CSS masks so they take the current text colour. Use it for: Next to a label, in a button, row, pill or menu item; Alone only in an icon button, with an `aria-label` on the button; Do not use icons as decoration; each one should carry meaning.",
-            "approval": "approved"
+            "status": "approved"
           },
           {
             "id": "composer",
             "title": "Composer",
             "description": "Composer is the input box for starting a task, replying to an agent, or running a workflow. Use it for: New task: centred under the greeting; Follow-up: pinned at the bottom of a task; Workflow run: with a workflow pill and input fields.",
-            "approval": "approved"
+            "status": "approved"
           },
           {
             "id": "form-controls",
             "title": "Form controls",
             "description": "Form controls are the switch, the stepper and the form row that lays them out beside a label. Use it for: Switch: an on/off setting that applies at once (Override orchestrator harness); Stepper: a small whole number (Turn limit, slot limit); Form row: any label-and-control pair in settings, dialogs and the inspector.",
-            "approval": "approved"
+            "status": "approved"
           },
           {
             "id": "text-field",
             "title": "Text field",
             "description": "Text field is a labelled single-line input, textarea, search field or select-looking button. Use it for: Forms, workflow inputs and settings; Search uses `hd-search` with a leading icon.",
-            "approval": "approved"
+            "status": "approved"
           },
           {
             "id": "sidebar",
             "title": "Sidebar",
             "description": "Sidebar is the 264px navigation column; it collapses to a 56px icon rail. Use it for: Always present on the left of the window; Collapse to the rail with the sidebar icon button.",
-            "approval": "approved"
+            "status": "approved"
           },
           {
             "id": "sidebar-nav-item",
             "title": "Sidebar nav item",
             "description": "Sidebar nav item is one row of primary navigation in the sidebar. Use it for: Top-level destinations: New task, Needs you, Workflows, Resources, Statistics, Settings.",
-            "approval": "approved"
+            "status": "approved"
           },
           {
             "id": "sidebar-task-row",
             "title": "Sidebar task row",
             "description": "Sidebar task row is one task or workflow run in the Running and Recent work lists. Use it for: Inside the sidebar sections Running and Recent work; Tasks and workflow runs share the row; the glyph tells them apart.",
-            "approval": "approved"
+            "status": "approved"
           },
           {
             "id": "tabs",
             "title": "Tabs",
             "description": "Tabs switches between panes of a view; the segmented control switches a filter or range. Use it for: `hd-tabs`: Changes, Artifacts, Events in the task pane; `hd-seg`: a small set of mutually exclusive options such as a time range.",
-            "approval": "approved"
+            "status": "approved"
           },
           {
             "id": "dialog",
             "title": "Dialog",
             "description": "Dialog asks for a decision that blocks the screen behind it. Use it for: Confirming destructive actions such as cancelling a task.",
-            "approval": "approved"
+            "status": "approved"
           },
           {
             "id": "status-badge",
             "title": "Status badge",
             "description": "Status badge shows a task or run status as a glyph plus its word. Use it for: Task header and detail views where the status needs a label; In lists use the bare glyph (SidebarTaskRow).",
-            "approval": "approved"
+            "status": "approved"
           },
           {
             "id": "approval-card",
             "title": "Approval card",
             "description": "Approval card asks the person to approve, reject or answer something inline in the transcript. Use it for: The agent needs permission (command, publish) or an answer.",
-            "approval": "approved"
+            "status": "approved"
           },
           {
             "id": "tool-call-row",
             "title": "Tool call row",
             "description": "Tool call row is a one-line summary of a tool call that expands to show its output. Use it for: Between agent messages in a transcript; keeps tool noise to one line each.",
-            "approval": "approved"
+            "status": "approved"
           },
           {
             "id": "transcript-message",
             "title": "Transcript message",
             "description": "Transcript message renders the conversation: user bubbles, agent prose, turn separators and the working indicator. Use it for: Inside `hd-transcript`, the centred 760px column of a task.",
-            "approval": "approved"
+            "status": "approved"
           },
           {
             "id": "inspector",
             "title": "Inspector",
             "description": "Inspector is the right panel of the workflow editor that edits the selected node. Use it for: In the workflow editor, beside the canvas, when a node is selected; Not for task detail; that uses the right pane with tabs.",
-            "approval": "approved"
+            "status": "approved"
           },
           {
             "id": "node-tray",
             "title": "Node tray",
             "description": "Node tray is the editor's bottom tray of draggable node chips, shown with the zoom control and the Standalone strip. Use it for: In the workflow editor, over the canvas, to add nodes by dragging; The zoom control sits at the bottom-right corner of every canvas, in the editor and on a run. The Standalone strip sits between the top bar and the canvas.",
-            "approval": "approved"
+            "status": "approved"
           },
           {
             "id": "parallel-lanes",
             "title": "Parallel lanes",
             "description": "Parallel lanes show the agents of a parallel group side by side, each in its own lane with its own composer. Use it for: In the run view of a parallel group, so every agent is visible at once; Not for a single agent; that uses the normal task detail.",
-            "approval": "approved"
+            "status": "approved"
           },
           {
             "id": "workflow-node",
             "title": "Workflow node",
             "description": "Workflow node is a step on the workflow canvas, connected to others by edges. Use it for: The workflow editor and run view. The canvas includes the zoom control at its bottom-right.",
-            "approval": "approved"
+            "status": "approved"
           }
         ]
       }
     ]
   };
+
+  HFV2.findFamily = function (id) {
+    return HFV2.registry.families.filter(function (family) { return family.id === id; })[0] || null;
+  };
+
+  HFV2.findState = function (family, id) {
+    return family.states.filter(function (state) { return state.id === id; })[0] || null;
+  };
+
+  HFV2.stateKeys = function () {
+    var keys = [];
+    HFV2.registry.families.forEach(function (family) {
+      family.states.forEach(function (state) { keys.push(family.id + '/' + state.id); });
+    });
+    return keys;
+  };
+
+  // Renderers draw the app frame of their states themselves. Each is exposed as HFV2[api]
+  // with mount(root, mountId); `wrapper` is the class list of the specimen that hosts it.
+  HFV2.RENDERERS = {
+    d2b: { api: 'd2bProposal', wrapper: 'hdc-specimen hdc-specimen--d2b' },
+    m04: { api: 'm04Proposal', wrapper: 'hdc-specimen hdc-specimen--m04' },
+    m05: { api: 'm05Proposal', wrapper: 'hdc-specimen hdc-specimen--m05' }
+  };
+
+  // Adds a state to a family and keeps the family's states in group order.
+  HFV2.registerState = function (familyId, state) {
+    var family = HFV2.findFamily(familyId);
+    if (!family) throw new Error('Unknown family ' + familyId);
+    if (HFV2.findState(family, state.id)) throw new Error('Duplicate route ' + familyId + '/' + state.id);
+    family.states.push(state);
+    if (family.groups) {
+      family.states.sort(function (a, b) { return family.groups.indexOf(a.group) - family.groups.indexOf(b.group); });
+    }
+    return state;
+  };
+
+  // The route of the state a renderer draws from its own id, or null.
+  HFV2.routeFor = function (renderer, mountId) {
+    var found = null;
+    HFV2.registry.families.forEach(function (family) {
+      family.states.forEach(function (state) {
+        var source = state.source;
+        if (source && source.renderer === renderer && source.mount === mountId) found = family.id + '/' + state.id;
+      });
+    });
+    return found;
+  };
+
+  // The approval line of a state. The state's own approval is read before its family's, then the registry's.
+  HFV2.approvalLine = function (family, state) {
+    if (state.status === 'provisional' || state.status === 'record') return state.approvalNote || 'Not approved';
+    var a = state.approval || family.approval || HFV2.registry.approval;
+    var detail = a.decision || a.reference;
+    return 'Approved by ' + a.by + ' on ' + a.date + (detail ? ' · ' + detail : ' · canvas ' + a.canvas + ' · design system ' + a.designSystem);
+  };
+
+  // Everything the catalog needs to draw one route, resolved in one place.
+  HFV2.describe = function (route) {
+    var parts = String(route).split('/');
+    var family = HFV2.findFamily(parts[0]);
+    var state = family && HFV2.findState(family, parts[1]);
+    if (!state) return null;
+    var source = state.source || {};
+    var key = source.template || route;
+    var renderer = source.renderer || null;
+    var meta = (HFV2.componentMeta && HFV2.componentMeta[key]) || null;
+    return {
+      route: route,
+      family: family,
+      state: state,
+      templateKey: key,
+      renderer: renderer,
+      mount: renderer ? source.mount : null,
+      wrapperClass: renderer ? HFV2.RENDERERS[renderer].wrapper : (meta ? 'hdc-specimen hdc-specimen--component' : 'hdc-specimen'),
+      componentMeta: meta,
+      guideKey: source.guide || key,
+      approval: HFV2.approvalLine(family, state),
+      sizeCaption: !!renderer,
+      status: state.status,
+      hidden: !!(state.hidden || family.hidden)
+    };
+  };
+
+  // States shown in navigation, the picker and the overview counts.
+  HFV2.currentStates = function (family) {
+    return family.hidden ? [] : family.states.filter(function (state) { return !state.hidden; });
+  };
+
 
   // Fills the appearance placeholders of a template. `selection` is the chosen
   // appearance (system, light or dark); `resolved` is the appearance applied
@@ -811,13 +762,5 @@
       .split('{{darkOn}}').join(String(selection === 'dark'))
       .split('{{systemOn}}').join(String(selection === 'system'))
       .split('{{themeIcon}}').join(icon);
-  };
-
-  HFV2.stateKeys = function () {
-    var keys = [];
-    HFV2.registry.families.forEach(function (family) {
-      family.states.forEach(function (state) { keys.push(family.id + '/' + state.id); });
-    });
-    return keys;
   };
 })();

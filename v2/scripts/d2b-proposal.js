@@ -168,7 +168,7 @@
     var match = template.match(/<aside class="hd-sidebar"[\s\S]*?<\/aside>/);
     if (!match) return '';
     var sidebar = match[0].replace('href="#new"', 'href="#new-task/default"').replace(/<a class="hd-task-row[^"]*is-active[^"]*"[\s\S]*?<\/a>/, function (row) {
-      return row.replace(/href="[^"]*"/, 'href="#d2b-proposal/' + esc(state.name) + '"')
+      return row.replace(/href="[^"]*"/, 'href="#' + esc((H.routeFor && H.routeFor('d2b', state.name)) || 'd2b-proposal/' + state.name) + '"')
         .replace(/(<span class="hd-task-row__title">)[\s\S]*?(<\/span>)/, '$1Fix slot release test$2');
     });
     return H.fill(sidebar, selection, resolved);
@@ -243,12 +243,12 @@
       var savedView = captureView();
       var r=requestView(s),a=activityView(s);
       host.dataset.size=s.size;
-      q('[data-d2b-controls]').innerHTML='<strong>Proposal controls · catalog only</strong><label>Size <select data-variant="size"><option value="reference"' +
+      q('[data-d2b-controls]').innerHTML='<strong>'+H.catalogStrips.d2b.controls+'</strong><label>Size <select data-variant="size"><option value="reference"' +
       (s.size==='reference'?' selected':'')+'>Reference 1280 × 800</option><option value="minimum"'+(s.size==='minimum'?' selected':'') +
       '>Minimum 1000 × 620</option></select></label><label>Request <select data-variant="request">'+options(variants.request,
       s.request)+'</select></label><label>History <select data-variant="history">'+options(variants.history,
       s.history)+'</select></label><label>Totals <select data-variant="summaryCoverage">'+options(variants.summaryCoverage,
-      s.summaryCoverage)+'</select></label><span>Deterministic mock · design reference</span>';
+      s.summaryCoverage)+'</select></label><span>'+H.catalogStrips.d2b.note+'</span>';
       q('[data-d2b-status]').innerHTML='<span class="hd-badge">'+(s.status==='Done'?'<span class="hd-glyph hd-glyph--done" aria-hidden="true"><span class="hd-i hd-i--sm hd-i-check"></span></span>':'<span class="hd-glyph hd-glyph--running" aria-hidden="true"></span>') +
       s.status+'</span>';
       q('[data-d2b-request]').innerHTML='<details data-disclosure="request" class="hd-d2b-request" open><summary>'+r.title +

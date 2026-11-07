@@ -5,6 +5,7 @@
   var HFV2 = window.HFV2;
   var STORAGE_KEY = 'hf-v2-appearance';
   var MODES = ['system', 'light', 'dark'];
+  var AWAITING = 'Earlier layout; current status awaiting decision';
   var ROUTE_PATTERN = /^#([a-z0-9-]+)\/([a-z0-9-]+)(?:\/(light|dark|system))?$/;
 
   var els = {
@@ -15,6 +16,7 @@
     title: document.getElementById('hdc-title'),
     description: document.getElementById('hdc-description'),
     approval: document.getElementById('hdc-approval'),
+    note: document.getElementById('hdc-note'),
     stage: document.getElementById('hdc-stage'),
     specimen: document.getElementById('hdc-specimen'),
     caption: document.getElementById('hdc-caption'),
@@ -53,16 +55,12 @@
     return mode;
   }
 
-  function findFamily(id) {
-    return HFV2.registry.families.filter(function (family) { return family.id === id; })[0] || null;
-  }
+  var findFamily = HFV2.findFamily;
+  var findState = HFV2.findState;
 
-  function findState(family, id) {
-    return family.states.filter(function (state) { return state.id === id; })[0] || null;
-  }
-
+  // Old routes resolve to their canonical route before the route is looked up.
   function parseHash(hash) {
-    var match = ROUTE_PATTERN.exec(hash || '');
+    var match = ROUTE_PATTERN.exec(HFV2.resolveRoute(hash || ''));
     if (!match) return null;
     var family = findFamily(match[1]);
     if (!family || !findState(family, match[2])) return null;
@@ -86,21 +84,56 @@
     return node;
   }
 
+  function titleOfRoute(route) {
+    var parts = route.split('/');
+    var family = findFamily(parts[0]);
+    var state = family && findState(family, parts[1]);
+    return state ? family.title + ' · ' + state.title : route;
+  }
+
+  function navList(family, states) {
+    var list = el('ul');
+    states.forEach(function (state) {
+      var item = el('li');
+      var link = el('a', 'hdc-nav-link', state.title);
+      link.href = hashFor(family.id, state.id);
+      link.setAttribute('data-route', family.id + '/' + state.id);
+      if (state.awaitingDecision) link.title = AWAITING;
+      item.appendChild(link);
+      list.appendChild(item);
+    });
+    return list;
+  }
+
+  function navFamily(family, heading) {
+    var states = HFV2.currentStates(family);
+    if (!states.length) return null;
+    var group = el('section', 'hdc-nav-group');
+    group.appendChild(el(heading, 'hdc-nav-group__title', family.title));
+    (family.groups || [null]).forEach(function (name) {
+      var inGroup = states.filter(function (state) { return (state.group || null) === name; });
+      if (!inGroup.length) return;
+      if (name) group.appendChild(el('p', 'hdc-nav-subgroup', name));
+      group.appendChild(navList(family, inGroup));
+    });
+    return group;
+  }
+
   function buildNav() {
-    HFV2.registry.families.forEach(function (family) {
-      var group = el('section', 'hdc-nav-group');
-      group.appendChild(el('h2', 'hdc-nav-group__title', family.title));
-      var list = el('ul');
-      family.states.forEach(function (state) {
-        var item = el('li');
-        var link = el('a', 'hdc-nav-link', state.title);
-        link.href = hashFor(family.id, state.id);
-        link.setAttribute('data-route', family.id + '/' + state.id);
-        item.appendChild(link);
-        list.appendChild(item);
+    var families = HFV2.registry.families;
+    families.filter(function (family) { return !family.area; }).forEach(function (family) {
+      var group = navFamily(family, 'h2');
+      if (group) els.nav.appendChild(group);
+    });
+    HFV2.registry.areas.forEach(function (area) {
+      var section = el('section', 'hdc-nav-area');
+      families.filter(function (family) { return family.area === area.id; }).forEach(function (family) {
+        var group = navFamily(family, 'h3');
+        if (group) section.appendChild(group);
       });
-      group.appendChild(list);
-      els.nav.appendChild(group);
+      if (!section.firstChild) return;
+      section.insertBefore(el('h2', 'hdc-nav-area__title', area.title), section.firstChild);
+      els.nav.appendChild(section);
     });
   }
 
@@ -118,11 +151,38 @@
   function updatePicker(family) {
     els.picker.textContent = '';
     family.states.forEach(function (state) {
+      if (state.hidden && state.id !== current.state) return;
       var option = el('option', '', family.title + ' · ' + state.title);
       option.value = state.id;
       els.picker.appendChild(option);
     });
     els.picker.value = current.state;
+  }
+
+  function linkTo(route) {
+    var link = el('a', '', titleOfRoute(route));
+    link.href = '#' + route;
+    return link;
+  }
+
+  // Tells a reader that the route shows an earlier design, and where the current one is.
+  function updateNote(state) {
+    els.note.textContent = '';
+    var parts = [];
+    if (state.supersededBy) parts.push(['Earlier design. Current design: ', [state.supersededBy]]);
+    else if (state.awaitingDecision) parts.push([AWAITING + '. Newer layout: ', [state.awaitingDecision]]);
+    if (state.supersedes && state.supersedes.length) parts.push(['Earlier design: ', state.supersedes]);
+    parts.forEach(function (part, index) {
+      var line = el('span', 'hdc-note__line');
+      line.appendChild(document.createTextNode(part[0]));
+      part[1].forEach(function (route, i) {
+        if (i) line.appendChild(document.createTextNode(', '));
+        line.appendChild(linkTo(route));
+      });
+      line.appendChild(document.createTextNode('.'));
+      els.note.appendChild(line);
+    });
+    els.note.hidden = !parts.length;
   }
 
   function updateToggle() {
@@ -136,48 +196,42 @@
 
   function render() {
     if (specimenCleanup) { specimenCleanup(); specimenCleanup = null; }
-    var parsed = parseHash(window.location.hash);
+    var hash = window.location.hash;
+    var parsed = parseHash(hash);
     if (!parsed) {
       var fallback = HFV2.registry.defaultRoute.split('/');
       parsed = { family: fallback[0], state: fallback[1], override: null };
-      if (window.location.hash && window.history && window.history.replaceState) {
+      if (hash && window.history && window.history.replaceState) {
         window.history.replaceState(null, '', hashFor(parsed.family, parsed.state));
       }
+    } else if (hash !== hashFor(parsed.family, parsed.state, parsed.override) && window.history && window.history.replaceState) {
+      // An old route: show the canonical one in the address bar.
+      window.history.replaceState(null, '', hashFor(parsed.family, parsed.state, parsed.override));
     }
     current = parsed;
 
-    var family = findFamily(current.family);
-    var state = findState(family, current.state);
-    var key = current.family + '/' + current.state;
+    var route = current.family + '/' + current.state;
+    var d = HFV2.describe(route);
+    var family = d.family;
+    var state = d.state;
     var mode = selection();
     var resolved = resolve(mode);
 
     document.documentElement.setAttribute('data-theme', resolved);
 
-    var html = HFV2.fill(HFV2.templates[key] || '', mode, resolved);
-    var meta = HFV2.componentMeta && HFV2.componentMeta[key];
+    var html = HFV2.fill(HFV2.templates[d.templateKey] || '', mode, resolved);
+    var meta = d.componentMeta;
+    els.specimen.className = d.wrapperClass;
     if (meta) {
-      els.specimen.className = 'hdc-specimen hdc-specimen--component';
       els.specimen.style.minHeight = meta.height + 'px';
       els.specimen.innerHTML = '<div data-theme="' + resolved + '" style="background: var(--bg); color: var(--text);">' + html + '</div>';
     } else {
-      els.specimen.className = current.family === 'd2b-proposal'
-        ? 'hdc-specimen hdc-specimen--d2b'
-        : (current.family === 'm04-proposal' ? 'hdc-specimen hdc-specimen--m04'
-          : (current.family === 'm05-proposal' ? 'hdc-specimen hdc-specimen--m05' : 'hdc-specimen'));
       els.specimen.style.minHeight = '';
       els.specimen.innerHTML = html;
     }
-    if (current.family === 'd2b-proposal' && HFV2.d2bProposal) {
-      specimenCleanup = HFV2.d2bProposal.mount(els.specimen, current.state);
-    }
-    if (current.family === 'm04-proposal' && HFV2.m04Proposal) {
-      specimenCleanup = HFV2.m04Proposal.mount(els.specimen, current.state);
-    }
-    if (current.family === 'm05-proposal' && HFV2.m05Proposal) {
-      specimenCleanup = HFV2.m05Proposal.mount(els.specimen, current.state);
-    }
-    var guide = HFV2.componentDocs && HFV2.componentDocs[key];
+    var renderer = d.renderer && HFV2[HFV2.RENDERERS[d.renderer].api];
+    if (renderer) specimenCleanup = renderer.mount(els.specimen, d.mount);
+    var guide = HFV2.componentDocs && HFV2.componentDocs[d.guideKey];
     els.doc.innerHTML = guide || '';
     els.doc.hidden = !guide;
     els.stage.scrollLeft = 0;
@@ -186,11 +240,9 @@
     els.eyebrow.textContent = 'Harflow Desktop / ' + family.title;
     els.title.textContent = state.title;
     els.description.textContent = state.description;
-    var approval = family.approval || HFV2.registry.approval;
-    els.approval.textContent = state.approval === 'approved'
-      ? 'Approved by ' + approval.by + ' on ' + approval.date + (approval.reference ? ' · ' + approval.reference : ' · canvas ' + approval.canvas + ' · design system ' + approval.designSystem)
-      : (state.approvalNote || 'Not approved');
-    var specimenSize = (current.family === 'd2b-proposal' || current.family === 'm04-proposal' || current.family === 'm05-proposal')
+    els.approval.textContent = d.approval;
+    updateNote(state);
+    var specimenSize = d.sizeCaption
       ? 'app frame 1280 × 800 or minimum 1000 × 620 via Size; catalogue controls outside the app'
       : (meta ? meta.width + ' wide' : '1280 × 800');
     els.caption.textContent = 'Specimen at native size (' + specimenSize + '). Appearance: ' +
@@ -223,8 +275,10 @@
   els.specimen.addEventListener('click', function (event) {
     var link = event.target.closest('a');
     if (link) {
-      event.preventDefault();
       var href = link.getAttribute('href') || '';
+      // Links to documents open normally; routes are handled here.
+      if (href.charAt(0) !== '#') return;
+      event.preventDefault();
       var parsed = parseHash(href);
       if (parsed) go(parsed.family, parsed.state, current.override);
       return;

@@ -59,18 +59,23 @@ test('amendment routes are separate and approved by the owner on 2026-11-06',()=
     assert.doesNotMatch(H.templates[key],/Approved/);
   }
 });
-test('registry approves all 30 M04 states with the six amendment states on separate provenance',()=>{
-  const family=H.registry.families.find(f=>f.id==='m04-proposal');
-  const approved=family.states.filter(s=>s.approval==='approved');
-  assert.equal(approved.length,30,'24 baseline states plus the six now-approved amendment states');
-  const amendment=family.states.filter(s=>s.id.startsWith('amendment-'));
-  assert.equal(amendment.length,6,'the six amendment states stay separate routes');
-  assert.ok(amendment.every(s=>s.approval==='approved'));
-  assert.ok(amendment.every(s=>/Owner-approved centered-composer amendment \(2026-11-06, separate from the M04 baseline approval of 2026-11-05\)/.test(s.description)));
-  assert.ok(family.states.filter(s=>!s.id.startsWith('amendment-')).every(s=>s.approval==='approved'));
-  assert.match(family.description,/owner-approved \(2026-11-06\) as a separate change/);
-  assert.match(family.description,/scrolls as one bounded area/,'the owner sidebar correction is documented for the whole M04 family');
-  assert.doesNotMatch(family.description,/are not approved/);
+const m04States=()=>H.registry.families.flatMap(f=>f.states.filter(s=>s.source&&s.source.renderer==='m04').map(s=>Object.assign({route:f.id+'/'+s.id},s)));
+test('registry approves all 30 entry states with the six centered composer states on separate provenance',()=>{
+  const all=m04States();
+  assert.equal(all.length,30,'24 baseline states plus the six now-approved centered composer states');
+  assert.ok(all.every(s=>s.status==='approved'));
+  const centered=all.filter(s=>s.source.mount.startsWith('amendment-'));
+  assert.equal(centered.length,6,'the six centered composer states stay separate routes');
+  assert.deepEqual(Array.from(centered,s=>s.route).sort(),['new-task/centered-capped','new-task/centered-empty','new-task/centered-growing','new-task/centered-options','new-task/centered-ready','new-task/centered-unknown']);
+  assert.ok(centered.every(s=>/Owner-approved centered-composer amendment \(2026-11-06, separate from the 2026-11-05 entry direction\)/.test(s.description)));
+  assert.ok(centered.every(s=>s.approval.date==='2026-11-06'&&/separate from the 2026-11-05 entry direction/.test(s.approval.decision)));
+  const baseline=all.filter(s=>!s.source.mount.startsWith('amendment-'));
+  assert.equal(baseline.length,24);
+  assert.ok(baseline.every(s=>s.approval.date==='2026-11-05'),'folding the states keeps each state\'s own approval date');
+  const sidebar=H.registry.families.find(f=>f.id==='sidebar');
+  assert.match(sidebar.description,/scrolls as one bounded area/,'the owner sidebar correction is documented for the sidebar');
+  assert.match(H.catalogStrips.m04.centeredNotice,/sidebar body-scroll correction applies to every entry, composer and sidebar state/);
+  assert.doesNotMatch(sidebar.description,/are not approved/);
 });
 test('amendment fixtures cover centered empty, one line, growth and the six-line cap',()=>{
   assert.equal(M.isAmendment('amendment-capped'),true);

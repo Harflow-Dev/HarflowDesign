@@ -91,12 +91,11 @@
       var boards = amendment
         ? [['amendment-empty','Empty'],['amendment-ready','One line'],['amendment-growing','Growing'],['amendment-capped','Capped'],['amendment-options','Options open'],['amendment-unknown','Unknown']]
         : [['shell','Shell'],['composer-ready','Composer'],['advanced','Advanced'],['history-retained','History'],['runtime-checking','Runtime']];
-      var boardLinks = boards.map(function (board) { return '<a href="#m04-proposal/' + board[0] + '/' + theme + '">' + board[1] + '</a>'; }).join('')
-        + (amendment ? '<a href="#m04-proposal/composer-ready/' + theme + '">Baseline (approved 2026-11-05)</a>' : '<a href="#m04-proposal/amendment-ready/' + theme + '">Centered composer (amendment)</a>');
-      var notice = amendment
-        ? 'Approved amendment (owner, 2026-11-06), separate from the M04 baseline approval of 2026-11-05; the 2026-11-06 sidebar body-scroll correction applies to all M04 routes. Local preview · appearance preserves draft · route changes reset · Reduce Motion: instant changes. Native titlebar and OS controls are browser approximations; native validation is pending.'
-        : 'Local preview · appearance preserves draft · route changes reset · Reduce Motion: instant changes. Native titlebar and OS controls are browser approximations.';
-      catalog.innerHTML = '<div class="hd-m04-actions"><strong>' + (amendment ? 'Approved amendment · Centered composer · Owner 2026-11-06' : 'Approved direction · M04 review') + '</strong>' + boardLinks + '<label>Frame <select data-m04-field="size"><option value="reference"' + (!s.narrow?' selected':'') + '>1280 × 800</option><option value="minimum"' + (s.narrow?' selected':'') + '>1000 × 620</option></select></label>' + button('Reset fixture','reset') + '</div><p>' + notice + '</p><details class="hd-m04-fixtures"'+(s.fixtures?' open':'')+'><summary>Fixture controls</summary><div class="hd-m04-actions">' + controls + '</div></details>';
+      var boardLinks = boards.map(function (board) { return '<a href="#' + H.routeFor('m04', board[0]) + '/' + theme + '">' + board[1] + '</a>'; }).join('')
+        + (amendment ? '<a href="#' + H.routeFor('m04', 'composer-ready') + '/' + theme + '">' + H.catalogStrips.m04.baselineLink + '</a>' : '<a href="#' + H.routeFor('m04', 'amendment-ready') + '/' + theme + '">' + H.catalogStrips.m04.centeredLink + '</a>');
+      var strips = H.catalogStrips.m04;
+      var notice = amendment ? strips.centeredNotice : strips.baselineNotice;
+      catalog.innerHTML = '<div class="hd-m04-actions"><strong>' + (amendment ? strips.centeredHeading : strips.baselineHeading) + '</strong>' + boardLinks + '<label>Frame <select data-m04-field="size"><option value="reference"' + (!s.narrow?' selected':'') + '>1280 × 800</option><option value="minimum"' + (s.narrow?' selected':'') + '>1000 × 620</option></select></label>' + button('Reset fixture','reset') + '</div><p>' + notice + '</p><details class="hd-m04-fixtures"'+(s.fixtures?' open':'')+'><summary>Fixture controls</summary><div class="hd-m04-actions">' + controls + '</div></details>';
       var base = template(s.collapsed ? 'new-task/sidebar-collapsed' : 'new-task/default');
       var app = base.querySelector('.hd-app'); app.removeAttribute('style'); app.classList.add('hd-m04-app'); app.setAttribute('data-theme',theme);
       frame.classList.toggle('hd-m04-window--minimum',s.narrow); frame.replaceChildren(app);
@@ -226,11 +225,11 @@
       if(a==='unqualified')qualify(s,s.revision,'unqualified');
       if(['created','refused','unknown'].includes(a))settle(s,a);
       if(a==='settings'){s.status='idle';s.advanced=true;}
-      if(a==='recent'){location.hash='#m04-proposal/history-retained/'+(host.getAttribute('data-theme')||'light');return;}
+      if(a==='recent'){location.hash='#'+H.routeFor('m04','history-retained')+'/'+(host.getAttribute('data-theme')||'light');return;}
       if(a.indexOf('enforcement-')===0){s.enforcement=a.slice(12);s.revision+=1;s.qualification='checking';}
       if(a==='runtime-failure')s.runtime='failed'; if(a==='install')s.runtime='installing'; if(a==='runtime-ready')s.runtime='qualified';
       if(a==='listing-ready')listing(s,'ready');if(a==='listing-failed')listing(s,'failed');if(a==='listing-retry')listing(s,'pending');
-      if(a==='older'){location.hash='#m04-proposal/history-older/'+(host.getAttribute('data-theme')||'light');return;} render();
+      if(a==='older'){location.hash='#'+H.routeFor('m04','history-older')+'/'+(host.getAttribute('data-theme')||'light');return;} render();
     }
     function submit(e){if(e.target.matches('.hd-composer')){e.preventDefault();start(s);render();}}
     function toggle(e){if(e.target.matches('.hd-m04-fixtures'))s.fixtures=e.target.open;}

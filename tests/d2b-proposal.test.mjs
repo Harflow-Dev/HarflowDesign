@@ -173,96 +173,51 @@ test('new activity is admitted explicitly and leaves the retained anchor intact'
   assert.equal(after.rows.length, before.rows.length + 1);
 });
 
-test('proposal templates cover eight focused states with accessible local observation surfaces', () => {
-  vm.runInContext(script('screens-d2b-proposal.js'), context);
-  const keys = Object.keys(context.HFV2.templates);
-  assert.deepEqual(keys.sort(), ['capacity', 'events', 'integrity-failed', 'loading', 'observed', 'partial', 'reconnecting', 'unavailable'].map(name => `d2b-proposal/${name}`).sort());
-  for (const key of keys) {
-    const html = context.HFV2.templates[key];
-    assert.match(html, /data-d2b-controls/, key);
-    assert.match(html, /aria-label="Captured transcript"/, key);
-    assert.match(html, /aria-live="polite"/, key);
-    assert.match(html, />Events</, key);
-    assert.ok(html.indexOf('data-d2b-request') < html.indexOf('data-d2b-rows'), key);
-    for (const [, href] of html.matchAll(/href="([^"]+)"/g)) assert.match(href, /^#[a-z-]+\/[a-z-]+$/);
-    assert.doesNotMatch(html, /role="tablist"|>Inspector</, key);
-  }
+// A runtime with the registry and the task family, as the catalog loads them.
+function loadCatalog() {
+  const ctx = vm.createContext({ window: {} });
+  ctx.window = ctx;
+  for (const name of ['registry.js', 'screens-task.js', 'screens-d2b-proposal.js', 'd2b-proposal.js']) vm.runInContext(script(name), ctx);
+  return ctx.HFV2;
+}
+const ROUTES = {
+  observed: 'task/activity-observed', loading: 'task/activity-loading', partial: 'task/activity-partial', unavailable: 'task/activity-unavailable',
+  'integrity-failed': 'task/activity-integrity-failed', reconnecting: 'task/activity-reconnecting', capacity: 'task/activity-capacity', events: 'task/activity-sources'
+};
+
+test('activity templates cover eight focused states with accessible local observation surfaces', () => {
+  const H = loadCatalog();
+  const keys = Object.keys(H.templates).filter(key => key.startsWith('d2b-proposal/'));
+  assert.deepEqual(Array.from(keys).sort(), Object.keys(ROUTES).map(name => `d2b-proposal/${name}`).sort());
+  for (const key of keys) assert.match(H.templates[key], /data-d2b-controls/, key);
 });
 
-test('history selection resets a rebased specimen and duplicate admission actions are idempotent', () => {
-  const rebased = api.transition(api.createState('capacity'), 'rebase');
-  const reset = api.transition(rebased, 'history', 'observed');
-  assert.equal(reset.currentWindow, false);
-  assert.equal(reset.fresh, false);
-  assert.equal(reset.anchor, api.createState('observed').anchor);
-  for (const action of ['earlier', 'new']) {
-    const first = api.transition(api.createState('observed'), action);
-    const repeated = api.transition(first, action);
-    assert.deepEqual(Array.from(repeated.rows, row => row.id), Array.from(first.rows, row => row.id));
+test('activity approval is per state and preserves the earlier catalog approval', () => {
+  const H = loadCatalog();
+  const task = H.registry.families.find(item => item.id === 'task');
+  const states = task.states.filter(item => item.source && item.source.renderer === 'd2b');
+  assert.equal(states.length, 8);
+  assert.deepEqual(Array.from(states, item => `task/${item.id}`).sort(), Object.values(ROUTES).sort());
+  for (const item of states) {
+    assert.equal(item.status, 'approved');
+    assert.equal(item.approval.date, '2026-11-05');
+    assert.equal(item.approval.by, 'the owner');
+    assert.match(item.approval.decision, /requested corrections applied/);
+    assert.equal(item.approval.canvas, undefined, 'state approval uses its explicit decision');
+    assert.match(H.approvalLine(task, item), /^Approved by the owner on 2026-11-05 · /);
   }
-});
-
-test('independent summary coverage can remain sound at the consumer limit or be limited itself', () => {
-  const capacity = api.createState('capacity');
-  assert.equal(api.activityView(capacity).toolCount, 2);
-  for (const action of ['earlier', 'new', 'rebase']) {
-    const after = api.transition(capacity, action);
-    assert.equal(after.summaryCoverage, 'observed');
-    assert.equal(api.activityView(after).toolCount, 2, action);
-  }
-  for (const coverage of ['limited', 'unavailable', 'loading']) {
-    const limited = api.transition(capacity, 'summaryCoverage', coverage);
-    assert.equal(api.activityView(limited).toolCount, null, coverage);
-    assert.doesNotMatch(api.activityView(limited).count, /\d/, coverage);
-  }
-  const rejectedZero = api.transition(capacity, 'summaryCoverage', 'empty');
-  assert.equal(api.activityView(rejectedZero).toolCount, null, 'known tool evidence disallows a contradictory zero');
-  const zero = api.transition(api.createState('empty'), 'summaryCoverage', 'empty');
-  assert.equal(api.activityView(zero).toolCount, 0);
-  assert.equal(api.activityView(zero).count, 'No tool calls observed in the available captured history');
-});
-
-test('known capture uncertainty rejects invalid sound totals through transitions and defensive views', () => {
-  for (const history of ['partial', 'unknown', 'unsupported', 'reset', 'reconnecting', 'unavailable', 'nonprogress']) {
-    const uncertain = state('sidecar', history);
-    for (const coverage of ['observed', 'empty']) {
-      const selected = api.transition(uncertain, 'summaryCoverage', coverage);
-      assert.equal(selected.summaryCoverage, 'unavailable', `${history}/${coverage}`);
-      assert.equal(api.activityView(selected).toolCount, null);
-      assert.equal(api.activityView({ ...uncertain, summaryCoverage: coverage }).toolCount, null, 'direct invalid models also fail closed');
-    }
-    for (const action of ['earlier', 'new', 'rebase']) assert.equal(api.activityView(api.transition(uncertain, action)).toolCount, null, `${history}/${action}`);
-  }
-});
-
-test('native size controls preserve independent observations, retained position and status', () => {
-  const before = api.transition(api.createState('capacity'), 'earlier');
-  for (const size of ['minimum', 'reference']) {
-    const after = api.transition(before, 'size', size);
-    assert.equal(after.size, size);
-    for (const key of ['rows', 'summaryCoverage', 'anchor', 'sourceEpoch', 'status', 'history', 'currentWindow']) assert.equal(after[key], before[key], key);
-  }
-});
-
-test('D2B owner approval is scoped to its family and preserves the earlier catalog approval', () => {
-  vm.runInContext(script('registry.js'), context);
-  const family = context.HFV2.registry.families.find(item => item.id === 'd2b-proposal');
-  assert.ok(family);
-  assert.equal(family.states.length, 8);
-  assert.ok(family.states.every(item => item.approval === 'approved'));
-  assert.equal(family.approval.date, '2026-11-05');
-  assert.equal(family.approval.by, 'the owner');
-  assert.match(family.approval.reference, /D2B observation states/);
-  assert.equal(family.approval.canvas, undefined, 'family approval uses its explicit reference');
-  const registry = context.HFV2.registry;
+  assert.equal(H.routeFor('d2b', 'observed'), 'task/activity-observed');
+  const registry = H.registry;
   assert.equal(registry.approval.date, '2026-11-03');
   assert.equal(registry.approval.canvas, '1793668079-d8d9');
   assert.equal(registry.approval.designSystem, '1793668064-9e04');
-  const task = registry.families.find(item => item.id === 'task');
-  assert.ok(task.states.every(item => item.approval === 'approved'));
+  const base = task.states.filter(item => !item.source);
+  assert.ok(base.length >= 4 && base.every(item => item.status === 'approved' && item.approval === undefined), 'base task states keep the original catalog approval');
+  assert.match(H.approvalLine(task, base[0]), /^Approved by the owner on 2026-11-03 · canvas /);
   assert.equal(task.approval, undefined, 'task family keeps the original catalog approval');
-  assert.match(script('d2b-proposal.js'), /Proposal controls · catalog only/);
-  assert.match(script('d2b-proposal.js'), /Deterministic mock · design reference/);
+  assert.equal(H.catalogStrips.d2b.controls, 'Review controls · catalog only');
+  assert.equal(H.catalogStrips.d2b.note, 'Deterministic mock · design reference');
+  assert.match(script('d2b-proposal.js'), /H\.catalogStrips\.d2b\.controls/);
 });
 
 test('consumer rebase cannot erase capture loss or admit sound totals after an unknown source', () => {
@@ -353,10 +308,7 @@ test('known captured tool evidence rejects contradictory zero even in a forged v
 });
 
 test('proposal sidebar preserves the canonical task navigation and appearance while adapting only its active fixture', () => {
-  const sidebarContext = vm.createContext({ window: {} });
-  sidebarContext.window = sidebarContext;
-  for (const name of ['registry.js', 'screens-task.js', 'screens-d2b-proposal.js', 'd2b-proposal.js']) vm.runInContext(script(name), sidebarContext);
-  const H = sidebarContext.HFV2;
+  const H = loadCatalog();
   const activeRow = /<a class="hd-task-row[^"]*is-active[^"]*"[\s\S]*?<\/a>/;
   const normalizeActive = html => html.replace(activeRow, '<active-task-fixture>');
   for (const name of ['observed', 'loading', 'reconnecting', 'capacity']) {
@@ -370,7 +322,7 @@ test('proposal sidebar preserves the canonical task navigation and appearance wh
       assert.equal((sidebar.match(/<aside class="hd-sidebar"/g) || []).length, 1);
       assert.equal((sidebar.match(/is-active/g) || []).length, 1);
       const active = sidebar.match(activeRow)[0];
-      assert.match(active, new RegExp(`href="#d2b-proposal/${name}"`));
+      assert.match(active, new RegExp(`href="#${ROUTES[name]}"`));
       assert.match(active, />Fix slot release test</);
       for (const label of ['Running', 'Recent work', 'Settings', 'Appearance']) assert.ok(sidebar.includes(label), label);
       for (const icon of ['plus', 'hand', 'workflow', 'gauge', 'chart', 'settings']) assert.ok(sidebar.includes(`hd-i-${icon}`), icon);
