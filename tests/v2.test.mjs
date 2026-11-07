@@ -486,6 +486,40 @@ test('the route map lists every earlier route and its current route', () => {
 test('the coverage ledger keeps its headings and anchor and names current routes', () => {
   const ledger = read(path.join(v2, 'docs', 'migration-coverage.md'));
   assert.match(ledger, /^## Capability disposition ledger \(S03\)$/m);
-  assert.doesNotMatch(ledger, /`(?:m04|m05|d2b)-proposal\//);
+  for (const [, now] of ledger.matchAll(/\(now `([a-z0-9/*-]+)`/g)) assert.ok(/^[a-z-]+\/[a-z0-9-]+\*?$/.test(now), `${now} is a current route`);
   for (const [, route] of ledger.matchAll(/`((?:task|new-task|sidebar)\/[a-z-]+)`/g)) assert.ok(routeSet.has(route), `${route} in the ledger exists`);
+});
+
+// ---- Strip literals and link behaviour ----
+
+// The strip-building functions draw the catalog-only controls above each app frame. Their string
+// literals are scanned for process names after markup and attribute names are removed. The decision
+// boards (hidden `records` routes) are built elsewhere and are exempt: they record the history.
+test('string literals in the strip builders carry no process names', () => {
+  const sources = [
+    ['m04-proposal.js', 'var controls=', 'var base = template('],
+    ['d2b-proposal.js', "q('[data-d2b-controls]').innerHTML", "q('[data-d2b-status]')"],
+    ['m05-proposal.js', 'var strip =', "host.querySelector('.hd-m05-catalog')"]
+  ];
+  const hits = [];
+  for (const [name, from, to] of sources) {
+    const source = read_(name);
+    const region = source.slice(source.indexOf(from), source.indexOf(to, source.indexOf(from)));
+    assert.ok(region.length > 200, `${name} strip region found`);
+    for (const [, literal] of region.matchAll(/'((?:[^'\\\n]|\\.)*)'/g)) {
+      const text = literal.replace(/<[^>]*>?/g, ' ').replace(/[\w:-]+=(?:"[^"]*"?|\\?')/g, ' ').replace(/\bdata-[\w-]+/g, ' ');
+      if (/^m0\d$/.test(literal)) continue; // the renderer id passed to HFV2.routeFor, never displayed
+      if (NAMING_RULE.test(text)) hits.push(`${name}: ${literal.slice(0, 70)}`);
+    }
+  }
+  assert.deepEqual(hits, []);
+});
+
+test('only the overview and decision boards may navigate to documents from a specimen', () => {
+  const catalog = read(path.join(v2, 'scripts', 'catalog.js'));
+  assert.match(catalog, /current\.family === 'overview' \|\| current\.family === 'records'\) window\.location\.href = href/);
+  assert.ok(catalog.indexOf('event.preventDefault()') < catalog.indexOf('window.location.href = href'), 'links are always intercepted first');
+  for (const key of Object.keys(HFV2.templates).filter(k => k !== 'overview/areas')) {
+    for (const [, href] of HFV2.templates[key].matchAll(/href="([^"]*)"/g)) assert.ok(href.startsWith('#'), `${key} links to ${href}`);
+  }
 });

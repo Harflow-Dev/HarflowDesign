@@ -30,7 +30,7 @@ The current interface reference is organised by area, screen and state group (se
 
 ## Evidence
 
-The Foundations / Native reference state links local HfUI rendering-test captures in both appearances (2000 × 1560; 220 tests passed in the source validation run). These validate native foundation references, not every catalog screen. Native fixture captures of the sidebar, task content, parallel view, workflows, session form, settings, and menu popover are included in `assets/references/screens/` for comparison. These are deterministic renders of pinned source views, not captures of a live user session. Current coverage and limitations are tracked in [screen-inventory.md](archive/v1/docs/screen-inventory.md).
+The Foundations / Native reference state links local HfUI rendering-test captures in both appearances (2000 × 1560; 220 tests passed in the source validation run). These validate native foundation references, not every catalog screen. Native fixture captures of the sidebar, task content, parallel view, workflows, session form, settings, and menu popover are included in `archive/v1/assets/references/screens/` for comparison. These are deterministic renders of pinned source views, not captures of a live user session. Current coverage and limitations are tracked in [screen-inventory.md](archive/v1/docs/screen-inventory.md).
 
 ## Loading handoff motion
 

@@ -276,9 +276,12 @@
     var link = event.target.closest('a');
     if (link) {
       var href = link.getAttribute('href') || '';
-      // Links to documents open normally; routes are handled here.
-      if (href.charAt(0) !== '#') return;
       event.preventDefault();
+      // Only the overview and the decision boards link to documents; app specimens never navigate.
+      if (href.charAt(0) !== '#') {
+        if (current.family === 'overview' || current.family === 'records') window.location.href = href;
+        return;
+      }
       var parsed = parseHash(href);
       if (parsed) go(parsed.family, parsed.state, current.override);
       return;

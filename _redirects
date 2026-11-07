@@ -1,8 +1,7 @@
 # Hosted-only redirects for paths that moved. Never matches / or /index.html.
 # The root index.html is served for any path that does not exist and redirects
 # the remaining v1 paths in the browser.
-/features/:name.html /archive/v1/features/:name.html 301
-/features/:name /archive/v1/features/:name 301
+/features/* /archive/v1/features/:splat 301
 /scripts/* /archive/v1/scripts/:splat 301
 /styles/* /archive/v1/styles/:splat 301
 /assets/* /archive/v1/assets/:splat 301
@@ -17,3 +16,10 @@
 /docs/statistics-loading.md /archive/v1/docs/statistics-loading.md 301
 /docs/statistics-proposal.md /archive/v1/docs/statistics-proposal.md 301
 /docs/task-continuity.md /archive/v1/docs/task-continuity.md 301
+/v2/docs/approval.md /v2/docs/decisions/approval.md 301
+/v2/docs/d2b-observation-approval.md /v2/docs/decisions/d2b-observation-approval.md 301
+/v2/docs/d2b-observation-proposal.md /v2/docs/decisions/d2b-observation-proposal.md 301
+/v2/docs/m04-proposal.md /v2/docs/decisions/m04-proposal.md 301
+/v2/docs/m04-centered-composer-proposal.md /v2/docs/decisions/m04-centered-composer-proposal.md 301
+/v2/docs/m05-task-screen-approval.md /v2/docs/decisions/m05-task-screen-approval.md 301
+/v2/docs/m05-task-screen-proposal.md /v2/docs/decisions/m05-task-screen-proposal.md 301

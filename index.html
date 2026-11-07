@@ -6,33 +6,53 @@
 <title>Harflow design</title>
 <link rel="icon" type="image/png" sizes="32x32" href="v2/assets/branding/app-icon-32.png">
 <script>
-// Root redirector. Relative targets keep it working under file://.
+// Root redirector. tests/redirector.test.mjs runs this script against a model of the host.
+// Hosting serves this page, with status 200, for any path that does not exist, so a served
+// path other than "/" and "/index.html" is a missing path. Targets are root-absolute when
+// served and relative under file://.
 (function () {
+  var MOVED = {
+    '/v2/docs/approval.md': '/v2/docs/decisions/approval.md',
+    '/v2/docs/d2b-observation-approval.md': '/v2/docs/decisions/d2b-observation-approval.md',
+    '/v2/docs/d2b-observation-proposal.md': '/v2/docs/decisions/d2b-observation-proposal.md',
+    '/v2/docs/m04-proposal.md': '/v2/docs/decisions/m04-proposal.md',
+    '/v2/docs/m04-centered-composer-proposal.md': '/v2/docs/decisions/m04-centered-composer-proposal.md',
+    '/v2/docs/m05-task-screen-approval.md': '/v2/docs/decisions/m05-task-screen-approval.md',
+    '/v2/docs/m05-task-screen-proposal.md': '/v2/docs/decisions/m05-task-screen-proposal.md'
+  };
   var loc = window.location;
-  var path = loc.pathname;
   var served = loc.protocol === 'http:' || loc.protocol === 'https:';
-  // Hosting serves this page, with status 200, for any path that does not exist.
-  // Old v1 paths (features, scripts, styles, assets, docs) move to archive/v1.
-  var atRoot = !served || path === '/' || /\/index\.html$/.test(path) || /\/$/.test(path);
-  var inSite = /^\/(archive|v2)(\/|$)/.test(path);
-  if (served && !atRoot && !inSite) {
-    loc.replace('/archive/v1' + path + loc.search + loc.hash);
-    return;
+  var hash = loc.hash && loc.hash !== '#' ? loc.hash : '';
+  var target = null;
+  if (!served) {
+    target = hash ? 'archive/v1/index.html' + hash : 'v2/index.html';
+  } else if (loc.pathname === '/' || loc.pathname === '/index.html') {
+    target = hash ? '/archive/v1/index.html' + hash : '/v2/index.html';
+  } else if (/^\/(archive|v2)(\/|$)/.test(loc.pathname)) {
+    // A missing path inside the sites is never redirected again; only the moved documents are.
+    if (Object.prototype.hasOwnProperty.call(MOVED, loc.pathname)) target = MOVED[loc.pathname] + loc.search + loc.hash;
+  } else {
+    // A moved v1 path (features, scripts, styles, assets, documents).
+    target = '/archive/v1' + loc.pathname + loc.search + loc.hash;
   }
-  if (!atRoot) return;
-  if (loc.hash && loc.hash !== '#') loc.replace('archive/v1/index.html' + loc.hash);
-  else loc.replace('v2/index.html');
+  if (target) { loc.replace(target); return; }
+  // Nothing to redirect to: show the links, root-absolute when served.
+  document.addEventListener('DOMContentLoaded', function () {
+    if (!served) return;
+    var links = document.querySelectorAll('a[data-root-link]');
+    for (var i = 0; i < links.length; i += 1) links[i].setAttribute('href', '/' + links[i].getAttribute('data-root-link'));
+  });
 })();
 </script>
 </head>
 <body>
 <noscript>
-<p>Harflow design reference.</p>
+<p>Harflow design reference (JavaScript is needed to open the links from a file).</p>
 <ul>
-<li><a href="v2/index.html">Harflow Desktop interface reference (v2)</a></li>
-<li><a href="archive/v1/index.html">Archived catalog (v1)</a></li>
+<li><a href="/v2/index.html">Harflow Desktop interface reference (v2)</a></li>
+<li><a href="/archive/v1/index.html">Archived catalog (v1)</a></li>
 </ul>
 </noscript>
-<p>Harflow design reference. <a href="v2/index.html">Interface reference (v2)</a> · <a href="archive/v1/index.html">Archived catalog (v1)</a></p>
+<p>Harflow design reference. <a href="v2/index.html" data-root-link="v2/index.html">Interface reference (v2)</a> · <a href="archive/v1/index.html" data-root-link="archive/v1/index.html">Archived catalog (v1)</a></p>
 </body>
 </html>
