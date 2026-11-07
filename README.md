@@ -1,43 +1,67 @@
-# Harflow interface reference
+# Harflow design
 
-The approved original Statistics overview and agreed metric behavior are recorded in
-[Statistics implementation reference](archive/v1/docs/statistics-approved.md). The separate
-`accounting-*` specimens remain unapproved exploration.
+HarflowDesign is the editable design website for Harflow: the interface reference for the redesigned Harflow Desktop client, its design system, and its screen states. It is maintained directly in Git and published at `design.harflow.dev`.
 
-Editable, offline design catalog derived from the current HarflowMac implementation. The baseline is source-derived. Approved directions are recorded in the screen inventory; approval does not establish native pixel fidelity.
+- `v2/` is the current interface reference, published at `design.harflow.dev/v2`. The site root opens it.
+- `archive/v1/` is the archived v1 catalog of the HarflowMac implementation. It is kept as behavioral evidence and is no longer edited; see [archive/v1/README.md](archive/v1/README.md).
 
-HarflowDesign is maintained directly in Git. Open root `index.html` in a browser, or serve the folder:
+## Preview
+
+Open `index.html` (it redirects to `v2/index.html`) or `v2/index.html` in a browser, or serve the folder:
 
 ```sh
 python3 -m http.server 8080
 ```
 
-Open `http://localhost:8080`. No dependencies, build, account, engine, or sibling checkout are required. Interactions use deterministic mock data. Screen and state changes reset specimens; appearance changes preserve the current specimen. The appearance preference is stored locally in this browser, independently of native app settings.
+Then open `http://localhost:8080`. No dependencies, build, account, engine, or sibling checkout are required, and everything works under `file://`. Interactions use deterministic mock data. The appearance preference (System, Light, Dark) is stored in this browser under `hf-v2-appearance`.
 
-- `styles/tokens.css`: exact appearance-aware RGB values from HfUI.
-- `styles/specimens.css`: shared specimen layouts and components.
-- `styles/start-screen.css`, `tasks.css`, `task-activity.css`, `task-summary.css`, `task-approvals.css`, `parallel.css`, `workflows.css`, `workflow-editor.css`, `workflow-editor-inspector.css`, `workflow-run.css`, `dialogs.css`, `state-recovery.css`, `sidebar-setup.css`, `sidebar-proposals.css`, `workflow-editor-proposals.css`, `council-activity.css`, `statistics.css`, `statistics-accounting.css`, `web.css`: screen-specific layouts.
-- `styles/appearance.css`: shared native-derived appearance footer and connection indicator.
-- `scripts/appearance.js`: local Light/Dark/System preference and independent catalog preview override.
-- `styles/catalog.css`: reference website navigation and chrome.
-- `scripts/registry.js`: screen families, states, and pinned source links. It also holds proposal metadata (`proposals`, `proposal`) from which the catalog caption, state picker suffix, search, and in-stage label for exploratory ticket proposals are derived.
-- `scripts/workflow-connectors.js`: shared native-derived connection geometry for workflow editor and run.
-- `scripts/start-screen.js`, `tasks.js`, `task-activity.js`, `task-summary.js`, `task-approvals.js`, `parallel.js`, `workflows.js`, `workflow-editor.js`, `workflow-editor-inspector.js`, `workflow-run.js`, `dialogs.js`, `state-recovery.js`, `sidebar-setup.js`, `sidebar-proposals.js`, `workflow-editor-proposals.js`, `council-activity.js`, `workflow-launch-proposals.js`, `statistics.js`, `statistics-accounting.js`, `web.js`: editable screen specimens.
-- `scripts/catalog.js`: local navigation and mock interactions.
-- `docs/screen-inventory.md`: coverage, limitations, and source evidence.
+The root `index.html` is a redirector. With no hash it opens `v2/index.html`. With a hash it opens the archived catalog with that hash, because root hashes used to be v1 routes. On the hosted site it also forwards the old v1 paths (`/features/…`, `/scripts/…`, `/styles/…`, `/assets/…` and the v1 documents) to `archive/v1/`; `_redirects` maps the same paths for the hosting layer.
 
-Exploratory ticket proposals live in the proposal modules and are labelled in the catalog; the workflow setup and teardown proposals (#21, HarflowMCP#41) add Start and End inspector states and a Run sheet command review. Use **Preview appearance** to inspect Light or Dark without changing the app preference. **App preference** follows the footer’s Light/Dark/System selection; System follows the browser’s OS appearance. Selecting a footer mode clears the preview override and preserves drafts and selections. The `system` hash suffix means follow the app preference, including an explicitly selected Light or Dark mode. Only the preference mode is persisted.
+## The interface reference (`v2/`)
 
-Deep links use `#screen/state/theme`, for example `#workflow-run/selected-node/dark`. Search navigation to locate a screen or state. Task activity and Task summary open the same task-detail shell; its tabs share their Activity, Summary, and Prompt renderers. Approval requests explore inline Activity cards with pending indicators on Summary and Prompt. Use the catalog width picker for 1000, 1200, or 1440-point specimens and **Focus specimen** to hide navigation. Narrow viewports scroll the native-size specimens horizontally; browser zoom remains available for inspection.
+The catalog is organised by area. An area groups screens, a screen holds states, and states sit in ordered groups:
 
-See [DESIGN.md](DESIGN.md) for foundations and the design approval workflow, and [the product glossary](docs/terminology.md) for user-facing terminology.
+| Area | Screens |
+| --- | --- |
+| Start work | New task, Sidebar |
+| Task | Task, Parallel group |
+| Attention | Needs you, Menu bar |
+| Workflows | Workflows, Workflow editor, Workflow run |
+| Capacity and usage | Resources, Statistics |
+| Settings and setup | Settings, App states, Harness runtime |
+| Design system | Brand, Foundations, Components |
 
-Validation: run `node --test tests/catalog.test.mjs` with the sibling HarflowMac checkout available at the pinned commit. Previewing the catalog does not require that checkout.
+The default page, `#overview/areas`, lists every area and screen with its current state count and a link to its decision. Deep links use `#family/state/theme`, for example `#workflow-editor/node-selected/dark`. Routes that existed before the restructure still open the same design; [v2/docs/route-map.md](v2/docs/route-map.md) lists each one.
 
+The catalog names screens and components only. Milestone, proposal, approval and gap history is recorded in [v2/docs/decisions/](v2/docs/decisions/README.md), which indexes each decision with its status, who approved it and when, the recording commit, its routes and its files.
+
+A design that a later design replaces stays reachable. A superseded state is hidden from navigation and its page links to the current design. Where the owner has not yet decided whether a newer layout replaces an older one, both stay listed and the older one is labelled "Earlier layout; current status awaiting decision".
+
+### Source layout
+
+- `v2/index.html`, `v2/scripts/catalog.js`: the catalog shell, navigation, appearance and rendering.
+- `v2/scripts/registry.js`: areas, screens and states, with each state's status and approval. `HFV2.describe(route)` resolves a route to its template, renderer, guide and approval line.
+- `v2/scripts/route-aliases.js`: old routes and `HFV2.resolveRoute`. `v2/scripts/supersessions.js`: which designs replace which.
+- `v2/scripts/screens-*.js`: the screen templates, one script per screen, and the registration of states drawn by a renderer. `components.js`, `foundations.js` and `component-docs.js`: the design system pages and guidelines. `screens-overview.js`: the overview page.
+- `v2/scripts/d2b-proposal.js`, `m04-proposal.js`, `m05-proposal.js`: renderers for the interactive task and entry states. The file names are historical; they do not appear in the catalog.
+- `v2/styles/tokens.css`, `bundle.css`: the design system tokens and components, copied as-is. `catalog.css` and the renderer stylesheets style the catalog chrome and those renderers.
+- `v2/docs/`: [screen inventory](v2/docs/screen-inventory.md), [terminology](v2/docs/terminology.md), the [migration coverage ledger](v2/docs/migration-coverage.md), the [route map](v2/docs/route-map.md) and the [decisions](v2/docs/decisions/README.md).
+
+The v2 site is self-contained: it imports nothing from the archive and uses only relative paths. Design direction and workflow are in [DESIGN.md](DESIGN.md). The user-facing glossary is [docs/terminology.md](docs/terminology.md); [v2/docs/terminology.md](v2/docs/terminology.md) covers the desktop redesign only.
+
+## Validation
+
+```sh
+sh ci/build-site.sh
+```
+
+The script checks JavaScript syntax, runs every file in `tests/` and stages `dist/`. Two tests need the sibling HarflowMac checkout (at `../HarflowMac`, or set `HARFLOW_MAC_ROOT`): the registry source links at the pinned commit, and the bundled branding bytes. They run locally and are skipped by name in CI.
+
+Pixel-level checks of the app frames are done with a headless browser outside the repository; they are not part of CI.
 
 ## Hosting and CI
 
-Cloudflare Pages publishes `main` through its GitHub integration. The intended production domain is `design.harflow.dev`. Pull requests receive Pages preview deployments. GitHub Actions runs JavaScript syntax checks and the standalone catalog suite on pushes to `main` and pull requests. The native source-path test remains a local check because it requires the sibling HarflowMac repository at its pinned commit.
+Cloudflare Pages publishes `main` through its GitHub integration. The intended production domain is `design.harflow.dev`. Pull requests receive Pages preview deployments. GitHub Actions runs `sh ci/build-site.sh` on pushes to `main` and pull requests.
 
 Pages configuration: framework **None**, production branch **main**, output directory **dist**, and build command:
 
@@ -45,34 +69,6 @@ Pages configuration: framework **None**, production branch **main**, output dire
 sh ci/build-site.sh
 ```
 
-The script checks JavaScript syntax, runs the standalone catalog and v2 test suites, and stages `dist/` with the root page, `scripts`, `styles`, `assets`, `docs`, `features` and `v2`. The owner updates the build command in the Pages dashboard; GitHub Actions runs the same script. Set the Pages build environment variable `NODE_VERSION` to `24`. Pages reruns validation before publishing, so a failed suite blocks that deployment independently of GitHub Actions. Only the staged site directories are published; repository metadata, tests, CI configuration, and local editor projects are excluded.
+The script stages `dist/` with the root page, `_redirects`, `archive`, `docs` and `v2`. The owner updates the build command in the Pages dashboard. Set the Pages build environment variable `NODE_VERSION` to `24`. Pages reruns validation before publishing, so a failed check blocks the deployment. Pages serves the root page, with status 200, for any path that does not exist; the root redirector forwards old v1 paths from there.
 
-## Harflow Desktop redesign (v2)
-
-`v2/` is the interface reference for the redesigned Harflow Desktop client, published at `design.harflow.dev/v2`. Open `v2/index.html` (offline, or through `python3 -m http.server 8080` and `http://localhost:8080/v2/`). It holds 30 screen states and the complete design system (brand book, foundations, and every component with its guidelines), each rendered at native size in System, Light or Dark appearance. The catalog chrome (`hdc-` classes in `v2/styles/catalog.css`) is separate from the specimens, which use the `hd-` design system unchanged.
-
-- `v2/scripts/registry.js`: families, states and approval status.
-- `v2/scripts/screens-*.js`: one script per family with the screen templates; `components.js`: component previews; `catalog.js`: navigation and appearance.
-- `v2/styles/tokens.css`, `bundle.css`: the design system tokens and components, copied as-is.
-- `v2/docs/`: screen inventory, terminology and the approval record.
-
-Deep links use `#family/state/theme`, for example `#workflow-editor/node-selected/dark`. The appearance preference is stored in this browser under `hf-v2-appearance`. The v2 site is self-contained: it imports nothing from the root `styles/` or `scripts/`, and uses only relative paths. At the end of the migration, `v2/` moves to the root and the current root moves to `/v1`; both moves are plain folder moves.
-
-The approved [loading-handoff motion rule](archive/v1/docs/loading-handoff.md) is previewable at
-`#foundations/skeleton-crossfade/light` and `/dark`, with populated, empty, error and
-Reduce Motion controls. The owner approved the rule on 2026-10-26; native implementation is under validation.
-
-The Statistics `overview` and `nodes` states retain the historical canvas. The `accounting-*` states are a separate exploratory proposal with prospective fixture evidence; see [the accounting proposal](archive/v1/docs/statistics-proposal.md). Neither direction is approved.
-
-`statistics/loading` and its empty, error, unsupported and refreshing states are an unapproved proposal for HarflowMac #41; see [statistics loading](archive/v1/docs/statistics-loading.md). The [work interaction reference](archive/v1/features/work-interaction.html) is the approved direction for queued transcript bubbles (HarflowMac #42, owner approval on 2026-10-29); see [queued messages](archive/v1/docs/queued-messages.md).
-
-The [harness qualification specimen](archive/v1/features/qualification.html) is the approved direction for HarflowMac #36 (`5d48a18`, owner approval on 2026-10-28). It covers deterministic checking, result, failure, cancellation and unsupported states; see [the proposal](archive/v1/docs/qualification-proposal.md).
-
-The [task-continuity specimen](archive/v1/features/task-continuity.html) records HarflowMac #37's
-approved direction (owner approval in the issue on 2026-10-28). It includes running,
-restart, supervision loss, diagnostic history, completed and unsupported states; see
-[task continuity](archive/v1/docs/task-continuity.md). Browser and native verification remain separate.
-
-The [shared-answering proposal](archive/v1/docs/shared-answering.md) for HarflowMac #46 adds
-approved Shared answer, Caller answered first and Harflow answered first states
-to the existing Messages/recovery and Needs you specimens (owner approval on 2026-11-02).
+A saved v1 appearance preference lived at the old root origin path and may reset once in a local `file://` preview after the move. The v2 preference key is unchanged.

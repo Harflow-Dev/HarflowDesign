@@ -2,7 +2,7 @@
 
 ## Baseline
 
-Source: HarflowMac commit `7fbed912b61094f2ee427a7d9be76a026767a61e`. This catalog translates current SwiftUI composition into editable browser specimens. It does not establish design approval or full-screen pixel fidelity.
+Source: HarflowMac commit `7fbed912b61094f2ee427a7d9be76a026767a61e`. The archived v1 catalog (`archive/v1/`) translates current SwiftUI composition into editable browser specimens. It does not establish design approval or full-screen pixel fidelity.
 
 Semantic RGB values are extracted directly from HfUI `Style/Palette.swift`, including harness colors. Native type sizes are 11, 12, 13, 14, 15, 18, and 22 points. Browser CSS pixels approximate points at 100% zoom. Shared radii are card 12, row/button 8, panel 16, and sheet 20. Spacing follows the native 2–28 point scale. Disclosure motion is 200 ms and arrival motion 180 ms; reduced motion follows the system browser preference.
 
@@ -17,6 +17,16 @@ Use [the canonical glossary](docs/terminology.md) for UI copy, accessibility lab
 Edit shared foundations before changing individual specimens. Keep catalog navigation independent of app layout. Use source-backed loading, empty, error, and interaction states; document combinations that do not exist in the current implementation. Fixtures must remain deterministic and contain no user data.
 
 New directions are exploratory until explicitly approved. Record an approved design using the HarflowDesign commit, file path, and screen/state/appearance. Product implementation should cite that exact reference and identify deviations. Compare full native screens before claiming pixel fidelity.
+
+## Harflow Desktop redesign (`v2/`)
+
+The current interface reference is organised by area, screen and state group (see README.md). Refine a feature there before product implementation, and include its loading, empty, populated, error and interaction states.
+
+- A state has a status: approved, provisional, superseded or record. Its approval (who, when, what was decided) belongs to the state, not to a screen or a milestone. Folding a state into a screen never relabels it with another state's date.
+- The catalog names screens only. Proposal, milestone and gap history goes in `v2/docs/decisions/`, indexed in its README with status, approver, date, recording commit, routes and files.
+- When a newer design may replace an older one, do not hide the older state on inference. List both and label the older one "Earlier layout; current status awaiting decision" until the owner decides; then move the entry from `proposed` to `applied` in `v2/scripts/supersessions.js` and cite the decision.
+- A route keeps its meaning. Rename a route only by adding an alias from the old one, and never reuse an old route for another design.
+- The app frame (templates, fixtures, CSS and in-app copy) is the design. Restructuring the catalog around it must leave every frame pixel-identical in both appearances; check with a headless browser before committing.
 
 ## Evidence
 

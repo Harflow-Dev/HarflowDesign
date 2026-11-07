@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Archive the v1 catalog at `archive/v1/` (with its documents) and make the root `index.html` a redirector: no hash opens `v2/index.html`, a hash opens the archived catalog with that hash, and the old v1 paths forward to `archive/v1/` (`_redirects` on the hosted site). The build script runs every test file and stages `archive` and `_redirects`.
+
+- Reorganise the `v2/` catalog by area, screen and state group, with an overview as the default page. Interactive task, entry, sidebar and runtime states join the screens they belong to, and the catalog no longer shows milestone or process names. Every earlier route still opens the same design through `v2/scripts/route-aliases.js`; `v2/docs/route-map.md` lists them. States carry their own status and approval. The failed task state is superseded by the Continue in a new session state; other possible replacements stay listed and are labelled as awaiting a decision.
+
+- Move the approval records and proposals to `v2/docs/decisions/` and add an index with status, approver, date, recording commit, routes and files.
+
 - Show the zoom control at the bottom-right of every `v2/` canvas. Workflow run graphs drawn at 70% read 70%; the recovery graph and the workflow-node specimen, drawn at full size, read 100%. The editor stays at 65%.
 
 - Show the locked orchestrator as the first card of every Standalone strip in the `v2/` workflow editor and run screens; selecting it opens the orchestrator settings.

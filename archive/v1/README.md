@@ -1,0 +1,57 @@
+# Harflow interface reference (archived v1 catalog)
+
+This is the archived v1 catalog, kept as behavioral evidence of the current HarflowMac implementation. It is no longer edited. The current design is [`v2/`](../../v2/index.html); the repository [README](../../README.md) explains the layout.
+
+The approved original Statistics overview and agreed metric behavior are recorded in
+[Statistics implementation reference](docs/statistics-approved.md). The separate
+`accounting-*` specimens remain unapproved exploration.
+
+Editable, offline design catalog derived from the current HarflowMac implementation. The baseline is source-derived. Approved directions are recorded in the screen inventory; approval does not establish native pixel fidelity.
+
+HarflowDesign is maintained directly in Git. Open `index.html` in a browser, or serve the repository root and open `/archive/v1/`:
+
+```sh
+python3 -m http.server 8080
+```
+
+Open `http://localhost:8080/archive/v1/`. No dependencies, build, account, engine, or sibling checkout are required. Interactions use deterministic mock data. Screen and state changes reset specimens; appearance changes preserve the current specimen. The appearance preference is stored locally in this browser, independently of native app settings.
+
+- `styles/tokens.css`: exact appearance-aware RGB values from HfUI.
+- `styles/specimens.css`: shared specimen layouts and components.
+- `styles/start-screen.css`, `tasks.css`, `task-activity.css`, `task-summary.css`, `task-approvals.css`, `parallel.css`, `workflows.css`, `workflow-editor.css`, `workflow-editor-inspector.css`, `workflow-run.css`, `dialogs.css`, `state-recovery.css`, `sidebar-setup.css`, `sidebar-proposals.css`, `workflow-editor-proposals.css`, `council-activity.css`, `statistics.css`, `statistics-accounting.css`, `web.css`: screen-specific layouts.
+- `styles/appearance.css`: shared native-derived appearance footer and connection indicator.
+- `scripts/appearance.js`: local Light/Dark/System preference and independent catalog preview override.
+- `styles/catalog.css`: reference website navigation and chrome.
+- `scripts/registry.js`: screen families, states, and pinned source links. It also holds proposal metadata (`proposals`, `proposal`) from which the catalog caption, state picker suffix, search, and in-stage label for exploratory ticket proposals are derived.
+- `scripts/workflow-connectors.js`: shared native-derived connection geometry for workflow editor and run.
+- `scripts/start-screen.js`, `tasks.js`, `task-activity.js`, `task-summary.js`, `task-approvals.js`, `parallel.js`, `workflows.js`, `workflow-editor.js`, `workflow-editor-inspector.js`, `workflow-run.js`, `dialogs.js`, `state-recovery.js`, `sidebar-setup.js`, `sidebar-proposals.js`, `workflow-editor-proposals.js`, `council-activity.js`, `workflow-launch-proposals.js`, `statistics.js`, `statistics-accounting.js`, `web.js`: editable screen specimens.
+- `scripts/catalog.js`: local navigation and mock interactions.
+- `docs/screen-inventory.md`: coverage, limitations, and source evidence.
+
+Exploratory ticket proposals live in the proposal modules and are labelled in the catalog; the workflow setup and teardown proposals (#21, HarflowMCP#41) add Start and End inspector states and a Run sheet command review. Use **Preview appearance** to inspect Light or Dark without changing the app preference. **App preference** follows the footer’s Light/Dark/System selection; System follows the browser’s OS appearance. Selecting a footer mode clears the preview override and preserves drafts and selections. The `system` hash suffix means follow the app preference, including an explicitly selected Light or Dark mode. Only the preference mode is persisted.
+
+Deep links use `#screen/state/theme`, for example `#workflow-run/selected-node/dark`. Search navigation to locate a screen or state. Task activity and Task summary open the same task-detail shell; its tabs share their Activity, Summary, and Prompt renderers. Approval requests explore inline Activity cards with pending indicators on Summary and Prompt. Use the catalog width picker for 1000, 1200, or 1440-point specimens and **Focus specimen** to hide navigation. Narrow viewports scroll the native-size specimens horizontally; browser zoom remains available for inspection.
+
+See [DESIGN.md](../../DESIGN.md) for foundations and the design approval workflow, and [the product glossary](../../docs/terminology.md) for user-facing terminology.
+
+Validation: run `node --test tests/catalog.test.mjs` from the repository root. The test that checks source links at the pinned commit needs the sibling HarflowMac checkout (or `HARFLOW_MAC_ROOT`). Previewing the catalog does not require that checkout.
+
+
+The approved [loading-handoff motion rule](docs/loading-handoff.md) is previewable at
+`#foundations/skeleton-crossfade/light` and `/dark`, with populated, empty, error and
+Reduce Motion controls. The owner approved the rule on 2026-10-26; native implementation is under validation.
+
+The Statistics `overview` and `nodes` states retain the historical canvas. The `accounting-*` states are a separate exploratory proposal with prospective fixture evidence; see [the accounting proposal](docs/statistics-proposal.md). Neither direction is approved.
+
+`statistics/loading` and its empty, error, unsupported and refreshing states are an unapproved proposal for HarflowMac #41; see [statistics loading](docs/statistics-loading.md). The [work interaction reference](features/work-interaction.html) is the approved direction for queued transcript bubbles (HarflowMac #42, owner approval on 2026-10-29); see [queued messages](docs/queued-messages.md).
+
+The [harness qualification specimen](features/qualification.html) is the approved direction for HarflowMac #36 (`5d48a18`, owner approval on 2026-10-28). It covers deterministic checking, result, failure, cancellation and unsupported states; see [the proposal](docs/qualification-proposal.md).
+
+The [task-continuity specimen](features/task-continuity.html) records HarflowMac #37's
+approved direction (owner approval in the issue on 2026-10-28). It includes running,
+restart, supervision loss, diagnostic history, completed and unsupported states; see
+[task continuity](docs/task-continuity.md). Browser and native verification remain separate.
+
+The [shared-answering proposal](docs/shared-answering.md) for HarflowMac #46 adds
+approved Shared answer, Caller answered first and Harflow answered first states
+to the existing Messages/recovery and Needs you specimens (owner approval on 2026-11-02).
