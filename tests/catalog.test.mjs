@@ -7,7 +7,8 @@ import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const v1Root = path.join(repoRoot, 'archive', 'v1');
 const scripts = ['tokens.js', 'registry.js', 'appearance.js', 'components.js', 'start-screen.js', 'workflow-errors.js', 'tasks.js', 'task-activity.js', 'parallel.js', 'task-approvals.js', 'task-summary.js', 'workflows.js', 'workflow-connectors.js', 'workflow-editor-proposals.js', 'workflow-editor-inspector.js', 'workflow-editor.js', 'council-activity.js', 'workflow-run.js', 'dialogs.js', 'workflow-launch-proposals.js', 'state-recovery.js', 'sidebar-setup.js', 'sidebar-proposals.js', 'statistics.js', 'statistics-accounting.js', 'web.js', 'skeleton-crossfade.js', 'foundations.js'];
 
 function loadDesignRuntime({ captureEvents = false, querySelectorOverride, querySelectorAllOverride, history, timers } = {}) {
@@ -36,7 +37,7 @@ function loadDesignRuntime({ captureEvents = false, querySelectorOverride, query
   });
   context.window = context;
   for (const file of scripts) {
-    vm.runInContext(fs.readFileSync(path.join(root, 'scripts', file), 'utf8'), context, { filename: file });
+    vm.runInContext(fs.readFileSync(path.join(v1Root, 'scripts', file), 'utf8'), context, { filename: file });
   }
   if (context.HF && context.HFWorkflowConnectors) context.HF.HFWorkflowConnectors = context.HFWorkflowConnectors;
   if (captureEvents) context.HF.__dispatchDesignEvent = event => document.dispatchEvent(event);
@@ -180,26 +181,35 @@ test('the main window titlebar carries the bundled emblem as a template image', 
   const bar = hf.titlebar('Harflow', { connectionStatus: true, connectionScreen: 'tasks', connectionState: 'populated' });
   assert.match(bar, /class="window-emblem" aria-hidden="true"><img src="assets\/branding\/menubarTemplate\.png" srcset="assets\/branding\/menubarTemplate@2x\.png 2x" alt=""/);
   assert.doesNotMatch(hf.titlebar('Sheet'), /window-emblem/);
-  const mac = path.resolve(root, '..', 'HarflowMac');
-  const source = 'macos/HfFeatures/MainWindowFeature/Sources/MainWindowFeature/Resources/Branding';
   for (const file of ['menubarTemplate.png', 'menubarTemplate@2x.png']) {
-    const copy = fs.readFileSync(path.join(root, 'assets/branding', file));
-    assert.ok(copy.length > 0, `${file} copied`);
-    const native = path.join(mac, source, file);
-    if (fs.existsSync(native)) assert.ok(copy.equals(fs.readFileSync(native)), `${file} matches the native resource byte for byte`);
+    assert.ok(fs.readFileSync(path.join(v1Root, 'assets/branding', file)).length > 0, `${file} copied`);
   }
-  const css = fs.readFileSync(path.join(root, 'styles/appearance.css'), 'utf8');
+  const css = fs.readFileSync(path.join(v1Root, 'styles/appearance.css'), 'utf8');
   assert.match(css, /\.window-emblem \{[^}]*background-color: var\(--primaryText\)[^}]*mask:/, 'the emblem is filled with the primary-text token through a mask');
   assert.match(css, /html\.file-protocol \.window-emblem img \{ display: block; \}/, 'file:// previews fall back to the image');
   assert.match(css, /\.window-emblem img \{[^}]*invert\(\.11\)/);
   assert.match(css, /data-theme="dark"\] \.window-emblem img[^}]*invert\(\.95\)/);
 });
 
+// Needs the sibling HarflowMac checkout. Strict when HARFLOW_MAC_ROOT is set or ../HarflowMac exists;
+// CI has no sibling and skips this test by name (ci/build-site.sh).
+test('bundled branding matches the native resources byte for byte', (t) => {
+  const mac = process.env.HARFLOW_MAC_ROOT || path.resolve(repoRoot, '..', 'HarflowMac');
+  if (!process.env.HARFLOW_MAC_ROOT && !fs.existsSync(mac)) return t.skip('no sibling HarflowMac checkout');
+  const source = 'macos/HfFeatures/MainWindowFeature/Sources/MainWindowFeature/Resources/Branding';
+  for (const file of ['menubarTemplate.png', 'menubarTemplate@2x.png']) {
+    const copy = fs.readFileSync(path.join(v1Root, 'assets/branding', file));
+    const native = path.join(mac, source, file);
+    assert.ok(fs.existsSync(native), `${file} exists in the native tree`);
+    assert.ok(copy.equals(fs.readFileSync(native)), `${file} matches the native resource byte for byte`);
+  }
+});
+
 test('setup card scrolls inside a 16 point inset above a fixed footer', () => {
   const hf = loadDesignRuntime();
   assert.match(hf.sidebarSetup('setup-required'), /<div class="setup-scroll"><section class="sidebar-setup-card"/);
   assert.doesNotMatch(hf.sidebarSetup('setup-ready'), /setup-scroll/);
-  const css = fs.readFileSync(path.join(root, 'styles/sidebar-setup.css'), 'utf8');
+  const css = fs.readFileSync(path.join(v1Root, 'styles/sidebar-setup.css'), 'utf8');
   assert.match(css, /\.sidebar-setup \.setup-scroll \{[^}]*padding: 16px/);
 });
 
@@ -286,7 +296,7 @@ test('task toolbar actions survive appearance-aware task rendering', () => {
 });
 
 test('principal title styling is scoped to the specimen title and matches native hierarchy', () => {
-  const css = fs.readFileSync(path.join(root, 'styles/appearance.css'), 'utf8');
+  const css = fs.readFileSync(path.join(v1Root, 'styles/appearance.css'), 'utf8');
   const titleRule = css.match(/\.main-window-titlebar \.window-title\s*\{([^}]*)\}/)?.[1] || '';
   assert.match(titleRule, /font-size\s*:\s*15px/);
   assert.match(titleRule, /font-weight\s*:\s*700/);
@@ -319,7 +329,7 @@ test('registry has a renderer and distinct state output for every screen state',
 
 test('registry source links resolve in the pinned HarflowMac tree', () => {
   const hf = loadDesignRuntime();
-  const mac = path.resolve(root, '..', 'HarflowMac');
+  const mac = process.env.HARFLOW_MAC_ROOT || path.resolve(repoRoot, '..', 'HarflowMac');
   assert.match(hf.base, /HarflowMac\/blob\/[0-9a-f]{40}\/macos\/$/);
   const commit = hf.commit;
   for (const family of hf.screens) {
@@ -337,10 +347,10 @@ function requireGit(cwd, args) {
 }
 
 test('index uses only local preview dependencies', () => {
-  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  const html = fs.readFileSync(path.join(v1Root, 'index.html'), 'utf8');
   for (const [, href] of html.matchAll(/(?:src|href)="([^"]+)"/g)) {
     assert.ok(!/^(?:https?:)?\/\//.test(href), `external dependency in index: ${href}`);
-    if (!href.startsWith('#')) assert.ok(fs.existsSync(path.join(root, href.split(/[?#]/)[0])), `missing local dependency: ${href}`);
+    if (!href.startsWith('#')) assert.ok(fs.existsSync(path.join(v1Root, href.split(/[?#]/)[0])), `missing local dependency: ${href}`);
   }
 });
 
@@ -351,13 +361,13 @@ test('escaping protects hostile mock form values and approval labels', () => {
   assert.equal(escaped, '&lt;/textarea&gt;&lt;img src=x onerror=&quot;alert(1)&quot;&gt;&lt;script&gt;bad()&lt;/script&gt;&amp;&quot;&#39;');
   assert.doesNotMatch(hf.field('Repository', hostile), /<(?:img|script)\b|onerror="/);
   assert.doesNotMatch(hf.chip(hostile), /<(?:img|script)\b|onerror="/);
-  const catalog = fs.readFileSync(path.join(root, 'scripts/catalog.js'), 'utf8');
+  const catalog = fs.readFileSync(path.join(v1Root, 'scripts/catalog.js'), 'utf8');
   assert.match(catalog, /ta-user-message.*HF\.escape\(text\)/);
   assert.match(catalog, /insertAdjacentHTML\('beforeend',`<div class="settings-row"><code>\$\{HF\.escape\(input\.value\)\}/);
 });
 
 test('terminal and session action gating is represented in the catalog controller', () => {
-  const catalog = fs.readFileSync(path.join(root, 'scripts/catalog.js'), 'utf8');
+  const catalog = fs.readFileSync(path.join(v1Root, 'scripts/catalog.js'), 'utf8');
   assert.match(catalog, /\['busy','loading','missing-cli'\]\.includes\(state\)/);
   assert.match(catalog, /x\.disabled=state==='busy'/);
   const hf = loadDesignRuntime();
@@ -734,7 +744,7 @@ test('pending approvals stay inline with Activity while Summary and Prompt share
     assert.match(pane, /Waiting for approval/);
     assert.doesNotMatch(pane, /class="approval-panel"/);
   }
-  const catalog = fs.readFileSync(path.join(root, 'scripts/catalog.js'), 'utf8');
+  const catalog = fs.readFileSync(path.join(v1Root, 'scripts/catalog.js'), 'utf8');
   assert.match(catalog, /case'approval-jump'/, 'the compact indicator must focus the Activity approval card');
 });
 
@@ -1088,7 +1098,7 @@ test('workflow connector renderers keep one arrow per edge and semantic backward
   assert.match(run, /class="wf-connector-edge backward"/);
   assert.doesNotMatch(run, /marker-end|non-scaling-stroke/);
 
-  const editorSource = fs.readFileSync(path.join(root, 'scripts', 'workflow-editor.js'), 'utf8');
+  const editorSource = fs.readFileSync(path.join(v1Root, 'scripts', 'workflow-editor.js'), 'utf8');
   assert.match(editorSource, /HFWorkflowConnectors\.roundedPath\(points\)/);
   assert.match(editorSource, /HFWorkflowConnectors\.arrowPath\(points\)/);
   assert.match(editorSource, /class="edge-hitbox"/);
@@ -1171,8 +1181,8 @@ test('selected workflow activity keeps a fit-width conversation selection across
 });
 
 test('selected workflow activity wraps readable code without changing ordinary Parallel lane sizing', () => {
-  const css = fs.readFileSync(path.join(root, 'styles/workflow-run.css'), 'utf8');
-  const parallel = fs.readFileSync(path.join(root, 'styles/parallel.css'), 'utf8');
+  const css = fs.readFileSync(path.join(v1Root, 'styles/workflow-run.css'), 'utf8');
+  const parallel = fs.readFileSync(path.join(v1Root, 'styles/parallel.css'), 'utf8');
   assert.match(css, /\.wfr-selected-activity \.parallel-lane \{ min-width: 0; max-width: 100%; flex: 1 1 0; \}/);
   assert.match(css, /\.wfr-selected-activity \.parallel-feed-scroll[^\n]*overflow-x: hidden; overflow-y: auto/);
   assert.match(css, /\.wfr-selected-activity[^\n]*overflow-wrap: anywhere; white-space: pre-wrap/);
@@ -1501,7 +1511,7 @@ test('workflow run summary and recovery remain independently guarded', () => {
 
 test('workflow editor exposes the saved, dirty, recovery, and empty states with safe action guards', () => {
   const hf = loadDesignRuntime();
-  const source = fs.readFileSync(path.join(root, 'scripts', 'workflow-editor.js'), 'utf8');
+  const source = fs.readFileSync(path.join(v1Root, 'scripts', 'workflow-editor.js'), 'utf8');
   const saved = hf.renderEditor('saved');
   assert.match(saved, /data-editor-route="saved"/);
   assert.match(saved, /Valid workflow · 3 nodes/);
@@ -1591,14 +1601,14 @@ test('canonical terminology distinguishes harnesses and nodes from participant a
   assert.match(parallel, /2 agents · read_only, write_in_repo/);
   assert.match(parallel, /Enforced for every agent here/);
 
-  const workflowSource = fs.readFileSync(path.join(root, 'scripts', 'workflow-editor.js'), 'utf8');
+  const workflowSource = fs.readFileSync(path.join(v1Root, 'scripts', 'workflow-editor.js'), 'utf8');
   assert.match(workflowSource, /data-modal-field="agent"/);
   assert.match(workflowSource, /data-editor-field/);
 });
 
 test('workflow editor zoom clamps to 50–200 in 25 point increments and preserves graph topology fixtures', () => {
   const hf = loadDesignRuntime();
-  const source = fs.readFileSync(path.join(root, 'scripts', 'workflow-editor.js'), 'utf8');
+  const source = fs.readFileSync(path.join(v1Root, 'scripts', 'workflow-editor.js'), 'utf8');
   assert.match(source, /Math\.min\(200,state\.zoom\+25\)/);
   assert.match(source, /Math\.max\(50,state\.zoom-25\)/);
   assert.match(hf.renderEditor('branch'), /parallel_start/);
@@ -1612,7 +1622,7 @@ test('workflow editor zoom clamps to 50–200 in 25 point increments and preserv
 
 test('workflow editor builder and run sheets keep their source-shaped launch fields', () => {
   const hf = loadDesignRuntime();
-  const source = fs.readFileSync(path.join(root, 'scripts', 'workflow-editor.js'), 'utf8');
+  const source = fs.readFileSync(path.join(v1Root, 'scripts', 'workflow-editor.js'), 'utf8');
   assert.match(source, /launchSheet\('builder'\)/);
   assert.match(source, /launchSheet\('run'\)/);
   assert.match(source, /data-modal-field="task"/);
@@ -1890,7 +1900,7 @@ test('unready setup titlebars expose a disconnected runtime indicator', () => {
 });
 
 test('setup styling uses appearance tokens for both light and dark surfaces', () => {
-  const css = fs.readFileSync(path.join(root, 'styles', 'sidebar-setup.css'), 'utf8');
+  const css = fs.readFileSync(path.join(v1Root, 'styles', 'sidebar-setup.css'), 'utf8');
   assert.match(css, /var\(--(?:cardBorder|cardFill|primaryText|secondaryText|accentLink)\)/);
   assert.doesNotMatch(css, /prefers-color-scheme/);
 });
@@ -1923,11 +1933,11 @@ test('specimen status captions label exploratory, element-scope, approved, and s
   assert.equal(hf.specimenStatus('tasks', 'setup-required').caption, 'First-install setup layout approved · Native fidelity under validation');
   assert.equal(hf.specimenStatus('tasks', 'populated').caption, 'Source-derived · Not approved · See coverage and native references');
   assert.equal(hf.specimenStatus('missing-family', 'x').kind, 'source-derived');
-  const catalog = fs.readFileSync(path.join(root, 'scripts/catalog.js'), 'utf8');
+  const catalog = fs.readFileSync(path.join(v1Root, 'scripts/catalog.js'), 'utf8');
   assert.match(catalog, /HF\.specimenStatus\(/);
   assert.match(catalog, /HF\.stateLabel\(/);
   assert.doesNotMatch(catalog, /Exploratory approval design|First-install setup layout approved/, 'captions must come from the registry helper');
-  assert.doesNotMatch(fs.readFileSync(path.join(root, 'scripts/state-recovery.js'), 'utf8'), /EXPLORATORY/, 'the recovery kicker is replaced by the shared specimen label');
+  assert.doesNotMatch(fs.readFileSync(path.join(v1Root, 'scripts/state-recovery.js'), 'utf8'), /EXPLORATORY/, 'the recovery kicker is replaced by the shared specimen label');
 });
 
 test('state labels and navigation search expose exploratory states', () => {
@@ -2097,7 +2107,7 @@ test('workflow error states are exploratory and the footer entry is not a floati
   hf.route = { screen: 'tasks', state: 'workflow-errors-open', theme: 'dark' };
   hf.resetWorkflowErrors(hf.route);
   assert.match(hf.workflowErrorsEntry(), /class="workflow-error-popover" open/);
-  const css = fs.readFileSync(path.join(root, 'styles/workflow-errors.css'), 'utf8');
+  const css = fs.readFileSync(path.join(v1Root, 'styles/workflow-errors.css'), 'utf8');
   assert.match(css, /\.workflow-sidebar-bottom \{ display: flex; flex: none; flex-direction: column;/);
   assert.match(css, /\.workflow-error-popover > summary \{[^}]*border: 1px solid var\(--hairline\);[^}]*background: var\(--sidebarBG\)/);
   assert.match(css, /\.workflow-error-count \{[^}]*margin-left: auto;[^}]*font-family: ui-monospace,SFMono-Regular,Menlo,monospace/);
@@ -2265,7 +2275,7 @@ test('statistics is an exploratory whole-proposal family with no native source',
     assert.match(html, /id="accounting-content"/, `${state} owns its content container`);
     assert.doesNotMatch(html, /id="statistics-content"|data-action="stat-[^"]*"/, `${state} stays isolated from legacy Statistics controls`);
   }
-  assert.match(fs.readFileSync(path.join(root, 'scripts/catalog.js'), 'utf8'), /No native source/);
+  assert.match(fs.readFileSync(path.join(v1Root, 'scripts/catalog.js'), 'utf8'), /No native source/);
 });
 
 test('legacy Statistics model, body, and render output stay byte-for-byte compatible with the pre-accounting baseline', () => {
@@ -2357,8 +2367,8 @@ test('statistics chart-hover pins one card on the highest-total day with that da
     assert.match(html, new RegExp(`<div class="stat-hover"[^>]*style="[^"]*width:${width}px`), `${label} card carries the ${measure} width`);
     assert.ok(html.includes(`clamp(${width / 2}px,`) && html.includes(`calc(100% - ${width / 2}px))`), `${label} clamp uses the card width`);
     assert.doesNotMatch(html, /padding-top|margin-top/, `${label} reserves no strip above the plot`);
-    assert.match(fs.readFileSync(path.join(root, 'styles/statistics.css'), 'utf8'), /\.stat-hover span, \.stat-hover b, \.stat-hover strong \{ white-space: nowrap; \}/, 'card text cannot wrap');
-    assert.doesNotMatch(fs.readFileSync(path.join(root, 'styles/statistics.css'), 'utf8'), /\.stat-chart-hover\s*\{[^}]*(padding|margin)/, 'chart-hover chart has no reserved strip');
+    assert.match(fs.readFileSync(path.join(v1Root, 'styles/statistics.css'), 'utf8'), /\.stat-hover span, \.stat-hover b, \.stat-hover strong \{ white-space: nowrap; \}/, 'card text cannot wrap');
+    assert.doesNotMatch(fs.readFileSync(path.join(v1Root, 'styles/statistics.css'), 'utf8'), /\.stat-chart-hover\s*\{[^}]*(padding|margin)/, 'chart-hover chart has no reserved strip');
     const bottom = html.match(/<div class="stat-hover"[^>]*style="[^"]*bottom:min\(([\d.]+)px,/);
     assert.ok(bottom, `${label} card has a bar-derived bottom offset`);
     assert.equal(Number(bottom[1]), +(bar.wfPx + bar.tkPx + 8).toFixed(1), `${label} bottom edge is 8px above the pinned bar top`);
@@ -2836,7 +2846,7 @@ test('statistics output is independent of the process time zone', () => {
     'process.stdout.write(JSON.stringify(out));'
   ].join('\n');
   const outputs = ['UTC', 'Australia/Sydney', 'America/Los_Angeles'].map(TZ => {
-    const result = spawnSync(process.execPath, ['-e', script, root, JSON.stringify(scripts)], { env: { ...process.env, TZ }, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+    const result = spawnSync(process.execPath, ['-e', script, v1Root, JSON.stringify(scripts)], { env: { ...process.env, TZ }, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
     assert.equal(result.status, 0, result.stderr);
     return result.stdout;
   });
@@ -3462,7 +3472,7 @@ test('Council Add member is the pill button and the collapsed summary sits on th
   councilRoute(hf, 'council-config');
   const html = hf.renderEditor('council-config');
   assert.match(html, /<button type="button" class="editor-inspector-secondary editor-council-add" data-action="editor-council-add">/);
-  const css = fs.readFileSync(path.join(root, 'styles/workflow-editor-proposals.css'), 'utf8');
+  const css = fs.readFileSync(path.join(v1Root, 'styles/workflow-editor-proposals.css'), 'utf8');
   const rule = css.split('\n').find(line => /\.editor-council-add \{/.test(line));
   assert.match(rule, /border-radius: 9999px/, 'the pill radius');
   assert.match(css, /\.editor-council-add:hover \{ background: var\(--pillFill\)/);
@@ -3824,7 +3834,7 @@ test('the setup-review sheet gates Run on review and a Repository edit asks agai
   assert.equal(hf.launchRunDisabled('setup-review'), true);
   for (const state of ['launch', 'busy', 'validation', 'library']) assert.equal(!!hf.launchRunDisabled(state), false, state);
   // Run the catalog render's own disable step (extracted from catalog.js, which needs the full page to load) against stub buttons.
-  const statement = /document\.querySelectorAll\('\[data-action="launch-workflow"\]'\)\.forEach\([^;]*\);/.exec(fs.readFileSync(path.join(root, 'scripts/catalog.js'), 'utf8'))?.[0];
+  const statement = /document\.querySelectorAll\('\[data-action="launch-workflow"\]'\)\.forEach\([^;]*\);/.exec(fs.readFileSync(path.join(v1Root, 'scripts/catalog.js'), 'utf8'))?.[0];
   assert.ok(statement, 'the catalog disable step exists');
   const catalogDisabled = state => { const button = { disabled: null }; new Function('document', 'HF', 'state', statement)({ querySelectorAll: selector => selector === '[data-action="launch-workflow"]' ? [button] : [] }, hf, state); return button.disabled; };
   assert.equal(catalogDisabled('setup-review'), true, 'unreviewed');
@@ -4102,7 +4112,7 @@ test('setup run states are registered with their tickets and the sidebar element
 });
 
 test('setup Not designed keeps timed out, teardown running beyond the mock, teardown failed, and cancel during setup', () => {
-  const inventory = fs.readFileSync(path.join(root, 'docs/screen-inventory.md'), 'utf8');
+  const inventory = fs.readFileSync(path.join(v1Root, 'docs/screen-inventory.md'), 'utf8');
   const clause = /workflow setup and teardown run states \(([^)]*)\)/.exec(inventory)?.[1];
   assert.ok(clause, 'the Not designed clause exists');
   assert.equal(clause, 'setup timed out, teardown running beyond the mock transition, teardown failed, and cancel during setup');
@@ -4154,12 +4164,12 @@ test('the Harflow web family is registered as a web platform with no source', ()
     assert.match(status.caption, /^Exploratory · .*HarflowWeb#1.*HarflowWeb#2.* · Not approved/);
   }
   assert.ok(hf.screens.filter(screen => screen.id !== 'web').every(screen => !screen.platform), 'every other family is macOS');
-  assert.match(fs.readFileSync(path.join(root, 'scripts/catalog.js'), 'utf8'), /No native source/);
+  assert.match(fs.readFileSync(path.join(v1Root, 'scripts/catalog.js'), 'utf8'), /No native source/);
 });
 
 test('catalog navigation groups families by platform, search hides empty groups, and the eyebrow follows', () => {
   const hf = loadDesignRuntime();
-  const source = fs.readFileSync(path.join(root, 'scripts/catalog.js'), 'utf8');
+  const source = fs.readFileSync(path.join(v1Root, 'scripts/catalog.js'), 'utf8');
   const start = source.indexOf('function renderNav(){');
   let depth = 0, end = start;
   for (let i = source.indexOf('{', start); i < source.length; i++) { if (source[i] === '{') depth++; if (source[i] === '}' && --depth === 0) { end = i + 1; break; } }
@@ -4188,7 +4198,7 @@ test('catalog navigation groups families by platform, search hides empty groups,
   const eyebrow = family => { const node = { textContent: '' }; new Function('document', 'family', eyebrowStatement)({ querySelector: selector => selector === '#eyebrow' ? node : null }, family); return node.textContent; };
   assert.equal(eyebrow(hf.screens.find(screen => screen.id === 'web')), 'HARFLOW / WEB');
   for (const family of hf.screens.filter(screen => screen.id !== 'web')) assert.equal(eyebrow(family), 'HARFLOW / MACOS', family.id);
-  assert.match(fs.readFileSync(path.join(root, 'index.html'), 'utf8'), /id="eyebrow"/);
+  assert.match(fs.readFileSync(path.join(v1Root, 'index.html'), 'utf8'), /id="eyebrow"/);
 });
 
 test('web states render their copy and the specimen is a fluid shell', () => {
@@ -4674,7 +4684,7 @@ test('every web sidebar and title bar mock control shows a toast and never navig
 
 test('the web sidebar is a fixed 272 px column and long titles truncate', () => {
   // No layout engine is available, so the sizing and truncation rules are checked as CSS text.
-  const css = fs.readFileSync(path.join(root, 'styles/web.css'), 'utf8');
+  const css = fs.readFileSync(path.join(v1Root, 'styles/web.css'), 'utf8');
   const rule = selector => css.split('\n').find(line => line.startsWith(`${selector} {`)) || '';
   const sidebar = rule('.web-sidebar');
   assert.match(sidebar, /\bwidth: 272px\b/);
@@ -4694,7 +4704,7 @@ test('clicking the web Incoming item runs the catalog route handler into the web
   const { hf } = webHarness();
   const action = webEl(webSidebar(hf.renderWeb('triggers')), { 'data-action': 'route:web/incoming' }, 'button').attrs['data-action'];
   // route: actions are handled by one case in catalog.js, which cannot be loaded here; that case is extracted and run.
-  const source = fs.readFileSync(path.join(root, 'scripts/catalog.js'), 'utf8');
+  const source = fs.readFileSync(path.join(v1Root, 'scripts/catalog.js'), 'utf8');
   const routeCase = /case'route':(\{[^}]*\})/.exec(source)?.[1];
   assert.ok(routeCase, 'the catalog route case exists');
   const calls = [];
@@ -4718,7 +4728,7 @@ test('an appearance click in the web specimen changes the preference and keeps t
   const light = webEl(hf.renderWeb('trigger-editor'), { 'data-appearance-preference': 'light' }, 'button');
   assert.ok(light, 'the web footer has the Light button');
   // The catalog click listener begins with the appearance branch; that branch is extracted and run with a real click target.
-  const source = fs.readFileSync(path.join(root, 'scripts/catalog.js'), 'utf8');
+  const source = fs.readFileSync(path.join(v1Root, 'scripts/catalog.js'), 'utf8');
   const branch = /const appearanceButton=e\.target\.closest\('\[data-appearance-preference\]'\);if\(appearanceButton\)\{[^}]*\}/.exec(source)?.[0];
   assert.ok(branch, 'the appearance branch exists');
   const target = { dataset: { appearancePreference: light.attrs['data-appearance-preference'] }, closest: selector => selector === '[data-appearance-preference]' ? target : null };
@@ -4731,7 +4741,7 @@ test('an appearance click in the web specimen changes the preference and keeps t
 });
 
 test('the inventory describes the web search as static and keeps the Today sentence once', () => {
-  const inventory = fs.readFileSync(path.join(root, 'docs/screen-inventory.md'), 'utf8');
+  const inventory = fs.readFileSync(path.join(v1Root, 'docs/screen-inventory.md'), 'utf8');
   const row = inventory.split('\n').find(line => line.startsWith('| `web/triggers`'));
   assert.ok(row, 'the web row exists');
   assert.ok(row.includes('a static disabled search field'));
@@ -4777,7 +4787,7 @@ test('the required actor condition survives a dispatched remove and the Not desi
   click('web-cond-remove:c2');
   assert.deepEqual(Array.from(hf.webState().draft.conditions, condition => condition.id), ['c1', 'c3']);
 
-  const inventory = fs.readFileSync(path.join(root, 'docs/screen-inventory.md'), 'utf8');
+  const inventory = fs.readFileSync(path.join(v1Root, 'docs/screen-inventory.md'), 'utf8');
   const end = inventory.indexOf('(HarflowWeb#1, HarflowWeb#2).');
   assert.ok(end > 0, 'the web clause ends with the ticket references');
   const clause = inventory.slice(inventory.lastIndexOf("the web app's Login", end), end);
@@ -4795,7 +4805,7 @@ test('the required actor condition survives a dispatched remove and the Not desi
 
 test('the run-failed graph stacks inside a container when the run pane is narrow', () => {
   // No layout engine is available, so the stacking rule is checked as CSS text.
-  const css = fs.readFileSync(path.join(root, 'styles/web.css'), 'utf8');
+  const css = fs.readFileSync(path.join(v1Root, 'styles/web.css'), 'utf8');
   assert.match(css, /\.web-run-main \{ container-type: inline-size; \}/);
   const block = /@container \(max-width: 640px\) \{([\s\S]*?)\n\}/.exec(css)?.[1];
   assert.ok(block, 'the container query exists');
@@ -4882,7 +4892,7 @@ test('setup run fallback panes never claim work that did not happen', () => {
 });
 
 test('the inventory keeps the run-failed header name and the web header renders it', () => {
-  const inventory = fs.readFileSync(path.join(root, 'docs/screen-inventory.md'), 'utf8');
+  const inventory = fs.readFileSync(path.join(v1Root, 'docs/screen-inventory.md'), 'utf8');
   assert.ok(inventory.includes('sidebar task titles and the run\'s Task input read "Fix #2481"'));
   assert.ok(inventory.includes('the run-failed header keeps the workflow name "Fix assigned bug" as on the canvas'));
   const hf = loadDesignRuntime();
@@ -4893,12 +4903,12 @@ test('the inventory keeps the run-failed header name and the web header renders 
 });
 
 test('every asset cache key in index.html is the first 12 hex characters of the file SHA-256', () => {
-  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  const html = fs.readFileSync(path.join(v1Root, 'index.html'), 'utf8');
   const references = [...html.matchAll(/(?:href|src)="([^"?]+)\?v=([0-9a-f]+)"/g)];
   assert.ok(references.length >= 40, 'index.html references versioned assets');
   const stale = [];
   for (const [, file, key] of references) {
-    const digest = createHash('sha256').update(fs.readFileSync(path.join(root, file))).digest('hex').slice(0, 12);
+    const digest = createHash('sha256').update(fs.readFileSync(path.join(v1Root, file))).digest('hex').slice(0, 12);
     if (digest !== key) stale.push(`${file}: ${key} should be ${digest}`);
   }
   assert.deepEqual(stale, []);
@@ -4907,7 +4917,7 @@ test('every asset cache key in index.html is the first 12 hex characters of the 
 });
 
 test('catalog document declares its language and metadata before the body', () => {
-  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  const html = fs.readFileSync(path.join(v1Root, 'index.html'), 'utf8');
   const bodyStart = html.indexOf('<body>');
   assert.match(html, /^<!doctype html>/i);
   assert.ok(bodyStart > 0, 'catalog has a body');
@@ -4977,7 +4987,7 @@ const approvalText = (html) => html.replace(/<[^>]+>/g, ' ').replace(/&#39;/g, "
 test('exploratory approval states are registered, reachable, listed in the inventory and render without raw JSON or ids', () => {
   const hf = loadDesignRuntime();
   const family = hf.screens.find((screen) => screen.id === 'approvals');
-  const inventory = fs.readFileSync(path.join(root, 'docs/screen-inventory.md'), 'utf8');
+  const inventory = fs.readFileSync(path.join(v1Root, 'docs/screen-inventory.md'), 'utf8');
   for (const state of approvalStates) {
     assert.ok(family.states.includes(state), `${state} is registered`);
     assert.ok(inventory.includes(`approvals/${state}\``), `${state} is in the inventory`);
@@ -5323,7 +5333,7 @@ test('pending approval cards carry the warning class and settled rows do not', (
     hf.renderTasks('approvals', state);
     assert.doesNotMatch(hf.approvalPanel(), /approval-pending/, `${state} is neutral`);
   }
-  assert.match(fs.readFileSync(path.join(root, 'styles/task-approvals.css'), 'utf8'), /\.approval-card\.approval-pending \{ background:var\(--warningBG\); border:1px solid var\(--warningFG\)/);
+  assert.match(fs.readFileSync(path.join(v1Root, 'styles/task-approvals.css'), 'utf8'), /\.approval-card\.approval-pending \{ background:var\(--warningBG\); border:1px solid var\(--warningFG\)/);
   const hf2 = loadDesignRuntime();
   hf2.route = { screen: 'workflow-run', state: 'run-approval-settled', theme: 'light' };
   hf2.resetWorkflowRun(hf2.route);

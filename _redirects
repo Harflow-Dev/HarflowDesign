@@ -1,0 +1,19 @@
+# Hosted-only redirects for paths that moved. Never matches / or /index.html.
+# The root index.html is served for any path that does not exist and redirects
+# the remaining v1 paths in the browser.
+/features/:name.html /archive/v1/features/:name.html 301
+/features/:name /archive/v1/features/:name 301
+/scripts/* /archive/v1/scripts/:splat 301
+/styles/* /archive/v1/styles/:splat 301
+/assets/* /archive/v1/assets/:splat 301
+/docs/loading-handoff.md /archive/v1/docs/loading-handoff.md 301
+/docs/needs-you-proposal.md /archive/v1/docs/needs-you-proposal.md 301
+/docs/qualification-proposal.md /archive/v1/docs/qualification-proposal.md 301
+/docs/queued-messages.md /archive/v1/docs/queued-messages.md 301
+/docs/resource-slots-proposal.md /archive/v1/docs/resource-slots-proposal.md 301
+/docs/screen-inventory.md /archive/v1/docs/screen-inventory.md 301
+/docs/shared-answering.md /archive/v1/docs/shared-answering.md 301
+/docs/statistics-approved.md /archive/v1/docs/statistics-approved.md 301
+/docs/statistics-loading.md /archive/v1/docs/statistics-loading.md 301
+/docs/statistics-proposal.md /archive/v1/docs/statistics-proposal.md 301
+/docs/task-continuity.md /archive/v1/docs/task-continuity.md 301

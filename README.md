@@ -1,7 +1,7 @@
 # Harflow interface reference
 
 The approved original Statistics overview and agreed metric behavior are recorded in
-[Statistics implementation reference](docs/statistics-approved.md). The separate
+[Statistics implementation reference](archive/v1/docs/statistics-approved.md). The separate
 `accounting-*` specimens remain unapproved exploration.
 
 Editable, offline design catalog derived from the current HarflowMac implementation. The baseline is source-derived. Approved directions are recorded in the screen inventory; approval does not establish native pixel fidelity.
@@ -58,21 +58,21 @@ The script checks JavaScript syntax, runs the standalone catalog and v2 test sui
 
 Deep links use `#family/state/theme`, for example `#workflow-editor/node-selected/dark`. The appearance preference is stored in this browser under `hf-v2-appearance`. The v2 site is self-contained: it imports nothing from the root `styles/` or `scripts/`, and uses only relative paths. At the end of the migration, `v2/` moves to the root and the current root moves to `/v1`; both moves are plain folder moves.
 
-The approved [loading-handoff motion rule](docs/loading-handoff.md) is previewable at
+The approved [loading-handoff motion rule](archive/v1/docs/loading-handoff.md) is previewable at
 `#foundations/skeleton-crossfade/light` and `/dark`, with populated, empty, error and
 Reduce Motion controls. The owner approved the rule on 2026-10-26; native implementation is under validation.
 
-The Statistics `overview` and `nodes` states retain the historical canvas. The `accounting-*` states are a separate exploratory proposal with prospective fixture evidence; see [the accounting proposal](docs/statistics-proposal.md). Neither direction is approved.
+The Statistics `overview` and `nodes` states retain the historical canvas. The `accounting-*` states are a separate exploratory proposal with prospective fixture evidence; see [the accounting proposal](archive/v1/docs/statistics-proposal.md). Neither direction is approved.
 
-`statistics/loading` and its empty, error, unsupported and refreshing states are an unapproved proposal for HarflowMac #41; see [statistics loading](docs/statistics-loading.md). The [work interaction reference](features/work-interaction.html) is the approved direction for queued transcript bubbles (HarflowMac #42, owner approval on 2026-10-29); see [queued messages](docs/queued-messages.md).
+`statistics/loading` and its empty, error, unsupported and refreshing states are an unapproved proposal for HarflowMac #41; see [statistics loading](archive/v1/docs/statistics-loading.md). The [work interaction reference](archive/v1/features/work-interaction.html) is the approved direction for queued transcript bubbles (HarflowMac #42, owner approval on 2026-10-29); see [queued messages](archive/v1/docs/queued-messages.md).
 
-The [harness qualification specimen](features/qualification.html) is the approved direction for HarflowMac #36 (`5d48a18`, owner approval on 2026-10-28). It covers deterministic checking, result, failure, cancellation and unsupported states; see [the proposal](docs/qualification-proposal.md).
+The [harness qualification specimen](archive/v1/features/qualification.html) is the approved direction for HarflowMac #36 (`5d48a18`, owner approval on 2026-10-28). It covers deterministic checking, result, failure, cancellation and unsupported states; see [the proposal](archive/v1/docs/qualification-proposal.md).
 
-The [task-continuity specimen](features/task-continuity.html) records HarflowMac #37's
+The [task-continuity specimen](archive/v1/features/task-continuity.html) records HarflowMac #37's
 approved direction (owner approval in the issue on 2026-10-28). It includes running,
 restart, supervision loss, diagnostic history, completed and unsupported states; see
-[task continuity](docs/task-continuity.md). Browser and native verification remain separate.
+[task continuity](archive/v1/docs/task-continuity.md). Browser and native verification remain separate.
 
-The [shared-answering proposal](docs/shared-answering.md) for HarflowMac #46 adds
+The [shared-answering proposal](archive/v1/docs/shared-answering.md) for HarflowMac #46 adds
 approved Shared answer, Caller answered first and Harflow answered first states
 to the existing Messages/recovery and Needs you specimens (owner approval on 2026-11-02).

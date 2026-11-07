@@ -4,14 +4,19 @@ set -eu
 
 cd "$(dirname "$0")/.."
 
-for file in scripts/*.js features/*.js v2/scripts/*.js; do
+for file in archive/v1/scripts/*.js archive/v1/features/*.js v2/scripts/*.js; do
   node --check "$file"
 done
 
-# Native source provenance is checked locally with the sibling HarflowMac checkout.
-node --test --test-skip-pattern='^registry source links resolve in the pinned HarflowMac tree$' tests/catalog.test.mjs tests/v2.test.mjs
+# Two tests read the sibling HarflowMac checkout, which CI does not have:
+# native source provenance at the pinned commit, and the bundled branding bytes.
+# Both run locally when ../HarflowMac exists or HARFLOW_MAC_ROOT is set.
+node --test \
+  --test-skip-pattern='^registry source links resolve in the pinned HarflowMac tree$' \
+  --test-skip-pattern='^bundled branding matches the native resources byte for byte$' \
+  tests/*.mjs
 
 rm -rf dist
 mkdir -p dist
-cp index.html dist/
-cp -R scripts styles assets docs features v2 dist/
+cp index.html _redirects dist/
+cp -R archive docs v2 dist/

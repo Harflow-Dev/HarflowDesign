@@ -104,7 +104,7 @@ Deferred staleness: `tasks/install-retry` and `menu-bar/install-banner` still ca
 
 ## Terminology deviations from native copy
 
-The [canonical glossary](terminology.md) (HarflowMac #16) governs editable specimens. Where it differs from the native app at `5128aeb`, the design follows the glossary and the difference is recorded here; native strings stay as source evidence. Internal ids, public fields, and participant terms are unchanged.
+The [canonical glossary](../../../docs/terminology.md) (HarflowMac #16) governs editable specimens. Where it differs from the native app at `5128aeb`, the design follows the glossary and the difference is recorded here; native strings stay as source evidence. Internal ids, public fields, and participant terms are unchanged.
 
 | Design copy | Native copy at 5128aeb | Glossary basis |
 |---|---|---|
@@ -239,7 +239,7 @@ HarflowMac #28 is exploratory, not approved. `workflow-run/orchestrator-decision
 
 HarflowMac #28 is exploratory, not approved.  and  show selectable decision history and selected decision activity; the standalone Orchestrator glow follows the selected fixture's actual decision-task status, while the idle fixture has no running decision task.  shows call origin, reason, result, and task activity only when the exact call task record is available; missing associations show an unavailable message. These deterministic fixtures do not define backend state or native behavior.
 
-The [canonical product glossary](terminology.md) governs design copy; native implementation is tracked in [HarflowMac #16](https://github.com/Harflow-Dev/HarflowMac/issues/16). Native reference images and exact source provenance may retain prior wording. Public tool and CLI fields are not renamed by this copy pass.
+The [canonical product glossary](../../../docs/terminology.md) governs design copy; native implementation is tracked in [HarflowMac #16](https://github.com/Harflow-Dev/HarflowMac/issues/16). Native reference images and exact source provenance may retain prior wording. Public tool and CLI fields are not renamed by this copy pass.
 
 Workflow editor and run share rounded connection paths and open 7 × 5-point arrowheads from `WorkflowCanvas.swift`. Corners clamp to 10 points or half the adjacent segment length; semantic backward connections use the native 5/3-point dash. Stroke widths, arrowheads, and dashes scale together with canvas zoom. Routing uses bounded fixture waypoints rather than a complete port of the native obstacle router.
 

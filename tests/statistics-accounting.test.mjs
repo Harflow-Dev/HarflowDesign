@@ -5,7 +5,8 @@ import path from 'node:path';
 import vm from 'node:vm';
 import { fileURLToPath } from 'node:url';
 
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const v1Root = path.join(repoRoot, 'archive', 'v1');
 const datesForRange = range => Array.from({ length: range }, (_, index) => new Date(Date.UTC(2026, 9, 27) - (range - 1 - index) * 86400000).toISOString().slice(0, 10));
 const scripts = ['tokens.js', 'registry.js', 'appearance.js', 'components.js', 'start-screen.js', 'tasks.js', 'task-activity.js', 'parallel.js', 'task-approvals.js', 'task-summary.js', 'workflows.js', 'workflow-connectors.js', 'workflow-editor-proposals.js', 'workflow-editor-inspector.js', 'workflow-editor.js', 'council-activity.js', 'workflow-run.js', 'dialogs.js', 'workflow-launch-proposals.js', 'state-recovery.js', 'sidebar-setup.js', 'sidebar-proposals.js', 'statistics.js', 'statistics-accounting.js', 'web.js', 'skeleton-crossfade.js', 'foundations.js'];
 
@@ -25,7 +26,7 @@ function runtime({ captureEvents = false, elements = {}, history = { state: null
   };
   const context = vm.createContext({ window: {}, document, history, CSS: { escape: String }, setTimeout, clearTimeout });
   context.window = context;
-  for (const file of scripts) vm.runInContext(fs.readFileSync(path.join(root, 'scripts', file), 'utf8'), context, { filename: file });
+  for (const file of scripts) vm.runInContext(fs.readFileSync(path.join(v1Root, 'scripts', file), 'utf8'), context, { filename: file });
   if (context.HFWorkflowConnectors) context.HF.HFWorkflowConnectors = context.HFWorkflowConnectors;
   if (captureEvents) context.HF.__dispatchDesignEvent = event => document.dispatchEvent(event);
   return context.HF;
