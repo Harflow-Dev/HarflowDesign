@@ -91,7 +91,7 @@ Stop dialog, exact copy:
 
 Basis: `cancel` help ("best-effort, its live descendants"), `spawned_by` and `root_task_id` lineage, "work the agent had already written to disk is left in place", issue 118. A stale dialog keeps today's refusal: "The conversation moved on — review and try again." Workflow-owned, builder and native-control tasks keep their existing `canCancel` gating.
 
-Takeover placement: recommended in overflow, using the existing confirmation text unchanged (`takeover-dialog`), because the top bar is already busy and the action is rare. The alternative is keeping today's toolbar button.
+Takeover placement: recommended in overflow, using the existing confirmation text unchanged (`takeover-dialog`), because the top bar is already busy and the action is rare. The alternative is keeping today's toolbar button. Either way the entry is for a person in the app: on the engine, takeover is human-only and ctl-only, fails closed for agent callers, and has no MCP route.
 
 **Owner decides:** Menu order and repository group. Dialog wording. Keep or drop the client-derived list. Takeover placement.
 
