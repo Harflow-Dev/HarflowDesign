@@ -73,13 +73,15 @@ Recorded by [S03](../../../HarflowMCP/docs/migration-receipts/S03.md) against Ha
 | Appearance System/Light/Dark in sidebar footer and rail | Accepted | Components; `new-task/sidebar-collapsed` |
 | Keyboard, focus, Reduce Motion, accessibility, narrow windows | Accepted | Gap G-ADAPTIVE |
 | Truthful enforcement, unknown and failure states | Accepted | Required on whichever surface displays the task; not a panel requirement |
+| Terminal takeover entry (human-only and ctl-only on the engine) | Accepted (owner, 2026-11-07) | `m05-proposal/overflow-running`, `m05-proposal/takeover-dialog`; moved back into v1 from D12 |
+| Builder-session "Always allow Harflow tools" shortcut | Accepted (owner, 2026-11-07) | Retained; no longer proposed for removal |
 
 ### Simplify
 
 | Capability | Status | Treatment |
 | --- | --- | --- |
 | Sidebar sections Running/Today/Earlier and nested conversation trees | Accepted | Flat Running and Recent work rows |
-| Task-level Summary and Prompt tabs | Accepted | Prompt is the first transcript message; summary in the transcript (`task/done`) |
+| Task-level Summary and Prompt tabs | Accepted | Prompt is the expandable Original request disclosure at the start of the transcript, per D2B and the owner's 2026-11-07 decision; summary in the transcript (`task/done`) |
 | Raw events sheet | Proposed | Events right-pane tab |
 | Registered artifacts | Accepted | Artifacts right-pane tab |
 | Parallel groups in the sidebar | Accepted | One flat row with the parallel icon; created only through MCP |
@@ -99,12 +101,11 @@ Recorded by [S03](../../../HarflowMCP/docs/migration-receipts/S03.md) against Ha
 | Council | Accepted | Never shown; also absent from native source |
 | Task inspector panel and its Technical info section | Accepted (S03) | Enforcement truth stays required elsewhere (Keep row above) |
 | Duplicate a workflow (native: editor More actions) | Accepted (S03) | Users copy a definition outside the client if needed; engine operations are unchanged |
-| Builder-session "Always allow Harflow tools" shortcut | Proposed | Builder approvals go through ordinary inline approvals |
 | Exploratory-only legacy proposals never shipped natively: starring (#7), sidebar context menus and delete (#8), task and workflow rename (#4; native has no rename of a saved workflow), standalone node reordering (#1), workflow setup/teardown (#21), readiness (MCP#18), store-recovery proposal states (#12), header appearance control (#6) | Proposed | Not in the native baseline; tickets stay open and unchanged as post-v1 backlog |
 
 ### Deferred (accepted plan D12; not shown in the v1 client)
 
-Terminal takeover and attach (including "Take over in terminal" in terminology and the old lanes); webhook notifications and subscriptions; limit-hit projections; `auto_continue`, `group_report_output`, `extra_writable_paths`; Codex app-server caller approvals; workflow `migrate`; legacy `PB_*` variables. Python keeps these engine operations. The owner may move any item back into v1.
+Webhook notifications and subscriptions; limit-hit projections; `auto_continue`, `group_report_output`, `extra_writable_paths`; Codex app-server caller approvals; workflow `migrate`; legacy `PB_*` variables. Python keeps these engine operations. The owner may move any item back into v1. The owner moved terminal takeover back on 2026-11-07 (Keep, above).
 
 ### Undecided
 
@@ -126,18 +127,20 @@ For a required retained or approved simplified feature, create missing states in
 | G-APPROVAL-WORDING | "Approve for this task" wording | DESIGN — M01-Gxx / M07 | Decided in S03: relabel to exact-action approval; no task-wide authority and no new contract. Separate from global MCP allowlist settings. |
 | G-ALLOWLIST | MCP approval settings | CAPABILITY — S05 / M03–M11 | Existing `harflow-ctl mcp-allowlist --backend --allow|--remove --json` supports human-only edits to future-session configuration with backend-specific restrictions; expose only supported narrow authority. See `HarflowMCP/docs/harness-permissions.md`. |
 | G-DIFF | Task changed files and diff | CONTRACT + DESIGN — S04 / M03–M05 | S04 follow-up implements `task-changes.v1`: stored bounded committed-range and working-tree diffs with provenance and non-authorship attribution. Contract read gap delivered, receipt acceptance pending. Design incomplete, not_captured and unmerged_unknown states; retain capture limits. No direct Git or private engine access. |
-| G-OVERFLOW | Task overflow menu with Cancel, Copy resume command, Copy task ID | DESIGN — M01-Gxx / M04–M05 | No takeover entry while takeover is deferred. |
+| G-OVERFLOW | Task overflow menu with Cancel, Copy resume command, Copy task ID | DESIGN — M01-Gxx / M04–M05 | Design approved 2026-11-07: `m05-proposal/overflow-*`, `cancel-dialog*`, `takeover-dialog`. Takeover keeps an entry, in overflow (owner, 2026-11-07). |
 | G-EDITOR | Editor validation, conflicts, missing child references, proposal loading/failure | DESIGN — M01-Gxx / M08 | Approve recoverable states preserving unsaved edits and explicit proposal review. |
 | G-WORKFLOW-MENU | Workflow overflow menu with Delete and its confirmation | DESIGN — M01-Gxx / M08 | Native confirmation states that existing run snapshots remain available; no Duplicate or Rename entry. |
 | G-GENERATE | Generate workflow with agent | DESIGN — M01-Gxx / M08 | New-workflow entry, description form and builder progress, consistent with `34c3b05`. |
 | G-RUN-ACTIONS | Workflow node/orchestrator messages and revise goal | DESIGN — M01-Gxx / M09 | Not drawn in the approved run states. |
-| G-HISTORY | History paging, retention, reconnect and read-only unavailable | DESIGN + CONTRACT — S04 / M03–M05 | S04 delivers bounded event/prompt reads, cursor and retention semantics; follow-up adds recorded-task successor discovery and live workflow node activity. Contract read gaps delivered, receipt acceptance pending. Loss, reconnect and unavailable design states remain open. |
+| G-HISTORY | History paging, retention, reconnect and read-only unavailable | CONTRACT reads delivered, DESIGN direction approved — S04 / M03–M05 | Contract: S04 and its follow-up deliver bounded event and prompt reads, cursor and retention semantics, successor discovery and live workflow node activity; receipt acceptance pending. Design: loss, reconnect and unavailable states approved by the owner on 2026-11-05 as `d2b-proposal/*` at `227da87` (`d2b-observation-approval.md`); sidebar paging approved as `m04-proposal/history-*` (`m04-proposal.md`). No design remains open. Native fidelity and product acceptance remain with M05. |
 | G-RESOURCES | Resource over-limit, permission, not-enabled and unsupported responses | DESIGN — M01-Gxx / M10 | Distinct safe responses without new capacity tiers. |
 | G-STATS | Statistics empty, error and incomplete; unsupported metrics | DESIGN + CONTRACT — S04 / M10 | Follow-up adds cost, coverage and observed model with provenance; null remains unknown, not zero. All-time history beyond retention remains unavailable; success rate/median require a complete generation client-side. Empty, error, incomplete and unsupported presentations still need design approval. |
 | G-TRANSPORT | Engine startup and transport | CONTRACT + DESIGN — S05 / M03–M11 | The Start engine, ECONNREFUSED and `engine.sock` specimen is mock content. Design honest unavailable/recovery states over the public CLI lifecycle; no hidden file or socket access. |
 | G-HARNESS | Harness menu gating | CAPABILITY — S05 / M03–M11 | Decided in S03: list engine-reported harnesses gated by capability cells; Native Python-route qualification targets Claude, Codex and Vibe; other harnesses carry no new native qualification claim. |
 | G-PLATFORM | macOS window chrome, tray, notifications | DESIGN — M01 / M11 | Native macOS adaptation first; Web browser/Linux access later; Windows native adaptations only after W05 and WIN01. |
 | G-ADAPTIVE | Keyboard, narrow windows, Reduce Motion and focus | DESIGN — M01-Gxx / M04–M12 | Approve adaptive and interaction states, then validate production pixels and accessibility. |
+
+M05 task screen, 2026-11-07: the owner approved the recommended options, relayed by the coordinator. See [the approval record](m05-task-screen-approval.md). It covers G-TASK-STATES, G-OVERFLOW, G-DIFF, G-ADAPTIVE, the G-PLATFORM task top bar and the task-pane part of the right-pane rows, and names Stop as the action word for Cancel task above. `state-cancel-partial` and all `artifacts-*` routes stay provisional on open contract gaps. Rows above keep their statuses unless named here.
 
 ## Contract receipt reconciliation — 2026-11-04
 

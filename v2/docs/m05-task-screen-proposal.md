@@ -1,6 +1,6 @@
-# M05 task screen proposal
+# M05 task screen
 
-Status: **proposal, not approved.** Nothing here authorizes implementation. Approval requires an explicit owner decision, recorded by commit, path and state. Until then the Mac keeps today's behaviour for every gated slice (D1, D2, G1, G2, H2).
+Status: **approved by the owner on 2026-11-07, relayed by the coordinator, except the provisional routes below.** See [the approval record](m05-task-screen-approval.md) for scope and pins. Approval does not establish native fidelity or product acceptance, and D1, D2, G1, G2 and H2 still need implementation and their own acceptance.
 
 Entry: [overview and decisions](../index.html#m05-proposal/overview/light). Every route under `m05-proposal/` supports `/light` and `/dark`; screen routes also have a 1280 × 800 and 1000 × 620 frame selector in the catalog strip.
 
@@ -11,7 +11,7 @@ Sources:
 - Contract: `HarflowMCP/docs/contracts.md`, fixtures in `contracts/v1`, engine 0.0.11. Where this document relies on engine source or a tool docstring instead, it says so.
 - Behaviour evidence: HarflowMac `17efff4`.
 
-Conventions in the specimens: tool rows have no durations or `+18 −6` counts, because they have no source. Composer text keeps the app's truthful wording as a recorded deviation, and its stacked shape stays out of scope (G-QUEUE). Specimens draw the recommended top bar (option C), still an open question.
+Conventions in the specimens: tool rows have no durations or `+18 −6` counts, because they have no source. Composer text keeps the app's truthful wording as a recorded deviation, and its stacked shape stays out of scope (G-QUEUE). Specimens draw the approved top bar (option C).
 
 ## Closed by the owner, 2026-11-07
 
@@ -21,13 +21,13 @@ Relayed by the coordinator and recorded in the M05 plan: "lets do original reque
 - Takeover keeps an entry, against ledger D12 and G-OVERFLOW. Its placement is the only design question left, and it stays at `TaskDetailToolbar.swift:80` until that is approved.
 - The builder's Always allow Harflow tools stays, against ledger 102. It is not a task screen item.
 
-These decisions are not reopened here. Ledger text reflecting them is proposed below.
+These decisions are not reopened here. The ledger now reflects them.
 
-## Needs a contract change or fixture
+## Open contract gaps
 
-These are flagged rather than designed around.
+These are flagged rather than designed around. `state-cancel-partial` and all `artifacts-*` routes stay provisional until theirs close.
 
-| Item | Finding | Effect on this proposal |
+| Item | Finding | Effect |
 | --- | --- | --- |
 | `cancel` result | No canonical fixture. `contracts.md` names only `cascade.pending_cancel_requested`, `pending_settled`, `cascade_incomplete` and refused ids. The fuller list (`cancelled_descendants`, `sigkill_survivors`, `owner_still_settling`, `not_signalled`, `not_recorded`) is in the MCP `cancel_task` docstring and `tasks.py`. | `state-cancel-partial` is provisional until HarflowMCP specifies and fixtures those fields. |
 | Processes outside the process group | HarflowMCP issue 118 is open. `sigkill_survivors` covers lineage tasks, not background builds, and the slot can release while they run. | The dialog says these can keep running and that Harflow can't list them. No survivor list is drawn. |
@@ -64,15 +64,15 @@ Retry: the approved `task/failed` banner says Retry, and ctl has no retry. See `
 
 | Option | Operation | Honest meaning |
 | --- | --- | --- |
-| Continue in a new session (recommended) | `continue` | Fresh session from the stored request, latest summary and outcome. Same harness, model and access. No new text needed; identical requests share one successor. Refused without observed exit, drained output and an untruncated request, and for workflow-owned tasks |
+| Continue in a new session (approved) | `continue` | Fresh session from the stored request, latest summary and outcome. Same harness, model and access. No new text needed; identical requests share one successor. Refused without observed exit, drained output and an untruncated request, and for workflow-owned tasks |
 | Resume session | `resume` | Same session, needs follow-up text. Acceptance is not completion. Adds a send mode the composer lacks |
-| Run again | `run` | No dedicated operation; repeats side effects. Not recommended |
+| Run again | `run` | No dedicated operation; repeats side effects. Not chosen |
 
 Follow-ups queued with `send` are consumed by `continue`, which the composer's Send now already reaches on a settled task.
 
-Stop or Cancel: `task/running` shows Stop in the composer and ledger 51 says Cancel in overflow. Both call `cancel`. Recommended: Stop in both, because "Cancel" beside a message field can read as discarding the draft. The outcome word stays Cancelled, since the status vocabulary is closed.
+Stop or Cancel: `task/running` shows Stop in the composer and ledger 51 says Cancel in overflow. Both call `cancel`. Approved: Stop in both, because "Cancel" beside a message field can read as discarding the draft. The outcome word stays Cancelled, since the status vocabulary is closed.
 
-**Owner decides:** Retry option. Stop or Cancel. Reported status plus notice for settling, or a Settling badge. Four unknown treatments rather than one badge. Whether "Status unavailable" may sit outside the closed vocabulary.
+**Approved:** Continue in a new session. Stop in both places. Reported status plus a notice for settling. The unknown-outcome treatments as drawn. "Status unavailable" for display only: it is not a task status and does not extend the closed vocabulary.
 
 ## G-OVERFLOW
 
@@ -91,9 +91,9 @@ Stop dialog, exact copy:
 
 Basis: `cancel` help ("best-effort, its live descendants"), `spawned_by` and `root_task_id` lineage, "work the agent had already written to disk is left in place", issue 118. A stale dialog keeps today's refusal: "The conversation moved on — review and try again." Workflow-owned, builder and native-control tasks keep their existing `canCancel` gating.
 
-Takeover placement: recommended in overflow, using the existing confirmation text unchanged (`takeover-dialog`), because the top bar is already busy and the action is rare. The alternative is keeping today's toolbar button. Either way the entry is for a person in the app: on the engine, takeover is human-only and ctl-only, fails closed for agent callers, and has no MCP route.
+Takeover placement: approved in overflow, using the existing confirmation text unchanged (`takeover-dialog`), because the top bar is already busy and the action is rare. Either way the entry is for a person in the app: on the engine, takeover is human-only and ctl-only, fails closed for agent callers, and has no MCP route.
 
-**Owner decides:** Menu order and repository group. Dialog wording. Keep or drop the client-derived list. Takeover placement.
+**Approved:** Menu order and repository group as drawn. Dialog wording as drawn. The earlier-turns list stays, labelled as client-derived. Takeover in overflow.
 
 ## Top bar content
 
@@ -109,7 +109,7 @@ Takeover placement: recommended in overflow, using the existing confirmation tex
 
 Revealing a group opens the pane on Events, expands that group, moves focus to it, and Escape closes and returns focus to the chip.
 
-**Owner decides:** Chips rather than a header row. Turn count placement. Resource card placement.
+**Approved as drawn:** Chips rather than a header row. Turn count placement. Resource card placement.
 
 ## G-DIFF
 
@@ -119,9 +119,9 @@ Reads `task-changes`. Structure is repository, then scope (Committed, Working tr
 - **Other writers:** Working tree always says "Includes other writers' and pre-existing changes in this checkout." `baseline_dirty` is shown as Yes, No or Unknown.
 - **Same path in both scopes:** two rows, never merged. Each diff header names its scope. `counts_and_patch_separate` is stated on working-tree diffs.
 - **8 × 2:** repositories collapse with count and state. `has_more` shows "Showing 2 of 84 rows" with Load more.
-- **Tab count:** the sum of stored `row_count`, a stored total, so unread pages don't change it (`changes-multi`). It counts rows, not files. Recommended: shown when `capture.state` is `available` and every repository and scope is `available` with no `rows_truncated`, otherwise no number (`changes-multi-limited`).
+- **Tab count:** the sum of stored `row_count`, a stored total, so unread pages don't change it (`changes-multi`). It counts rows, not files. Approved rule: shown when `capture.state` is `available` and every repository and scope is `available` with no `rows_truncated`, otherwise no number (`changes-multi-limited`).
 - **No differences:** a stricter test, the plan's derived completeness value: the above, plus all pages read and `unmerged_unknown` false. Only that may say no differences observed.
-- **Which task id:** each resume or continuation is its own supervised task with its own capture. Recommended: read the current member and offer a turn picker. A combined view is not offered, since no contract supports one and an approximate union would be a new claim.
+- **Which task id:** each resume or continuation is its own supervised task with its own capture. Approved: read the current member and offer a turn picker. A combined view is not offered, since no contract supports one and an approximate union would be a new claim.
 
 Document state copy:
 
@@ -159,7 +159,7 @@ Text mode (`changes-text`): a row read shows a placeholder, a chunk with `has_mo
 
 `unmerged_unknown` is stated as "Conflicts may exist", and also appears on scopes cut short. `reported_conflicts` is advisory and never adds, changes or hides a row. Renames are off, so a rename shows as a deletion and an addition. `EditedFiles` is never swapped in as a fallback. Diff text stays out of persistence and logs because the contract claims no redaction.
 
-**Owner decides:** Hierarchy and two-row treatment. Tab count rule. Which task id. Attribution always visible.
+**Approved:** Hierarchy and two-row treatment. Tab count rule. Current turn with a turn picker. Attribution always visible.
 
 ## Artifacts and Events tabs
 
@@ -169,7 +169,7 @@ Events holds the approved D2B content below collapsed facts groups, with paging 
 
 Artifacts shows references with stat observations. Availability is `available`, `changed`, `deleted` or `unavailable` at `observed_at`; available does not establish unchanged contents. A missing manifest is empty, a corrupt one unavailable. Pages hold at most 50, and the tab shows no count because a page has no total. Load more appends; a cursor rejected after a manifest change restarts the read (`artifacts-page-error`).
 
-**Owner decides:** Facts groups at the top of Events. Artifacts stays provisional until the contract item above is done.
+**Approved as drawn:** Three tabs, and facts groups at the top of Events. Artifacts content stays provisional until the contract item above is done.
 
 ## G-ADAPTIVE
 
@@ -177,15 +177,15 @@ Measured from tokens: 1000 minus the 264 sidebar leaves 736, and a 420 pane leav
 
 | Option | Transcript | Trade-off |
 | --- | --- | --- |
-| A, recommended: pane over the transcript | Keeps 736 | No re-wrap, so reading anchor and row heights stay put. Covers content; Escape or the toggle closes |
+| A, approved: pane over the transcript | Keeps 736 | No re-wrap, so reading anchor and row heights stay put. Covers content; Escape or the toggle closes |
 | B: collapse the sidebar while open | 524 | Both visible. Changes a setting the person did not touch, and re-wraps |
 | C: side by side anyway | 316 | Simple. Transcript is hard to read |
 
-Rule: split at or above 900 points of detail width (420 pane plus 480 transcript), otherwise overlay. Collapsing the sidebar by hand at minimum gives 944, so a split. 900 is a proposal and needs native checking against the feed's measurement key.
+Rule: split at or above 900 points of detail width (420 pane plus 480 transcript), otherwise overlay. Collapsing the sidebar by hand at minimum gives 944, so a split. 900 is approved as drawn and still needs native checking against the feed's measurement key.
 
 Defaults: running is closed, matching `task/running`, and first open lands on Events because Changes has nothing until capture. Done is open at split widths, matching `task/done`, and closed at overlay widths. Failed is closed, matching `task/failed`, so the banner keeps the focus. A person's choice is kept per conversation.
 
-**Owner decides:** Option. Threshold. Running and failed defaults.
+**Approved:** Option A. Threshold and the running and failed defaults as drawn.
 
 ## G-PLATFORM
 
@@ -195,13 +195,13 @@ Defaults: running is closed, matching `task/running`, and first open lands on Ev
 | --- | --- | --- |
 | A: specimen adjacency | Title, badge, meta at leading edge | Matches the specimen. Title jumps between screens; connection status needs a new home |
 | B: accepted position, status apart | Title and connection status in principal; badge trailing | No move from M04, closest to today. Title and status no longer read together |
-| C, recommended: accepted position, adjacent | Principal holds title, badge, meta, connection status | Keeps both. Long titles truncate first, meta drops first |
+| C, approved: accepted position, adjacent | Principal holds title, badge, meta, connection status | Keeps both. Long titles truncate first, meta drops first |
 
-Native principal item width and truncation are unmeasured, and a real-window check is needed before pixel acceptance, as M04 had. D1 stays gated until this is chosen.
+Native principal item width and truncation are unmeasured. Approval does not remove the real-window check needed at implementation, as M04 had.
 
-## Proposed ledger text
+## Ledger text
 
-Not applied. For `v2/docs/migration-coverage.md`:
+Applied to `v2/docs/migration-coverage.md` on 2026-11-07:
 
 G-HISTORY, gap register:
 
@@ -218,4 +218,4 @@ Owner decisions of 2026-11-07:
 
 Fixtures are deterministic local text; no engine, provider, network or user data is involved. Native toolbar, menus, sheets, materials, scrolling and text are browser approximations. Accessibility, VoiceOver, Dynamic Type and real scroll-anchor behaviour are unverified. Catalog route changes reset a specimen; native state must persist as described above.
 
-Validation evidence is recorded in the commit message for this proposal.
+Validation evidence is recorded in the commit messages for this family.

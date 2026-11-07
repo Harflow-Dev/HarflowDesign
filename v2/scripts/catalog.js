@@ -189,7 +189,7 @@
     var approval = family.approval || HFV2.registry.approval;
     els.approval.textContent = state.approval === 'approved'
       ? 'Approved by ' + approval.by + ' on ' + approval.date + (approval.reference ? ' · ' + approval.reference : ' · canvas ' + approval.canvas + ' · design system ' + approval.designSystem)
-      : 'Not approved';
+      : (state.approvalNote || 'Not approved');
     var specimenSize = (current.family === 'd2b-proposal' || current.family === 'm04-proposal' || current.family === 'm05-proposal')
       ? 'app frame 1280 × 800 or minimum 1000 × 620 via Size; catalogue controls outside the app'
       : (meta ? meta.width + ' wide' : '1280 × 800');

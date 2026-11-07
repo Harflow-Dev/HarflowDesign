@@ -1,5 +1,5 @@
-/* M05 task screen proposal. NOT approved: every state is a draft for owner review.
-   Each state is one row here; v2/scripts/m05-proposal.js renders it from `spec`.
+/* M05 task screen states. Owner-approved 2026-11-07 (relayed by the coordinator), except the
+   provisional routes below; see v2/docs/m05-task-screen-approval.md. Each state is one row here; v2/scripts/m05-proposal.js renders it from `spec`.
    Catalog controls stay outside the native-size specimen. */
 (function () {
   'use strict';
@@ -13,7 +13,7 @@
 
   // [id, gap, title, one-line purpose, contract basis, needs-contract flag or '', spec]
   var rows = [
-    ['overview', 'All', 'Overview and owner decisions', 'Every gap, its routes and what the owner needs to decide.', 'See v2/docs/m05-task-screen-proposal.md.', '', { board: 'overview' }],
+    ['overview', 'All', 'Overview and decisions', 'Every gap, its routes, what was decided and what stays provisional.', 'See v2/docs/m05-task-screen-proposal.md.', '', { board: 'overview' }],
 
     // G-TASK-STATES
     ['state-running', 'G-TASK-STATES', 'Running · Stop in composer', 'Baseline running screen with the proposed top bar. Stop opens the same confirmation as the overflow item.', 'status running; cancel.', '', Object.assign({}, RUNNING, { composer: 'running', pane: false })],
@@ -34,8 +34,8 @@
     ['state-continue-started', 'G-TASK-STATES', 'Continue · new session started', 'The successor becomes the conversation\'s next turn, and the earlier run stays readable.', 'continuation_of_task_id; a continuation is its own supervised task.', '', Object.assign({}, RUNNING, { composer: 'running', pane: false, turns: 2, notice: 'continued' })],
     ['state-continue-refused', 'G-TASK-STATES', 'Continue · refused', 'A task with continuation history or auto-continue that was cancelled refuses Continue. Nothing started; the engine\'s reason is shown.', 'Launch refusal; stop_chain marker in task_continuation.py; not visible on status, so it is only known on refusal.', 'Source-derived: the chain-stop marker is not in contracts.md or on status, so the app learns it only from the refusal.', { badge: 'cancelled', task: 'stopped', banner: 'continueRefused', composer: 'settled', pane: false }],
     ['state-failed', 'G-TASK-STATES', 'Failed · proposed banner', 'Replaces Retry with Continue in a new session, which is what ctl actually offers without new text.', 'continue: fresh session from a conclusively settled task; identical retries share one successor.', '', Object.assign({}, FAILED, { banner: 'failed', composer: 'settled', pane: false })],
-    ['retry-options', 'G-TASK-STATES', 'Owner question · what Retry means', 'Three contract-honest readings of the approved Retry button, drawn side by side.', 'run, resume, continue launch semantics.', '', { board: 'retry' }],
-    ['stop-options', 'G-TASK-STATES', 'Owner question · Stop or Cancel', 'The approved specimen says Stop in the composer; the ledger says Cancel in overflow.', 'Both call ctl cancel.', '', { board: 'stop' }],
+    ['retry-options', 'G-TASK-STATES', 'Decision · what Retry means', 'Three contract-honest readings of the approved Retry button, drawn side by side.', 'run, resume, continue launch semantics.', '', { board: 'retry' }],
+    ['stop-options', 'G-TASK-STATES', 'Decision · Stop or Cancel', 'The approved specimen says Stop in the composer; the ledger says Cancel in overflow.', 'Both call ctl cancel.', '', { board: 'stop' }],
 
     // G-OVERFLOW
     ['overflow-running', 'G-OVERFLOW', 'Overflow · running', 'Open menu for a running task. Takeover, per the closed owner decision, and repository actions live here once the old header goes.', 'canCancel; canTakeover; resume_command; task id; repoPath.', '', Object.assign({}, RUNNING, { composer: 'running', pane: false, menu: true })],
@@ -82,7 +82,7 @@
     ['events-error', 'Tabs', 'Events · unavailable', 'History unavailable does not imply task failure.', 'log.state unavailable; D2B.', '', Object.assign({}, DONE, { composer: 'settled', pane: 'open', tab: 'events', events: 'error' })],
 
     // G-ADAPTIVE
-    ['adaptive-options', 'G-ADAPTIVE', 'Owner question · pane at minimum', 'Side by side leaves 316 points for the transcript. Three options drawn at the real minimum.', '1000 × 620 minimum; 264 sidebar; 420 pane.', '', { board: 'adaptive' }],
+    ['adaptive-options', 'G-ADAPTIVE', 'Decision · pane at minimum', 'Side by side leaves 316 points for the transcript. Three options drawn at the real minimum.', '1000 × 620 minimum; 264 sidebar; 420 pane.', '', { board: 'adaptive' }],
     ['adaptive-overlay', 'G-ADAPTIVE', 'Pane over the transcript · 1000 × 620', 'Recommended below 900 points of detail width: no re-wrap, no anchor movement, Escape closes.', 'Layout only.', '', Object.assign({}, DONE, { composer: 'settled', pane: 'open', tab: 'changes', changes: 'single', frame: 'minimum' })],
     ['adaptive-split', 'G-ADAPTIVE', 'Pane beside the transcript · 1280 × 800', 'At or above 900 points of detail width the pane sits beside the transcript, as approved in task/done.', 'task/done at 3643d08.', '', Object.assign({}, DONE, { composer: 'settled', pane: 'open', tab: 'changes', changes: 'single' })],
     ['adaptive-running-closed', 'G-ADAPTIVE', 'Running · pane closed by default', 'Matches task/running. The toggle opens it; state is kept per conversation.', 'task/running at 3643d08.', '', Object.assign({}, RUNNING, { composer: 'running', pane: false })],
@@ -90,18 +90,25 @@
     ['adaptive-failed-default', 'G-ADAPTIVE', 'Failed · default pane state', 'Closed, matching task/failed, so the banner stays the focus. Remembered if the owner opens it.', 'task/failed at 3643d08.', '', Object.assign({}, FAILED, { banner: 'failed', composer: 'settled', pane: false })],
 
     // G-PLATFORM
-    ['platform-options', 'G-PLATFORM', 'Owner question · top bar composition', 'Specimen adjacency against the accepted M04 title position, three ways, at both widths.', 'MainWindowNavigationView.swift:48 principal; TaskDetailToolbar.swift:80 primaryAction.', '', { board: 'platform' }]
+    ['platform-options', 'G-PLATFORM', 'Decision · top bar composition', 'Specimen adjacency against the accepted M04 title position, three ways, at both widths.', 'MainWindowNavigationView.swift:48 principal; TaskDetailToolbar.swift:80 primaryAction.', '', { board: 'platform' }]
   ];
 
+  // Contract gaps are still open for these, so the approval does not cover them.
+  var PROVISIONAL = ['state-cancel-partial', 'artifacts-populated', 'artifacts-page-error', 'artifacts-empty', 'artifacts-loading', 'artifacts-error'];
+  // Boards record the decision. Options that were not chosen are not approved.
+  var RECORDS = ['overview', 'retry-options', 'stop-options', 'adaptive-options', 'platform-options'];
+  var DISPLAY_ONLY = 'Approved for display only: "Status unavailable" is not a task status and does not extend the status vocabulary. ';
   var states = rows.map(function (r) {
-    return { id: r[0], gap: r[1], title: r[2], description: 'Proposal, not approved. ' + r[3], basis: r[4], flag: r[5], spec: r[6], approval: 'proposal' };
+    var kind = PROVISIONAL.indexOf(r[0]) >= 0 ? 'provisional' : RECORDS.indexOf(r[0]) >= 0 ? 'record' : 'approved';
+    var prefix = { approved: 'Approved by the owner, 2026-11-07. ', provisional: 'Provisional, not approved: contract gap open. ', record: 'Decision record. Options not chosen are not approved. ' }[kind];
+    return { id: r[0], gap: r[1], title: r[2], summary: r[3], description: prefix + (r[0] === 'state-status-unavailable' ? DISPLAY_ONLY : '') + r[3], basis: r[4], flag: r[5], spec: r[6], kind: kind, approval: kind === 'approved' ? 'approved' : kind, approvalNote: kind === 'provisional' ? 'Provisional · not approved · contract gap open' : kind === 'record' ? 'Decision record · options not chosen are not approved' : '' };
   });
   H.m05ProposalStates = states;
 
   states.forEach(function (s) {
     var key = 'm05-proposal/' + s.id;
     T[key] = '<div class="hd-m05" data-theme="{{theme}}" data-light-on="{{lightOn}}" data-dark-on="{{darkOn}}" data-system-on="{{systemOn}}" data-m05-state="' + s.id + '"><div class="hd-m05-catalog" aria-label="M05 proposal review controls"></div><div class="hd-m05-stage"></div></div>';
-    docs[key] = '<p><strong>Proposal, not approved.</strong> Nothing here authorizes implementation until the owner approves it and the approval is recorded by commit, path and state.</p><p>Fixtures are deterministic local text; no engine, provider or network is involved. Native toolbar, menus, materials and text rendering are browser approximations. <a href="docs/m05-task-screen-proposal.md">Proposal semantics, copy tables and contract notes</a>.</p>';
+    docs[key] = '<p><strong>' + (s.kind === 'approved' ? 'Approved by the owner, 2026-11-07.' : s.kind === 'provisional' ? 'Provisional, not approved.' : 'Decision record.') + '</strong> See the <a href="docs/m05-task-screen-approval.md">approval record</a> for scope. Approval does not establish native fidelity or product acceptance.</p><p>Fixtures are deterministic local text; no engine, provider or network is involved. Native toolbar, menus, materials and text rendering are browser approximations. <a href="docs/m05-task-screen-proposal.md">Semantics, copy tables and contract notes</a>.</p>';
   });
 
   // Registered here so the state list has one source; inserted after the M04 family.
@@ -109,9 +116,10 @@
   if (registry && registry.families) {
     var family = {
       id: 'm05-proposal',
-      title: 'M05 task screen proposal',
-      description: 'Draft proposal for the M05 task screen gaps. Not approved. Deterministic browser fixtures only; no native implementation is authorized by these specimens.',
-      states: states.map(function (s) { return { id: s.id, title: s.title, description: s.description, approval: 'proposal' }; })
+      title: 'M05 task screen',
+      description: 'Owner-approved M05 task screen states (2026-11-07), except provisional routes with an open contract gap. Deterministic browser fixtures only; native fidelity and product acceptance remain separate.',
+      approval: { by: 'the owner', date: '2026-11-07', reference: 'M05 task screen, relayed by the coordinator; native and runtime qualification separate' },
+      states: states.map(function (s) { return { id: s.id, title: s.title, description: s.description, approval: s.approval, approvalNote: s.approvalNote }; })
     };
     var at = registry.families.findIndex(function (f) { return f.id === 'm04-proposal'; });
     registry.families.splice(at < 0 ? registry.families.length : at + 1, 0, family);
