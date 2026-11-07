@@ -105,7 +105,7 @@ Every route carries the scoped 2026-11-05 owner approval and supports `/light` a
 | `capacity` | Retained reading window with independently sound summary |
 | `events` | Normalized records, unsupported stubs, duplicate/regressing sequence example and separate recovery |
 
-Entry: [observed light](../index.html#d2b-proposal/observed/light), [partial dark](../index.html#d2b-proposal/partial/dark), [capacity](../index.html#d2b-proposal/capacity/light), [events](../index.html#d2b-proposal/events/dark). Request/history/totals selectors are catalogue fixture controls, not proposed app settings. They expose the table's less common variants without adding sprawling task screens.
+Entry: [observed light](../../index.html#d2b-proposal/observed/light), [partial dark](../../index.html#d2b-proposal/partial/dark), [capacity](../../index.html#d2b-proposal/capacity/light), [events](../../index.html#d2b-proposal/events/dark). Request/history/totals selectors are catalogue fixture controls, not proposed app settings. They expose the table's less common variants without adding sprawling task screens.
 
 ## Native layout and accessibility
 

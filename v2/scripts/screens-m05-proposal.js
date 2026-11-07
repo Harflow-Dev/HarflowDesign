@@ -1,5 +1,5 @@
 /* M05 task screen states. Owner-approved 2026-11-07 (relayed by the coordinator), except the
-   provisional routes below; see v2/docs/m05-task-screen-approval.md. Each state is one row here; v2/scripts/m05-proposal.js renders it from `spec`.
+   provisional routes below; see v2/docs/decisions/m05-task-screen-approval.md. Each state is one row here; v2/scripts/m05-proposal.js renders it from `spec`.
    Catalog controls stay outside the native-size specimen. */
 (function () {
   'use strict';
@@ -116,7 +116,7 @@
   states.forEach(function (s) {
     var key = 'm05-proposal/' + s.id;
     T[key] = '<div class="hd-m05" data-theme="{{theme}}" data-light-on="{{lightOn}}" data-dark-on="{{darkOn}}" data-system-on="{{systemOn}}" data-m05-state="' + s.id + '"><div class="hd-m05-catalog" aria-label="' + STRIPS.label + '"></div><div class="hd-m05-stage"></div></div>';
-    docs[key] = '<p><strong>' + (s.kind === 'approved' ? 'Approved by the owner, 2026-11-07.' : s.kind === 'provisional' ? 'Provisional, not approved.' : 'Decision record.') + '</strong> See the <a href="docs/m05-task-screen-approval.md">approval record</a> for scope. Approval does not establish native fidelity or product acceptance.</p><p>Fixtures are deterministic local text; no engine, provider or network is involved. Native toolbar, menus, materials and text rendering are browser approximations. <a href="docs/m05-task-screen-proposal.md">Semantics, copy tables and contract notes</a>.</p>';
+    docs[key] = '<p><strong>' + (s.kind === 'approved' ? 'Approved by the owner, 2026-11-07.' : s.kind === 'provisional' ? 'Provisional, not approved.' : 'Decision record.') + '</strong> See the <a href="docs/decisions/m05-task-screen-approval.md">approval record</a> for scope. Approval does not establish native fidelity or product acceptance.</p><p>Fixtures are deterministic local text; no engine, provider or network is involved. Native toolbar, menus, materials and text rendering are browser approximations. <a href="docs/decisions/m05-task-screen-proposal.md">Semantics, copy tables and contract notes</a>.</p>';
   });
 
   // Routes: renderer id -> [family, state, group]. The renderer id stays the template key.

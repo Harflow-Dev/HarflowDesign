@@ -30,7 +30,7 @@
         var states = HFV2.currentStates(family);
         var groups = (family.groups || []).filter(function (group) { return states.some(function (state) { return state.group === group; }); });
         out += '<tr><td><a href="' + routeOf(family, states[0]) + '">' + esc(family.title) + '</a></td><td>' + states.length + '</td><td>' + esc(groups.join(', ') || '·') +
-          '</td><td><a href="docs/approval.md">Decision</a></td></tr>';
+          '</td><td><a href="docs/decisions/README.md#' + esc(family.id) + '">Decision</a></td></tr>';
       });
       out += '</tbody></table></section>';
     });

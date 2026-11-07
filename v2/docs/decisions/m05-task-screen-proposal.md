@@ -2,7 +2,7 @@
 
 Status: **approved by the owner on 2026-11-07, relayed by the coordinator, except the provisional routes below.** See [the approval record](m05-task-screen-approval.md) for scope and pins. Approval does not establish native fidelity or product acceptance, and D1, D2, G1, G2 and H2 still need implementation and their own acceptance.
 
-Entry: [overview and decisions](../index.html#m05-proposal/overview/light). Every route under `m05-proposal/` supports `/light` and `/dark`; screen routes also have a 1280 × 800 and 1000 × 620 frame selector in the catalog strip.
+Entry: [overview and decisions](../../index.html#m05-proposal/overview/light). Every route under `m05-proposal/` supports `/light` and `/dark`; screen routes also have a 1280 × 800 and 1000 × 620 frame selector in the catalog strip.
 
 Sources:
 

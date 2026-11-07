@@ -2,7 +2,7 @@
 
 Date: 2026-11-05 (Asia/Jakarta). Base: `ba10e2d659dbdf6fbf759c9c9b6165fff9d9cd38`.
 
-The owner accepted the D2B direction and requested spacing between Load earlier/New activity and a correct sidebar for future sessions. [Scoped approval record](../../v2/docs/d2b-observation-approval.md) preserves the exact feedback and scope. The previous proposal receipt/checks remain historical evidence, unchanged.
+The owner accepted the D2B direction and requested spacing between Load earlier/New activity and a correct sidebar for future sessions. [Scoped approval record](../../v2/docs/decisions/d2b-observation-approval.md) preserves the exact feedback and scope. The previous proposal receipt/checks remain historical evidence, unchanged.
 
 ## Corrections
 

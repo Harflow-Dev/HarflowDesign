@@ -464,3 +464,28 @@ test('retargeted links in renderers resolve to registered routes', () => {
   for (const id of ['composer-ready', 'amendment-ready', 'shell', 'advanced', 'history-retained', 'runtime-checking']) assert.ok(routeSet.has(HFV2.routeFor('m04', id)), id);
   for (const gap of HFV2.m05Proposal.GAPS) for (const id of gap.routes) assert.ok(routeSet.has(HFV2.routeFor('m05', id)), id);
 });
+
+// ---- Decisions folder ----
+
+test('the decisions index lists every decision file and each screen has an anchor', () => {
+  const dir = path.join(v2, 'docs', 'decisions');
+  const index = read(path.join(dir, 'README.md'));
+  const docs = fs.readdirSync(dir).filter(name => name.endsWith('.md') && name !== 'README.md');
+  assert.equal(docs.length, 7);
+  for (const name of docs) assert.ok(index.includes(`(${name})`), `${name} is indexed`);
+  for (const family of HFV2.registry.families.filter(f => f.area)) assert.ok(index.includes(`### \`${family.id}\``), `${family.id} has a decision section`);
+  for (const column of ['Status', 'Approved by and date', 'Recording commit', 'Routes', 'Files']) assert.ok(index.includes(column), column);
+  for (const old of ['approval', 'm04-proposal', 'm05-task-screen-approval']) assert.ok(!fs.existsSync(path.join(v2, 'docs', `${old}.md`)), `${old}.md moved`);
+});
+
+test('the route map lists every earlier route and its current route', () => {
+  const map = read(path.join(v2, 'docs', 'route-map.md'));
+  for (const [old, target] of Object.entries(HFV2.routeAliases)) assert.ok(map.includes(`| \`${old}\` | \`${target}\` |`), `${old} is mapped`);
+});
+
+test('the coverage ledger keeps its headings and anchor and names current routes', () => {
+  const ledger = read(path.join(v2, 'docs', 'migration-coverage.md'));
+  assert.match(ledger, /^## Capability disposition ledger \(S03\)$/m);
+  assert.doesNotMatch(ledger, /`(?:m04|m05|d2b)-proposal\//);
+  for (const [, route] of ledger.matchAll(/`((?:task|new-task|sidebar)\/[a-z-]+)`/g)) assert.ok(routeSet.has(route), `${route} in the ledger exists`);
+});
