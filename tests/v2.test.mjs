@@ -33,7 +33,7 @@ const keys = HFV2.stateKeys();
 const routeSet = new Set(keys);
 const descriptors = keys.map(route => HFV2.describe(route));
 const templateKeys = [...new Set(descriptors.map(d => d.templateKey))];
-const STATUSES = ['approved', 'provisional', 'superseded', 'record'];
+const STATUSES = ['approved', 'provisional', 'record'];
 const NAMING_RULE = /\bm0\d\b|d2b|propos(al|ed)|native entry|\bG-[A-Z]+\b/i;
 
 test('registry routes are unique and every descriptor resolves to a template, guide and mount', () => {
@@ -330,46 +330,115 @@ test('the naming rule catches the names it forbids', () => {
 });
 
 const aliases = HFV2.routeAliases;
+const redirects = HFV2.routeRedirects;
+const retired = HFV2.retired;
+const retiredByRoute = new Map(retired.map(entry => [entry.route, entry]));
+const SUFFIXES = ['', '/light', '/dark', '/system'];
+const reserved = JSON.parse(read(path.join(root, 'tests', 'data', 'v2-reserved-routes.json'))).routes;
 
-test('aliases resolve old routes without shadowing, chaining or pointing nowhere', () => {
+// Template keys that renderers clone for other states.
+function rendererReads() {
+  const found = new Set();
+  for (const name of ['m04-proposal.js', 'm05-proposal.js', 'd2b-proposal.js']) {
+    for (const [, key] of read_(name).matchAll(/'((?:new-task|task|sidebar|workflows)\/[a-z0-9-]+)'/g)) found.add(key);
+  }
+  return found;
+}
+
+test('aliases resolve old routes without shadowing or chaining, and land on a live route or a retired one', () => {
   const entries = Object.entries(aliases);
-  assert.equal(entries.length, descriptors.filter(d => d.renderer).length, 'every renderer route has exactly one old route');
+  assert.equal(entries.length, descriptors.filter(d => d.renderer && !d.state.redrawOf).length + retired.filter(e => e.renderer).length, 'every renderer route has exactly one old route, retired ones included, except provisional redraws');
   for (const [old, target] of entries) {
     assert.match(old, /^[a-z0-9-]+\/[a-z0-9-]+$/);
     assert.ok(!routeSet.has(old), `${old} is an alias and must not also be canonical`);
-    assert.ok(routeSet.has(target), `${old} points at missing route ${target}`);
+    assert.ok(!(old in redirects), `${old} is an alias and must not also be a redirect`);
     assert.ok(!(target in aliases), `${old} chains through ${target}`);
-    const d = HFV2.describe(target);
-    assert.equal(d.templateKey, old, `${old} renders the same template as ${target}`);
-    assert.ok(d.renderer, `${target} keeps its renderer`);
+    if (routeSet.has(target)) {
+      const d = HFV2.describe(target);
+      assert.equal(d.templateKey, old, `${old} renders the same template as ${target}`);
+      assert.ok(d.renderer, `${target} keeps its renderer`);
+    } else {
+      const entry = retiredByRoute.get(target);
+      assert.ok(entry, `${old} points at missing route ${target}`);
+      assert.equal(entry.template, old, `${old} drew the template of the retired ${target}`);
+      assert.ok(entry.renderer, `${target} kept its renderer when it was retired`);
+    }
   }
   assert.equal(new Set(entries.map(([, target]) => target)).size, entries.length, 'no two old routes share a route');
 });
 
 test('resolveRoute canonicalises old routes and keeps the appearance suffix', () => {
-  for (const suffix of ['', '/light', '/dark', '/system']) {
+  for (const suffix of SUFFIXES) {
     assert.equal(HFV2.resolveRoute(`#m05-proposal/state-running${suffix}`), `#task/running-stop${suffix}`);
     assert.equal(HFV2.resolveRoute(`#m04-proposal/history-retained${suffix}`), `#sidebar/history-retained${suffix}`);
     assert.equal(HFV2.resolveRoute(`#d2b-proposal/events${suffix}`), `#task/activity-sources${suffix}`);
-    assert.equal(HFV2.resolveRoute(`#task/running${suffix}`), `#task/running${suffix}`, 'a canonical route is unchanged');
+    assert.equal(HFV2.resolveRoute(`#task/approval${suffix}`), `#task/approval${suffix}`, 'a canonical route is unchanged');
+    assert.equal(HFV2.resolveRoute(`#task/running${suffix}`), `#task/running-stop${suffix}`, 'a retired route redirects');
+    assert.equal(HFV2.resolveRoute(`#m04-proposal/composer-ready${suffix}`), `#new-task/centered-ready${suffix}`, 'an alias followed by a redirect');
+    assert.equal(HFV2.resolveRoute(`#m04-proposal/advanced${suffix}`), `#new-task/centered-options${suffix}`);
   }
   for (const odd of ['', '#', '#nothing', '#a/b/c/d', '#m05-proposal/state-running/sepia', '#m05-proposal/unknown']) assert.equal(HFV2.resolveRoute(odd), odd);
   assert.equal(HFV2.resolveRoute(undefined), undefined);
-  for (const [old, target] of Object.entries(aliases)) assert.equal(HFV2.resolveRoute(`#${old}/dark`), `#${target}/dark`);
+  for (const [old, target] of Object.entries(aliases)) {
+    const final = target in redirects ? redirects[target] : target;
+    assert.equal(HFV2.resolveRoute(`#${old}/dark`), `#${final}/dark`);
+  }
+});
+
+test('redirects send retired routes to live states and obey their invariants', () => {
+  const entries = Object.entries(redirects);
+  assert.ok(entries.length >= 9);
+  assert.deepEqual(Array.from(retired, e => e.route).sort(), entries.map(([from]) => from).sort(), 'every redirect is a recorded retirement');
+  for (const [from, to] of entries) {
+    assert.match(from, /^[a-z0-9-]+\/[a-z0-9-]+$/);
+    assert.ok(!routeSet.has(from), `${from} is retired and must not be navigable`);
+    assert.ok(!(from in aliases), `${from} must not be an alias key`);
+    assert.ok(routeSet.has(to), `${from} redirects to a registered state`);
+    assert.ok(!(to in redirects), `${to} is a redirect target and must not itself be retired`);
+    assert.ok(!(to in aliases), `${to} is a redirect target and must not be an alias key`);
+    assert.equal(HFV2.describe(to).hidden, false, `${from} does not redirect to a hidden state`);
+    assert.equal(retiredByRoute.get(from).redirect, to);
+  }
+  for (const entry of retired) {
+    for (const field of ['title', 'template', 'basis', 'pins']) assert.ok(entry[field], `${entry.route} records its ${field}`);
+    assert.equal(routeSet.has(entry.route), false);
+    const cloned = rendererReads().has(entry.template);
+    assert.equal(typeof HFV2.templates[entry.template] === 'string', cloned, `${entry.template} stays only when a renderer clones it`);
+    assert.ok(!(entry.template in HFV2.componentDocs), `${entry.template} keeps no guide`);
+    if (entry.renderer) assert.equal(HFV2.routeFor(entry.renderer, entry.mount), entry.route, 'generated links still produce the retired route');
+  }
+  for (const suffix of SUFFIXES) for (const [from, to] of entries) assert.equal(HFV2.resolveRoute(`#${from}${suffix}`), `#${to}${suffix}`);
+});
+
+test('every alias, reserved route and appearance suffix reaches a live, renderable state in at most one redirect', () => {
+  const sources = [...Object.keys(aliases), ...reserved, ...Object.keys(redirects), ...keys];
+  for (const route of new Set(sources)) {
+    for (const suffix of SUFFIXES) {
+      const resolved = HFV2.resolveRoute(`#${route}${suffix}`);
+      const target = resolved.slice(1, suffix ? -suffix.length : undefined);
+      assert.ok(resolved.endsWith(suffix), `${route} keeps ${suffix || 'no suffix'}`);
+      assert.ok(routeSet.has(target), `${route} resolves to missing ${target}`);
+      const d = HFV2.describe(target);
+      assert.equal(typeof HFV2.templates[d.templateKey], 'string', `${target} has a template`);
+      if (d.renderer) assert.equal(typeof HFV2[HFV2.RENDERERS[d.renderer].api].mount, 'function');
+      assert.equal(HFV2.resolveRoute(resolved), resolved, `${route} is settled after one resolution`);
+    }
+  }
 });
 
 test('every route registered at the base commit still opens the same design', () => {
-  const { routes } = JSON.parse(read(path.join(root, 'tests', 'data', 'v2-reserved-routes.json')));
+  const routes = reserved;
   assert.ok(routes.length >= 170);
   assert.equal(new Set(routes).size, routes.length);
   for (const route of routes) {
     if (route in aliases) continue;
-    assert.ok(routeSet.has(route), `${route} neither exists nor is an alias`);
+    if (route in redirects) continue;
+    assert.ok(routeSet.has(route), `${route} neither exists nor is an alias or a redirect`);
     assert.equal(HFV2.describe(route).templateKey, route, `${route} was reused for another design`);
   }
   assert.ok(routeSet.has(HFV2.registry.defaultRoute));
   assert.equal(HFV2.registry.defaultRoute, 'overview/areas');
-  assert.ok(routeSet.has('new-task/default'));
+  assert.equal(redirects['new-task/default'], 'new-task/centered-empty');
 });
 
 test('catalog canonicalises the address only when rendering, after alias lookup', () => {
@@ -383,30 +452,40 @@ test('catalog canonicalises the address only when rendering, after alias lookup'
   assert.match(source, /try \{[\s\S]*localStorage\.getItem[\s\S]*catch/, 'unavailable storage is tolerated');
 });
 
-test('applied supersessions hide the older state; proposed ones label it and hide nothing', () => {
-  const { applied, proposed } = HFV2.supersessions;
+test('retired states are gone from the registry; superseded-state handling no longer exists', () => {
   const stateOf = route => { const [f, s] = route.split('/'); return HFV2.findState(HFV2.findFamily(f), s); };
-  assert.deepEqual(Array.from(applied, e => `${e.older} → ${e.newer}`), ['task/failed → task/failed-continue']);
-  for (const { older, newer, basis } of applied) {
-    assert.ok(basis, `${older} cites its basis`);
-    assert.equal(stateOf(older).status, 'superseded');
-    assert.equal(stateOf(older).hidden, true);
-    assert.equal(stateOf(older).supersededBy, newer);
-    assert.deepEqual(Array.from(stateOf(newer).supersedes), [older]);
-    assert.ok(!stateOf(newer).hidden);
-    assert.equal(HFV2.describe(older).hidden, true);
-    assert.equal(typeof HFV2.templates[HFV2.describe(older).templateKey], 'string', 'a superseded state keeps its template');
+  assert.deepEqual(Array.from(retired, e => e.route).sort(), [
+    'new-task/composer-ready', 'new-task/composer-unknown', 'new-task/default', 'new-task/harness-menu', 'new-task/options-open',
+    'new-task/sidebar-collapsed', 'task/done', 'task/failed', 'task/running'
+  ]);
+  for (const entry of retired) {
+    assert.equal(stateOf(entry.route), null, `${entry.route} is not registered`);
+    assert.ok(!HFV2.currentStates(HFV2.findFamily(entry.route.split('/')[0])).some(s => s.id === entry.route.split('/')[1]));
   }
-  assert.ok(!HFV2.currentStates(HFV2.findFamily('task')).some(s => s.id === 'failed'));
-  for (const { older, newer } of proposed) {
-    assert.ok(routeSet.has(older) && routeSet.has(newer), `${older} → ${newer}`);
-    assert.notEqual(stateOf(older).status, 'superseded');
-    assert.ok(!stateOf(older).hidden, `${older} stays listed until the owner decides`);
-    assert.equal(stateOf(older).awaitingDecision, newer);
-    assert.equal(stateOf(newer).supersedes, undefined);
+  assert.equal(redirects['task/failed'], 'task/failed-continue');
+  assert.equal(redirects['task/running'], 'task/running-stop');
+  assert.equal(redirects['task/done'], 'task/changes-single');
+  assert.equal(redirects['new-task/default'], 'new-task/centered-empty');
+  assert.equal(redirects['new-task/sidebar-collapsed'], 'sidebar/collapsed');
+  assert.equal(redirects['new-task/harness-menu'], 'new-task/centered-ready');
+  assert.equal(redirects['new-task/composer-ready'], 'new-task/centered-ready');
+  assert.equal(redirects['new-task/composer-unknown'], 'new-task/centered-unknown');
+  assert.equal(redirects['new-task/options-open'], 'new-task/centered-options');
+  assert.ok(!('task/activity-sources' in redirects), 'the activity sources state waits for an owner decision');
+  assert.ok(routeSet.has('task/activity-sources'));
+  for (const family of HFV2.registry.families) for (const state of family.states) {
+    assert.notEqual(state.status, 'superseded');
+    for (const field of ['supersededBy', 'supersedes', 'awaitingDecision']) assert.equal(state[field], undefined, `${family.id}/${state.id} ${field}`);
   }
-  assert.ok(!proposed.some(e => e.older === 'task/failed'));
-  assert.ok(proposed.some(e => e.older === 'task/running'), 'the running state is still awaiting a decision');
+  assert.equal(HFV2.supersessions, undefined);
+  const catalog = read(path.join(v2, 'scripts', 'catalog.js'));
+  assert.ok(!/supersededBy|awaitingDecision|AWAITING|Earlier design/.test(catalog), 'the earlier-design note is gone');
+  const decisions = read(path.join(v2, 'docs', 'decisions', 'README.md'));
+  for (const entry of retired) {
+    assert.ok(decisions.includes(`\`${entry.route}\``), `${entry.route} is recorded in the decisions README`);
+    assert.ok(decisions.includes(`\`${entry.redirect}\``), `${entry.redirect} is recorded in the decisions README`);
+  }
+  assert.ok(decisions.includes('Q2 owner answer 2026-11-08; target confirmed by the coordinator 2026-11-08'));
 });
 
 test('hidden families and states stay out of navigation, the picker and the overview counts', () => {
@@ -417,11 +496,12 @@ test('hidden families and states stay out of navigation, the picker and the over
   assert.ok(records.states.every(s => s.status === 'record'));
   const overview = HFV2.templates['overview/areas'];
   assert.ok(!overview.includes('Decision boards'), 'hidden families are not listed');
-  assert.ok(overview.includes('href="#task/failed"'), 'the earlier design is listed under earlier designs');
+  assert.ok(overview.includes('Replaced designs') && !overview.includes('Earlier designs') && !overview.includes('Awaiting a decision'));
+  for (const entry of retired) assert.ok(overview.includes(`now opens <a href="#${entry.redirect}">`), `${entry.route} is listed under replaced designs`);
   const task = HFV2.findFamily('task');
   const current = HFV2.currentStates(task).length;
   assert.ok(new RegExp(`Task</a></td><td>${current}</td>`).test(overview), 'overview counts current states only');
-  assert.equal(HFV2.currentStates(task).length, task.states.length - 1);
+  assert.equal(HFV2.currentStates(task).length, task.states.length);
   for (const d of descriptors.filter(x => x.family.id === 'records')) assert.equal(d.hidden, true);
   const catalog = read(path.join(v2, 'scripts', 'catalog.js'));
   assert.match(catalog, /HFV2\.currentStates\(family\)/, 'navigation lists current states');
@@ -431,12 +511,11 @@ test('hidden families and states stay out of navigation, the picker and the over
 test('status and approval are per state and never borrowed from a sibling', () => {
   const stateOf = route => { const [f, s] = route.split('/'); return [HFV2.findFamily(f), HFV2.findState(HFV2.findFamily(f), s)]; };
   const line = route => HFV2.approvalLine(...stateOf(route));
-  assert.match(line('task/running'), /^Approved by the owner on 2026-11-03 · canvas /);
+  assert.match(line('task/approval'), /^Approved by the owner on 2026-11-03 · canvas /);
   assert.match(line('task/activity-observed'), /^Approved by the owner on 2026-11-05 · /);
-  assert.match(line('new-task/composer-ready'), /^Approved by the owner on 2026-11-05 · /);
+  assert.match(line('new-task/composer-loading'), /^Approved by the owner on 2026-11-05 · /);
   assert.match(line('new-task/centered-ready'), /^Approved by the owner on 2026-11-06 · /);
   assert.match(line('task/running-stop'), /^Approved by the owner on 2026-11-07 · /);
-  assert.match(line('task/failed'), /^Approved by the owner on 2026-11-03 · canvas /, 'a superseded state keeps its own approval');
   assert.equal(stateOf('task/cancelled-partial')[1].status, 'provisional');
   assert.equal(line('task/cancelled-partial'), 'Provisional · not approved · contract gap open');
   for (const state of ['populated', 'page-error', 'empty', 'loading', 'error']) assert.equal(stateOf(`task/artifacts-${state}`)[1].status, 'provisional', `artifacts-${state}`);
@@ -461,7 +540,12 @@ test('retargeted links in renderers resolve to registered routes', () => {
   assert.equal(HFV2.routeFor('m04', 'history-older'), 'sidebar/history-older');
   assert.equal(HFV2.routeFor('d2b', 'observed'), 'task/activity-observed');
   assert.equal(HFV2.routeFor('m04', 'unknown'), null);
-  for (const id of ['composer-ready', 'amendment-ready', 'shell', 'advanced', 'history-retained', 'runtime-checking']) assert.ok(routeSet.has(HFV2.routeFor('m04', id)), id);
+  for (const id of ['amendment-ready', 'shell', 'history-retained', 'runtime-checking']) assert.ok(routeSet.has(HFV2.routeFor('m04', id)), id);
+  for (const id of ['composer-ready', 'composer-unknown', 'advanced']) {
+    const route = HFV2.routeFor('m04', id);
+    assert.ok(route && !routeSet.has(route), `${id} falls back to its retired route`);
+    assert.ok(routeSet.has(HFV2.resolveRoute('#' + route).slice(1)), `${id} then redirects to a live state`);
+  }
   for (const gap of HFV2.m05Proposal.GAPS) for (const id of gap.routes) assert.ok(routeSet.has(HFV2.routeFor('m05', id)), id);
 });
 
@@ -481,6 +565,7 @@ test('the decisions index lists every decision file and each screen has an ancho
 test('the route map lists every earlier route and its current route', () => {
   const map = read(path.join(v2, 'docs', 'route-map.md'));
   for (const [old, target] of Object.entries(HFV2.routeAliases)) assert.ok(map.includes(`| \`${old}\` | \`${target}\` |`), `${old} is mapped`);
+  for (const [from, to] of Object.entries(HFV2.routeRedirects)) assert.ok(map.includes(`| \`${from}\` | \`${to}\` |`), `${from} redirects to ${to} in the map`);
 });
 
 test('the coverage ledger keeps its headings and anchor and names current routes', () => {
@@ -525,4 +610,40 @@ test('only the overview and decision boards may navigate to documents from a spe
   for (const key of Object.keys(HFV2.templates).filter(k => k !== 'overview/areas')) {
     for (const [, href] of HFV2.templates[key].matchAll(/href="([^"]*)"/g)) assert.ok(href.startsWith('#'), `${key} links to ${href}`);
   }
+});
+
+// ---- Links resolve to current states ----
+
+// Only route-shaped links are checked. Bare fragments such as `#new` (the New task link of the base
+// task templates) and `#needs-you` (design-system specimens) have never been routes; clicking one does
+// nothing, and the pixel harness lists them separately.
+
+test('every in-page link of a template resolves, through aliases and redirects, to a registered state', () => {
+  let checked = 0;
+  for (const key of Object.keys(HFV2.templates).filter(k => k !== 'overview/areas')) {
+    for (const [, href] of HFV2.templates[key].matchAll(/href="(#[a-z0-9-]+\/[a-z0-9-]+)"/g)) {
+      checked += 1;
+      const resolved = HFV2.resolveRoute(href);
+      const target = resolved.slice(1);
+      assert.ok(routeSet.has(target), `${key} links to ${href}, which resolves to ${target}`);
+      assert.ok(!(target in redirects), `${key} link ${href} settles on a retired route`);
+      assert.notEqual(HFV2.describe(target), null);
+    }
+  }
+  assert.ok(checked > 100);
+});
+
+test('strip links of the m04 renderer point at current states, never at retired ones', () => {
+  const source = read_('m04-proposal.js');
+  const region = source.slice(source.indexOf('var boards = amendment'), source.indexOf('var strips = H.catalogStrips.m04;'));
+  const mounts = [...region.matchAll(/\['([a-z-]+)','[A-Za-z ]+'\]/g)].map(m => m[1]);
+  assert.ok(mounts.length >= 11, 'both strips list their boards');
+  for (const mount of mounts) {
+    const route = HFV2.routeFor('m04', mount);
+    assert.ok(routeSet.has(route), `${mount} links to the registered ${route}`);
+  }
+  assert.ok(!/routeFor\('m04', '(composer-ready|composer-unknown|advanced)'\)/.test(source), 'no strip builds a link to a retired mount');
+  assert.ok(!/baselineLink|centeredLink/.test(source));
+  const overviewMounts = read_('m05-proposal.js').match(/routeFor\('m05', '[a-z-]+'\)/g) || [];
+  for (const call of overviewMounts) assert.ok(routeSet.has(HFV2.routeFor('m05', call.match(/'m05', '([a-z-]+)'/)[1])), call);
 });

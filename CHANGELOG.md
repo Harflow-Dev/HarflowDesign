@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Retire nine superseded `v2/` states on the owner's answers of 2026-11-08: `task/running`, `task/done`, `task/failed`, `new-task/default`, `new-task/sidebar-collapsed`, `new-task/harness-menu`, `new-task/composer-ready`, `new-task/composer-unknown` and `new-task/options-open`. They leave navigation and their routes redirect to the replacement states (`routeRedirects`). The "Earlier design" note and the awaiting-decision label are removed, and the overview lists the replaced designs. `task/activity-sources` is unchanged pending an owner decision.
+
 - Archive the v1 catalog at `archive/v1/` (with its documents) and make the root `index.html` a redirector: no hash opens `v2/index.html`, a hash opens the archived catalog with that hash, and the old v1 paths forward to `archive/v1/` (`_redirects` on the hosted site). The build script runs every test file and stages `archive` and `_redirects`.
 
 - Reorganise the `v2/` catalog by area, screen and state group, with an overview as the default page. Interactive task, entry, sidebar and runtime states join the screens they belong to, and the catalog no longer shows milestone or process names. Every earlier route still opens the same design through `v2/scripts/route-aliases.js`; `v2/docs/route-map.md` lists them. States carry their own status and approval. The failed task state is superseded by the Continue in a new session state; other possible replacements stay listed and are labelled as awaiting a decision.

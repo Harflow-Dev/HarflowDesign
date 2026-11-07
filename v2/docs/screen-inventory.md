@@ -10,9 +10,6 @@ Migration intent and unresolved coverage are tracked in the [migration coverage 
 
 | Family | State | Route | Shows |
 | --- | --- | --- | --- |
-| New task | Default | `new-task/default` | Greeting, composer with repository, harness and model, and access level pills; sidebar with Running and Recent work |
-| New task | Harness menu open | `new-task/harness-menu` | Harness and model pill opened to choose a harness, then a model |
-| New task | Sidebar collapsed | `new-task/sidebar-collapsed` | 56px icon rail with the Needs you dot and a running count on New task |
 | Needs you | Waiting items | `needs-you/waiting` | Approvals and a question from tasks and workflow runs, answerable in place |
 | Needs you | Empty | `needs-you/empty` | Nothing waits for the person |
 | Workflows | List | `workflows/list` | Workflows with node count, Edit and Run; no run status |
@@ -21,10 +18,7 @@ Migration intent and unresolved coverage are tracked in the [migration coverage 
 | Workflow editor | Node selected | `workflow-editor/node-selected` | Left-to-right canvas, standalone on-demand nodes, node inspector |
 | Workflow editor | Orchestrator settings | `workflow-editor/orchestrator` | Locked orchestrator selected in the Standalone strip; harness, model and access in the inspector |
 | Workflow editor | Edit with agent | `workflow-editor/edit-with-agent` | Agent proposal on the canvas, builder activity in the right pane |
-| Task | Running | `task/running` | Slim top bar, transcript with collapsed and expanded tool calls, follow-up composer |
 | Task | Waiting for approval | `task/approval` | Inline approval card in the transcript |
-| Task | Done, changes pane | `task/done` | Summary and the right pane with changed files and diff |
-| Task | Failed | `task/failed` | Failure stated with the fix |
 | Parallel group | Lanes | `parallel-group/lanes` | One lane per agent, each with its own composer |
 | Workflow run | Graph, needs you | `workflow-run/graph-needs-you` | Run graph left to right with a node that needs the person |
 | Workflow run | Parallel view | `workflow-run/parallel` | The run's agents as lanes |
@@ -43,6 +37,8 @@ Migration intent and unresolved coverage are tracked in the [migration coverage 
 | Brand | One state per brand book section | `brand/<section>` | Principles, brand mark, appearance, content fundamentals, visual foundations, layout, iconography, using the components, not in this system |
 | Foundations | Colour, typography, spacing-radius, elevation | `foundations/<name>` | Every design token with light and dark values and usage |
 | Components | One state per component | `components/<name>` | Design system components, starting with the cover; each shows its full guideline text below the preview |
+
+The base New task states (`new-task/default`, `harness-menu`, `sidebar-collapsed`) and the base Task states Running, Done, changes pane and Failed were replaced by later designs on the owner's decision. Their routes still open the replacement; see [the decisions record](decisions/README.md#retired-designs) and the [route map](route-map.md).
 
 ## Decisions recorded from the owner's feedback rounds
 

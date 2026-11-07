@@ -34,14 +34,15 @@
       });
       out += '</tbody></table></section>';
     });
-    var supersessions = HFV2.supersessions || { applied: [], proposed: [] };
-    if (supersessions.applied.length) {
-      out += '<section class="hdc-overview__area"><h2>Earlier designs</h2><p>Replaced by a current design. The route still opens and links to its replacement.</p><ul>' +
-        supersessions.applied.map(function (e) { return '<li><a href="#' + e.older + '">' + esc(titleOf(e.older)) + '</a> replaced by <a href="#' + e.newer + '">' + esc(titleOf(e.newer)) + '</a></li>'; }).join('') + '</ul></section>';
+    var retired = HFV2.retired || [];
+    if (retired.length) {
+      out += '<section class="hdc-overview__area"><h2>Replaced designs</h2><p>The owner replaced these designs. Each old route now opens its replacement; <a href="docs/decisions/README.md#retired-designs">the decisions record</a> lists the basis and where the old design can be seen.</p><ul>' +
+        retired.map(function (e) { return '<li>' + esc(e.title) + ' now opens <a href="#' + e.redirect + '">' + esc(titleOf(e.redirect)) + '</a></li>'; }).join('') + '</ul></section>';
     }
-    if (supersessions.proposed.length) {
-      out += '<section class="hdc-overview__area"><h2>Awaiting a decision</h2><p>Both layouts stay listed until the owner decides which is current.</p><ul>' +
-        supersessions.proposed.map(function (e) { return '<li><a href="#' + e.older + '">' + esc(titleOf(e.older)) + '</a> · newer layout <a href="#' + e.newer + '">' + esc(titleOf(e.newer)) + '</a></li>'; }).join('') + '</ul></section>';
+    var pending = HFV2.pendingRedraw || [];
+    if (pending.length) {
+      out += '<section class="hdc-overview__area"><h2>Redraws awaiting approval</h2><p>The earlier layout stays listed until the owner approves its centered redraw.</p><ul>' +
+        pending.map(function (e) { return '<li><a href="#' + e.older + '">' + esc(titleOf(e.older)) + '</a> · centered redraw <a href="#' + e.newer + '">' + esc(titleOf(e.newer)) + '</a></li>'; }).join('') + '</ul></section>';
     }
     return out + '</div>';
   }

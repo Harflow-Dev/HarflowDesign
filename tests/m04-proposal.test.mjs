@@ -7,8 +7,8 @@ vm.createContext(context);
 for (const name of ['registry.js','m04-proposal.js','screens-m04-proposal.js']) vm.runInContext(fs.readFileSync(new URL('../v2/scripts/'+name,import.meta.url),'utf8'),context);
 const H=context.window.HFV2, M=H.m04Proposal.model;
 const ready=()=>{const s=M.create('composer-ready');s.draft='Review the queue';return s;};
-test('all 24 approved baseline routes register without DOM or canonical templates',()=>{
-  assert.equal(H.m04ProposalStates.length,24);
+test('all 21 approved baseline routes register without DOM or canonical templates',()=>{
+  assert.equal(H.m04ProposalStates.length,21);
   assert.ok(H.m04ProposalStates.every(x=>x.approved && x.status==='Approved'));
   for(const x of H.m04ProposalStates){
     assert.equal(typeof H.templates['m04-proposal/'+x.id],'string');
@@ -60,9 +60,9 @@ test('amendment routes are separate and approved by the owner on 2026-11-06',()=
   }
 });
 const m04States=()=>H.registry.families.flatMap(f=>f.states.filter(s=>s.source&&s.source.renderer==='m04').map(s=>Object.assign({route:f.id+'/'+s.id},s)));
-test('registry approves all 30 entry states with the six centered composer states on separate provenance',()=>{
+test('registry approves all 27 entry states with the six centered composer states on separate provenance',()=>{
   const all=m04States();
-  assert.equal(all.length,30,'24 baseline states plus the six now-approved centered composer states');
+  assert.equal(all.length,27,'21 baseline states plus the six now-approved centered composer states');
   assert.ok(all.every(s=>s.status==='approved'));
   const centered=all.filter(s=>s.source.mount.startsWith('amendment-'));
   assert.equal(centered.length,6,'the six centered composer states stay separate routes');
@@ -70,7 +70,7 @@ test('registry approves all 30 entry states with the six centered composer state
   assert.ok(centered.every(s=>/Owner-approved centered-composer amendment \(2026-11-06, separate from the 2026-11-05 entry direction\)/.test(s.description)));
   assert.ok(centered.every(s=>s.approval.date==='2026-11-06'&&/separate from the 2026-11-05 entry direction/.test(s.approval.decision)));
   const baseline=all.filter(s=>!s.source.mount.startsWith('amendment-'));
-  assert.equal(baseline.length,24);
+  assert.equal(baseline.length,21);
   assert.ok(baseline.every(s=>s.approval.date==='2026-11-05'),'folding the states keeps each state\'s own approval date');
   const sidebar=H.registry.families.find(f=>f.id==='sidebar');
   assert.match(sidebar.description,/scrolls as one bounded area/,'the owner sidebar correction is documented for the sidebar');

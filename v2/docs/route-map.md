@@ -2,11 +2,29 @@
 
 Every route that existed before the information architecture changed still opens, and it opens the same design: the old route and the route it points to are rendered from the same template by the same renderer, so the app frame is identical. The address bar then shows the current route. The `/light`, `/dark` or `/system` suffix is kept.
 
-The aliases are defined in `v2/scripts/route-aliases.js`. A test checks that none of them shadows a current route, chains to another alias or points nowhere, and that every route registered at the base commit `17739e4` is either still current or listed here.
+The aliases are defined in `v2/scripts/route-aliases.js`. An alias never changes meaning. An owner-decided redirect (`v2/scripts/supersessions.js`) sends a retired route to its replacement: the alias is applied first, then at most one redirect. A test checks that no alias shadows a current route or chains, that every redirect lands on a current state, and that every route registered at the base commit `17739e4` is either still current, an alias or a redirect.
 
 ## Unchanged routes
 
-The 72 routes of the base screens, the brand book, the foundations and the components keep their ids (for example `new-task/default`, `task/running`, `workflow-editor/node-selected`, `components/button`). One of them is no longer listed in navigation: `task/failed` is superseded by `task/failed-continue`, and it still opens with a note that links to the current design.
+The routes of the base screens, the brand book, the foundations and the components keep their ids (for example `needs-you/waiting`, `workflow-editor/node-selected`, `components/button`), except the nine retired routes listed under "Retired routes".
+
+## Retired routes
+
+The owner replaced these designs on 2026-11-08. The route still opens, and it shows the replacement. The address bar then shows the replacement route. The decisions record gives the basis and the commits where the old design can be seen.
+
+| Retired route | Opens | Screen and state |
+| --- | --- | --- |
+| `task/running` | `task/running-stop` | Task · Running · Stop in composer |
+| `task/done` | `task/changes-single` | Task · Changes · one repository |
+| `task/failed` | `task/failed-continue` | Task · Failed · Continue in a new session |
+| `new-task/default` | `new-task/centered-empty` | New task · Centered composer · Empty |
+| `new-task/sidebar-collapsed` | `sidebar/collapsed` | Sidebar · Shell · Collapsed rail |
+| `new-task/harness-menu` | `new-task/centered-ready` | New task · Centered composer · One line ready |
+| `new-task/composer-ready` | `new-task/centered-ready` | New task · Centered composer · One line ready |
+| `new-task/composer-unknown` | `new-task/centered-unknown` | New task · Centered composer · Outcome unknown |
+| `new-task/options-open` | `new-task/centered-options` | New task · Centered composer · Options open |
+
+The earlier routes `m04-proposal/composer-ready`, `m04-proposal/composer-unknown` and `m04-proposal/advanced` (listed below) reach the same replacements through their alias followed by the redirect.
 
 ## Moved routes
 
@@ -22,17 +40,17 @@ The 72 routes of the base screens, the brand book, the foundations and the compo
 | `d2b-proposal/events` | `task/activity-sources` | Task · Normalized and recovered sources | Yes |
 | `m04-proposal/amendment-empty` | `new-task/centered-empty` | New task · Centered composer · Empty | Yes |
 | `m04-proposal/composer-loading` | `new-task/composer-loading` | New task · Composer · Checking options | Yes |
-| `m04-proposal/composer-ready` | `new-task/composer-ready` | New task · Composer · Ready | Yes |
+| `m04-proposal/composer-ready` | `new-task/composer-ready` | New task · Composer · Ready | No, retired: opens `new-task/centered-ready` |
 | `m04-proposal/composer-unqualified` | `new-task/composer-unqualified` | New task · Composer · Unavailable options | Yes |
 | `m04-proposal/composer-invalid` | `new-task/composer-invalid` | New task · Composer · Validation | Yes |
 | `m04-proposal/composer-starting` | `new-task/composer-starting` | New task · Composer · Starting | Yes |
 | `m04-proposal/composer-refused` | `new-task/composer-refused` | New task · Composer · Refused | Yes |
-| `m04-proposal/composer-unknown` | `new-task/composer-unknown` | New task · Composer · Outcome unknown | Yes |
+| `m04-proposal/composer-unknown` | `new-task/composer-unknown` | New task · Composer · Outcome unknown | No, retired: opens `new-task/centered-unknown` |
 | `m04-proposal/amendment-ready` | `new-task/centered-ready` | New task · Centered composer · One line ready | Yes |
 | `m04-proposal/amendment-growing` | `new-task/centered-growing` | New task · Centered composer · Growing | Yes |
 | `m04-proposal/amendment-capped` | `new-task/centered-capped` | New task · Centered composer · Capped at six lines | Yes |
 | `m04-proposal/amendment-unknown` | `new-task/centered-unknown` | New task · Centered composer · Outcome unknown | Yes |
-| `m04-proposal/advanced` | `new-task/options-open` | New task · Task options · Open | Yes |
+| `m04-proposal/advanced` | `new-task/options-open` | New task · Task options · Open | No, retired: opens `new-task/centered-options` |
 | `m04-proposal/advanced-closed` | `new-task/options-closed` | New task · Task options · Closed | Yes |
 | `m04-proposal/amendment-options` | `new-task/centered-options` | New task · Centered composer · Options open | Yes |
 | `m04-proposal/shell` | `sidebar/expanded` | Sidebar · Shell · Expanded | Yes |

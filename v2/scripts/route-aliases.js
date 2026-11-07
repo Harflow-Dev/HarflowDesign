@@ -1,5 +1,7 @@
-// Old routes that now open another route. A redirect never changes the design: the old route and its
-// target render the same template through the same renderer. Keys are never reused as canonical routes.
+// Old routes that now open another route. An alias never changes meaning: the old route and its target
+// render the same template through the same renderer. Keys are never reused as canonical routes.
+// An owner-decided redirect (HFV2.routeRedirects in supersessions.js) sends a retired route to its
+// replacement; resolveRoute applies the alias first and then at most one redirect.
 (function () {
   'use strict';
   var HFV2 = (window.HFV2 = window.HFV2 || {});
@@ -110,12 +112,18 @@
 
   var ROUTE_PATTERN = /^#([a-z0-9-]+)\/([a-z0-9-]+)(\/(?:light|dark|system))?$/;
 
+  var own = function (map, key) { return Object.prototype.hasOwnProperty.call(map, key); };
+
   // Returns the canonical hash for a route hash, keeping its /light, /dark or /system suffix.
-  // A hash that is not a route, or whose route is not an alias, is returned unchanged.
+  // The alias is applied first, then at most one redirect. A hash that is not a route, or whose route
+  // is neither an alias nor a redirect, is returned unchanged.
   HFV2.resolveRoute = function (hash) {
     var match = ROUTE_PATTERN.exec(hash || '');
     if (!match) return hash;
-    var target = Object.prototype.hasOwnProperty.call(HFV2.routeAliases, match[1] + '/' + match[2]) ? HFV2.routeAliases[match[1] + '/' + match[2]] : null;
-    return target ? '#' + target + (match[3] || '') : hash;
+    var key = match[1] + '/' + match[2];
+    var target = own(HFV2.routeAliases, key) ? HFV2.routeAliases[key] : key;
+    var redirects = HFV2.routeRedirects || {};
+    if (own(redirects, target)) target = redirects[target];
+    return target === key ? hash : '#' + target + (match[3] || '');
   };
 })();

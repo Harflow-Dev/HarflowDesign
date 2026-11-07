@@ -25,7 +25,7 @@ Use `docs/terminology.md` as the canonical user-facing glossary (`v2/docs/termin
 
 ## Catalog naming
 
-Navigation, family and state ids and titles, descriptions, the approval line, the page title, the state picker, catalog control strips and guide text name the product screen or component only. Milestone, proposal, approval and gap history lives in `v2/docs/decisions/`; `tests/v2.test.mjs` enforces this. Each state carries its own status and approval; record a new decision in `v2/docs/decisions/README.md`. A route never changes meaning: moved routes stay as aliases in `v2/scripts/route-aliases.js`.
+Navigation, family and state ids and titles, descriptions, the approval line, the page title, the state picker, catalog control strips and guide text name the product screen or component only. Milestone, proposal, approval and gap history lives in `v2/docs/decisions/`; `tests/v2.test.mjs` enforces this. Each state carries its own status and approval; record a new decision in `v2/docs/decisions/README.md`. An alias never changes meaning: moved routes stay as aliases in `v2/scripts/route-aliases.js`. An owner-decided redirect sends a retired route to its replacement (`v2/scripts/supersessions.js`); record the retirement in the decisions README.
 
 ## Design workflow
 

@@ -5,7 +5,7 @@
   var HFV2 = window.HFV2;
   var STORAGE_KEY = 'hf-v2-appearance';
   var MODES = ['system', 'light', 'dark'];
-  var AWAITING = 'Earlier layout; current status awaiting decision';
+  var PENDING = 'Earlier layout; centered redraw awaiting owner approval';
   var ROUTE_PATTERN = /^#([a-z0-9-]+)\/([a-z0-9-]+)(?:\/(light|dark|system))?$/;
 
   var els = {
@@ -58,7 +58,7 @@
   var findFamily = HFV2.findFamily;
   var findState = HFV2.findState;
 
-  // Old routes resolve to their canonical route before the route is looked up.
+  // Old routes resolve to their canonical route (alias, then redirect) before the route is looked up.
   function parseHash(hash) {
     var match = ROUTE_PATTERN.exec(HFV2.resolveRoute(hash || ''));
     if (!match) return null;
@@ -98,7 +98,7 @@
       var link = el('a', 'hdc-nav-link', state.title);
       link.href = hashFor(family.id, state.id);
       link.setAttribute('data-route', family.id + '/' + state.id);
-      if (state.awaitingDecision) link.title = AWAITING;
+      if (pendingRedrawOf(family.id + '/' + state.id)) link.title = PENDING;
       item.appendChild(link);
       list.appendChild(item);
     });
@@ -165,19 +165,28 @@
     return link;
   }
 
-  // Tells a reader that the route shows an earlier design, and where the current one is.
-  function updateNote(state) {
+  function pendingRedrawOf(route) {
+    return (HFV2.pendingRedraw || []).filter(function (pair) { return pair.older === route; })[0] || null;
+  }
+
+  function redrawsOf(route) {
+    return (HFV2.pendingRedraw || []).filter(function (pair) { return pair.newer === route; });
+  }
+
+  // Tells a reader that a state has a centered redraw waiting for approval, or is that redraw.
+  function updateNote(route) {
     els.note.textContent = '';
     var parts = [];
-    if (state.supersededBy) parts.push(['Earlier design. Current design: ', [state.supersededBy]]);
-    else if (state.awaitingDecision) parts.push([AWAITING + '. Newer layout: ', [state.awaitingDecision]]);
-    if (state.supersedes && state.supersedes.length) parts.push(['Earlier design: ', state.supersedes]);
-    parts.forEach(function (part, index) {
+    var pending = pendingRedrawOf(route);
+    if (pending) parts.push([PENDING + '. Redraw: ', [pending.newer]]);
+    var redraws = redrawsOf(route);
+    if (redraws.length) parts.push(['Earlier layout: ', redraws.map(function (pair) { return pair.older; })]);
+    parts.forEach(function (part) {
       var line = el('span', 'hdc-note__line');
       line.appendChild(document.createTextNode(part[0]));
-      part[1].forEach(function (route, i) {
+      part[1].forEach(function (target, i) {
         if (i) line.appendChild(document.createTextNode(', '));
-        line.appendChild(linkTo(route));
+        line.appendChild(linkTo(target));
       });
       line.appendChild(document.createTextNode('.'));
       els.note.appendChild(line);
@@ -241,7 +250,7 @@
     els.title.textContent = state.title;
     els.description.textContent = state.description;
     els.approval.textContent = d.approval;
-    updateNote(state);
+    updateNote(route);
     var specimenSize = d.sizeCaption
       ? 'app frame 1280 × 800 or minimum 1000 × 620 via Size; catalogue controls outside the app'
       : (meta ? meta.width + ' wide' : '1280 × 800');

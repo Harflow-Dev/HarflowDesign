@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   var H = window.HFV2 = window.HFV2 || {};
-  var ids = ['shell','shell-collapsed','shell-narrow','composer-loading','composer-ready','composer-unqualified','composer-invalid','composer-starting','composer-refused','composer-unknown','advanced','advanced-closed','history-empty','history-loading','history-older','history-error','history-reconnecting','history-retained','runtime-checking','runtime-install-required','runtime-update-required','runtime-installing','runtime-failed','runtime-listing'];
+  var ids = ['shell','shell-collapsed','shell-narrow','composer-loading','composer-unqualified','composer-invalid','composer-starting','composer-refused','advanced-closed','history-empty','history-loading','history-older','history-error','history-reconnecting','history-retained','runtime-checking','runtime-install-required','runtime-update-required','runtime-installing','runtime-failed','runtime-listing'];
   H.m04ProposalStates = ids.map(function (id) { return { id: id, title: id.replace(/-/g, ' '), description: 'Approved M04 visual direction (2026-11-05): ' + id.replace(/-/g, ' ') + ' review fixture.', status: 'Approved', approved: true }; });
   // Owner-approved centered-composer amendment (2026-11-06), recorded separately
   // from the baseline approval above. Separate routes with their own root class
@@ -17,9 +17,7 @@
     baselineHeading: 'Approved direction · 2026-11-05',
     centeredHeading: 'Approved amendment · Centered composer · Owner 2026-11-06',
     baselineNotice: 'Local preview · appearance preserves draft · route changes reset · Reduce Motion: instant changes. Native titlebar and OS controls are browser approximations.',
-    centeredNotice: 'Approved amendment (owner, 2026-11-06), separate from the 2026-11-05 approval; the 2026-11-06 sidebar body-scroll correction applies to every entry, composer and sidebar state. Local preview · appearance preserves draft · route changes reset · Reduce Motion: instant changes. Native titlebar and OS controls are browser approximations; native validation is pending.',
-    baselineLink: 'Baseline (approved 2026-11-05)',
-    centeredLink: 'Centered composer (amendment)'
+    centeredNotice: 'Approved amendment (owner, 2026-11-06), separate from the 2026-11-05 approval; the 2026-11-06 sidebar body-scroll correction applies to every entry, composer and sidebar state. Local preview · appearance preserves draft · route changes reset · Reduce Motion: instant changes. Native titlebar and OS controls are browser approximations; native validation is pending.'
   };
   ids.forEach(function (id) { T['m04-proposal/' + id] = '<div class="hd-m04-proposal" data-theme="{{theme}}"><div class="hd-m04-catalog" aria-label="' + STRIPS.baselineLabel + '"></div><div class="hd-m04-window"></div></div>'; });
   amendmentIds.forEach(function (id) { T['m04-proposal/' + id] = '<div class="hd-m04-proposal hd-m04-amendment" data-theme="{{theme}}"><div class="hd-m04-catalog" aria-label="' + STRIPS.centeredLabel + '"></div><div class="hd-m04-window"></div></div>'; });
@@ -30,13 +28,10 @@
     ["shell-collapsed", "sidebar", "collapsed", "Layout", "Shell · Collapsed rail", "Native collapsed rail and accessible navigation."],
     ["shell-narrow", "sidebar", "minimum", "Layout", "Shell · Minimum window", "Minimum-size composition without font scaling."],
     ["composer-loading", "new-task", "composer-loading", "Composer", "Composer · Checking options", "Readiness is pending; the draft remains editable."],
-    ["composer-ready", "new-task", "composer-ready", "Composer", "Composer · Ready", "Qualified, valid selections allow an explicit start."],
     ["composer-unqualified", "new-task", "composer-unqualified", "Composer", "Composer · Unavailable options", "Unsupported or unqualified selections cannot start."],
     ["composer-invalid", "new-task", "composer-invalid", "Composer", "Composer · Validation", "Invalid input and requested options need correction."],
     ["composer-starting", "new-task", "composer-starting", "Composer", "Composer · Starting", "One in-flight start retains the draft and prevents duplicates."],
     ["composer-refused", "new-task", "composer-refused", "Composer", "Composer · Refused", "A definitive refusal preserves the draft for review."],
-    ["composer-unknown", "new-task", "composer-unknown", "Composer", "Composer · Outcome unknown", "Unknown outcome preserves uncertainty without automatic retry."],
-    ["advanced", "new-task", "options-open", "Task options", "Task options · Open", "Retained supported controls with truthful enforcement limits."],
     ["advanced-closed", "new-task", "options-closed", "Task options", "Task options · Closed", "Customized task options retained behind the bottom-left plus button."],
     ["history-empty", "sidebar", "history-empty", "Recent work", "History · Empty", "No running or recent work in the available listing."],
     ["history-loading", "sidebar", "history-loading", "Recent work", "History · Loading", "Initial listing has no fabricated work rows."],

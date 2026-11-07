@@ -88,11 +88,12 @@
       var theme = host.getAttribute('data-theme') || 'light';
       var runtimeBoard=route.indexOf('runtime-')===0, historyBoard=route.indexOf('history-')===0;
       var controls=runtimeBoard ? button('Runtime failure','runtime-failure')+button('Runtime ready','runtime-ready')+button('Listing ready','listing-ready')+button('Listing failed','listing-failed') : historyBoard ? '' : button('Qualification ready','qualified')+button('Qualification unavailable','unqualified')+button('Complete: created','created',s.status!=='starting')+button('Complete: refused','refused',s.status!=='starting')+button('Complete: unknown','unknown',s.status!=='starting')+button('Enforcement supported','enforcement-supported')+button('Enforcement unknown','enforcement-unknown')+button('Enforcement unsupported','enforcement-unsupported');
+      // Strip links point at current states only. The earlier composer and Advanced links now open the
+      // centered composer states that replaced them.
       var boards = amendment
         ? [['amendment-empty','Empty'],['amendment-ready','One line'],['amendment-growing','Growing'],['amendment-capped','Capped'],['amendment-options','Options open'],['amendment-unknown','Unknown']]
-        : [['shell','Shell'],['composer-ready','Composer'],['advanced','Advanced'],['history-retained','History'],['runtime-checking','Runtime']];
-      var boardLinks = boards.map(function (board) { return '<a href="#' + H.routeFor('m04', board[0]) + '/' + theme + '">' + board[1] + '</a>'; }).join('')
-        + (amendment ? '<a href="#' + H.routeFor('m04', 'composer-ready') + '/' + theme + '">' + H.catalogStrips.m04.baselineLink + '</a>' : '<a href="#' + H.routeFor('m04', 'amendment-ready') + '/' + theme + '">' + H.catalogStrips.m04.centeredLink + '</a>');
+        : [['shell','Shell'],['amendment-ready','Composer'],['amendment-options','Advanced'],['history-retained','History'],['runtime-checking','Runtime']];
+      var boardLinks = boards.map(function (board) { return '<a href="#' + H.routeFor('m04', board[0]) + '/' + theme + '">' + board[1] + '</a>'; }).join('');
       var strips = H.catalogStrips.m04;
       var notice = amendment ? strips.centeredNotice : strips.baselineNotice;
       catalog.innerHTML = '<div class="hd-m04-actions"><strong>' + (amendment ? strips.centeredHeading : strips.baselineHeading) + '</strong>' + boardLinks + '<label>Frame <select data-m04-field="size"><option value="reference"' + (!s.narrow?' selected':'') + '>1280 × 800</option><option value="minimum"' + (s.narrow?' selected':'') + '>1000 × 620</option></select></label>' + button('Reset fixture','reset') + '</div><p>' + notice + '</p><details class="hd-m04-fixtures"'+(s.fixtures?' open':'')+'><summary>Fixture controls</summary><div class="hd-m04-actions">' + controls + '</div></details>';

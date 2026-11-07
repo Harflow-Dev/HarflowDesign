@@ -1,7 +1,7 @@
 // Areas, families and states of the Harflow Desktop interface reference.
 // Route format: family/state. A state is rendered from its template, by the renderer named in its
 // `source`; states without a `source` render the template with their own route as the key.
-// Screen scripts add their states with HFV2.registerState; supersessions.js marks superseded states.
+// Screen scripts add their states with HFV2.registerState; supersessions.js lists retired states and their redirects.
 (function () {
   'use strict';
   var HFV2 = (window.HFV2 = window.HFV2 || {});
@@ -69,29 +69,7 @@
           "Task options"
         ],
         "description": "Starting a task: the greeting, the composer with its option pills and the task options.",
-        "states": [
-          {
-            "id": "default",
-            "title": "Default",
-            "description": "Greeting and composer with repository, harness and model, and access level pills.",
-            "status": "approved",
-            "group": "Entry"
-          },
-          {
-            "id": "harness-menu",
-            "title": "Harness menu open",
-            "description": "The harness and model pill opened to choose a harness and then a model.",
-            "status": "approved",
-            "group": "Entry"
-          },
-          {
-            "id": "sidebar-collapsed",
-            "title": "Sidebar collapsed",
-            "description": "The 56px icon rail with the Needs you dot and a running count on New task.",
-            "status": "approved",
-            "group": "Entry"
-          }
-        ]
+        "states": []
       },
       {
         "id": "sidebar",
@@ -121,30 +99,9 @@
         "description": "Task detail: a slim top bar, the transcript, inline approvals and the composer, with every status, the actions menu, the changes, events and artifacts panes and the adaptive layout.",
         "states": [
           {
-            "id": "running",
-            "title": "Running",
-            "description": "A running task with expanded and collapsed tool calls and a follow-up composer.",
-            "status": "approved",
-            "group": "Status"
-          },
-          {
             "id": "approval",
             "title": "Waiting for approval",
             "description": "An approval card in the transcript, answered inline.",
-            "status": "approved",
-            "group": "Status"
-          },
-          {
-            "id": "done",
-            "title": "Done, changes pane",
-            "description": "A finished task with the summary and the changes pane open.",
-            "status": "approved",
-            "group": "Status"
-          },
-          {
-            "id": "failed",
-            "title": "Failed",
-            "description": "A failed task with the fact and the fix.",
             "status": "approved",
             "group": "Status"
           }
@@ -698,7 +655,8 @@
     return state;
   };
 
-  // The route of the state a renderer draws from its own id, or null.
+  // The route of the state a renderer draws from its own id, or null. A retired state is not
+  // registered, so its route comes from HFV2.retired; opening it redirects to the replacement.
   HFV2.routeFor = function (renderer, mountId) {
     var found = null;
     HFV2.registry.families.forEach(function (family) {
@@ -706,6 +664,9 @@
         var source = state.source;
         if (source && source.renderer === renderer && source.mount === mountId) found = family.id + '/' + state.id;
       });
+    });
+    if (!found) (HFV2.retired || []).forEach(function (entry) {
+      if (entry.renderer === renderer && entry.mount === mountId) found = entry.route;
     });
     return found;
   };
