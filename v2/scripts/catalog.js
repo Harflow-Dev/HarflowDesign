@@ -163,7 +163,8 @@
     } else {
       els.specimen.className = current.family === 'd2b-proposal'
         ? 'hdc-specimen hdc-specimen--d2b'
-        : (current.family === 'm04-proposal' ? 'hdc-specimen hdc-specimen--m04' : 'hdc-specimen');
+        : (current.family === 'm04-proposal' ? 'hdc-specimen hdc-specimen--m04'
+          : (current.family === 'm05-proposal' ? 'hdc-specimen hdc-specimen--m05' : 'hdc-specimen'));
       els.specimen.style.minHeight = '';
       els.specimen.innerHTML = html;
     }
@@ -172,6 +173,9 @@
     }
     if (current.family === 'm04-proposal' && HFV2.m04Proposal) {
       specimenCleanup = HFV2.m04Proposal.mount(els.specimen, current.state);
+    }
+    if (current.family === 'm05-proposal' && HFV2.m05Proposal) {
+      specimenCleanup = HFV2.m05Proposal.mount(els.specimen, current.state);
     }
     var guide = HFV2.componentDocs && HFV2.componentDocs[key];
     els.doc.innerHTML = guide || '';
@@ -186,7 +190,7 @@
     els.approval.textContent = state.approval === 'approved'
       ? 'Approved by ' + approval.by + ' on ' + approval.date + (approval.reference ? ' · ' + approval.reference : ' · canvas ' + approval.canvas + ' · design system ' + approval.designSystem)
       : 'Not approved';
-    var specimenSize = (current.family === 'd2b-proposal' || current.family === 'm04-proposal')
+    var specimenSize = (current.family === 'd2b-proposal' || current.family === 'm04-proposal' || current.family === 'm05-proposal')
       ? 'app frame 1280 × 800 or minimum 1000 × 620 via Size; catalogue controls outside the app'
       : (meta ? meta.width + ' wide' : '1280 × 800');
     els.caption.textContent = 'Specimen at native size (' + specimenSize + '). Appearance: ' +
