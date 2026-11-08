@@ -96,7 +96,7 @@ test('specs are complete: frame, label, region ops, valid kinds and an allowlist
       if (op.kind === 'html') assert.ok(typeof op.html === 'function' || typeof op.html === 'string');
     }
     assert.ok(spec.ops.some(op => REGION_KINDS.includes(op.kind)), `${key} replaces at least one data region`);
-    assert.equal(spec.chrome[spec.label], 1, `${key} lists its loading label once`);
+    assert.ok(!(spec.label in spec.chrome), `${key}: the loading label is the frame's own and is not counted as content`);
     for (const [text, n] of Object.entries(spec.chrome)) assert.ok(text.trim() && Number.isInteger(n) && n > 0, `${key}: ${JSON.stringify(text)} has a positive count`);
   }
   assert.notEqual(HFV2.skeletonSpecs['task'].chrome, HFV2.skeletonSpecs['task-pane'].chrome, 'the pane adds its own chrome');
@@ -112,6 +112,7 @@ test('the authored patterns contain blocks only: no text, digits or hrefs', () =
       for (const html of outputs) {
         assert.equal(html.replace(/<[^>]*>/g, '').trim(), '', `${key}: ${op.sel} draws no text`);
         assert.ok(!/href=/.test(html), `${key}: ${op.sel} has no links`);
+        assert.ok(!/\d/.test(html.replace(/ (style|class)="[^"]*"/g, '')), `${key}: ${op.sel} has no digits outside style and class`);
         assert.ok(!/aria-label|title=/.test(html), `${key}: ${op.sel} has no accessible names of its own`);
         for (const [, tag] of html.matchAll(/<(span|div|svg|line|hr)\b/g)) assert.ok(tag);
       }
@@ -121,10 +122,13 @@ test('the authored patterns contain blocks only: no text, digits or hrefs', () =
   }
 });
 
+const MAIN_AREA_AS_LOADED = ['HarflowMCP · New task', 'HarflowMCP', 'Claude Code · Opus 5.5'];
 test('allowlists carry no data: no name, count, time or status from a fixture', () => {
   const DATA = /\b(Fix flaky|Nightly dependency|Review preload|Release checklist|Add retry budget|Migrate events|Opus 5\.5|gpt-6|HarflowMCP|HarflowWeb|Scan lockfiles|Draft upgrade|Security reviewer|Docs checker|\d+ of \d+|in use|waiting)\b/;
   for (const [key, spec] of Object.entries(HFV2.skeletonSpecs)) {
     for (const text of Object.keys(spec.chrome)) {
+      // sidebar/loading draws the main area exactly as new-task/centered-empty does, so its pills and caption are listed.
+      if (key === 'sidebar' && MAIN_AREA_AS_LOADED.includes(text)) continue;
       assert.ok(!DATA.test(text), `${key}: ${text}`);
       if (/\d/.test(text)) assert.ok(['⌘N', '65%', '70%', '7 days', '30 days', 'Tue 14:32'].includes(text), `${key}: digits only in listed numeric chrome: ${text}`);
     }
@@ -135,11 +139,11 @@ test('the specs keep the loaded geometry: pinned regions, row counts that fit an
   const source = read('scripts/skeleton-specs.js');
   assert.match(source, /var TITLE = \[190, 140, 168, 120\]/);
   for (const [key, spec] of Object.entries(HFV2.skeletonSpecs)) {
-    for (const op of spec.ops.filter(o => REGION_KINDS.includes(o.kind))) assert.ok(op.pin === 'fixed' || op.pin === 'min', `${key}: ${op.sel} pins its region`);
+    for (const op of spec.ops.filter(o => REGION_KINDS.includes(o.kind))) assert.ok(op.pin === 'fixed' || op.pin === 'min' || (op.pin === 'none' && /tbody$/.test(op.sel)), `${key}: ${op.sel} pins its region`);
   }
 });
 
-test('the engine, the shimmer and the render hooks are wired', () => {
+test('tripwire: the engine, the shimmer and the render hooks are wired in source', () => {
   const engine = read('scripts/skeleton.js');
   for (const name of ['H.skeletonize', 'H.skeletonScan', 'H.skelBlock']) assert.ok(engine.includes(name), name);
   assert.match(engine, /setAttribute\('aria-busy', 'true'\)/);
@@ -165,12 +169,13 @@ test('the engine, the shimmer and the render hooks are wired', () => {
   for (const file of ['styles/skeleton.css', 'scripts/skeleton-specs.js', 'scripts/skeleton.js']) assert.ok(html.includes(file), `${file} is loaded`);
 });
 
-test('a loading mount ignores in-frame actions and a normal mount is untouched', () => {
+test('tripwire: the loading mounts keep their guards in source', () => {
   const m04 = read('scripts/m04-proposal.js');
-  for (const handler of ['function input(e) {\n      if (loading) return;', 'function click(e) { if(loading)return;', 'if(loading)return;start(s);render();']) assert.ok(m04.includes(handler), handler);
+  assert.match(m04, /function input\(e\) \{\n      if \(loading\) return;/);
+  assert.match(m04, /if\(loading\)\{ if\(e\.target\.closest\('summary'\)\)e\.preventDefault\(\); if\(!b\|\|!loadingAllows\(b\.dataset\.m04\)\)return; \}/);
+  assert.match(m04, /if\(loading\)return;start\(s\);render\(\);/);
   assert.match(m04, /if \(loading\) \{ lastRoute = null; lastState = null; \}/, 'a loading mount keeps no state for the next mount');
-  const m05 = read('scripts/m05-proposal.js');
-  assert.match(m05, /if \(ext && ext\.loading && a !== 'pane' && a\.indexOf\('tab-'\) !== 0\) return;/);
+  assert.match(read('scripts/m05-proposal.js'), /if \(ext && ext\.loading && !loadingAllows\(a\)\) return;/);
 });
 
 test('existing templates are byte-identical to the base commit apart from the token row and the retired mount', () => {
@@ -193,4 +198,37 @@ test('the shimmer component is drawn in both appearances and its reduced-motion 
   assert.ok(t.includes('data-theme="light"') && t.includes('data-theme="dark"'));
   assert.ok(t.includes('hd-skel--shimmer hd-skel--still'), 'the static form is drawn');
   assert.ok(HFV2.componentDocs['components/skeleton-shimmer'].includes('aria-busy'));
+});
+
+test('a loading mount refuses blocked actions and lets chrome through (called, not matched)', () => {
+  const m04 = HFV2.m04Proposal.model.loadingAllows, m05 = HFV2.m05Proposal.loadingAllows;
+  for (const blocked of ['options', 'reset', 'recent', 'older', 'settings', 'qualified', 'created', 'install']) assert.equal(m04(blocked), false, `m04 refuses ${blocked}`);
+  assert.equal(m04('collapse'), true, 'the sidebar toggle is chrome');
+  for (const blocked of ['menu', 'stop', 'takeover', 'load-more', 'dialog-close', 'dialog-confirm', 'reveal-notices', 'reveal-enforcement']) assert.equal(m05(blocked), false, `m05 refuses ${blocked}`);
+  for (const chrome of ['pane', 'tab-changes', 'tab-artifacts', 'tab-events', 'collapse']) assert.equal(m05(chrome), true, `m05 allows ${chrome}`);
+});
+
+test('the sidebar spec touches only the sidebar listing and inert controls', () => {
+  const spec = HFV2.skeletonSpecs['sidebar'];
+  for (const op of spec.ops) {
+    if (op.kind === 'disable') continue;
+    assert.match(op.sel, /hd-nav|hd-section|hd-rail/, `sidebar spec: ${op.kind} ${op.sel} is in the sidebar`);
+  }
+  assert.ok(!spec.ops.some(op => /hd-topbar|hd-composer|hd-m04-status/.test(op.sel) && op.kind !== 'disable'), 'the main area is drawn as loaded');
+  assert.ok(HFV2.skeletonSpecs['new-task'].ops.some(op => /hd-m04-picker/.test(op.sel) && op.kind === 'fill'), 'new-task/loading keeps its own pills');
+});
+
+test('patterns are not shaped by fixtures: equal rows per card, a fixed-count table, uniform approval items, no unnamed control', () => {
+  const resources = HFV2.skeletonSpecs['resources'].ops.find(op => /hd-grid--2/.test(op.sel) && op.kind === 'html');
+  const counts = [0, 1, 2, 3, 4].map(i => (resources.html({}, i).match(/hd-task-row/g) || []).length);
+  assert.equal(new Set(counts).size, 1, 'every card has the same row count');
+  const stats = HFV2.skeletonSpecs['statistics'].ops.find(op => /tbody/.test(op.sel));
+  assert.equal(stats.kind, 'rows');
+  assert.ok(Number.isInteger(stats.count));
+  assert.ok(!HFV2.skeletonSpecs['statistics'].ops.some(op => /\btd\b/.test(op.sel)), 'no cell-by-cell conversion of the fixture');
+  const mcp = HFV2.skeletonSpecs['settings-mcp-approvals'].ops.find(op => /nth-child\(2\)/.test(op.sel)).html({});
+  const harnesses = HFV2.skeletonSpecs['settings-harnesses'].ops.find(op => /nth-child\(2\)/.test(op.sel)).html({});
+  assert.equal((mcp.match(/hd-form-row/g) || []).length, 2 * (harnesses.match(/hd-form-row/g) || []).length, 'each item has the same row count beneath it');
+  assert.ok(!/<form|<input/.test(mcp));
+  assert.ok(HFV2.skeletonSpecs['workflow-editor'].ops.some(op => op.kind === 'fill' && /button\.hd-form-row/.test(op.sel)), 'the fallback disclosure is replaced, not left without a name');
 });

@@ -31,14 +31,16 @@
   }
 
   // The sidebar's data: the Needs you count, the attention dot, and the Running and Recent work lists.
-  function sidebarOps(scope) {
+  function sidebarOps(scope, optional) {
     var s = scope ? scope + ' ' : '';
     return [
-      { sel: s + '.hd-nav-item__count', kind: 'text', w: 14, h: 12, shape: 'pill' },
-      { sel: s + '.hd-nav .hd-dot', kind: 'hide' },
-      { sel: s + '[aria-label="Running"] .hd-section__count', kind: 'text', w: 14, h: 12, shape: 'pill' },
-      { sel: s + '[aria-label="Running"] .hd-section__list', kind: 'rows', count: 2, row: taskRow, pin: 'fixed' },
-      { sel: s + '[aria-label="Recent work"] .hd-section__list', kind: 'rows', count: 8, row: taskRow, pin: 'fixed' }
+      { sel: s + '.hd-nav-item__count', kind: 'text', w: 14, h: 12, shape: 'pill', optional: !!optional },
+      { sel: s + '.hd-nav .hd-dot', kind: 'hide', optional: !!optional },
+      { sel: s + '.hd-rail-item__badge', kind: 'text', w: 14, h: 10, shape: 'pill', optional: true },
+      { sel: s + '.hd-rail .hd-dot', kind: 'hide', optional: true },
+      { sel: s + '[aria-label="Running"] .hd-section__count', kind: 'text', w: 14, h: 12, shape: 'pill', optional: !!optional },
+      { sel: s + '[aria-label="Running"] .hd-section__list', kind: 'rows', count: 2, row: taskRow, pin: 'fixed', optional: !!optional },
+      { sel: s + '[aria-label="Recent work"] .hd-section__list', kind: 'rows', count: 8, row: taskRow, pin: 'fixed', optional: !!optional }
     ];
   }
 
@@ -47,21 +49,26 @@
 
   // ---- New task: the centered composer, empty ----
   var M04 = '.hd-m04-window .hd-app';
-  function pillOps() {
+  // Blocked controls: the renderer ignores them while loading and they are marked aria-disabled.
+  function blockedOps() {
     return [
-      { sel: M04 + ' .hd-m04-picker', kind: 'fill', shape: 'pill' },
-      { sel: M04 + ' .hd-m04-status', kind: 'text', w: 150, h: 12 },
+      { sel: M04 + ' [data-m04="options"]', kind: 'disable' },
       { sel: M04 + ' .hd-composer__input', kind: 'disable' },
       { sel: M04 + ' .hd-composer__send', kind: 'disable' }
     ];
   }
   S['new-task'] = {
     frame: M04, label: 'Loading New task',
-    ops: [{ sel: M04 + ' .hd-topbar .caption', kind: 'text', w: 140, h: 12 }].concat(sidebarOps(M04), pillOps())
+    ops: [
+      { sel: M04 + ' .hd-topbar .caption', kind: 'text', w: 140, h: 12 },
+      { sel: M04 + ' .hd-m04-picker', kind: 'fill', shape: 'pill' },
+      { sel: M04 + ' .hd-m04-status', kind: 'text', w: 150, h: 12 }
+    ].concat(sidebarOps(M04, true), blockedOps())
   };
+  // Sidebar rows only: the main area renders exactly as new-task/centered-empty draws it. The pills stay, inert.
   S['sidebar'] = {
     frame: M04, label: 'Loading Sidebar',
-    ops: [{ sel: M04 + ' .hd-topbar .caption', kind: 'settext', text: 'New task' }].concat(sidebarOps(M04), pillOps().filter(function (o) { return o.sel.indexOf('status') < 0; }))
+    ops: sidebarOps(M04, true).concat([{ sel: M04 + ' .hd-m04-picker summary', kind: 'disable' }], blockedOps())
   };
 
   // ---- Task: the task screen (m05 frame) ----
@@ -187,7 +194,7 @@
       { sel: APP + ' .hd-split > div > .caption', kind: 'text', w: 180, h: 10 },
       { sel: INSPECTOR + ' .hd-inspector__title', kind: 'text', w: 90, h: 14 },
       { sel: INSPECTOR + ' .hd-input, ' + INSPECTOR + ' .hd-switch, ' + INSPECTOR + ' .hd-stepper', kind: 'fill', shape: 'soft' },
-      { sel: INSPECTOR + ' button.hd-form-row .hd-form-row__label', kind: 'text', w: 150, h: 12 },
+      { sel: INSPECTOR + ' button.hd-form-row', kind: 'fill', shape: 'soft' },
       { sel: INSPECTOR + ' .hd-row', kind: 'text', w: 120, h: 12, optional: true }
     ].concat(SB)
   };
@@ -252,7 +259,7 @@
 
   // Resources
   function meterCard(el, i) {
-    var rows = i < 2 ? 2 : (i === 2 ? 0 : 1);
+    var rows = 1;
     var html = '<div style="display:flex;flex-direction:column;gap:8px;padding:0"><div style="display:flex;justify-content:space-between;align-items:center">' + line(110, 14) + B(70, 12, 'pill') + '</div>' + B('100%', 8, 'pill', 'flex:none');
     for (var r = 0; r < rows; r += 1) html += '<div class="hd-task-row" style="padding:0">' + B(14, 14, 'circle') + '<span style="flex:1;display:block">' + line(TITLE[(i + r) % 4], 12) + '</span>' + B(34, 10, 'pill') + '</div>';
     return html + '</div>';
@@ -274,6 +281,11 @@
     return '<div style="flex:1;min-width:0"><div style="display:flex;align-items:flex-end;gap:10px;height:176px;padding:16px 8px 0 0;box-sizing:border-box">' + h.map(function (v) { return B(0, v + '%', 'soft', 'flex:1;min-width:0;'); }).join('') + '</div>' +
       '<div style="display:flex;justify-content:space-between;margin-top:6px">' + line(40, 10) + line(40, 10) + line(40, 10) + '</div></div>';
   }
+  // A table row: five cells in the loaded columns, one block each.
+  function statRow(i) {
+    var w = [110, 30, 40, 46, 60];
+    return '<tr aria-hidden="true" style="border-bottom:1px solid var(--border)">' + w.map(function (v) { return '<td style="padding:8px 12px">' + B(v, 12, 'line', 'max-width:100%') + '</td>'; }).join('') + '</tr>';
+  }
   S['statistics'] = {
     frame: APP, label: 'Loading Statistics',
     ops: [
@@ -281,7 +293,7 @@
       { sel: APP + ' .hd-stat__value', kind: 'text', w: 80, h: 24 },
       { sel: APP + ' .hd-stat__delta', kind: 'text', w: 120, h: 10 },
       { sel: APP + ' .hd-card .hd-row + div', kind: 'html', pin: 'fixed', html: bars },
-      { sel: APP + ' .hd-card table tbody td', kind: 'text', w: [110, 30, 40, 46, 60], h: 12 }
+      { sel: APP + ' .hd-card table tbody', kind: 'rows', count: 5, pin: 'none', row: statRow }
     ].concat(SB)
   };
 
@@ -317,10 +329,13 @@
       { sel: SET + ' .hd-tabs ~ div > section .hd-form-row', kind: 'html', pin: 'fixed', html: qualificationRow }
     ], SB)
   };
+  // Five uniform items, each a harness row with one approval row beneath it: no row is expanded.
   function approvalsList() {
-    var out = '<hr style="border:0;border-top:1px solid var(--border);margin:0"><div class="hd-form-row" aria-hidden="true" style="height:44px;box-sizing:border-box">' + B(32, 32, 'soft') + '<span style="flex:1;display:block">' + line(80, 14) + '</span>' + B(82, 22, 'pill') + B(139, 32, 'pill') + '</div>';
-    out += '<div style="padding:8px 0 0 44px;height:228px;box-sizing:border-box;overflow:hidden">' + line(480, 10) + [0, 1, 2].map(function (i) { return '<div class="hd-form-row" style="height:44px;box-sizing:border-box;padding:0 12px">' + line([180, 260, 150][i], 14) + '<span style="flex:1"></span>' + B(64, 26, 'pill') + '</div>'; }).join('') + '<div style="display:flex;gap:8px;padding:8px 12px">' + B('75%', 32, 'soft', 'flex:none') + B(107, 32, 'pill') + '</div></div>';
-    for (var i = 0; i < 4; i += 1) out += '<hr style="border:0;border-top:1px solid var(--border);margin:0"><div class="hd-form-row" aria-hidden="true" style="height:44px;box-sizing:border-box">' + B(32, 32, 'soft') + '<span style="flex:1;display:block">' + line(TITLE[i] / 2, 14) + '</span>' + B(82, 22, 'pill') + B(75, 32, 'pill') + '</div>';
+    var hr = '<hr style="border:0;border-top:1px solid var(--border);margin:0">', out = hr;
+    for (var i = 0; i < 5; i += 1) {
+      out += '<div class="hd-form-row" aria-hidden="true" style="height:44px;box-sizing:border-box">' + B(32, 32, 'soft') + '<span style="flex:1;display:block">' + line(TITLE[i % 4] / 2, 14) + '</span>' + B(82, 22, 'pill') + B(75, 32, 'pill') + '</div>' +
+        '<div class="hd-form-row" aria-hidden="true" style="height:44px;box-sizing:border-box;padding-left:44px">' + line(TITLE[(i + 1) % 4], 14) + '<span style="flex:1"></span>' + B(64, 26, 'pill') + '</div>' + hr;
+    }
     return out;
   }
   S['settings-mcp-approvals'] = {
@@ -338,53 +353,55 @@
   // open" are the host operating system's menu bar around the popover, drawn as in the loaded screen.
   var CHROME = {
     "new-task": {
-      "Loading New task": 1, "Sidebar": 1, "Harflow": 1, "Collapse sidebar": 1, "Main": 1, "New task": 2, "⌘N": 1, "Needs you": 1, "Workflows": 1, "Resources": 1, "Statistics": 1, "Running": 2, "Recent work": 2, "Settings": 1, "Appearance": 1, "System": 1, "System, follows this computer": 1, "Light": 2, "Dark": 2, "What should we work on?": 1, "Task prompt": 1, "Describe the task. Use @ to mention files.": 1, "More task options": 2, "Default options": 1, "Start task": 1
+      "Sidebar": 1, "Harflow": 1, "Collapse sidebar": 1, "Main": 1, "New task": 2, "⌘N": 1, "Needs you": 1, "Workflows": 1, "Resources": 1, "Statistics": 1, "Running": 2, "Recent work": 2, "Settings": 1, "Appearance": 1, "System": 1, "System, follows this computer": 1, "Light": 2, "Dark": 2, "What should we work on?": 1, "Task prompt": 1, "Describe the task. Use @ to mention files.": 1, "More task options": 2, "Default options": 1, "Start task": 1
     },
     "sidebar": {
-      "Loading Sidebar": 1, "Sidebar": 1, "Harflow": 1, "Collapse sidebar": 1, "Main": 1, "New task": 3, "⌘N": 1, "Needs you": 1, "Workflows": 1, "Resources": 1, "Statistics": 1, "Running": 2, "Recent work": 2, "Settings": 1, "Appearance": 1, "System": 1, "System, follows this computer": 1, "Light": 2, "Dark": 2, "What should we work on?": 1, "Task prompt": 1, "Describe the task. Use @ to mention files.": 1, "More task options": 2, "Default options": 1, "Start task": 1, "Describe a task to continue.": 1
+      "Sidebar": 1, "Harflow": 1, "Collapse sidebar": 1, "Main": 1, "New task": 2, "⌘N": 1, "Needs you": 1, "Workflows": 1, "Resources": 1, "Statistics": 1, "Running": 2, "Recent work": 2, "Settings": 1, "Appearance": 1, "System": 1, "System, follows this computer": 1, "Light": 2, "Dark": 2, "HarflowMCP · New task": 1, "What should we work on?": 1, "Task prompt": 1, "Describe the task. Use @ to mention files.": 1, "More task options": 2, "Default options": 1, "HarflowMCP": 1, "Repository / recent folders": 1, "Claude Code · Opus 5.5": 1, "Harness": 1, "Model": 1, "Can edit this repo": 1, "Access": 1, "Start task": 1, "Describe a task to continue.": 1
     },
     "task": {
-      "Loading Task": 1, "Sidebar": 1, "Harflow": 1, "Collapse sidebar": 1, "Main": 1, "New task": 1, "⌘N": 1, "Needs you": 1, "Workflows": 1, "Resources": 1, "Statistics": 1, "Running": 2, "Recent work": 2, "Settings": 1, "Appearance": 1, "System": 1, "System, follows this computer": 1, "Light": 2, "Dark": 2, "Show right pane": 1, "More actions": 1, "Task conversation": 1, "Follow-up": 1, "Message this task": 1, "Queue a message…": 1, "Send queues. Send now requests delivery when safe.": 1, "Send": 1
+      "Sidebar": 1, "Harflow": 1, "Collapse sidebar": 1, "Main": 1, "New task": 1, "⌘N": 1, "Needs you": 1, "Workflows": 1, "Resources": 1, "Statistics": 1, "Running": 2, "Recent work": 2, "Settings": 1, "Appearance": 1, "System": 1, "System, follows this computer": 1, "Light": 2, "Dark": 2, "Show right pane": 1, "More actions": 1, "Task conversation": 1, "Follow-up": 1, "Message this task": 1, "Queue a message…": 1, "Send queues. Send now requests delivery when safe.": 1, "Send": 1
     },
     "task-pane": {
-      "Loading Task": 1, "Sidebar": 1, "Harflow": 1, "Collapse sidebar": 1, "Main": 1, "New task": 1, "⌘N": 1, "Needs you": 1, "Workflows": 1, "Resources": 1, "Statistics": 1, "Running": 2, "Recent work": 2, "Settings": 1, "Appearance": 1, "System": 1, "System, follows this computer": 1, "Light": 2, "Dark": 2, "Hide right pane": 1, "More actions": 1, "Task conversation": 1, "Follow-up": 1, "Message this task": 1, "Queue a message…": 1, "Send queues. Send now requests delivery when safe.": 1, "Send": 1, "Task details": 1, "Changes": 1, "Artifacts": 1, "Events": 1, "Close right pane": 1
+      "Sidebar": 1, "Harflow": 1, "Collapse sidebar": 1, "Main": 1, "New task": 1, "⌘N": 1, "Needs you": 1, "Workflows": 1, "Resources": 1, "Statistics": 1, "Running": 2, "Recent work": 2, "Settings": 1, "Appearance": 1, "System": 1, "System, follows this computer": 1, "Light": 2, "Dark": 2, "Hide right pane": 1, "More actions": 1, "Task conversation": 1, "Follow-up": 1, "Message this task": 1, "Queue a message…": 1, "Send queues. Send now requests delivery when safe.": 1, "Send": 1, "Task details": 1, "Changes": 1, "Artifacts": 1, "Events": 1, "Close right pane": 1
     },
     "parallel-group": {
-      "Loading Parallel group": 1, "Sidebar": 1, "Harflow": 1, "Collapse sidebar": 1, "Main": 1, "New task": 1, "⌘N": 1, "Needs you": 1, "Workflows": 1, "Resources": 1, "Statistics": 1, "Running": 2, "Recent work": 2, "Settings": 1, "Appearance": 1, "System": 1, "System, follows this computer": 1, "Light": 2, "Dark": 2, "View prompt": 1, "Cancel all": 1, "Message": 6, "Send": 3
+      "Sidebar": 1, "Harflow": 1, "Collapse sidebar": 1, "Main": 1, "New task": 1, "⌘N": 1, "Needs you": 1, "Workflows": 1, "Resources": 1, "Statistics": 1, "Running": 2, "Recent work": 2, "Settings": 1, "Appearance": 1, "System": 1, "System, follows this computer": 1, "Light": 2, "Dark": 2, "View prompt": 1, "Cancel all": 1, "Message": 6, "Send": 3
     },
     "needs-you": {
-      "Loading Needs you": 1, "Sidebar": 1, "Harflow": 1, "Collapse sidebar": 1, "Main": 1, "New task": 1, "⌘N": 1, "Needs you": 2, "Workflows": 1, "Resources": 1, "Statistics": 1, "Running": 2, "Recent work": 2, "Settings": 1, "Appearance": 1, "System": 1, "System, follows this computer": 1, "Light": 2, "Dark": 2
+      "Sidebar": 1, "Harflow": 1, "Collapse sidebar": 1, "Main": 1, "New task": 1, "⌘N": 1, "Needs you": 2, "Workflows": 1, "Resources": 1, "Statistics": 1, "Running": 2, "Recent work": 2, "Settings": 1, "Appearance": 1, "System": 1, "System, follows this computer": 1, "Light": 2, "Dark": 2
     },
     "menu-bar": {
-      "Loading Menu bar": 1, "Harflow": 1, "Harflow, menu open": 1, "Tue 14:32": 1, "Harflow menu": 1, "New task": 1, "Needs you": 2, "Running": 2, "Recent": 2, "Open Harflow": 1, "Settings…": 1, "Quit": 1
+      "Harflow": 1, "Harflow, menu open": 1, "Tue 14:32": 1, "Harflow menu": 1, "New task": 1, "Needs you": 2, "Running": 2, "Recent": 2, "Open Harflow": 1, "Settings…": 1, "Quit": 1
     },
     "workflows": {
-      "Loading Workflows": 1, "Sidebar": 1, "Harflow": 1, "Collapse sidebar": 1, "Main": 1, "New task": 1, "⌘N": 1, "Needs you": 1, "Workflows": 2, "Resources": 1, "Statistics": 1, "Running": 2, "Recent work": 2, "Settings": 1, "Appearance": 1, "System": 1, "System, follows this computer": 1, "Light": 2, "Dark": 2, "Search workflows": 2, "New workflow": 1
+      "Sidebar": 1, "Harflow": 1, "Collapse sidebar": 1, "Main": 1, "New task": 1, "⌘N": 1, "Needs you": 1, "Workflows": 2, "Resources": 1, "Statistics": 1, "Running": 2, "Recent work": 2, "Settings": 1, "Appearance": 1, "System": 1, "System, follows this computer": 1, "Light": 2, "Dark": 2, "Search workflows": 2, "New workflow": 1
     },
     "workflow-editor": {
-      "Loading Workflow editor": 1, "Sidebar": 1, "Harflow": 1, "Collapse sidebar": 1, "Main": 1, "New task": 1, "⌘N": 1, "Needs you": 1, "Workflows": 2, "Resources": 1, "Statistics": 1, "Running": 2, "Recent work": 2, "Settings": 1, "Appearance": 1, "System": 1, "System, follows this computer": 1, "Light": 2, "Dark": 2, "Edit with agent": 1, "More actions": 1, "Discard": 1, "Save": 1, "Run": 1, "Standalone": 1, "Outside the workflow path": 1, "Add on-demand node": 1, "Workflow canvas": 1, "Add node": 1, "Planning": 1, "Implementation": 1, "Review": 1, "Task": 1, "Run workflow": 1, "Start": 1, "Parallel group": 1, "End": 1, "Zoom": 1, "Zoom out": 1, "−": 1, "65%": 1, "Zoom in": 1, "+": 1, "Node settings": 1, "Delete node": 1, "NODE": 1, "Node name": 1, "Role": 1, "Optional": 1, "Continue if this node fails within a parallel branch.": 1, "INSTRUCTIONS": 1, "Instructions": 1, "AGENT": 1, "Harness": 1, "Model": 1, "Effort": 1, "Turn limit": 1, "Caller approvals": 1, "Tried in order for confirmed quota, model or availability failures.": 1, "RUN": 1, "Execution": 1, "Session": 1, "Time limit": 1, "Stop and settle the attempt before retrying or using a fallback.": 1, "Limit": 1, "Attempts per visit": 1, "Context questions": 1, "ACCESS": 1, "Access level": 1
+      "Sidebar": 1, "Harflow": 1, "Collapse sidebar": 1, "Main": 1, "New task": 1, "⌘N": 1, "Needs you": 1, "Workflows": 2, "Resources": 1, "Statistics": 1, "Running": 2, "Recent work": 2, "Settings": 1, "Appearance": 1, "System": 1, "System, follows this computer": 1, "Light": 2, "Dark": 2, "Edit with agent": 1, "More actions": 1, "Discard": 1, "Save": 1, "Run": 1, "Standalone": 1, "Outside the workflow path": 1, "Add on-demand node": 1, "Workflow canvas": 1, "Add node": 1, "Planning": 1, "Implementation": 1, "Review": 1, "Task": 1, "Run workflow": 1, "Start": 1, "Parallel group": 1, "End": 1, "Zoom": 1, "Zoom out": 1, "−": 1, "65%": 1, "Zoom in": 1, "+": 1, "Node settings": 1, "Delete node": 1, "NODE": 1, "Node name": 1, "Role": 1, "Optional": 1, "Continue if this node fails within a parallel branch.": 1, "INSTRUCTIONS": 1, "Instructions": 1, "AGENT": 1, "Harness": 1, "Model": 1, "Effort": 1, "Turn limit": 1, "Caller approvals": 1, "Tried in order for confirmed quota, model or availability failures.": 1, "RUN": 1, "Execution": 1, "Session": 1, "Time limit": 1, "Stop and settle the attempt before retrying or using a fallback.": 1, "Limit": 1, "Attempts per visit": 1, "Context questions": 1, "ACCESS": 1, "Access level": 1
     },
     "workflow-run": {
-      "Loading Workflow run": 1, "Sidebar": 1, "Harflow": 1, "Collapse sidebar": 1, "Main": 1, "New task": 1, "⌘N": 1, "Needs you": 1, "Workflows": 1, "Resources": 1, "Statistics": 1, "Running": 2, "Recent work": 2, "Settings": 1, "Appearance": 1, "System": 1, "System, follows this computer": 1, "Light": 2, "Dark": 2, "Run view": 1, "Graph": 1, "Parallel": 1, "Pause": 1, "Cancel run": 1, "More actions": 1, "Standalone": 1, "Outside the workflow path": 1, "Workflow steps": 1, "Zoom": 1, "Zoom out": 1, "−": 1, "70%": 1, "Zoom in": 1, "+": 1, "Close": 1, "Message this node": 3, "Send": 1
+      "Sidebar": 1, "Harflow": 1, "Collapse sidebar": 1, "Main": 1, "New task": 1, "⌘N": 1, "Needs you": 1, "Workflows": 1, "Resources": 1, "Statistics": 1, "Running": 2, "Recent work": 2, "Settings": 1, "Appearance": 1, "System": 1, "System, follows this computer": 1, "Light": 2, "Dark": 2, "Run view": 1, "Graph": 1, "Parallel": 1, "Pause": 1, "Cancel run": 1, "More actions": 1, "Standalone": 1, "Outside the workflow path": 1, "Workflow steps": 1, "Zoom": 1, "Zoom out": 1, "−": 1, "70%": 1, "Zoom in": 1, "+": 1, "Close": 1, "Message this node": 3, "Send": 1
     },
     "workflow-run-parallel": {
-      "Loading Workflow run": 1, "Sidebar": 1, "Harflow": 1, "Collapse sidebar": 1, "Main": 1, "New task": 1, "⌘N": 1, "Needs you": 1, "Workflows": 1, "Resources": 1, "Statistics": 1, "Running": 2, "Recent work": 2, "Settings": 1, "Appearance": 1, "System": 1, "System, follows this computer": 1, "Light": 2, "Dark": 2, "Run view": 1, "Graph": 1, "Parallel": 1, "Pause": 1, "Cancel run": 1, "Message": 4, "Send": 2
+      "Sidebar": 1, "Harflow": 1, "Collapse sidebar": 1, "Main": 1, "New task": 1, "⌘N": 1, "Needs you": 1, "Workflows": 1, "Resources": 1, "Statistics": 1, "Running": 2, "Recent work": 2, "Settings": 1, "Appearance": 1, "System": 1, "System, follows this computer": 1, "Light": 2, "Dark": 2, "Run view": 1, "Graph": 1, "Parallel": 1, "Pause": 1, "Cancel run": 1, "Message": 4, "Send": 2
     },
     "resources": {
-      "Loading Resources": 1, "Sidebar": 1, "Harflow": 1, "Collapse sidebar": 1, "Main": 1, "New task": 1, "⌘N": 1, "Needs you": 1, "Workflows": 1, "Resources": 2, "Statistics": 1, "Running": 2, "Recent work": 2, "Settings": 1, "Appearance": 1, "System": 1, "System, follows this computer": 1, "Light": 2, "Dark": 2, "Slots limit how many tasks each harness runs at once. A task waits for a free slot before it starts.": 1, "Waiting for a slot": 1
+      "Sidebar": 1, "Harflow": 1, "Collapse sidebar": 1, "Main": 1, "New task": 1, "⌘N": 1, "Needs you": 1, "Workflows": 1, "Resources": 2, "Statistics": 1, "Running": 2, "Recent work": 2, "Settings": 1, "Appearance": 1, "System": 1, "System, follows this computer": 1, "Light": 2, "Dark": 2, "Slots limit how many tasks each harness runs at once. A task waits for a free slot before it starts.": 1, "Waiting for a slot": 1
     },
     "statistics": {
-      "Loading Statistics": 1, "Sidebar": 1, "Harflow": 1, "Collapse sidebar": 1, "Main": 1, "New task": 1, "⌘N": 1, "Needs you": 1, "Workflows": 1, "Resources": 1, "Statistics": 2, "Running": 2, "Recent work": 2, "Settings": 1, "Appearance": 1, "System": 1, "System, follows this computer": 1, "Light": 2, "Dark": 2, "Period": 1, "7 days": 1, "30 days": 1, "All time": 1, "Tasks run": 1, "Success rate": 1, "Agent time": 1, "Reported cost": 1, "Tasks per day": 1, "Done": 1, "Failed": 1, "By harness": 1, "Harness": 1, "Tasks": 1, "Success": 1, "Median duration": 1, "Cost": 1
+      "Sidebar": 1, "Harflow": 1, "Collapse sidebar": 1, "Main": 1, "New task": 1, "⌘N": 1, "Needs you": 1, "Workflows": 1, "Resources": 1, "Statistics": 2, "Running": 2, "Recent work": 2, "Settings": 1, "Appearance": 1, "System": 1, "System, follows this computer": 1, "Light": 2, "Dark": 2, "Period": 1, "7 days": 1, "30 days": 1, "All time": 1, "Tasks run": 1, "Success rate": 1, "Agent time": 1, "Reported cost": 1, "Tasks per day": 1, "Done": 1, "Failed": 1, "By harness": 1, "Harness": 1, "Tasks": 1, "Success": 1, "Median duration": 1, "Cost": 1
     },
     "settings-general": {
-      "Loading Settings": 1, "Sidebar": 1, "Harflow": 1, "Collapse sidebar": 1, "Main": 1, "New task": 1, "⌘N": 1, "Needs you": 1, "Workflows": 1, "Resources": 1, "Statistics": 1, "Running": 2, "Recent work": 2, "Settings": 2, "Appearance": 3, "System": 2, "System, follows this computer": 1, "Light": 3, "Dark": 3, "Settings sections": 1, "General": 1, "Harnesses": 1, "Theme": 2, "Also in the sidebar footer.": 1, "Behaviour": 2, "Open the window when a task starts": 1, "Notify when a task finishes": 1, "Notify when a request needs you": 1, "Harflow runtime": 2, "Check for updates": 1, "Task store": 2, "Inspect task store": 1, "Show backup in Finder": 1
+      "Sidebar": 1, "Harflow": 1, "Collapse sidebar": 1, "Main": 1, "New task": 1, "⌘N": 1, "Needs you": 1, "Workflows": 1, "Resources": 1, "Statistics": 1, "Running": 2, "Recent work": 2, "Settings": 2, "Appearance": 3, "System": 2, "System, follows this computer": 1, "Light": 3, "Dark": 3, "Settings sections": 1, "General": 1, "Harnesses": 1, "Theme": 2, "Also in the sidebar footer.": 1, "Behaviour": 2, "Open the window when a task starts": 1, "Notify when a task finishes": 1, "Notify when a request needs you": 1, "Harflow runtime": 2, "Check for updates": 1, "Task store": 2, "Inspect task store": 1, "Show backup in Finder": 1
     },
     "settings-harnesses": {
-      "Loading Settings": 1, "Sidebar": 1, "Harflow": 1, "Collapse sidebar": 1, "Main": 1, "New task": 1, "⌘N": 1, "Needs you": 1, "Workflows": 1, "Resources": 1, "Statistics": 1, "Running": 2, "Recent work": 2, "Settings": 2, "Appearance": 1, "System": 1, "System, follows this computer": 1, "Light": 2, "Dark": 2, "Settings sections": 1, "General": 1, "Harnesses": 1, "Where Harflow is registered as an MCP server": 1, "Refresh": 1, "Harness qualification": 2
+      "Sidebar": 1, "Harflow": 1, "Collapse sidebar": 1, "Main": 1, "New task": 1, "⌘N": 1, "Needs you": 1, "Workflows": 1, "Resources": 1, "Statistics": 1, "Running": 2, "Recent work": 2, "Settings": 2, "Appearance": 1, "System": 1, "System, follows this computer": 1, "Light": 2, "Dark": 2, "Settings sections": 1, "General": 1, "Harnesses": 1, "Where Harflow is registered as an MCP server": 1, "Refresh": 1, "Harness qualification": 2
     },
     "settings-mcp-approvals": {
-      "Loading Settings": 1, "Sidebar": 1, "Harflow": 1, "Collapse sidebar": 1, "Main": 1, "New task": 1, "⌘N": 1, "Needs you": 1, "Workflows": 1, "Resources": 1, "Statistics": 1, "Running": 2, "Recent work": 2, "Settings": 2, "Appearance": 1, "System": 1, "System, follows this computer": 1, "Light": 2, "Dark": 2, "Settings sections": 1, "General": 1, "Harnesses": 1, "Where Harflow is registered as an MCP server": 1, "Refresh": 1, "Harness qualification": 2
+      "Sidebar": 1, "Harflow": 1, "Collapse sidebar": 1, "Main": 1, "New task": 1, "⌘N": 1, "Needs you": 1, "Workflows": 1, "Resources": 1, "Statistics": 1, "Running": 2, "Recent work": 2, "Settings": 2, "Appearance": 1, "System": 1, "System, follows this computer": 1, "Light": 2, "Dark": 2, "Settings sections": 1, "General": 1, "Harnesses": 1, "Where Harflow is registered as an MCP server": 1, "Refresh": 1, "Harness qualification": 2
     }
   };
   Object.keys(CHROME).forEach(function (key) { S[key].chrome = CHROME[key]; });
+  // The two frames whose sidebar can collapse also show the rail's own chrome once it has.
+  S['new-task'].chromeCollapsed = S['sidebar'].chromeCollapsed = { 'Expand sidebar': 2, 'Change appearance': 1 };
 })();

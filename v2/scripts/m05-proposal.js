@@ -389,6 +389,9 @@
   // `options` is optional and passed by no existing route: { loading, approved, afterRender(stage) }. A loading mount draws
   // the loaded state, ignores every in-frame action except the pane and its tabs, keeps the catalog Frame
   // control, and calls afterRender(stage) after every render of the app frame.
+  // The actions a loading mount lets through: the right pane and its tabs, and the sidebar toggle, are chrome. Everything else
+  // acts on task data.
+  function loadingAllows(a) { return a === 'pane' || a === 'collapse' || String(a).indexOf('tab-') === 0; }
   function mount(root, id, options) {
     var state = (H.m05ProposalStates || []).filter(function (s) { return s.id === id; })[0];
     if (!state) return function () {};
@@ -426,7 +429,7 @@
       if (ui.reveal) { var open = stage.querySelector('[data-m05-focus]'); if (open) { open.focus({ preventScroll: true }); open.scrollIntoView({ block: 'nearest' }); } }
     }
     function act(a) {
-      if (ext && ext.loading && a !== 'pane' && a.indexOf('tab-') !== 0) return;
+      if (ext && ext.loading && !loadingAllows(a)) return;
       if (a === 'pane') { ui.pane = !ui.pane; ui.reveal = ''; return render('[data-m05="pane"]'); }
       if (a === 'menu') { ui.menu = !ui.menu; return render(ui.menu ? '.hd-m05-menu [role="menuitem"]' : '[data-m05="menu"]'); }
       if (a === 'load-more') { ui.paged[ui.tab] = true; return render('[data-m05="tab-' + ui.tab + '"]'); }
@@ -453,5 +456,5 @@
     render();
     return function () { disposed = true; host.removeEventListener('click', click); host.removeEventListener('change', change); host.removeEventListener('keydown', keydown); host.removeEventListener('submit', submit); };
   }
-  H.m05Proposal = { mount: mount, mountState: mountState, screenHtml: screenHtml, initialUi: initialUi, icon: icon, BADGES: BADGES, FRAMES: FRAMES, paneMode: paneMode, detailWidth: detailWidth, GAPS: GAPS };
+  H.m05Proposal = { loadingAllows: loadingAllows, mount: mount, mountState: mountState, screenHtml: screenHtml, initialUi: initialUi, icon: icon, BADGES: BADGES, FRAMES: FRAMES, paneMode: paneMode, detailWidth: detailWidth, GAPS: GAPS };
 })();

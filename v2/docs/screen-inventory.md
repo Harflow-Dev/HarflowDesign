@@ -58,7 +58,7 @@ Each screen with a first load has one Loading state, drawn from the loaded state
 | Family | State | Route | Mirrors |
 | --- | --- | --- | --- |
 | New task | Loading | `new-task/loading` | `new-task/centered-empty` |
-| Sidebar | Loading | `sidebar/loading` | `new-task/centered-empty`, sidebar rows only |
+| Sidebar | Loading | `sidebar/loading` | `new-task/centered-empty`; sidebar rows only, the main area as that state draws it |
 | Task | Loading, Loading · Right pane open | `task/loading`, `task/loading-pane` | `task/running-stop`, `task/pane-running-open` |
 | Parallel group | Loading | `parallel-group/loading` | `parallel-group/lanes` |
 | Needs you | Loading | `needs-you/loading` | `needs-you/waiting` |

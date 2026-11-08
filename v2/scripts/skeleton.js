@@ -94,7 +94,8 @@
   function rows(el, op) {
     var first = el.firstElementChild;
     var height = op.rowHeight || (first ? first.offsetHeight : 32);
-    pin(el, op.pin);
+    // A table body cannot take a fixed height; its table card is pinned by a separate op.
+    if (op.pin === 'none') el.setAttribute('data-skel-region', ''); else pin(el, op.pin);
     var html = '';
     for (var i = 0; i < op.count; i += 1) html += op.row(i, height);
     el.innerHTML = html;
@@ -156,8 +157,8 @@
       if (node.tagName === 'OPTION') return;
       Array.prototype.forEach.call(node.childNodes, visit);
     }
-    visit(frame);
-    if (frame.hasAttribute('aria-label')) { seen[frame.getAttribute('aria-label')] = (seen[frame.getAttribute('aria-label')] || 1); }
+    // The frame's own loading label is not content: the screen carries it once, by construction.
+    Array.prototype.forEach.call(frame.childNodes, visit);
     return seen;
   };
 })();

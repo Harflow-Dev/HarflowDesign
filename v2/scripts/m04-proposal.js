@@ -43,6 +43,8 @@
     var above = anchor.top - top - 16, below = bottom - anchor.bottom - 16;
     return { above: above, below: below, belowWins: below > above, maxHeight: Math.max(0, Math.min(400, Math.max(above, below))) };
   }
+  // The actions a loading mount lets through: the sidebar toggle is chrome. Every other in-frame action is data-dependent.
+  function loadingAllows(action) { return action === 'collapse'; }
   function create(route) {
     if (isRedraw(route)) {
       var copy = create(REDRAW_SOURCES[route]); copy.route = route;
@@ -260,7 +262,7 @@
     }
 
     function change(e) { var key=e.target.dataset.m04Field; if(!key || key==='draft')return;if(loading && key!=='size')return;if(key==='turns' && s.turns===e.target.value)return;if(['effort','turns','approvals'].includes(key)){select(s,key,e.target.value);syncOptions();return;} if(key==='size')s.narrow=e.target.value==='minimum'; else if(key==='repository'||key==='harness'||key==='model'||key==='access'||key==='effort'||key==='turns'||key==='approvals') select(s,key,e.target.value); else if(!['starting','unknown','created'].includes(s.status)) s[key]=e.target.value; render(); }
-    function click(e) { if(loading)return; var b=e.target.closest('[data-m04]'); if(!b)return; var a=b.dataset.m04;
+    function click(e) { var b=e.target.closest('[data-m04]'); if(loading){ if(e.target.closest('summary'))e.preventDefault(); if(!b||!loadingAllows(b.dataset.m04))return; } if(!b)return; var a=b.dataset.m04;
       if(a==='options'){optionsOpen(s,!s.advanced);syncOptions();if(s.advanced&&e.detail===0){var first=frame.querySelector('#m04-task-options select');if(first)first.focus();}return;}
       if(a==='reset'){s=create(route);lastState=s;} if(a==='collapse')s.collapsed=!s.collapsed;
       if(a==='qualified')qualify(s,s.revision,s.repository==='Unavailable folder'||s.harness==='Unavailable harness'?'unqualified':'ready');
@@ -296,5 +298,5 @@
     render();
     return function(){disposed=true;host.removeEventListener('keydown',keydown);document.removeEventListener('click',outside);host.removeEventListener('input',input);host.removeEventListener('change',change);host.removeEventListener('click',click);host.removeEventListener('submit',submit);host.removeEventListener('toggle',toggle,true);if(widthRaf)window.cancelAnimationFrame(widthRaf);if(widthObserver)widthObserver.disconnect();};
   }
-  H.m04Proposal={mount:mount,model:{create:create,customized:customized,optionsOpen:optionsOpen,problem:problem,select:select,qualify:qualify,start:start,settle:settle,history:history,listing:listing,isAmendment:isAmendment,isRedraw:isRedraw,redrawSources:REDRAW_SOURCES,amendmentPopupMetrics:amendmentPopupMetrics,promptOneLineHeight:promptOneLineHeight,promptCapHeight:promptCapHeight,amendmentDrafts:AMENDMENT_DRAFTS}};
+  H.m04Proposal={mount:mount,model:{loadingAllows:loadingAllows,create:create,customized:customized,optionsOpen:optionsOpen,problem:problem,select:select,qualify:qualify,start:start,settle:settle,history:history,listing:listing,isAmendment:isAmendment,isRedraw:isRedraw,redrawSources:REDRAW_SOURCES,amendmentPopupMetrics:amendmentPopupMetrics,promptOneLineHeight:promptOneLineHeight,promptCapHeight:promptCapHeight,amendmentDrafts:AMENDMENT_DRAFTS}};
 })();
