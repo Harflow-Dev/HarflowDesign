@@ -1,4 +1,4 @@
-// Minimum window drafts: the loaded screens drawn in the 1000 × 620 window. Each is derived from its loaded state:
+// Minimum window states: the loaded screens drawn in the 1000 × 620 window. Each is derived from its loaded state:
 // the same template runs, then HFV2.applyMinimum (minimum-frame.js) applies the fixes the window needs. The
 // loaded states are not changed.
 (function () {
@@ -6,7 +6,7 @@
   var H = (window.HFV2 = window.HFV2 || {});
 
   function minimum(familyId, state) {
-    var base = { group: 'Minimum window', status: 'provisional', approvalNote: 'Provisional · needs owner approval' };
+    var base = { group: 'Minimum window', status: 'approved', approval: { by: 'the owner', date: '2026-11-08', decision: 'Minimum window' } };
     Object.keys(state).forEach(function (k) { base[k] = state[k]; });
     return H.registerState(familyId, base);
   }

@@ -73,17 +73,17 @@ Each screen with a first load has one Loading state, drawn from the loaded state
 
 `sidebar/history-loading` was retired for `sidebar/loading` and opens it. The partial loads (`task/changes-loading`, `events-loading`, `artifacts-loading`, `sidebar/history-older`, `new-task/centered-loading`) and the first-load screens of App states and Harness runtime are unchanged.
 
-## Minimum window drafts
+## Minimum window
 
-Eleven provisional states draw six loaded screens and five loading states at 1000 × 620 (see [the decisions record](decisions/README.md#minimum-window-drafts)). Each is derived from its loaded state; the loaded states are unchanged. The owner decided the sizes on 2026-11-08 (lanes 360, inspector 288, popover 380, meta drops first); the drafts stay provisional.
+Eleven approved states draw six loaded screens and five loading states at 1000 × 620 (see [the decisions record](decisions/README.md#minimum-window-drafts)). Each is derived from its loaded state; the loaded states are unchanged. The owner decided the sizes on 2026-11-08 (lanes 360, inspector 288, popover 380, meta drops first) and approved the states the same day, with three fixes: the canvas scrolls, the meta dot is focusable and shows its text on focus, and the wrapped label at 288 is accepted.
 
 | Family | State | Route | Derived from |
 | --- | --- | --- | --- |
 | Needs you | Waiting · 1000 × 620 | `needs-you/waiting-minimum` | `needs-you/waiting`; the representative drawing of the sidebar rule for every static screen |
 | Parallel group | Lanes · 1000 × 620 | `parallel-group/lanes-minimum` | `parallel-group/lanes`; 360 point lanes, the top bar meta drops first |
 | Workflow run | Parallel view · 1000 × 620 | `workflow-run/parallel-minimum` | `workflow-run/parallel`; 360 point lanes, the top bar meta drops first |
-| Workflow editor | Node selected · 1000 × 620 | `workflow-editor/node-selected-minimum` | `workflow-editor/node-selected`; inspector 288, the top bar meta drops first |
-| Workflow editor | Orchestrator · 1000 × 620 | `workflow-editor/orchestrator-minimum` | `workflow-editor/orchestrator`; inspector 288, the top bar meta drops first |
+| Workflow editor | Node selected · 1000 × 620 | `workflow-editor/node-selected-minimum` | `workflow-editor/node-selected`; inspector 288, the canvas scrolls, the top bar meta drops first |
+| Workflow editor | Orchestrator · 1000 × 620 | `workflow-editor/orchestrator-minimum` | `workflow-editor/orchestrator`; inspector 288, the canvas scrolls, the top bar meta drops first |
 | Menu bar | Busy · 1000 × 620 | `menu-bar/busy-minimum` | `menu-bar/busy`; popover 380 × 560 |
 | Needs you | Loading · 1000 × 620 | `needs-you/loading-minimum` | `needs-you/waiting-minimum` with its loading skeleton |
 | Parallel group | Loading · 1000 × 620 | `parallel-group/loading-minimum` | `parallel-group/lanes-minimum` with its loading skeleton |
@@ -91,7 +91,7 @@ Eleven provisional states draw six loaded screens and five loading states at 100
 | Workflow editor | Loading · 1000 × 620 | `workflow-editor/loading-minimum` | `workflow-editor/node-selected-minimum` with its loading skeleton |
 | Menu bar | Loading · 1000 × 620 | `menu-bar/loading-minimum` | `menu-bar/busy-minimum` with its loading skeleton |
 
-Every loading state of the approved screens is approved; the loading drafts at 1000 × 620 are provisional. The orchestrator has no loading state, so it has no loading draft.
+Every loading state, including those at 1000 × 620, is approved. The orchestrator has no loading state, so it has none at 1000 × 620.
 
 ## Decisions recorded from the owner's feedback rounds
 

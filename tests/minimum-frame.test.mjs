@@ -19,6 +19,8 @@ function loadRuntime() {
 }
 const HFV2 = loadRuntime();
 const json = value => JSON.parse(JSON.stringify(value));
+const APPROVAL = { by: 'the owner', date: '2026-11-08', decision: 'Minimum window' };
+const APPROVED_LINE = 'Approved by the owner on 2026-11-08 · Minimum window';
 const NAMING_RULE = /\bm0\d\b|d2b|propos(al|ed)|native entry|\bG-[A-Z]+\b/i;
 
 const STATES = {
@@ -40,16 +42,17 @@ const LOADING = {
   'menu-bar/loading-minimum': { of: 'menu-bar/busy', base: 'menu-bar/busy-minimum', fixes: ['popover'], spec: 'menu-bar' }
 };
 
-test('the six minimum window drafts are registered, provisional and derived from their loaded state', () => {
+test('the six minimum window states are registered, approved and derived from their loaded state', () => {
   const all = HFV2.registry.families.flatMap(f => f.states.filter(s => s.minimum && !s.skeleton).map(s => `${f.id}/${s.id}`));
   assert.deepEqual([...all].sort(), Object.keys(STATES).sort());
   for (const [route, want] of Object.entries(STATES)) {
     const [familyId, stateId] = route.split('/');
     const family = HFV2.findFamily(familyId);
     const state = HFV2.findState(family, stateId);
-    assert.equal(state.status, 'provisional', route);
-    assert.equal(state.approvalNote, 'Provisional · needs owner approval', route);
-    assert.ok(!state.approval, `${route} carries no approval`);
+    assert.equal(state.status, 'approved', route);
+    assert.ok(!('approvalNote' in state), `${route} carries no approval note`);
+    assert.deepEqual(json(state.approval), APPROVAL, route);
+    assert.equal(HFV2.approvalLine(family, state), APPROVED_LINE, route);
     assert.equal(state.group, 'Minimum window', route);
     assert.ok(family.groups.includes('Minimum window'), `${familyId} lists the group`);
     assert.equal(state.title, want.title);
@@ -60,11 +63,31 @@ test('the six minimum window drafts are registered, provisional and derived from
     assert.equal(d.templateKey, loaded.templateKey, `${route} renders the template of ${want.of}`);
     assert.equal(d.renderer, null);
     assert.ok(d.templateKey in HFV2.templates);
-    assert.equal(d.status, 'provisional');
-    assert.equal(d.approval, 'Provisional · needs owner approval');
+    assert.equal(d.status, 'approved');
+    assert.equal(d.approval, APPROVED_LINE);
     assert.deepEqual(JSON.parse(JSON.stringify(d.minimum)), { of: want.of, fixes: want.fixes });
     assert.ok(!(`${familyId}/${stateId}` in HFV2.templates), `${route} has no template of its own`);
   }
+});
+
+test('all eleven minimum window states are approved, each with its own approval, no approval note and no provisional strip', () => {
+  const minimumStates = HFV2.registry.families.flatMap(f => f.states.filter(s => s.minimum).map(s => ({ family: f, state: s, route: `${f.id}/${s.id}` })));
+  assert.equal(minimumStates.length, 11);
+  assert.ok(minimumStates.every(({ route }) => route.endsWith('-minimum')), 'every minimum state has a -minimum id');
+  const approvals = new Set();
+  for (const { family, state, route } of minimumStates) {
+    assert.ok(!('approvalNote' in state), `${route} carries no approval note`);
+    assert.equal(state.status, 'approved', route);
+    assert.deepEqual(json(state.approval), APPROVAL, route);
+    approvals.add(state.approval);
+    const d = HFV2.describe(route);
+    assert.equal(d.approval, APPROVED_LINE, `${route} strip`);
+    assert.ok(!/Provisional|needs owner approval|not approved/i.test(d.approval + state.title + state.description), `${route} says nothing provisional`);
+    assert.equal(HFV2.approvalLine(family, state), APPROVED_LINE);
+  }
+  assert.equal(approvals.size, 11, 'each registration has its own approval object');
+  // Other states whose id ends in -minimum (task/topbar-minimum) are not derived states and keep their own records.
+  assert.deepEqual(json(HFV2.registry.families.flatMap(f => f.states.filter(s => s.minimum && 'approvalNote' in s).map(s => `${f.id}/${s.id}`))), []);
 });
 
 // The manifest holds the template digests of ba8c928. The templates are identical at 9d19fd7, the commit this work builds
@@ -78,22 +101,22 @@ test('no existing template changed: the digests equal those of the base commit a
   }
 });
 
-test('the five loading drafts are registered with the minimum() helper, provisional, in the Minimum window group', () => {
+test('the five loading states are registered with the minimum() helper, approved, in the Minimum window group', () => {
   const all = HFV2.registry.families.flatMap(f => f.states.filter(s => s.minimum && s.skeleton).map(s => `${f.id}/${s.id}`));
   assert.deepEqual([...all].sort(), Object.keys(LOADING).sort());
   const source = read('scripts/screens-minimum.js');
-  assert.equal((source.match(/^  minimum\('/gm) || []).length, 11, 'all eleven drafts go through minimum()');
+  assert.equal((source.match(/^  minimum\('/gm) || []).length, 11, 'all eleven states go through minimum()');
   for (const [route, want] of Object.entries(LOADING)) {
     const [familyId, stateId] = route.split('/');
     const family = HFV2.findFamily(familyId), state = HFV2.findState(family, stateId);
-    assert.equal(state.status, 'provisional', route);
-    assert.equal(state.approvalNote, 'Provisional · needs owner approval', route);
-    assert.ok(!state.approval && !('approval' in state), `${route} carries no approval`);
+    assert.equal(state.status, 'approved', route);
+    assert.ok(!('approvalNote' in state), `${route} carries no approval note`);
+    assert.deepEqual(json(state.approval), APPROVAL, route);
     assert.equal(state.group, 'Minimum window', route);
     assert.equal(state.title, 'Loading · 1000 × 620');
     assert.deepEqual(json(state.minimum), { of: want.of, fixes: want.fixes });
     assert.deepEqual(json(state.skeleton), { spec: want.spec }, `${route} declares a spec and no skeleton.of`);
-    assert.equal(HFV2.approvalLine(family, state), 'Provisional · needs owner approval');
+    assert.equal(HFV2.approvalLine(family, state), APPROVED_LINE, `${route} shows the approval line, not a loading strip`);
     // The fix list is the one of the minimum draft it is compared with.
     const [bf, bs] = want.base.split('/');
     assert.deepEqual(json(HFV2.findState(HFV2.findFamily(bf), bs).minimum.fixes), want.fixes, `${route} uses the fixes of ${want.base}`);
@@ -103,10 +126,11 @@ test('the five loading drafts are registered with the minimum() helper, provisio
     assert.equal(d.renderer, null);
     assert.deepEqual(json(d.minimum), { of: want.of, fixes: want.fixes });
     assert.deepEqual(json(d.skeleton), { spec: want.spec });
-    assert.equal(d.status, 'provisional');
+    assert.equal(d.status, 'approved');
+    assert.equal(d.approval, APPROVED_LINE);
     assert.ok(HFV2.skeletonSpecs[want.spec], `${route} names a registered spec`);
     assert.ok(!(route in HFV2.templates));
-    for (const field of ['id', 'title', 'description', 'group', 'approvalNote']) assert.ok(!NAMING_RULE.test(state[field]), `${route} ${field}`);
+    for (const field of ['id', 'title', 'description', 'group']) assert.ok(!NAMING_RULE.test(state[field]), `${route} ${field}`);
   }
 });
 
@@ -308,11 +332,11 @@ test('the sizing decisions are in the stylesheet: inspector 288, popover 380 by 
   assert.match(css, /\.hdc-min-inspector \.hd-inspector__body\{position:relative\}/);
 });
 
-test('the drafts name the product screen only', () => {
+test('the states name the product screen only', () => {
   for (const route of Object.keys(STATES)) {
     const [familyId, stateId] = route.split('/');
     const family = HFV2.findFamily(familyId), state = HFV2.findState(family, stateId);
-    for (const field of ['id', 'title', 'description', 'group', 'approvalNote']) assert.ok(!NAMING_RULE.test(state[field]), `${route} ${field}`);
+    for (const field of ['id', 'title', 'description', 'group']) assert.ok(!NAMING_RULE.test(state[field]), `${route} ${field}`);
     assert.ok(!NAMING_RULE.test(HFV2.approvalLine(family, state)));
   }
 });
