@@ -25,7 +25,8 @@
     var ext = {
       hooks: {
         transcriptSlot: function () {
-          return '<div data-d2b-request></div><div class="hd-scroll hd-d2b-history" tabindex="0" aria-label="Captured transcript"><div data-d2b-boundary tabindex="-1"></div><div data-d2b-rows></div></div><div class="hd-d2b-live hd-muted" role="status" aria-live="polite" data-d2b-live></div>';
+          var message = String(controller.state().message || '').replace(/&/g, '&amp;').replace(/</g, '&lt;');
+          return '<div data-d2b-request></div><div class="hd-scroll hd-d2b-history" tabindex="0" aria-label="Captured transcript"><div data-d2b-boundary tabindex="-1"></div><div data-d2b-rows></div></div><div class="hd-d2b-live hd-muted" role="status" aria-live="polite" data-d2b-live>' + message + '</div>';
         },
         eventsBody: function () { return '<div class="hd-d2b-facts hd-tr-facts" data-d2b-facts></div>'; },
         identity: {
