@@ -6,7 +6,8 @@
   var text = 'Find and fix the slot release race. Keep notification under the lock. Add a deterministic regression. Preserve unrelated edits. Report the exact focused validation result and any remaining uncertainty before concluding.';
   var variants = {
     request: ['sidecar','inline','preview','unverified','truncated','loading','unavailable',
-    'integrity-failed'], size: ['reference','minimum'], summaryCoverage: ['observed','empty',
+    'integrity-failed'], size: ['reference','minimum'], // size is kept only so the builder digest in the tests still covers its 272 cases
+    summaryCoverage: ['observed','empty',
     'loading','unavailable','limited'], history: ['observed','empty','loading','partial',
     'unknown', 'unavailable','unsupported','nonprogress','reconnecting','reset','capacity',
     'drained']

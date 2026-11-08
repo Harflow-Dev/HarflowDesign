@@ -848,7 +848,7 @@ test('the decisions record lists every redraw with its earlier state, the owner 
   assert.match(proposal[167], /^Events holds the approved D2B content below collapsed facts groups/, 'line 168 is the sentence the redraws cite');
   assert.ok(decisions.includes('`v2/docs/decisions/m05-task-screen-proposal.md:168`'));
   assert.match(decisions, /^## Centered and transcript redraws$/m);
-  assert.ok(!decisions.includes('Provisional redraws awaiting owner review') && !decisions.includes('provisional-redraws-awaiting-owner-review'));
+  assert.ok(!decisions.includes('Provisional redraws awaiting owner review') && decisions.split('provisional-redraws-awaiting-owner-review').length === 2, 'only the explicit anchor remains');
   const section = decisions.slice(decisions.indexOf('## Centered and transcript redraws'), decisions.indexOf('## By screen'));
   for (const [older, newer] of [...COMPOSER_REDRAWS, ...SHELL_REDRAWS, ...TRANSCRIPT_REDRAWS]) {
     const row = section.split('\n').find(line => line.startsWith(`| \`${newer}\` |`));
@@ -864,6 +864,7 @@ test('the decisions record lists every redraw with its earlier state, the owner 
   assert.ok(section.includes('`sidebar/centered-expanded`') && section.includes('duplicate'));
   assert.ok(section.includes('Copy record') && section.includes('Record ordering'), 'the four Events elements are recorded as approved');
   assert.ok(decisions.includes('| Centered and transcript redraws |'));
+  assert.ok(decisions.includes('<a id="provisional-redraws-awaiting-owner-review"></a>'), 'the earlier anchor of the renamed section keeps working');
   for (const link of decisions.matchAll(/\(#([a-z0-9-]+)\)/g)) {
     const anchor = link[1];
     assert.ok(decisions.split('\n').some(line => /^#{1,6} /.test(line) && line.replace(/^#+ /, '').toLowerCase().replace(/[^a-z0-9 -]/g, '').replace(/ /g, '-') === anchor), `${anchor} resolves to a heading`);

@@ -204,8 +204,14 @@ test('redraw descriptions carry the approval of 2026-11-08 and no provisional wo
 });
 test('only the open harness picker repeats the status message under the Harness select',()=>{
   const src=fs.readFileSync(new URL('../v2/scripts/m04-proposal.js',import.meta.url),'utf8');
-  assert.match(src,/route==='centered-harness-open'&&key==='harness'&&problem\(s\)/);
+  assert.match(src,/route==='centered-harness-open'&&key==='harness'&&s\.qualification!=='ready',hint=gate&&problem\(s\)/);
   assert.match(src,/aria-describedby="m04-harness-hint"/);
   assert.match(src,/class="hd-field__hint" id="m04-harness-hint"/);
   assert.equal(M.problem(M.create('centered-harness-open')),'Choose a qualified harness and model.');
+});
+test('the open harness picker disables the unavailable option and shows the hint only while unqualified',()=>{
+  const src=fs.readFileSync(new URL('../v2/scripts/m04-proposal.js',import.meta.url),'utf8');
+  assert.match(src,/s\.qualification!=='ready'/);
+  assert.match(src,/gated&&v===gated\?' disabled'/);
+  assert.match(src,/options\(values,s\[key\],gate\?'Unavailable harness':''\)/);
 });

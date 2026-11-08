@@ -6,7 +6,7 @@
   H.m04ProposalStates = ids.map(function (id) { return { id: id, title: id.replace(/-/g, ' '), description: 'Approved M04 visual direction (2026-11-05): ' + id.replace(/-/g, ' ') + ' review fixture.', status: 'Approved', approved: true }; });
   // Owner-approved centered-composer amendment (2026-11-06), recorded separately
   // from the baseline approval above. Separate routes with their own root class
-  // (hd-m04-amendment); the 24 baseline states are unchanged.
+  // (hd-m04-amendment); the baseline states are unchanged.
   var amendmentIds = ['amendment-empty','amendment-ready','amendment-growing','amendment-capped','amendment-options','amendment-unknown'];
   H.m04AmendmentStates = amendmentIds.map(function (id) { return { id: id, title: id.replace(/-/g, ' '), description: 'Owner-approved centered-composer amendment (2026-11-06, separate from the M04 baseline approval of 2026-11-05): ' + id.replace(/-/g, ' ') + ' review fixture.', status: 'Approved', approved: true }; });
   // Owner-approved centered redraws (2026-11-08) of six bottom-layout composer states and two shell states,

@@ -6,9 +6,11 @@
 
 - Add `new-task/centered-harness-open`: the centered composer's harness picker open, with an unavailable harness selected so that Start is disabled and the existing qualification message shows. `new-task/harness-menu` opens it.
 
+- Route hashes are now `#family/state[/view][/appearance]`; a state declares the views it has (the eight transcript routes declare `events`, which opens the right pane on Events at load, for example `#task/transcript-observed/events/dark`), and a view a state does not declare is dropped. The task screen renderer takes optional hooks for its transcript column, Events body and task identity, and the transcript regions are built by shared builders and one controller; the existing routes are unchanged.
+
 - Remove the unused activity transcript mount, wrapper templates and guides (`d2b-proposal/*`); the transcript routes keep the shared builders and controller.
 
-- Retire nine superseded `v2/` states on the owner's answers of 2026-11-08: `task/running`, `task/done`, `task/failed`, `new-task/default`, `new-task/sidebar-collapsed`, `new-task/harness-menu`, `new-task/composer-ready`, `new-task/composer-unknown` and `new-task/options-open`. They leave navigation and their routes redirect to the replacement states (`routeRedirects`). The "Earlier design" note and the awaiting-decision label are removed, and the overview lists the replaced designs. `task/activity-sources` is unchanged pending an owner decision.
+- Retire nine superseded `v2/` states on the owner's answers of 2026-11-08: `task/running`, `task/done`, `task/failed`, `new-task/default`, `new-task/sidebar-collapsed`, `new-task/harness-menu`, `new-task/composer-ready`, `new-task/composer-unknown` and `new-task/options-open`. They leave navigation and their routes redirect to the replacement states (`routeRedirects`). The "Earlier design" note and the awaiting-decision label are removed, and the overview lists the replaced designs. `task/activity-sources` is unchanged pending an owner decision (superseded: it now opens `task/transcript-sources`).
 
 - Archive the v1 catalog at `archive/v1/` (with its documents) and make the root `index.html` a redirector: no hash opens `v2/index.html`, a hash opens the archived catalog with that hash, and the old v1 paths forward to `archive/v1/` (`_redirects` on the hosted site). The build script runs every test file and stages `archive` and `_redirects`.
 
