@@ -134,16 +134,67 @@ test('the loading drafts keep the approved specs and drop only the top bar meta 
   assert.ok(!HFV2.skeletonSpecs['needs-you'].ops.concat(HFV2.skeletonSpecs['menu-bar'].ops).some(op => /topbar__meta/.test(op.sel)));
 });
 
-test('tripwire: the catalog applies the template, then the minimum fixes, then the skeleton, on every render', () => {
-  const catalog = read('scripts/catalog.js');
-  const min = catalog.indexOf('HFV2.applyMinimum(els.specimen, d.minimum.fixes)'), skel = catalog.indexOf('applySkeleton(els.specimen)');
-  const tmpl = catalog.indexOf('els.specimen.innerHTML = html');
-  assert.ok(tmpl > 0 && min > tmpl && skel > min, 'template, minimum, skeleton in that order');
-  assert.equal((catalog.match(/HFV2\.applyMinimum\(/g) || []).length, 1);
-  // One render function serves the first render, every re-render and every appearance switch.
-  assert.match(catalog, /function setPreference\(value\)[\s\S]*?go\(current\.family/);
+// Runs catalog.js against a tolerant stub page. The stub element stores what is assigned to it and answers every other
+// property with a function that does nothing, which is all the render path needs. applyMinimum and skeletonize are
+// replaced by recorders, so the test sees the order in which the catalog calls them and what the specimen holds then.
+function runCatalog(route) {
+  const calls = [];
+  const stub = () => new Proxy({}, {
+    get(target, key) {
+      if (key in target) return target[key];
+      if (key === 'querySelectorAll') return () => [];
+      if (key === 'firstChild' || key === 'closest') return null;
+      if (key === 'classList') return { add() {}, remove() {}, contains: () => false };
+      return () => stub();
+    },
+    set(target, key, value) { target[key] = value; return true; }
+  });
+  const listeners = {}, elements = {};
+  const context = vm.createContext({
+    window: {},
+    document: { getElementById: id => (elements[id] = elements[id] || stub()), createElement: () => stub(), createTextNode: () => stub(), documentElement: stub(), title: '' }
+  });
+  context.window = context;
+  context.location = { hash: `#${route}/light`, href: '' };
+  context.history = { replaceState() {} };
+  context.addEventListener = (type, fn) => { listeners[type] = fn; };
+  const scripts = fs.readdirSync(path.join(v2, 'scripts')).filter(name => name !== 'catalog.js' && name !== 'registry.js');
+  for (const name of ['registry.js', ...scripts]) vm.runInContext(read(path.join('scripts', name)), context, { filename: name });
+  const H = context.HFV2;
+  H.applyMinimum = (host, fixes) => calls.push({ step: 'minimum', fixes: json(fixes), specimenHasTemplate: String(host.innerHTML).includes('hd-app') });
+  H.skeletonize = (host, spec) => { calls.push({ step: 'skeleton', spec, minimumFirst: calls.some(c => c.step === 'minimum') }); return { ok: true, unmatched: [] }; };
+  vm.runInContext(read('scripts/catalog.js'), context, { filename: 'catalog.js' });
+  return { H, calls, rerender: hash => { context.location.hash = hash; listeners.hashchange(); }, specimen: elements['hdc-specimen'] };
+}
+
+test('the catalog applies the template, then the minimum fixes, then the skeleton, on the first render and on a second render', () => {
+  for (const [route, want] of Object.entries(LOADING)) {
+    const run = runCatalog(route);
+    run.rerender(`#${route}/dark`);
+    const spec = run.H.skeletonSpecs[want.spec];
+    assert.deepEqual(json(run.calls.map(c => c.step)), ['minimum', 'skeleton', 'minimum', 'skeleton'], `${route}: minimum before skeleton on both passes`);
+    for (const c of run.calls) {
+      if (c.step === 'minimum') { assert.deepEqual(c.fixes, want.fixes, route); assert.ok(c.specimenHasTemplate, `${route}: the template is in the specimen first`); }
+      else { assert.equal(c.spec, spec, `${route} skeletonizes with ${want.spec}`); assert.ok(c.minimumFirst, route); }
+    }
+    assert.match(String(run.specimen.className), /hdc-specimen--minimum/);
+  }
+  // A plain minimum draft applies the fixes and no skeleton; the fixes are applied again on a second render.
+  const plain = runCatalog('menu-bar/busy-minimum');
+  plain.rerender('#menu-bar/busy-minimum/dark');
+  assert.deepEqual(json(plain.calls.map(c => c.step)), ['minimum', 'minimum']);
   const registry = read('scripts/registry.js');
-  assert.ok(registry.indexOf('state.skeleton && state.minimum') < registry.indexOf('if (state.skeleton) {'), 'the combined branch is checked first');
+  assert.ok(registry.indexOf('state.skeleton && state.minimum') < registry.indexOf('if (state.skeleton) {'), 'tripwire: the combined branch is checked first');
+});
+
+test('every minimum draft derives from a static screen: applyMinimum runs only on the static path', () => {
+  const drafts = HFV2.registry.families.flatMap(f => f.states.filter(s => s.minimum).map(s => `${f.id}/${s.id}`));
+  assert.equal(drafts.length, 11);
+  for (const route of drafts) {
+    const state = HFV2.findState(HFV2.findFamily(route.split('/')[0]), route.split('/')[1]);
+    assert.equal(HFV2.describe(state.minimum.of).renderer, null, `${route} derives from ${state.minimum.of}, which has no renderer`);
+    assert.equal(HFV2.describe(route).renderer, null, route);
+  }
 });
 
 test('the loaded states the drafts derive from are untouched', () => {

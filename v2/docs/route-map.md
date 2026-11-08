@@ -105,7 +105,7 @@ These are canonical routes with no earlier name; they are not aliases or redirec
 
 ## Minimum window routes
 
-These are canonical routes with no earlier name. Each draws the state in the second column at 1000 × 620 with the fixes the window needs (the loading routes add the loading skeleton); they are provisional ([decisions](decisions/README.md#minimum-window-drafts)). None declares a view.
+These are canonical routes with no earlier name. Each draws the state in the second column at 1000 × 620 with the fixes the window needs (the loading routes add the loading skeleton); they are provisional ([decisions](decisions/README.md#minimum-window-drafts)). None declares a view. Every loading state of the approved screens is approved; the loading drafts at 1000 × 620 are provisional.
 
 | Minimum window route | Derived from |
 | --- | --- |
