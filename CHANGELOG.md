@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Scroll the workflow graph canvas and make the top bar meta focusable in the minimum window drafts of the `v2/` reference, on the owner's decision of 2026-11-08: the graph of `workflow-editor/node-selected-minimum`, `workflow-editor/orchestrator-minimum` and `workflow-editor/loading-minimum` scrolls in its own viewport with a visible scrollbar and keyboard access, and the dot of the top bar meta on the lane screens, the editor and the orchestrator takes focus and shows the dropped text on hover and focus (Escape dismisses it). The lane screens and the orchestrator gain one empty decorative dot.
+
 - Add `workflow-editor/orchestrator-minimum` and five loading drafts at 1000 × 620 (`needs-you/loading-minimum`, `parallel-group/loading-minimum`, `workflow-run/loading-parallel-minimum`, `workflow-editor/loading-minimum`, `menu-bar/loading-minimum`) to the `v2/` reference, all provisional. The 12 point overflow of the orchestrator frame (a visually hidden label outside the frame) is removed by the inspector fix of the previous entry, which makes the inspector body contain its hidden labels; that change landed with the sizing decisions, not with this entry. The loading drafts apply the minimum fixes and then the loading skeleton; the lane and editor drafts use minimum variants of the approved skeleton specs that leave the top bar meta out. The approved states are unchanged.
 
 - Apply the owner's sizing decisions of 2026-11-08 to the minimum window drafts: the editor inspector is 288 points wide (the canvas gains 52), the popover is 380 wide, and on the lane screens the top bar meta drops first so the title stays whole. The lane floor stays 360. The drafts stay provisional; the approved states are unchanged.

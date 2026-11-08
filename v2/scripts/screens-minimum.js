@@ -18,23 +18,23 @@
   });
   minimum('parallel-group', {
     id: 'lanes-minimum', title: 'Lanes · 1000 × 620',
-    description: 'The lanes of a parallel group in the minimum window. Each lane keeps a 360 point floor and the lanes scroll horizontally; the top bar drops its meta text so the title stays whole; the sidebar body scrolls.',
+    description: 'The lanes of a parallel group in the minimum window. Each lane keeps a 360 point floor and the lanes scroll horizontally; the top bar drops its meta text so the title stays whole, and its dot shows the text on hover and focus; the sidebar body scrolls.',
     minimum: { of: 'parallel-group/lanes', fixes: ['sidebar', 'lanes', 'topbar-meta'] }
   });
   minimum('workflow-run', {
     id: 'parallel-minimum', title: 'Parallel view · 1000 × 620',
-    description: 'A run as lanes in the minimum window. Each lane keeps a 360 point floor and the lanes scroll horizontally; the top bar drops its meta text so the title stays whole; the sidebar body scrolls.',
+    description: 'A run as lanes in the minimum window. Each lane keeps a 360 point floor and the lanes scroll horizontally; the top bar drops its meta text so the title stays whole, and its dot shows the text on hover and focus; the sidebar body scrolls.',
     minimum: { of: 'workflow-run/parallel', fixes: ['sidebar', 'lanes', 'topbar-meta'] }
   });
   minimum('workflow-editor', {
     id: 'node-selected-minimum', title: 'Node selected · 1000 × 620',
-    description: 'The editor with a node selected in the minimum window. The inspector is 288 points wide; the top bar drops its meta text so the title stays whole; the sidebar body scrolls.',
-    minimum: { of: 'workflow-editor/node-selected', fixes: ['sidebar', 'inspector', 'topbar-meta'] }
+    description: 'The editor with a node selected in the minimum window. The inspector is 288 points wide; the canvas scrolls; the top bar drops its meta text so the title stays whole, and its dot shows the text on hover and focus; the sidebar body scrolls.',
+    minimum: { of: 'workflow-editor/node-selected', fixes: ['sidebar', 'inspector', 'canvas', 'topbar-meta'] }
   });
   minimum('workflow-editor', {
     id: 'orchestrator-minimum', title: 'Orchestrator · 1000 × 620',
-    description: 'The locked orchestrator selected, in the minimum window. The inspector is 288 points wide and its body scrolls; the top bar drops its meta text so the title stays whole; the sidebar body scrolls.',
-    minimum: { of: 'workflow-editor/orchestrator', fixes: ['sidebar', 'inspector', 'topbar-meta'] }
+    description: 'The locked orchestrator selected, in the minimum window. The inspector is 288 points wide and its body scrolls; the canvas scrolls; the top bar drops its meta text so the title stays whole, and its dot shows the text on hover and focus; the sidebar body scrolls.',
+    minimum: { of: 'workflow-editor/orchestrator', fixes: ['sidebar', 'inspector', 'canvas', 'topbar-meta'] }
   });
   minimum('menu-bar', {
     id: 'busy-minimum', title: 'Busy · 1000 × 620',
@@ -62,8 +62,8 @@
   });
   minimum('workflow-editor', {
     id: 'loading-minimum', title: 'Loading · 1000 × 620',
-    description: 'A workflow being opened, in the minimum window: the title, standalone nodes, canvas graph and inspector fields are placeholders, the inspector is 288 points wide, and the top bar shows no meta text.',
-    minimum: { of: 'workflow-editor/node-selected', fixes: ['sidebar', 'inspector', 'topbar-meta'] }, skeleton: { spec: 'workflow-editor-minimum' }
+    description: 'A workflow being opened, in the minimum window: the title, standalone nodes, canvas graph and inspector fields are placeholders, the canvas scrolls, the inspector is 288 points wide, and the top bar shows no meta text.',
+    minimum: { of: 'workflow-editor/node-selected', fixes: ['sidebar', 'inspector', 'canvas', 'topbar-meta'] }, skeleton: { spec: 'workflow-editor-minimum' }
   });
   minimum('menu-bar', {
     id: 'loading-minimum', title: 'Loading · 1000 × 620',

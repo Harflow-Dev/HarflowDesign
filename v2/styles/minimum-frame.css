@@ -23,3 +23,17 @@
 .hdc-specimen--minimum.hdc-min-popover section[aria-label="Harflow menu"]{width:380px!important;height:560px}
 .hdc-specimen--minimum.hdc-min-popover section[aria-label="Harflow menu"]>*{flex-shrink:0}
 .hdc-specimen--minimum.hdc-min-popover section[aria-label="Harflow menu"]>.hd-popover__scroll{position:relative;flex:1 1 auto;min-height:0;overflow-y:auto;scrollbar-width:thin}
+
+/* Canvas: the graph layer scrolls in its own viewport; the tray and the zoom control stay over it. The dot grid moves
+   with the graph. */
+.hdc-specimen--minimum.hdc-min-canvas .hd-canvas{background-image:none}
+.hdc-specimen--minimum.hdc-min-canvas .hd-canvas__scroll{position:absolute;inset:0;overflow:auto;background-image:radial-gradient(var(--border) 1px,transparent 1px);background-size:20px 20px;background-attachment:local;scrollbar-width:thin;scrollbar-color:color-mix(in srgb,var(--text-tertiary) 72%,transparent) transparent}
+.hdc-specimen--minimum.hdc-min-canvas .hd-canvas__scroll:focus-visible{outline-offset:-2px}
+.hdc-specimen--minimum.hdc-min-canvas .hd-canvas>.hd-tray,.hdc-specimen--minimum.hdc-min-canvas .hd-canvas>.hd-zoom{z-index:2}
+
+/* Top bar meta: a small focusable target whose text shows on hover and on keyboard focus. The padding and the equal
+   negative margin leave the layout as it was. The tooltip stays under the pointer (no gap), and Escape dismisses it. */
+.hdc-specimen--minimum.hdc-min-topbar-meta .hd-topbar__meta,.hdc-specimen--minimum.hdc-min-editor-topbar .hd-topbar__meta{display:inline-flex;align-items:center;gap:6px;padding:5px;margin:-5px}
+.hdc-specimen--minimum .hd-topbar__meta[tabindex]{position:relative;z-index:6;border-radius:var(--radius-sm)}
+.hdc-specimen--minimum .hd-topbar__meta-dot{width:6px;height:6px;border-radius:var(--radius-full);background:var(--text-tertiary);flex:none}
+.hdc-specimen--minimum .hd-topbar__meta[tabindex]:hover:not(.is-dismissed)>.hd-sr,.hdc-specimen--minimum .hd-topbar__meta[tabindex]:focus-visible:not(.is-dismissed)>.hd-sr{position:absolute;left:0;top:100%;z-index:1;width:max-content;max-width:320px;height:auto;clip:auto;overflow:visible;white-space:normal;padding:4px 8px;border-top:6px solid transparent;background-clip:padding-box;border-radius:var(--radius-sm);background:var(--text);color:var(--bg);font-size:12px;line-height:16px}

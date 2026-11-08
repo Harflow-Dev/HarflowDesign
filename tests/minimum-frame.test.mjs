@@ -25,8 +25,8 @@ const STATES = {
   'needs-you/waiting-minimum': { of: 'needs-you/waiting', fixes: ['sidebar'], title: 'Waiting · 1000 × 620' },
   'parallel-group/lanes-minimum': { of: 'parallel-group/lanes', fixes: ['sidebar', 'lanes', 'topbar-meta'], title: 'Lanes · 1000 × 620' },
   'workflow-run/parallel-minimum': { of: 'workflow-run/parallel', fixes: ['sidebar', 'lanes', 'topbar-meta'], title: 'Parallel view · 1000 × 620' },
-  'workflow-editor/node-selected-minimum': { of: 'workflow-editor/node-selected', fixes: ['sidebar', 'inspector', 'topbar-meta'], title: 'Node selected · 1000 × 620' },
-  'workflow-editor/orchestrator-minimum': { of: 'workflow-editor/orchestrator', fixes: ['sidebar', 'inspector', 'topbar-meta'], title: 'Orchestrator · 1000 × 620' },
+  'workflow-editor/node-selected-minimum': { of: 'workflow-editor/node-selected', fixes: ['sidebar', 'inspector', 'canvas', 'topbar-meta'], title: 'Node selected · 1000 × 620' },
+  'workflow-editor/orchestrator-minimum': { of: 'workflow-editor/orchestrator', fixes: ['sidebar', 'inspector', 'canvas', 'topbar-meta'], title: 'Orchestrator · 1000 × 620' },
   'menu-bar/busy-minimum': { of: 'menu-bar/busy', fixes: ['popover'], title: 'Busy · 1000 × 620' }
 };
 
@@ -36,7 +36,7 @@ const LOADING = {
   'needs-you/loading-minimum': { of: 'needs-you/waiting', base: 'needs-you/waiting-minimum', fixes: ['sidebar'], spec: 'needs-you' },
   'parallel-group/loading-minimum': { of: 'parallel-group/lanes', base: 'parallel-group/lanes-minimum', fixes: ['sidebar', 'lanes', 'topbar-meta'], spec: 'parallel-group-minimum' },
   'workflow-run/loading-parallel-minimum': { of: 'workflow-run/parallel', base: 'workflow-run/parallel-minimum', fixes: ['sidebar', 'lanes', 'topbar-meta'], spec: 'workflow-run-parallel-minimum' },
-  'workflow-editor/loading-minimum': { of: 'workflow-editor/node-selected', base: 'workflow-editor/node-selected-minimum', fixes: ['sidebar', 'inspector', 'topbar-meta'], spec: 'workflow-editor-minimum' },
+  'workflow-editor/loading-minimum': { of: 'workflow-editor/node-selected', base: 'workflow-editor/node-selected-minimum', fixes: ['sidebar', 'inspector', 'canvas', 'topbar-meta'], spec: 'workflow-editor-minimum' },
   'menu-bar/loading-minimum': { of: 'menu-bar/busy', base: 'menu-bar/busy-minimum', fixes: ['popover'], spec: 'menu-bar' }
 };
 
@@ -110,28 +110,36 @@ test('the five loading drafts are registered with the minimum() helper, provisio
   }
 });
 
-test('the loading drafts keep the approved specs and drop only the top bar meta in the variants', () => {
+test('the loading drafts keep the approved specs; the variants drop the top bar meta and find the graph in the canvas viewport', () => {
   const ops = key => HFV2.skeletonSpecs[key].ops;
   const pairs = [['parallel-group', 'parallel-group-minimum'], ['workflow-run-parallel', 'workflow-run-parallel-minimum'], ['workflow-editor', 'workflow-editor-minimum']];
+  const graphLayer = '.hd-app .hd-canvas > div:first-child', viewportLayer = '.hd-app .hd-canvas__scroll > div:first-child';
+  const mapSel = sel => (sel === graphLayer ? viewportLayer : sel);
   for (const [base, variant] of pairs) {
     const meta = '.hd-app .hd-topbar .hd-topbar__meta';
     const kept = ops(base).filter(op => !(op.kind === 'text' && op.sel === meta));
     assert.equal(ops(base).length - kept.length, 1, `${base} has one meta block op`);
     const v = ops(variant);
     assert.ok(!v.some(op => op.kind === 'text' && op.sel === meta), `${variant} draws no meta block`);
-    assert.deepEqual(v.slice(0, kept.length).map(op => `${op.kind} ${op.sel}`), kept.map(op => `${op.kind} ${op.sel}`), `${variant} keeps the other ops in order`);
+    assert.deepEqual(v.slice(0, kept.length).map(op => `${op.kind} ${op.sel}`), kept.map(op => `${op.kind} ${mapSel(op.sel)}`), `${variant} keeps the other ops in order`);
     const added = v.slice(kept.length);
     assert.deepEqual(json(added.map(op => [op.kind, op.sel, op.name === undefined ? '-' : op.name, op.value === undefined ? '-' : op.value])), [
-      ['attr', meta, 'title', null], ['remove', meta + ' .hd-sr', '-', '-'], ['hide', meta + ' .hd-dot', '-', '-']]);
+      ['attr', meta, 'title', null], ['attr', meta, 'tabindex', null], ['attr', meta, 'role', null], ['remove', meta + ' .hd-sr', '-', '-'],
+      ['hide', meta + ' .hd-dot', '-', '-'], ['hide', meta + ' .hd-topbar__meta-dot', '-', '-']]);
     assert.deepEqual(HFV2.skeletonSpecs[variant].chrome, HFV2.skeletonSpecs[base].chrome, `${variant} has the allowlist of ${base}`);
     assert.equal(HFV2.skeletonSpecs[variant].frame, HFV2.skeletonSpecs[base].frame);
   }
+  // The approved editor spec still finds the graph layer in the canvas itself; only its minimum variant looks in the viewport.
+  assert.ok(ops('workflow-editor').some(op => op.kind === 'custom' && op.sel === graphLayer));
+  assert.ok(!ops('workflow-editor').some(op => op.sel === viewportLayer));
+  assert.ok(ops('workflow-editor-minimum').some(op => op.kind === 'custom' && op.sel === viewportLayer && op.pin === 'fixed'));
+  assert.ok(!ops('workflow-editor-minimum').some(op => op.sel === graphLayer));
   // The approved loading states still name the approved specs.
   for (const [route, spec] of [['parallel-group/loading', 'parallel-group'], ['workflow-run/loading-parallel', 'workflow-run-parallel'], ['workflow-editor/loading', 'workflow-editor']]) assert.equal(HFV2.findState(HFV2.findFamily(route.split('/')[0]), route.split('/')[1]).skeleton.spec, spec);
   // needs-you and menu-bar need no variant: nothing in their specs touches a minimum fix.
   assert.equal(LOADING['needs-you/loading-minimum'].spec, 'needs-you');
   assert.equal(LOADING['menu-bar/loading-minimum'].spec, 'menu-bar');
-  assert.ok(!HFV2.skeletonSpecs['needs-you'].ops.concat(HFV2.skeletonSpecs['menu-bar'].ops).some(op => /topbar__meta/.test(op.sel)));
+  assert.ok(!HFV2.skeletonSpecs['needs-you'].ops.concat(HFV2.skeletonSpecs['menu-bar'].ops).some(op => /topbar__meta|hd-canvas/.test(op.sel)));
 });
 
 // Runs catalog.js against a tolerant stub page. The stub element stores what is assigned to it and answers every other
@@ -215,13 +223,25 @@ test('every minimum-frame selector is scoped under .hdc-specimen--minimum', () =
   }
 });
 
-test('tripwire: applyMinimum creates no text and sets exactly one title', () => {
+test('tripwire: applyMinimum creates no text and makes only the listed attribute and element changes', () => {
   const source = read('scripts/minimum-frame.js').replace(/\/\/.*$/gm, '');
   for (const forbidden of ['createTextNode', 'textContent', 'innerHTML', 'innerText', 'outerHTML', 'insertAdjacentHTML', 'insertAdjacentText', '.data =', 'nodeValue =']) assert.ok(!source.includes(forbidden), `minimum-frame.js uses ${forbidden}`);
-  assert.equal((source.match(/setAttribute\(/g) || []).length, 1, 'one setAttribute call');
-  assert.match(source, /setAttribute\('title', node\.nodeValue\.trim\(\)\)/);
+  // Attributes: tabindex and role on the meta and the canvas viewport, aria-hidden on the empty dot, and the canvas
+  // label moved verbatim. No title is set and none is removed.
+  const attrs = [...source.matchAll(/setAttribute\('([a-z-]+)', ('[^']*'|label)\)/g)].map(m => `${m[1]}=${m[2]}`);
+  assert.deepEqual(attrs, ["aria-hidden='true'", "tabindex='0'", "role='note'", 'aria-label=label', "tabindex='0'", "role='region'"]);
+  assert.equal((source.match(/setAttribute\(/g) || []).length, attrs.length, 'every setAttribute call is listed');
+  assert.deepEqual([...source.matchAll(/removeAttribute\('([a-z-]+)'\)/g)].map(m => m[1]), ['aria-label']);
+  assert.ok(!/title/.test(source.replace(/\/\*[\s\S]*?\*\//g, '')), 'no title is set');
   const created = [...source.matchAll(/createElement\('([a-z]+)'\)/g)].map(m => m[1]);
   assert.deepEqual([...new Set(created)].sort(), ['div', 'span']);
+  // The empty elements: the popover and sidebar bodies, the canvas viewport (div), the .hd-sr wrapper and the dot (span).
+  assert.equal(created.filter(t => t === 'div').length, 3);
+  assert.equal(created.filter(t => t === 'span').length, 2);
+  // Listeners: the meta's hover and focus, and one document keydown listener that the next render removes.
+  assert.deepEqual([...source.matchAll(/meta\.addEventListener\('([a-z]+)'/g)].map(m => m[1]), ['mouseenter', 'mouseleave', 'focusin', 'focusout']);
+  assert.equal((source.match(/document\.addEventListener\('keydown'/g) || []).length, 1);
+  assert.equal((source.match(/document\.removeEventListener\('keydown'/g) || []).length, 1);
   assert.ok(!/\.removeChild\(|\.remove\(\)/.test(source), 'no node is removed');
 });
 
@@ -277,7 +297,7 @@ test('the fix names and their host classes name the product screen only, and the
   const css = read('styles/minimum-frame.css');
   for (const cls of new Set(css.match(/hdc-min-[a-z-]+|hd-[a-z-]+scroll/g))) assert.ok(!NAMING_RULE.test(cls), cls);
   assert.ok(HFV2.minimumFixes.includes('topbar-meta') && HFV2.minimumFixes.includes('editor-topbar'));
-  assert.deepEqual([...HFV2.minimumFixes].sort(), ['editor-topbar', 'inspector', 'lanes', 'popover', 'sidebar', 'topbar-meta']);
+  assert.deepEqual([...HFV2.minimumFixes].sort(), ['canvas', 'editor-topbar', 'inspector', 'lanes', 'popover', 'sidebar', 'topbar-meta']);
 });
 
 test('the sizing decisions are in the stylesheet: inspector 288, popover 380 by 560, lane floor 360', () => {
@@ -299,11 +319,20 @@ test('the drafts name the product screen only', () => {
 
 // ---- Behaviour of applyMinimum on a small hand-written node tree (no DOM library). ----
 class FakeNode {
-  constructor(tag, attrs = {}, kids = []) { this.nodeType = 1; this.tag = tag; this.attrs = { ...attrs }; this.childNodes = []; this.parent = null; this.classes = new Set((attrs.class || '').split(/\s+/).filter(Boolean)); this.classList = { add: c => this.classes.add(c), contains: c => this.classes.has(c) }; kids.forEach(k => this.appendChild(k)); }
-  set className(v) { this.classes = new Set(v.split(/\s+/).filter(Boolean)); this.classList = { add: c => this.classes.add(c), contains: c => this.classes.has(c) }; }
+  constructor(tag, attrs = {}, kids = []) {
+    this.nodeType = 1; this.tag = tag; this.attrs = { ...attrs }; this.childNodes = []; this.parent = null; this.listeners = {};
+    this.classes = new Set((attrs.class || '').split(/\s+/).filter(Boolean));
+    this.classList = { add: c => this.classes.add(c), remove: c => this.classes.delete(c), contains: c => this.classes.has(c) };
+    kids.forEach(k => this.appendChild(k));
+  }
+  set className(v) { this.classes = new Set(v.split(/\s+/).filter(Boolean)); }
   get children() { return this.childNodes.filter(n => n.nodeType === 1); }
   setAttribute(k, v) { this.attrs[k] = v; }
-  getAttribute(k) { return this.attrs[k]; }
+  getAttribute(k) { return k in this.attrs ? this.attrs[k] : null; }
+  removeAttribute(k) { delete this.attrs[k]; }
+  hasAttribute(k) { return k in this.attrs; }
+  addEventListener(type, fn) { (this.listeners[type] = this.listeners[type] || []).push(fn); }
+  fire(type, event = {}) { (this.listeners[type] || []).forEach(fn => fn(event)); }
   detach(n) { if (n.parent) n.parent.childNodes.splice(n.parent.childNodes.indexOf(n), 1); n.parent = this; }
   appendChild(n) { this.detach(n); this.childNodes.push(n); return n; }
   insertBefore(n, ref) { this.detach(n); this.childNodes.splice(this.childNodes.indexOf(ref), 0, n); return n; }
@@ -317,14 +346,24 @@ class FakeText { constructor(v) { this.nodeType = 3; this.nodeValue = v; this.pa
 const el = (tag, cls, kids = [], attrs = {}) => new FakeNode(tag, { class: cls, ...attrs }, kids);
 function texts(node, out = []) { node.childNodes.forEach(n => (n.nodeType === 3 ? out.push(n.nodeValue.trim()) : texts(n, out))); return out.filter(Boolean).sort(); }
 
-function runMinimum(host, fixes) {
-  const context = vm.createContext({ window: {}, document: { createElement: tag => new FakeNode(tag) } });
+// One shared fake document records the listeners added to and removed from it.
+function runMinimum(host, fixes, doc) {
+  const document = doc || makeDocument();
+  const context = vm.createContext({ window: {}, document });
   context.window = context;
   vm.runInContext(read('scripts/minimum-frame.js'), context);
   context.HFV2.applyMinimum(host, fixes);
+  return document;
+}
+function makeDocument() {
+  const document = { listeners: [], removed: [], createElement: tag => new FakeNode(tag) };
+  document.addEventListener = (type, fn) => document.listeners.push({ type, fn });
+  document.removeEventListener = (type, fn) => { document.removed.push({ type, fn }); document.listeners = document.listeners.filter(l => !(l.type === type && l.fn === fn)); };
+  document.press = key => document.listeners.filter(l => l.type === 'keydown').forEach(l => l.fn({ key }));
+  return document;
 }
 
-test('applyMinimum on a hand-written node tree: sidebar, popover and top bar meta', () => {
+test('applyMinimum on a hand-written node tree: sidebar, popover, canvas and top bar meta', () => {
   const sidebar = el('aside', 'hd-sidebar', [el('div', 'hd-sidebar__top'), el('nav', 'hd-nav'), el('section', 'hd-section'), el('section', 'hd-section hd-section--fill'), el('div', 'hd-sidebar__foot')]);
   const pop = el('section', '', [el('div', 'h'), el('section', 'a'), el('section', 'b'), el('section', 'c'), el('div', 'f')], { 'aria-label': 'Harflow menu' });
   const phrase = 'Unsaved changes · Revision 7', phrase2 = 'Enforced for every agent here: Network: not controlled.';
@@ -332,10 +371,12 @@ test('applyMinimum on a hand-written node tree: sidebar, popover and top bar met
   meta.appendChild(new FakeText(phrase));
   const meta2 = el('span', 'hd-topbar__meta');
   meta2.appendChild(new FakeText(phrase2));
-  const host = el('div', 'hdc-specimen', [sidebar, pop, el('div', 'hd-topbar', [meta, meta2])]);
+  const layer = el('div', 'layer'), tray = el('div', 'hd-tray'), zoom = el('div', 'hd-zoom');
+  const canvas = el('div', 'hd-canvas', [layer, tray, zoom], { 'aria-label': 'Workflow canvas' });
+  const host = el('div', 'hdc-specimen', [sidebar, pop, el('div', 'hd-topbar', [meta, meta2]), canvas]);
   sidebar.children[2].appendChild(new FakeText('Running'));
   const before = texts(host);
-  runMinimum(host, ['sidebar', 'popover', 'topbar-meta', 'lanes', 'inspector']);
+  runMinimum(host, ['sidebar', 'popover', 'topbar-meta', 'lanes', 'inspector', 'canvas']);
 
   const side = sidebar.children.map(c => [...c.classes][0]);
   assert.deepEqual(side, ['hd-sidebar__top', 'hd-sidebar__scroll', 'hd-sidebar__foot']);
@@ -344,20 +385,97 @@ test('applyMinimum on a hand-written node tree: sidebar, popover and top bar met
   assert.deepEqual(pop.children.map(c => [...c.classes][0]), ['h', 'hd-popover__scroll', 'f']);
   assert.deepEqual(pop.children[1].children.map(c => [...c.classes][0]), ['a', 'b', 'c']);
 
-  for (const [node, text] of [[meta, phrase], [meta2, phrase2]]) {
+  // The canvas: only the graph layer moves into the viewport; the tray and zoom stay on the canvas. The label moves verbatim.
+  assert.deepEqual(canvas.children.map(c => [...c.classes][0]), ['hd-canvas__scroll', 'hd-tray', 'hd-zoom']);
+  const viewport = canvas.children[0];
+  assert.deepEqual(viewport.children, [layer]);
+  assert.equal(viewport.getAttribute('aria-label'), 'Workflow canvas');
+  assert.ok(!canvas.hasAttribute('aria-label'), 'the label is on the viewport only');
+  assert.equal(viewport.getAttribute('tabindex'), '0');
+  assert.equal(viewport.getAttribute('role'), 'region');
+  assert.equal(viewport.children.length, 1);
+  assert.deepEqual(viewport.childNodes.filter(n => n.nodeType === 3), []);
+
+  for (const [node, text, ownDot] of [[meta, phrase, true], [meta2, phrase2, false]]) {
     const hidden = node.children.find(c => c.classes.has('hd-sr'));
     assert.ok(hidden, 'the meta text sits in .hd-sr');
     assert.equal(hidden.childNodes.length, 1);
     assert.equal(hidden.childNodes[0].nodeValue, text);
-    assert.equal(node.getAttribute('title'), text);
+    assert.ok(!node.hasAttribute('title'), 'no title: the text is shown on hover and focus instead');
     assert.equal(node.children.filter(c => c.classes.has('hd-sr')).length, 1, 'the text is exposed once');
     assert.deepEqual(node.childNodes.filter(n => n.nodeType === 3), [], 'no bare text is left in the meta');
+    assert.equal(node.getAttribute('tabindex'), '0');
+    assert.equal(node.getAttribute('role'), 'note');
+    assert.ok(!node.hasAttribute('aria-label'), 'no second name');
+    // One dot: the screen's own, or one empty decorative element added in its place.
+    const dots = node.children.filter(c => c.classes.has('hd-dot') || c.classes.has('hd-topbar__meta-dot'));
+    assert.equal(dots.length, 1);
+    assert.equal(dots[0].classes.has('hd-dot'), ownDot);
+    assert.equal(dots[0].getAttribute('aria-hidden'), 'true');
+    assert.deepEqual(dots[0].childNodes, [], 'a decorative dot holds nothing');
+    assert.ok(node.children.indexOf(dots[0]) < node.children.indexOf(hidden));
+    for (const type of ['mouseenter', 'mouseleave', 'focusin', 'focusout']) assert.equal((node.listeners[type] || []).length, 1, `${type} listener`);
   }
-  assert.ok(meta.children.some(c => c.classes.has('hd-dot')), 'the dot stays');
 
   assert.deepEqual(texts(host), before, 'the text multiset is unchanged');
-  for (const fix of ['sidebar', 'popover', 'topbar-meta', 'lanes', 'inspector']) assert.ok(host.classes.has(`hdc-min-${fix}`));
+  for (const fix of ['sidebar', 'popover', 'topbar-meta', 'lanes', 'inspector', 'canvas']) assert.ok(host.classes.has(`hdc-min-${fix}`));
   assert.throws(() => runMinimum(host, ['unknown']), /Unknown minimum fix/);
+});
+
+test('the canvas fix is idempotent and leaves a canvas with no graph layer alone', () => {
+  const canvas = el('div', 'hd-canvas', [el('div', 'layer')], { 'aria-label': 'Workflow canvas' });
+  const empty = el('div', 'hd-canvas');
+  const host = el('div', 'hdc-specimen', [canvas, empty]);
+  runMinimum(host, ['canvas', 'canvas']);
+  assert.equal(canvas.children.length, 1);
+  assert.equal(canvas.children[0].children.length, 1);
+  assert.equal(empty.children.length, 0);
+});
+
+// The meta text is shown while the pointer is on it or it has focus. Escape dismisses it; it stays dismissed until
+// both the pointer and the focus have left, and only then can the next hover or focus reveal it again.
+test('the meta text is dismissible: hover and focus are tracked independently and Escape is one document listener', () => {
+  const build = () => {
+    const meta = el('span', 'hd-topbar__meta');
+    meta.appendChild(new FakeText('Revision 7'));
+    return { meta, host: el('div', 'hdc-specimen', [el('div', 'hd-topbar', [meta])]) };
+  };
+  const hidden = m => m.classes.has('is-dismissed');
+  const { meta, host } = build();
+  const doc = runMinimum(host, ['topbar-meta']);
+  assert.equal(doc.listeners.filter(l => l.type === 'keydown').length, 1);
+
+  // Escape with nothing revealed does nothing.
+  doc.press('Escape'); assert.ok(!hidden(meta));
+  // A reveal by hover alone, with focus on the body, is dismissed.
+  meta.fire('mouseenter'); doc.press('Enter'); assert.ok(!hidden(meta), 'other keys do nothing');
+  doc.press('Escape'); assert.ok(hidden(meta));
+  meta.fire('mouseleave'); assert.ok(!hidden(meta), 'reset once neither hover nor focus remains');
+  // Escape, then the pointer leaves while the focus stays: still hidden.
+  meta.fire('focusin'); meta.fire('mouseenter'); doc.press('Escape'); assert.ok(hidden(meta));
+  meta.fire('mouseleave'); assert.ok(hidden(meta), 'focus remains');
+  meta.fire('focusout'); assert.ok(!hidden(meta), 'both ended');
+  // Escape, then the focus leaves while the pointer stays: still hidden.
+  meta.fire('focusin'); meta.fire('mouseenter'); doc.press('Escape'); meta.fire('focusout'); assert.ok(hidden(meta), 'hover remains');
+  meta.fire('mouseleave'); assert.ok(!hidden(meta));
+  // A focus reveal is dismissed too, and the next focus shows it again.
+  meta.fire('focusin'); doc.press('Escape'); assert.ok(hidden(meta));
+  meta.fire('focusout'); meta.fire('focusin'); assert.ok(!hidden(meta));
+
+  // A second render into the same host removes the first listener before it adds its own, so they never stack.
+  const again = build();
+  host.childNodes.forEach(n => { n.parent = null; });
+  host.childNodes = [];
+  host.appendChild(again.host.children[0]);
+  runMinimum(host, ['topbar-meta'], doc);
+  assert.equal(doc.listeners.filter(l => l.type === 'keydown').length, 1);
+  assert.equal(doc.removed.filter(l => l.type === 'keydown').length, 1);
+  const fresh = host.querySelector('.hd-topbar__meta');
+  fresh.fire('mouseenter'); doc.press('Escape');
+  assert.ok(hidden(fresh), 'the new listener acts on the new meta');
+  // A render with no meta (another fix list) removes the listener and adds none.
+  runMinimum(host, ['sidebar'], doc);
+  assert.equal(doc.listeners.length, 0);
 });
 
 test('the inspector fix touches no node, and the old top bar name still applies the same fix', () => {
@@ -368,6 +486,24 @@ test('the inspector fix touches no node, and the old top bar name still applies 
   runMinimum(host, ['inspector', 'editor-topbar']);
   assert.deepEqual(inspector.children.map(c => [...c.classes][0]), ['hd-inspector__body']);
   assert.equal(inspector.children[0].children.length, 0);
-  assert.equal(meta.getAttribute('title'), 'Run started 02:00 · HarflowMCP');
+  assert.ok(!meta.hasAttribute('title'));
+  assert.equal(meta.getAttribute('tabindex'), '0');
   assert.ok(host.classes.has('hdc-min-inspector') && host.classes.has('hdc-min-editor-topbar'));
+});
+
+test('the stylesheet: the canvas viewport scrolls, the meta layout is unchanged and the reveal has no gap', () => {
+  const css = read('styles/minimum-frame.css').replace(/\/\*[\s\S]*?\*\//g, '');
+  // The canvas keeps its clipping and its colour; the viewport scrolls and carries the dot grid with the graph.
+  assert.match(css, /\.hdc-min-canvas \.hd-canvas__scroll\{position:absolute;inset:0;overflow:auto;[^}]*background-attachment:local;scrollbar-width:thin;/);
+  assert.match(css, /\.hdc-min-canvas \.hd-canvas\{background-image:none\}/);
+  assert.match(css, /\.hdc-min-canvas \.hd-canvas__scroll:focus-visible\{outline-offset:-2px\}/);
+  assert.match(css, /\.hd-canvas>\.hd-tray,[^{]*\.hd-canvas>\.hd-zoom\{z-index:2\}/);
+  // The meta's padding and its negative margin cancel, so the top bar lays out as before.
+  const m = /\.hdc-min-topbar-meta \.hd-topbar__meta,[^{]*\{[^}]*padding:(\d+)px;margin:-(\d+)px\}/.exec(css);
+  assert.ok(m && m[1] === m[2], 'padding and negative margin are equal');
+  // The tooltip is reached from the meta's own box (no gap), on hover and on focus, and a dismissed meta shows none.
+  assert.match(css, /\.hd-topbar__meta\[tabindex\]:hover:not\(\.is-dismissed\)>\.hd-sr,[^{]*\.hd-topbar__meta\[tabindex\]:focus-visible:not\(\.is-dismissed\)>\.hd-sr\{position:absolute;left:0;top:100%;/);
+  assert.match(css, /\.hd-topbar__meta\[tabindex\]\{position:relative;z-index:6;/);
+  // The neutral dot is the tertiary text colour, not the attention colour of an unsaved change.
+  assert.match(css, /\.hd-topbar__meta-dot\{[^}]*background:var\(--text-tertiary\)/);
 });

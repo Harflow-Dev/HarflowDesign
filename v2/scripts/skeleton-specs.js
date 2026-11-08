@@ -411,17 +411,24 @@
   };
   Object.keys(CHROME).forEach(function (key) { S[key].chrome = CHROME[key]; });
   // Minimum window variants. The minimum drafts drop the top bar meta (minimum-frame.js): its text sits in a visually
-  // hidden span and in a title. The meta is data, so a loading draft carries neither. The variants of the approved
-  // specs below drop the meta block, remove the title and the hidden text, and keep the meta box as it is in the
-  // minimum loaded state. Everything else is the approved spec.
+  // hidden span, and the meta is a focusable target with a dot. The meta is data, so a loading draft carries none of
+  // that. The variants of the approved specs below drop the meta block, remove the hidden text, hide the dots, take the
+  // meta out of the tab order, and keep the meta box as it is in the minimum loaded state. The minimum canvas scrolls
+  // in its own viewport, so the graph layer is found there. Everything else is the approved spec.
   function minimumVariant(base, titleWidth) {
     var meta = APP + ' .hd-topbar .hd-topbar__meta';
+    var graphLayer = APP + ' .hd-canvas > div:first-child';
     var ops = base.ops.filter(function (op) { return !(op.kind === 'text' && op.sel === meta); }).map(function (op) {
-      return titleWidth && op.kind === 'text' && op.sel === APP + ' .hd-topbar .hd-topbar__title' ? Object.assign({}, op, { w: titleWidth }) : op;
+      if (titleWidth && op.kind === 'text' && op.sel === APP + ' .hd-topbar .hd-topbar__title') return Object.assign({}, op, { w: titleWidth });
+      if (op.sel === graphLayer) return Object.assign({}, op, { sel: APP + ' .hd-canvas__scroll > div:first-child' });
+      return op;
     });
     ops.push({ sel: meta, kind: 'attr', name: 'title', value: null });
+    ops.push({ sel: meta, kind: 'attr', name: 'tabindex', value: null });
+    ops.push({ sel: meta, kind: 'attr', name: 'role', value: null });
     ops.push({ sel: meta + ' .hd-sr', kind: 'remove' });
     ops.push({ sel: meta + ' .hd-dot', kind: 'hide', optional: true });
+    ops.push({ sel: meta + ' .hd-topbar__meta-dot', kind: 'hide', optional: true });
     return Object.assign({}, base, { ops: ops, chrome: Object.assign({}, base.chrome) });
   }
   S['parallel-group-minimum'] = minimumVariant(S['parallel-group']);
