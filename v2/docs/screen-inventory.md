@@ -2,7 +2,7 @@
 
 Interface reference for the redesigned Harflow Desktop client. Open `v2/index.html`, or use deep links of the form `#family/state/theme` (theme is `light`, `dark` or `system`). Every screen is a 1280 by 800 specimen built from the Harflow Desktop design system (classes prefixed `hd-`); the catalog chrome uses the prefix `hdc-`.
 
-All states below were approved by the owner on 2026-11-03. See [approval.md](decisions/approval.md) for the versions and the way implementations cite them. Dark appearance is covered by the appearance toggle, not by separate states.
+All states below were approved by the owner on 2026-11-03 unless a row says otherwise. See [approval.md](decisions/approval.md) for the versions and the way implementations cite them. Dark appearance is covered by the appearance toggle, not by separate states.
 
 Migration intent and unresolved coverage are tracked in the [migration coverage ledger](migration-coverage.md).
 
