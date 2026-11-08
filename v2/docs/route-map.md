@@ -105,7 +105,7 @@ These are canonical routes with no earlier name; they are not aliases or redirec
 
 ## Minimum window routes
 
-These are canonical routes with no earlier name. Each draws the loaded state in the second column at 1000 × 620 with the fixes the window needs; they are provisional ([decisions](decisions/README.md#minimum-window-drafts)). None declares a view.
+These are canonical routes with no earlier name. Each draws the state in the second column at 1000 × 620 with the fixes the window needs (the loading routes add the loading skeleton); they are provisional ([decisions](decisions/README.md#minimum-window-drafts)). None declares a view.
 
 | Minimum window route | Derived from |
 | --- | --- |
@@ -113,7 +113,13 @@ These are canonical routes with no earlier name. Each draws the loaded state in 
 | `parallel-group/lanes-minimum` | `parallel-group/lanes` |
 | `workflow-run/parallel-minimum` | `workflow-run/parallel` |
 | `workflow-editor/node-selected-minimum` | `workflow-editor/node-selected` |
+| `workflow-editor/orchestrator-minimum` | `workflow-editor/orchestrator` |
 | `menu-bar/busy-minimum` | `menu-bar/busy` |
+| `needs-you/loading-minimum` | `needs-you/waiting-minimum` with its loading skeleton |
+| `parallel-group/loading-minimum` | `parallel-group/lanes-minimum` with its loading skeleton |
+| `workflow-run/loading-parallel-minimum` | `workflow-run/parallel-minimum` with its loading skeleton |
+| `workflow-editor/loading-minimum` | `workflow-editor/node-selected-minimum` with its loading skeleton |
+| `menu-bar/loading-minimum` | `menu-bar/busy-minimum` with its loading skeleton |
 
 ## Moved routes
 

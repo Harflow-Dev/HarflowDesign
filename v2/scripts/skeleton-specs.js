@@ -410,6 +410,23 @@
     }
   };
   Object.keys(CHROME).forEach(function (key) { S[key].chrome = CHROME[key]; });
+  // Minimum window variants. The minimum drafts drop the top bar meta (minimum-frame.js): its text sits in a visually
+  // hidden span and in a title. The meta is data, so a loading draft carries neither. The variants of the approved
+  // specs below drop the meta block, remove the title and the hidden text, and keep the meta box as it is in the
+  // minimum loaded state. Everything else is the approved spec.
+  function minimumVariant(base, titleWidth) {
+    var meta = APP + ' .hd-topbar .hd-topbar__meta';
+    var ops = base.ops.filter(function (op) { return !(op.kind === 'text' && op.sel === meta); }).map(function (op) {
+      return titleWidth && op.kind === 'text' && op.sel === APP + ' .hd-topbar .hd-topbar__title' ? Object.assign({}, op, { w: titleWidth }) : op;
+    });
+    ops.push({ sel: meta, kind: 'attr', name: 'title', value: null });
+    ops.push({ sel: meta + ' .hd-sr', kind: 'remove' });
+    ops.push({ sel: meta + ' .hd-dot', kind: 'hide', optional: true });
+    return Object.assign({}, base, { ops: ops, chrome: Object.assign({}, base.chrome) });
+  }
+  S['parallel-group-minimum'] = minimumVariant(S['parallel-group']);
+  S['workflow-run-parallel-minimum'] = minimumVariant(S['workflow-run-parallel']);
+  S['workflow-editor-minimum'] = minimumVariant(S['workflow-editor'], 117);
   // The two frames whose sidebar can collapse also show the rail's own chrome once it has.
   S['new-task'].chromeCollapsed = S['sidebar'].chromeCollapsed = { 'Expand sidebar': 2, 'Change appearance': 1 };
 })();

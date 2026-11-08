@@ -18,6 +18,7 @@ function loadRuntime() {
   return context.HFV2;
 }
 const HFV2 = loadRuntime();
+const json = value => JSON.parse(JSON.stringify(value));
 const NAMING_RULE = /\bm0\d\b|d2b|propos(al|ed)|native entry|\bG-[A-Z]+\b/i;
 
 const STATES = {
@@ -25,11 +26,22 @@ const STATES = {
   'parallel-group/lanes-minimum': { of: 'parallel-group/lanes', fixes: ['sidebar', 'lanes', 'topbar-meta'], title: 'Lanes · 1000 × 620' },
   'workflow-run/parallel-minimum': { of: 'workflow-run/parallel', fixes: ['sidebar', 'lanes', 'topbar-meta'], title: 'Parallel view · 1000 × 620' },
   'workflow-editor/node-selected-minimum': { of: 'workflow-editor/node-selected', fixes: ['sidebar', 'inspector', 'topbar-meta'], title: 'Node selected · 1000 × 620' },
+  'workflow-editor/orchestrator-minimum': { of: 'workflow-editor/orchestrator', fixes: ['sidebar', 'inspector', 'topbar-meta'], title: 'Orchestrator · 1000 × 620' },
   'menu-bar/busy-minimum': { of: 'menu-bar/busy', fixes: ['popover'], title: 'Busy · 1000 × 620' }
 };
 
-test('the five minimum window drafts are registered, provisional and derived from their loaded state', () => {
-  const all = HFV2.registry.families.flatMap(f => f.states.filter(s => s.minimum).map(s => `${f.id}/${s.id}`));
+// The loading drafts: the minimum draft of the same screen with its loading skeleton. `of` is the loaded route the draft
+// derives from (one hop), `base` the minimum draft it is compared with in the browser checks.
+const LOADING = {
+  'needs-you/loading-minimum': { of: 'needs-you/waiting', base: 'needs-you/waiting-minimum', fixes: ['sidebar'], spec: 'needs-you' },
+  'parallel-group/loading-minimum': { of: 'parallel-group/lanes', base: 'parallel-group/lanes-minimum', fixes: ['sidebar', 'lanes', 'topbar-meta'], spec: 'parallel-group-minimum' },
+  'workflow-run/loading-parallel-minimum': { of: 'workflow-run/parallel', base: 'workflow-run/parallel-minimum', fixes: ['sidebar', 'lanes', 'topbar-meta'], spec: 'workflow-run-parallel-minimum' },
+  'workflow-editor/loading-minimum': { of: 'workflow-editor/node-selected', base: 'workflow-editor/node-selected-minimum', fixes: ['sidebar', 'inspector', 'topbar-meta'], spec: 'workflow-editor-minimum' },
+  'menu-bar/loading-minimum': { of: 'menu-bar/busy', base: 'menu-bar/busy-minimum', fixes: ['popover'], spec: 'menu-bar' }
+};
+
+test('the six minimum window drafts are registered, provisional and derived from their loaded state', () => {
+  const all = HFV2.registry.families.flatMap(f => f.states.filter(s => s.minimum && !s.skeleton).map(s => `${f.id}/${s.id}`));
   assert.deepEqual([...all].sort(), Object.keys(STATES).sort());
   for (const [route, want] of Object.entries(STATES)) {
     const [familyId, stateId] = route.split('/');
@@ -66,8 +78,76 @@ test('no existing template changed: the digests equal those of the base commit a
   }
 });
 
+test('the five loading drafts are registered with the minimum() helper, provisional, in the Minimum window group', () => {
+  const all = HFV2.registry.families.flatMap(f => f.states.filter(s => s.minimum && s.skeleton).map(s => `${f.id}/${s.id}`));
+  assert.deepEqual([...all].sort(), Object.keys(LOADING).sort());
+  const source = read('scripts/screens-minimum.js');
+  assert.equal((source.match(/^  minimum\('/gm) || []).length, 11, 'all eleven drafts go through minimum()');
+  for (const [route, want] of Object.entries(LOADING)) {
+    const [familyId, stateId] = route.split('/');
+    const family = HFV2.findFamily(familyId), state = HFV2.findState(family, stateId);
+    assert.equal(state.status, 'provisional', route);
+    assert.equal(state.approvalNote, 'Provisional · needs owner approval', route);
+    assert.ok(!state.approval && !('approval' in state), `${route} carries no approval`);
+    assert.equal(state.group, 'Minimum window', route);
+    assert.equal(state.title, 'Loading · 1000 × 620');
+    assert.deepEqual(json(state.minimum), { of: want.of, fixes: want.fixes });
+    assert.deepEqual(json(state.skeleton), { spec: want.spec }, `${route} declares a spec and no skeleton.of`);
+    assert.equal(HFV2.approvalLine(family, state), 'Provisional · needs owner approval');
+    // The fix list is the one of the minimum draft it is compared with.
+    const [bf, bs] = want.base.split('/');
+    assert.deepEqual(json(HFV2.findState(HFV2.findFamily(bf), bs).minimum.fixes), want.fixes, `${route} uses the fixes of ${want.base}`);
+    // Resolved in one place: the template of the loaded route, both declarations kept, and no chain through another draft.
+    const d = HFV2.describe(route), loaded = HFV2.describe(want.of);
+    assert.equal(d.templateKey, loaded.templateKey);
+    assert.equal(d.renderer, null);
+    assert.deepEqual(json(d.minimum), { of: want.of, fixes: want.fixes });
+    assert.deepEqual(json(d.skeleton), { spec: want.spec });
+    assert.equal(d.status, 'provisional');
+    assert.ok(HFV2.skeletonSpecs[want.spec], `${route} names a registered spec`);
+    assert.ok(!(route in HFV2.templates));
+    for (const field of ['id', 'title', 'description', 'group', 'approvalNote']) assert.ok(!NAMING_RULE.test(state[field]), `${route} ${field}`);
+  }
+});
+
+test('the loading drafts keep the approved specs and drop only the top bar meta in the variants', () => {
+  const ops = key => HFV2.skeletonSpecs[key].ops;
+  const pairs = [['parallel-group', 'parallel-group-minimum'], ['workflow-run-parallel', 'workflow-run-parallel-minimum'], ['workflow-editor', 'workflow-editor-minimum']];
+  for (const [base, variant] of pairs) {
+    const meta = '.hd-app .hd-topbar .hd-topbar__meta';
+    const kept = ops(base).filter(op => !(op.kind === 'text' && op.sel === meta));
+    assert.equal(ops(base).length - kept.length, 1, `${base} has one meta block op`);
+    const v = ops(variant);
+    assert.ok(!v.some(op => op.kind === 'text' && op.sel === meta), `${variant} draws no meta block`);
+    assert.deepEqual(v.slice(0, kept.length).map(op => `${op.kind} ${op.sel}`), kept.map(op => `${op.kind} ${op.sel}`), `${variant} keeps the other ops in order`);
+    const added = v.slice(kept.length);
+    assert.deepEqual(json(added.map(op => [op.kind, op.sel, op.name === undefined ? '-' : op.name, op.value === undefined ? '-' : op.value])), [
+      ['attr', meta, 'title', null], ['remove', meta + ' .hd-sr', '-', '-'], ['hide', meta + ' .hd-dot', '-', '-']]);
+    assert.deepEqual(HFV2.skeletonSpecs[variant].chrome, HFV2.skeletonSpecs[base].chrome, `${variant} has the allowlist of ${base}`);
+    assert.equal(HFV2.skeletonSpecs[variant].frame, HFV2.skeletonSpecs[base].frame);
+  }
+  // The approved loading states still name the approved specs.
+  for (const [route, spec] of [['parallel-group/loading', 'parallel-group'], ['workflow-run/loading-parallel', 'workflow-run-parallel'], ['workflow-editor/loading', 'workflow-editor']]) assert.equal(HFV2.findState(HFV2.findFamily(route.split('/')[0]), route.split('/')[1]).skeleton.spec, spec);
+  // needs-you and menu-bar need no variant: nothing in their specs touches a minimum fix.
+  assert.equal(LOADING['needs-you/loading-minimum'].spec, 'needs-you');
+  assert.equal(LOADING['menu-bar/loading-minimum'].spec, 'menu-bar');
+  assert.ok(!HFV2.skeletonSpecs['needs-you'].ops.concat(HFV2.skeletonSpecs['menu-bar'].ops).some(op => /topbar__meta/.test(op.sel)));
+});
+
+test('tripwire: the catalog applies the template, then the minimum fixes, then the skeleton, on every render', () => {
+  const catalog = read('scripts/catalog.js');
+  const min = catalog.indexOf('HFV2.applyMinimum(els.specimen, d.minimum.fixes)'), skel = catalog.indexOf('applySkeleton(els.specimen)');
+  const tmpl = catalog.indexOf('els.specimen.innerHTML = html');
+  assert.ok(tmpl > 0 && min > tmpl && skel > min, 'template, minimum, skeleton in that order');
+  assert.equal((catalog.match(/HFV2\.applyMinimum\(/g) || []).length, 1);
+  // One render function serves the first render, every re-render and every appearance switch.
+  assert.match(catalog, /function setPreference\(value\)[\s\S]*?go\(current\.family/);
+  const registry = read('scripts/registry.js');
+  assert.ok(registry.indexOf('state.skeleton && state.minimum') < registry.indexOf('if (state.skeleton) {'), 'the combined branch is checked first');
+});
+
 test('the loaded states the drafts derive from are untouched', () => {
-  for (const want of Object.values(STATES)) {
+  for (const want of [...Object.values(STATES), ...Object.values(LOADING)]) {
     const state = HFV2.findState(HFV2.findFamily(want.of.split('/')[0]), want.of.split('/')[1]);
     assert.equal(state.status, 'approved');
     assert.ok(!state.minimum);

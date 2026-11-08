@@ -19,7 +19,7 @@ function loadRuntime() {
 }
 const HFV2 = loadRuntime();
 const json = value => JSON.parse(JSON.stringify(value));
-const loadingStates = HFV2.registry.families.flatMap(family => family.states.filter(state => state.skeleton).map(state => ({ family, state, route: `${family.id}/${state.id}` })));
+const loadingStates = HFV2.registry.families.flatMap(family => family.states.filter(state => state.skeleton && !state.minimum).map(state => ({ family, state, route: `${family.id}/${state.id}` })));
 const KINDS = ['rows', 'html', 'custom', 'text', 'fill', 'hide', 'remove', 'disable', 'drop', 'attr', 'settext', 'pin'];
 const REGION_KINDS = ['rows', 'html', 'custom'];
 
@@ -98,7 +98,10 @@ test('sidebar/loading replaced sidebar/history-loading; no pending redraw pair n
 });
 
 test('specs are complete: frame, label, region ops, valid kinds and an allowlist', () => {
-  const used = new Set(loadingStates.map(({ state }) => state.skeleton.spec));
+  // The loading drafts at 1000 × 620 (tests/minimum-frame.test.mjs) use the approved specs and their minimum variants.
+  const draftSpecs = HFV2.registry.families.flatMap(f => f.states.filter(s => s.skeleton && s.minimum).map(s => s.skeleton.spec));
+  assert.equal(draftSpecs.length, 5);
+  const used = new Set([...loadingStates.map(({ state }) => state.skeleton.spec), ...draftSpecs]);
   for (const key of used) assert.ok(HFV2.skeletonSpecs[key], `spec ${key} exists`);
   for (const [key, spec] of Object.entries(HFV2.skeletonSpecs)) {
     assert.ok(spec.frame && /^Loading [A-Z]/.test(spec.label), `${key} has a frame and a label`);

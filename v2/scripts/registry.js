@@ -756,6 +756,15 @@
     var family = HFV2.findFamily(parts[0]);
     var state = family && HFV2.findState(family, parts[1]);
     if (!state) return null;
+    if (state.skeleton && state.minimum) {
+      // A loading draft at 1000 × 620 draws the template of the loaded screen its minimum state derives from, then
+      // the minimum fixes, then the skeleton (catalog.js). It declares both and no skeleton.of.
+      var shown = HFV2.describe(state.minimum.of);
+      return Object.assign({}, shown, {
+        route: route, family: family, state: state, guideKey: route, approval: HFV2.approvalLine(family, state),
+        views: [], status: state.status, hidden: !!(state.hidden || family.hidden), minimum: state.minimum, skeleton: state.skeleton
+      });
+    }
     if (state.skeleton) {
       // A loading state draws the template and renderer of the loaded screen it mirrors; only its own metadata,
       // approval and skeleton declaration differ.

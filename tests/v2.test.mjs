@@ -81,8 +81,9 @@ test('registry routes are unique and every descriptor resolves to a template, gu
       assert.ok(d.componentMeta === null, `${d.route} is not a component specimen`);
     } else {
       // A loading state draws the template of the loaded screen it mirrors; every other state renders its own.
-      if (d.skeleton) assert.equal(d.templateKey, HFV2.describe(d.skeleton.of).templateKey, `${d.route} renders the template of ${d.skeleton.of}`);
-      else if (d.minimum) assert.equal(d.templateKey, HFV2.describe(d.minimum.of).templateKey, `${d.route} renders the template of ${d.minimum.of}`);
+      // A loading draft at 1000 × 620 declares a minimum and a skeleton and no skeleton.of: its template is the minimum's.
+      if (d.minimum) assert.equal(d.templateKey, HFV2.describe(d.minimum.of).templateKey, `${d.route} renders the template of ${d.minimum.of}`);
+      else if (d.skeleton) assert.equal(d.templateKey, HFV2.describe(d.skeleton.of).templateKey, `${d.route} renders the template of ${d.skeleton.of}`);
       else assert.equal(d.templateKey, d.route, `${d.route} renders its own template`);
     }
   }

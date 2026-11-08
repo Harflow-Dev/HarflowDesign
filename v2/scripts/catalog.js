@@ -246,8 +246,11 @@
     var applySkeleton = function (host) { HFV2.skeletonReport = HFV2.skeletonize(host, skeletonSpec); };
     if (skeletonSpec) { options.loading = true; options.decision = (d.state.approval || {}).decision; options.afterRender = applySkeleton; }
     if (renderer) specimenCleanup = renderer.mount(els.specimen, d.mount, options);
-    else if (skeletonSpec) applySkeleton(els.specimen);
-    if (d.minimum) HFV2.applyMinimum(els.specimen, d.minimum.fixes);
+    else {
+      // Template, then the minimum fixes, then the skeleton: a skeleton pins the boxes the fixes have laid out.
+      if (d.minimum) HFV2.applyMinimum(els.specimen, d.minimum.fixes);
+      if (skeletonSpec) applySkeleton(els.specimen);
+    }
     var guide = HFV2.componentDocs && HFV2.componentDocs[d.guideKey];
     els.doc.innerHTML = guide || '';
     els.doc.hidden = !guide;
