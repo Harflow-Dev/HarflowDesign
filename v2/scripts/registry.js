@@ -513,6 +513,13 @@
             "status": "approved"
           },
           {
+            "id": "skeleton-shimmer",
+            "title": "Skeleton shimmer",
+            "description": "Skeleton shimmer is the placeholder block of a screen's first load, with a sheen that sweeps every 1.4 seconds and a static form under reduced motion. Use it for: The data regions of a loading screen; the screen's real chrome stays as drawn.",
+            "status": "provisional",
+            "approvalNote": "Provisional · needs owner approval"
+          },
+          {
             "id": "icons",
             "title": "Icons",
             "description": "Icons is the set of 39 stroke icons, drawn as CSS masks so they take the current text colour. Use it for: Next to a label, in a button, row, pill or menu item; Alone only in an icon button, with an `aria-label` on the button; Do not use icons as decoration; each one should carry meaning.",
@@ -685,6 +692,15 @@
     var family = HFV2.findFamily(parts[0]);
     var state = family && HFV2.findState(family, parts[1]);
     if (!state) return null;
+    if (state.skeleton) {
+      // A loading state draws the template and renderer of the loaded screen it mirrors; only its own metadata,
+      // approval and skeleton declaration differ.
+      var loaded = HFV2.describe(state.skeleton.of);
+      return Object.assign({}, loaded, {
+        route: route, family: family, state: state, guideKey: route, approval: HFV2.approvalLine(family, state),
+        views: [], status: state.status, hidden: !!(state.hidden || family.hidden), skeleton: state.skeleton
+      });
+    }
     var source = state.source || {};
     var key = source.template || route;
     var renderer = source.renderer || null;

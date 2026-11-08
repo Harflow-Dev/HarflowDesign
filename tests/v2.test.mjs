@@ -80,7 +80,9 @@ test('registry routes are unique and every descriptor resolves to a template, gu
       assert.ok(d.mount, `${d.route} names its mount id`);
       assert.ok(d.componentMeta === null, `${d.route} is not a component specimen`);
     } else {
-      assert.equal(d.templateKey, d.route, `${d.route} renders its own template`);
+      // A loading state draws the template of the loaded screen it mirrors; every other state renders its own.
+      if (d.skeleton) assert.equal(d.templateKey, HFV2.describe(d.skeleton.of).templateKey, `${d.route} renders the template of ${d.skeleton.of}`);
+      else assert.equal(d.templateKey, d.route, `${d.route} renders its own template`);
     }
   }
   const mountIds = {
@@ -366,7 +368,7 @@ test('aliases resolve old routes without shadowing or chaining, and land on a li
   // The retired duplicate shell state had no earlier name either.
   const redrawMounts = new Set(HFV2.m04RedrawStates.map(x => x.id));
   const nameless = new Set(['sidebar/centered-expanded']);
-  assert.equal(entries.length, descriptors.filter(d => d.renderer && d.renderer !== 'transcript' && !(d.renderer === 'm04' && redrawMounts.has(d.mount))).length + retired.filter(e => e.renderer && !nameless.has(e.route)).length, 'every renderer route has exactly one old route, retired ones included, except the redraws');
+  assert.equal(entries.length, descriptors.filter(d => d.renderer && !d.skeleton && d.renderer !== 'transcript' && !(d.renderer === 'm04' && redrawMounts.has(d.mount))).length + retired.filter(e => e.renderer && !nameless.has(e.route)).length, 'every renderer route has exactly one old route, retired ones included, except the redraws');
   for (const [old, target] of entries) {
     assert.match(old, /^[a-z0-9-]+\/[a-z0-9-]+$/);
     assert.ok(!routeSet.has(old), `${old} is an alias and must not also be canonical`);
@@ -934,7 +936,7 @@ test('the catalog opens a declared view at load and canonicalises the address wi
   const source = read(path.join(v2, 'scripts', 'catalog.js'));
   assert.match(source, /HFV2\.parseRoute\(HFV2\.resolveRoute\(hash \|\| ''\)\)/);
   assert.match(source, /function hashFor\(family, state, override, view\)[\s\S]*?\(view \? '\/' \+ view : ''\)[\s\S]*?\(override \? '\/' \+ override : ''\)/, 'the view precedes the appearance');
-  assert.match(source, /renderer\.mount\(els\.specimen, d\.mount, \{ view: current\.view \}\)/);
+  assert.match(source, /var options = \{ view: current\.view \};[\s\S]*?renderer\.mount\(els\.specimen, d\.mount, options\)/);
   assert.match(source, /go\(current\.family, current\.state, null, current\.view\)/, 'an appearance change keeps the view');
   const render = source.slice(source.indexOf('function render()'), source.indexOf('function setPreference'));
   assert.match(render, /hashFor\(parsed\.family, parsed\.state, parsed\.override, parsed\.view\)/);

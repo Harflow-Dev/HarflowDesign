@@ -324,6 +324,38 @@ steps and radii: space-3 12, space-4 16, space-5 24, row-height 32, sidebar-widt
 `;
   M['components/skeleton'] = { width: 960, height: 360, group: 'Feedback' };
 
+  T['components/skeleton-shimmer'] = `
+<div class="hd-stage" style="gap:var(--space-5)">
+  <div class="caption hd-faint">Shimmer (hd-skel--shimmer): a sheen sweeps each block every 1.4 s. Fill is --surface-active, the sheen is --skeleton-sheen.</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4)">
+    <div data-theme="light" style="background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:var(--radius-lg);padding:var(--space-4);display:flex;flex-direction:column;gap:var(--space-3)" aria-busy="true" aria-label="Light appearance, shimmering">
+      <div class="caption hd-faint">Light</div>
+      <div style="display:flex;align-items:center;gap:var(--space-3)"><span class="hd-skel hd-skel--shimmer hd-skel--circle" aria-hidden="true" style="width:16px;height:16px"></span><span class="hd-skel hd-skel--shimmer hd-skel--pill" aria-hidden="true" style="width:190px;height:12px"></span></div>
+      <div style="display:flex;align-items:center;gap:var(--space-3)"><span class="hd-skel hd-skel--shimmer hd-skel--circle" aria-hidden="true" style="width:16px;height:16px"></span><span class="hd-skel hd-skel--shimmer hd-skel--pill" aria-hidden="true" style="width:140px;height:12px"></span></div>
+      <span class="hd-skel hd-skel--shimmer hd-skel--soft" aria-hidden="true" style="width:100%;height:64px"></span>
+    </div>
+    <div data-theme="dark" style="background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:var(--radius-lg);padding:var(--space-4);display:flex;flex-direction:column;gap:var(--space-3)" aria-busy="true" aria-label="Dark appearance, shimmering">
+      <div class="caption hd-faint">Dark</div>
+      <div style="display:flex;align-items:center;gap:var(--space-3)"><span class="hd-skel hd-skel--shimmer hd-skel--circle" aria-hidden="true" style="width:16px;height:16px"></span><span class="hd-skel hd-skel--shimmer hd-skel--pill" aria-hidden="true" style="width:190px;height:12px"></span></div>
+      <div style="display:flex;align-items:center;gap:var(--space-3)"><span class="hd-skel hd-skel--shimmer hd-skel--circle" aria-hidden="true" style="width:16px;height:16px"></span><span class="hd-skel hd-skel--shimmer hd-skel--pill" aria-hidden="true" style="width:140px;height:12px"></span></div>
+      <span class="hd-skel hd-skel--shimmer hd-skel--soft" aria-hidden="true" style="width:100%;height:64px"></span>
+    </div>
+  </div>
+  <div class="caption hd-faint">Reduced motion (hd-skel--still, applied by the prefers-reduced-motion media query): the same blocks with no sweep and no pulse.</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4)">
+    <div data-theme="light" style="background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:var(--radius-lg);padding:var(--space-4);display:flex;flex-direction:column;gap:var(--space-3)" aria-busy="true" aria-label="Light appearance, static">
+      <div style="display:flex;align-items:center;gap:var(--space-3)"><span class="hd-skel hd-skel--shimmer hd-skel--still hd-skel--circle" aria-hidden="true" style="width:16px;height:16px"></span><span class="hd-skel hd-skel--shimmer hd-skel--still hd-skel--pill" aria-hidden="true" style="width:190px;height:12px"></span></div>
+      <span class="hd-skel hd-skel--shimmer hd-skel--still hd-skel--soft" aria-hidden="true" style="width:100%;height:40px"></span>
+    </div>
+    <div data-theme="dark" style="background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:var(--radius-lg);padding:var(--space-4);display:flex;flex-direction:column;gap:var(--space-3)" aria-busy="true" aria-label="Dark appearance, static">
+      <div style="display:flex;align-items:center;gap:var(--space-3)"><span class="hd-skel hd-skel--shimmer hd-skel--still hd-skel--circle" aria-hidden="true" style="width:16px;height:16px"></span><span class="hd-skel hd-skel--shimmer hd-skel--still hd-skel--pill" aria-hidden="true" style="width:190px;height:12px"></span></div>
+      <span class="hd-skel hd-skel--shimmer hd-skel--still hd-skel--soft" aria-hidden="true" style="width:100%;height:40px"></span>
+    </div>
+  </div>
+</div>
+`;
+  M['components/skeleton-shimmer'] = { width: 960, height: 520, group: 'Feedback' };
+
   T['components/icons'] = `
 <div class="hd-stage">
 <div class="caption hd-faint">16px (default) and 20px (hd-i--lg). Icons take currentColor.</div>

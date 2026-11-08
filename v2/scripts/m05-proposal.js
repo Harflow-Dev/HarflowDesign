@@ -386,9 +386,21 @@
   function frameLabel(ui) {
     return '<label>Frame <select data-m05-frame><option value="reference"' + (ui.frame === 'reference' ? ' selected' : '') + '>1280 × 800</option><option value="minimum"' + (ui.frame === 'minimum' ? ' selected' : '') + '>1000 × 620</option></select></label>';
   }
-  function mount(root, id) {
+  // `options` is optional and passed by no existing route: { loading, approved, afterRender(stage) }. A loading mount draws
+  // the loaded state, ignores every in-frame action except the pane and its tabs, keeps the catalog Frame
+  // control, and calls afterRender(stage) after every render of the app frame.
+  function mount(root, id, options) {
     var state = (H.m05ProposalStates || []).filter(function (s) { return s.id === id; })[0];
-    return state ? mountState(root, state, null) : function () {};
+    if (!state) return function () {};
+    if (options && options.loading) {
+      var strips = H.catalogStrips.loading;
+      return mountState(root, state, {
+        loading: true,
+        strip: function (st, ui, frameLabel) { var ok = options.approved; return '<div class="hd-m05-strip"><strong>' + strips[ok ? 'approvedHeading' : 'heading'] + '</strong>' + frameLabel + '</div><p class="hd-faint">' + strips[ok ? 'approvedNote' : 'note'] + '</p>'; },
+        afterRender: function (stage) { if (options.afterRender) options.afterRender(stage); }
+      });
+    }
+    return mountState(root, state, null);
   }
   // `ext` is optional and passed by no existing route: { hooks, strip(state, ui, frameLabel),
   // beforeRender(), afterRender(stage, saved) }. beforeRender runs before the specimen is replaced and returns
@@ -414,6 +426,7 @@
       if (ui.reveal) { var open = stage.querySelector('[data-m05-focus]'); if (open) { open.focus({ preventScroll: true }); open.scrollIntoView({ block: 'nearest' }); } }
     }
     function act(a) {
+      if (ext && ext.loading && a !== 'pane' && a.indexOf('tab-') !== 0) return;
       if (a === 'pane') { ui.pane = !ui.pane; ui.reveal = ''; return render('[data-m05="pane"]'); }
       if (a === 'menu') { ui.menu = !ui.menu; return render(ui.menu ? '.hd-m05-menu [role="menuitem"]' : '[data-m05="menu"]'); }
       if (a === 'load-more') { ui.paged[ui.tab] = true; return render('[data-m05="tab-' + ui.tab + '"]'); }

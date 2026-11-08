@@ -100,16 +100,24 @@
   function listing(s, result) { s.listing = result; }
   function esc(value) { return String(value).replace(/[&<>"']/g, function (c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
   function button(text, action, disabled) { return '<button type="button" class="hd-btn hd-btn--secondary hd-btn--sm" data-m04="' + action + '"' + (disabled ? ' disabled' : '') + '>' + text + '</button>'; }
-  function mount(root, route) {
+  // `options` is optional and passed by no existing route: { loading, approved, afterRender(host) }. A loading mount
+  // starts from a fresh fixture, keeps no state for the next mount, ignores every in-frame action and lets only
+  // the catalog Frame control through. afterRender(host) runs after every render of the app frame.
+  function mount(root, route, options) {
     var host = root.matches && root.matches('.hd-m04-proposal') ? root : root.querySelector('.hd-m04-proposal');
     if (!host) return function () {};
-    var s = lastRoute === route && lastState ? lastState : create(route), disposed = false;
+    var loading = !!(options && options.loading), afterRender = options && options.afterRender, approvedLoading = !!(options && options.approved);
+    var s = !loading && lastRoute === route && lastState ? lastState : create(route), disposed = false;
     var amendment = isAmendment(route);
-    lastRoute = route; lastState = s;
+    if (loading) { lastRoute = null; lastState = null; } else { lastRoute = route; lastState = s; }
     var frame = host.querySelector('.hd-m04-window'), catalog = host.querySelector('.hd-m04-catalog');
     function template(key) { var box = document.createElement('div'); box.innerHTML = H.fill ? H.fill(H.templates[key], host.getAttribute('data-theme') || 'light', host.getAttribute('data-theme') || 'light') : H.templates[key]; return box; }
     function render() {
       if (disposed) return;
+      renderBody();
+      if (afterRender && !disposed) afterRender(host);
+    }
+    function renderBody() {
       var theme = host.getAttribute('data-theme') || 'light';
       var runtimeBoard=route.indexOf('runtime-')===0, historyBoard=route.indexOf('history-')===0;
       var controls=runtimeBoard ? button('Runtime failure','runtime-failure')+button('Runtime ready','runtime-ready')+button('Listing ready','listing-ready')+button('Listing failed','listing-failed') : historyBoard ? '' : button('Qualification ready','qualified')+button('Qualification unavailable','unqualified')+button('Complete: created','created',s.status!=='starting')+button('Complete: refused','refused',s.status!=='starting')+button('Complete: unknown','unknown',s.status!=='starting')+button('Enforcement supported','enforcement-supported')+button('Enforcement unknown','enforcement-unknown')+button('Enforcement unsupported','enforcement-unsupported');
@@ -126,7 +134,8 @@
       var strips = H.catalogStrips.m04;
       var notice = isRedraw(route) ? strips.redrawNotice : amendment ? strips.centeredNotice : strips.baselineNotice;
       var heading = isRedraw(route) ? (route.indexOf('centered-shell')===0 ? strips.redrawShellHeading : strips.redrawHeading) : amendment ? strips.centeredHeading : strips.baselineHeading;
-      catalog.innerHTML = '<div class="hd-m04-actions"><strong>' + heading + '</strong>' + boardLinks + '<label>Frame <select data-m04-field="size"><option value="reference"' + (!s.narrow?' selected':'') + '>1280 × 800</option><option value="minimum"' + (s.narrow?' selected':'') + '>1000 × 620</option></select></label>' + button('Reset fixture','reset') + '</div><p>' + notice + '</p><details class="hd-m04-fixtures"'+(s.fixtures?' open':'')+'><summary>Fixture controls</summary><div class="hd-m04-actions">' + controls + '</div></details>';
+      if (loading) catalog.innerHTML = '<div class="hd-m04-actions"><strong>' + H.catalogStrips.loading[approvedLoading ? 'approvedHeading' : 'heading'] + '</strong><label>Frame <select data-m04-field="size"><option value="reference"' + (!s.narrow?' selected':'') + '>1280 × 800</option><option value="minimum"' + (s.narrow?' selected':'') + '>1000 × 620</option></select></label></div><p>' + H.catalogStrips.loading[approvedLoading ? 'approvedNote' : 'note'] + '</p>';
+      else catalog.innerHTML = '<div class="hd-m04-actions"><strong>' + heading + '</strong>' + boardLinks + '<label>Frame <select data-m04-field="size"><option value="reference"' + (!s.narrow?' selected':'') + '>1280 × 800</option><option value="minimum"' + (s.narrow?' selected':'') + '>1000 × 620</option></select></label>' + button('Reset fixture','reset') + '</div><p>' + notice + '</p><details class="hd-m04-fixtures"'+(s.fixtures?' open':'')+'><summary>Fixture controls</summary><div class="hd-m04-actions">' + controls + '</div></details>';
       var base = template(s.collapsed ? 'new-task/sidebar-collapsed' : 'new-task/default');
       var app = base.querySelector('.hd-app'); app.removeAttribute('style'); app.classList.add('hd-m04-app'); app.setAttribute('data-theme',theme);
       frame.classList.toggle('hd-m04-window--minimum',s.narrow); frame.replaceChildren(app);
@@ -242,6 +251,7 @@
     function keydown(e){if(e.key==='Escape'&&s.advanced){e.preventDefault();closeOptions(true);}}
     function outside(e){if(s.advanced&&!host.querySelector('.hd-m04-options-anchor')?.contains(e.target))closeOptions(false);}
     function input(e) {
+      if (loading) return;
       var key=e.target.dataset.m04Field;if(!['draft','turns'].includes(key))return;
       if(['starting','unknown','created'].includes(s.status))return;
       if (key==='draft')s.draft=e.target.value;else select(s,key,e.target.value);
@@ -249,8 +259,8 @@
       sizePrompt();
     }
 
-    function change(e) { var key=e.target.dataset.m04Field; if(!key || key==='draft')return;if(key==='turns' && s.turns===e.target.value)return;if(['effort','turns','approvals'].includes(key)){select(s,key,e.target.value);syncOptions();return;} if(key==='size')s.narrow=e.target.value==='minimum'; else if(key==='repository'||key==='harness'||key==='model'||key==='access'||key==='effort'||key==='turns'||key==='approvals') select(s,key,e.target.value); else if(!['starting','unknown','created'].includes(s.status)) s[key]=e.target.value; render(); }
-    function click(e) { var b=e.target.closest('[data-m04]'); if(!b)return; var a=b.dataset.m04;
+    function change(e) { var key=e.target.dataset.m04Field; if(!key || key==='draft')return;if(loading && key!=='size')return;if(key==='turns' && s.turns===e.target.value)return;if(['effort','turns','approvals'].includes(key)){select(s,key,e.target.value);syncOptions();return;} if(key==='size')s.narrow=e.target.value==='minimum'; else if(key==='repository'||key==='harness'||key==='model'||key==='access'||key==='effort'||key==='turns'||key==='approvals') select(s,key,e.target.value); else if(!['starting','unknown','created'].includes(s.status)) s[key]=e.target.value; render(); }
+    function click(e) { if(loading)return; var b=e.target.closest('[data-m04]'); if(!b)return; var a=b.dataset.m04;
       if(a==='options'){optionsOpen(s,!s.advanced);syncOptions();if(s.advanced&&e.detail===0){var first=frame.querySelector('#m04-task-options select');if(first)first.focus();}return;}
       if(a==='reset'){s=create(route);lastState=s;} if(a==='collapse')s.collapsed=!s.collapsed;
       if(a==='qualified')qualify(s,s.revision,s.repository==='Unavailable folder'||s.harness==='Unavailable harness'?'unqualified':'ready');
@@ -263,7 +273,7 @@
       if(a==='listing-ready')listing(s,'ready');if(a==='listing-failed')listing(s,'failed');if(a==='listing-retry')listing(s,'pending');
       if(a==='older'){location.hash='#'+H.routeFor('m04','history-older')+'/'+(host.getAttribute('data-theme')||'light');return;} render();
     }
-    function submit(e){if(e.target.matches('.hd-composer')){e.preventDefault();start(s);render();}}
+    function submit(e){if(e.target.matches('.hd-composer')){e.preventDefault();if(loading)return;start(s);render();}}
     function toggle(e){if(e.target.matches('.hd-m04-fixtures'))s.fixtures=e.target.open;else if(route==='centered-harness-open'&&e.target.matches('.hd-m04-picker[data-m04-picker]'))s.picker=e.target.open?e.target.dataset.m04Picker:'';}
     host.addEventListener('input',input);host.addEventListener('change',change);host.addEventListener('click',click);host.addEventListener('submit',submit);host.addEventListener('toggle',toggle,true);
     host.addEventListener('keydown',keydown);document.addEventListener('click',outside);

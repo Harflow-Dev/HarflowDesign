@@ -28,6 +28,7 @@
   --diff-add: #e3f4e6;
   --diff-remove: #fbe7e5;
   --scrim: rgba(20, 20, 22, 0.32);
+  --skeleton-sheen: rgba(255, 255, 255, 0.75);
   --brand-start: #8580ff;
   --brand-end: #5b52ea;
   --shadow-composer: 0 1px 2px rgba(0, 0, 0, 0.04), 0 4px 16px rgba(0, 0, 0, 0.06);
@@ -63,6 +64,7 @@
   --diff-add: #2a3d2e;
   --diff-remove: #43302e;
   --scrim: rgba(0, 0, 0, 0.45);
+  --skeleton-sheen: rgba(255, 255, 255, 0.08);
   --brand-start: #8580ff;
   --brand-end: #5b52ea;
   --shadow-composer: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 16px rgba(0, 0, 0, 0.25);
