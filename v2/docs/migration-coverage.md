@@ -81,7 +81,7 @@ Recorded by [S03](../../../HarflowMCP/docs/migration-receipts/S03.md) against Ha
 | Capability | Status | Treatment |
 | --- | --- | --- |
 | Sidebar sections Running/Today/Earlier and nested conversation trees | Accepted | Flat Running and Recent work rows |
-| Task-level Summary and Prompt tabs | Accepted | Prompt is the expandable Original request disclosure at the start of the transcript, per D2B and the owner's 2026-11-07 decision; summary in the transcript (`task/done` (retired; now opens `task/changes-single`)) |
+| Task-level Summary and Prompt tabs | Accepted | Prompt is the expandable Original request disclosure at the start of the transcript, per D2B and the owner's 2026-11-07 decision; summary in the transcript: `task/done` (retired; now opens `task/changes-single`) |
 | Raw events sheet | Proposed | Events right-pane tab |
 | Registered artifacts | Accepted | Artifacts right-pane tab |
 | Parallel groups in the sidebar | Accepted | One flat row with the parallel icon; created only through MCP |
