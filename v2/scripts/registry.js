@@ -133,19 +133,25 @@
         "id": "needs-you",
         "title": "Needs you",
         "area": "attention",
+        "groups": [
+          "Needs you",
+          "Loading"
+        ],
         "description": "Every request that waits for the person, answered inline.",
         "states": [
           {
             "id": "waiting",
             "title": "Waiting items",
             "description": "Approvals and a question from tasks and workflow runs, each answerable in place.",
-            "status": "approved"
+            "status": "approved",
+            "group": "Needs you"
           },
           {
             "id": "empty",
             "title": "Empty",
             "description": "Nothing waits for the person.",
-            "status": "approved"
+            "status": "approved",
+            "group": "Needs you"
           }
         ]
       },
@@ -153,19 +159,25 @@
         "id": "menu-bar",
         "title": "Menu bar",
         "area": "attention",
+        "groups": [
+          "Menu bar",
+          "Loading"
+        ],
         "description": "The menu bar popover and its monochrome template glyph.",
         "states": [
           {
             "id": "busy",
             "title": "Busy",
             "description": "Running work and requests answered inline from the popover.",
-            "status": "approved"
+            "status": "approved",
+            "group": "Menu bar"
           },
           {
             "id": "empty",
             "title": "Nothing running",
             "description": "No tasks yet, with the way to open Harflow.",
-            "status": "approved"
+            "status": "approved",
+            "group": "Menu bar"
           }
         ]
       },
@@ -173,25 +185,32 @@
         "id": "workflows",
         "title": "Workflows",
         "area": "workflows",
+        "groups": [
+          "Workflows",
+          "Loading"
+        ],
         "description": "The workflow list and the Run workflow sheet.",
         "states": [
           {
             "id": "list",
             "title": "List",
             "description": "Workflows with node count, Edit and Run. No run status is shown.",
-            "status": "approved"
+            "status": "approved",
+            "group": "Workflows"
           },
           {
             "id": "empty",
             "title": "Empty",
             "description": "No workflows yet, with the next step.",
-            "status": "approved"
+            "status": "approved",
+            "group": "Workflows"
           },
           {
             "id": "run",
             "title": "Run workflow",
             "description": "Task (required), Goal (optional), repository and orchestrator override.",
-            "status": "approved"
+            "status": "approved",
+            "group": "Workflows"
           }
         ]
       },
@@ -199,25 +218,32 @@
         "id": "workflow-editor",
         "title": "Workflow editor",
         "area": "workflows",
+        "groups": [
+          "Workflow editor",
+          "Loading"
+        ],
         "description": "The canvas editor, flowing left to right, with the inspector for the selected node.",
         "states": [
           {
             "id": "node-selected",
             "title": "Node selected",
             "description": "A node selected on the canvas with its inspector open.",
-            "status": "approved"
+            "status": "approved",
+            "group": "Workflow editor"
           },
           {
             "id": "orchestrator",
             "title": "Orchestrator settings",
             "description": "The locked orchestrator selected in the Standalone strip, with its harness, model and access settings in the inspector.",
-            "status": "approved"
+            "status": "approved",
+            "group": "Workflow editor"
           },
           {
             "id": "edit-with-agent",
             "title": "Edit with agent",
             "description": "The changes the agent suggests on the canvas, with the builder activity in the right pane, reviewed before they are applied.",
-            "status": "approved"
+            "status": "approved",
+            "group": "Workflow editor"
           }
         ]
       },
@@ -225,31 +251,39 @@
         "id": "workflow-run",
         "title": "Workflow run",
         "area": "workflows",
+        "groups": [
+          "Workflow run",
+          "Loading"
+        ],
         "description": "A workflow run as a graph, as parallel lanes, and its recovery and on-demand states.",
         "states": [
           {
             "id": "graph-needs-you",
             "title": "Graph, needs you",
             "description": "Run graph flowing left to right with a node that needs the person.",
-            "status": "approved"
+            "status": "approved",
+            "group": "Workflow run"
           },
           {
             "id": "parallel",
             "title": "Parallel view",
             "description": "The run's agents as lanes with their transcripts.",
-            "status": "approved"
+            "status": "approved",
+            "group": "Workflow run"
           },
           {
             "id": "recovery",
             "title": "Paused, recovery",
             "description": "A paused run with a failed node and the recovery actions.",
-            "status": "approved"
+            "status": "approved",
+            "group": "Workflow run"
           },
           {
             "id": "on-demand",
             "title": "On-demand node selected",
             "description": "A standalone on-demand node selected on a run to inspect its calls.",
-            "status": "approved"
+            "status": "approved",
+            "group": "Workflow run"
           }
         ]
       },
@@ -257,13 +291,18 @@
         "id": "resources",
         "title": "Resources",
         "area": "capacity",
+        "groups": [
+          "Resources",
+          "Loading"
+        ],
         "description": "Concurrency capacity per harness.",
         "states": [
           {
             "id": "slots",
             "title": "Slots",
             "description": "Slots in use per harness, the tasks holding them, and tasks waiting for a slot.",
-            "status": "approved"
+            "status": "approved",
+            "group": "Resources"
           }
         ]
       },
@@ -271,13 +310,18 @@
         "id": "statistics",
         "title": "Statistics",
         "area": "capacity",
+        "groups": [
+          "Statistics",
+          "Loading"
+        ],
         "description": "Usage over a time range.",
         "states": [
           {
             "id": "overview",
             "title": "Overview",
             "description": "Headline numbers, tasks per day, and a per-harness breakdown.",
-            "status": "approved"
+            "status": "approved",
+            "group": "Statistics"
           }
         ]
       },
@@ -285,25 +329,32 @@
         "id": "settings",
         "title": "Settings",
         "area": "settings",
+        "groups": [
+          "Settings",
+          "Loading"
+        ],
         "description": "Appearance, behaviour, runtime and harness management.",
         "states": [
           {
             "id": "general",
             "title": "General",
             "description": "Appearance, behaviour toggles, runtime and task store.",
-            "status": "approved"
+            "status": "approved",
+            "group": "Settings"
           },
           {
             "id": "harnesses",
             "title": "Harnesses",
             "description": "Registration, install state and qualification for each harness.",
-            "status": "approved"
+            "status": "approved",
+            "group": "Settings"
           },
           {
             "id": "mcp-approvals",
             "title": "MCP approvals",
             "description": "Global tool approvals listed and managed inline.",
-            "status": "approved"
+            "status": "approved",
+            "group": "Settings"
           }
         ]
       },

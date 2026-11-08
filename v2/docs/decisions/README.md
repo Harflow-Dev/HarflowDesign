@@ -15,7 +15,7 @@ Routes are written as the current route, with the route used before the informat
 | Entry, sidebar and runtime states (entry direction) | Start work; Settings and setup | Approved | The owner, 2026-11-05 | `5b37a3d` (earlier `ad80bcd`, `bd5d349`) | 24 states, twelve of them now retired (see Retired designs): `sidebar/expanded`, `collapsed`, `minimum`; `history-*`; `new-task/composer-*`, `options-open`, `options-closed`, and `composer-ready` and `composer-unknown`; `harness-runtime/*`. Old routes `m04-proposal/*`, listed in the route map | [m04-proposal.md](m04-proposal.md), [approval.md](approval.md) |
 | Centered composer amendment, with the unified sidebar scroll | Start work | Approved, separately from the entry direction | The owner, 2026-11-06 | `9d64bfd` | `new-task/centered-empty`, `centered-ready`, `centered-growing`, `centered-capped`, `centered-options`, `centered-unknown` (`m04-proposal/amendment-*`) | [m04-centered-composer-proposal.md](m04-centered-composer-proposal.md) |
 | Centered and transcript redraws | Start work; Task | Approved | The owner, 2026-11-08 ("Yes, accept all", relayed by the coordinator) | `b19520c` (base `3f12d29`); the hint under the Harness select of `new-task/centered-harness-open` follows in `48a54d3`; the gated option follows in `19365d9` | `new-task/centered-loading`, `centered-unqualified`, `centered-invalid`, `centered-starting`, `centered-refused`, `centered-options-closed`, `centered-harness-open`; `sidebar/centered-collapsed`, `centered-minimum`; `task/transcript-observed`, `transcript-loading`, `transcript-partial`, `transcript-unavailable`, `transcript-integrity-failed`, `transcript-reconnecting`, `transcript-capacity`, `transcript-sources`. Eighteen earlier states are retired (see Retired designs) | This file ([Centered and transcript redraws](#centered-and-transcript-redraws)), [m04-centered-composer-proposal.md](m04-centered-composer-proposal.md) |
-| Loading states | All screens with a first load | `sidebar/loading` approved, the other states provisional | The owner, 2026-11-08 (sidebar only) | The commits that add each loading state (`git log --grep="loading states"`) | `new-task/loading`, `sidebar/loading`, `task/loading`, `task/loading-pane`, `parallel-group/loading`, `components/skeleton-shimmer` | `v2/scripts/skeleton.js`, `v2/scripts/skeleton-specs.js`, `v2/styles/skeleton.css`, `v2/scripts/screens-loading-work.js`, `v2/scripts/screens-loading-more.js` |
+| Loading states | All screens with a first load | `sidebar/loading` approved, the other 15 states provisional | The owner, 2026-11-08 (sidebar only) | The commits that add each loading state (`git log --grep="loading states"`) | `new-task/loading`, `sidebar/loading`, `task/loading`, `task/loading-pane`, `parallel-group/loading`, `needs-you/loading`, `menu-bar/loading`, `workflows/loading`, `workflow-editor/loading`, `workflow-run/loading`, `workflow-run/loading-parallel`, `resources/loading`, `statistics/loading`, `settings/loading-general`, `settings/loading-harnesses`, `settings/loading-mcp-approvals`, `components/skeleton-shimmer` | `v2/scripts/skeleton.js`, `v2/scripts/skeleton-specs.js`, `v2/styles/skeleton.css`, `v2/scripts/screens-loading-work.js`, `v2/scripts/screens-loading-more.js` |
 | Task screen states (statuses, actions, top bar, changes, events, artifacts, layout) | Task | Approved, except the provisional routes below | The owner, 2026-11-07, relayed by the coordinator | `17739e4` (proposal `3e85e26`, `a9c65fe`) | `task/running-stop` (`m05-proposal/state-running`), the other status, action, top bar, changes, events and layout routes, and the decision boards under `records/` (`m05-proposal/overview`, `retry-options`, `stop-options`, `adaptive-options`, `platform-options`). Provisional, not approved: `task/cancelled-partial` and `task/artifacts-*`, until the contract gaps close | [m05-task-screen-approval.md](m05-task-screen-approval.md), [m05-task-screen-proposal.md](m05-task-screen-proposal.md) |
 
 ## Retired designs
@@ -155,6 +155,18 @@ The owner asked on 2026-11-08 for "the shimmer page for each page", each "resemb
 | `task/loading` | `task/running-stop` | Title, status badge, meta and chips; the transcript; the Stop button; the sidebar rows. The right pane toggle, composer and sidebar navigation are real |
 | `task/loading-pane` | `task/pane-running-open` | As `task/loading`, plus the pane body. Tab names are real |
 | `parallel-group/loading` | `parallel-group/lanes` | The top bar facts and, in each of the three lanes (as the loaded state draws), the header and transcript. Lane frames and composers are real |
+| `needs-you/loading` | `needs-you/waiting` | The waiting count and the request cards |
+| `menu-bar/loading` | `menu-bar/busy` | The running count, the Needs you cards and the Running and Recent rows. The section headings and footer actions are real |
+| `workflows/loading` | `workflows/list` | The workflow rows. The title, search and New workflow are real |
+| `workflow-editor/loading` | `workflow-editor/node-selected` | Title, meta, standalone nodes, the canvas graph (four nodes at the loaded node size with connectors) and the inspector fields. The toolbar is real and its actions are disabled |
+| `workflow-run/loading` | `workflow-run/on-demand` | Header, standalone nodes, graph and node pane |
+| `workflow-run/loading-parallel` | `workflow-run/parallel` | Header and the three lanes, and the orchestrator strip |
+| `resources/loading` | `resources/slots` | The five harness cards and the waiting row |
+| `statistics/loading` | `statistics/overview` | The four figures, the chart and the table cells. Labels, range control and column headers are real |
+| `settings/loading-general` | `settings/general` | Toggles and the runtime and task store status |
+| `settings/loading-harnesses` | `settings/harnesses` | The harness rows and the qualification rows |
+| `settings/loading-mcp-approvals` | `settings/mcp-approvals` | The harness rows with the approvals list open |
+| `components/skeleton-shimmer` | the primitive | Light, dark and the reduced-motion form |
 
 **Rules the drawings follow.**
 - No data: names, counts, digits and times do not appear. Count slots are empty pills. A hand-written allowlist per screen (`chrome` in the spec) lists every string the screen may show, with its count; a check compares both ways. The only digits are numeric chrome: `⌘N`, the editor and run zoom (65%, 70%), the range control (7 days, 30 days), and the clock of the operating system menu bar around the popover.
@@ -185,7 +197,7 @@ The owner asked on 2026-11-08 for "the shimmer page for each page", each "resemb
 - `menu-bar/busy`: the popover is 739 points tall and the frame is 620.
 
 **Questions for the owner.**
-- Are the provisional loading states and the shimmer primitive accepted?
+- Are the 15 provisional loading states and the shimmer primitive accepted?
 - Is a known task title shown for real while the rest loads (not drawn)?
 
 ## By screen
