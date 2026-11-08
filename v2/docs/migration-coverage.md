@@ -62,7 +62,7 @@ Recorded by [S03](../../../HarflowMCP/docs/migration-receipts/S03.md) against Ha
 | Generate a workflow with the builder agent | Accepted (S03) | Gap G-GENERATE |
 | Delete a workflow, with confirmation (native: editor More actions) | Accepted (S03) | Gap G-WORKFLOW-MENU |
 | Workflow run graph and parallel view, node and on-demand inspection, pause, resume, cancel, recover | Accepted | `workflow-run/*` |
-| Workflow node/orchestrator messages and revise goal | Proposed | Included in plan v1 scope; gap G-RUN-ACTIONS |
+| Workflow node/orchestrator messages and revise goal | Accepted (owner, 2026-11-08) | Kept, consistent with full parity including steering; gap G-RUN-ACTIONS stays open (nothing drawn yet) |
 | Parallel group lanes, per-lane composer, Cancel all | Accepted | `parallel-group/lanes` |
 | Resource slots observation | Accepted | `resources/slots`; gap G-RESOURCES |
 | Statistics overview with range selector | Accepted | `statistics/overview`; gap G-STATS |
@@ -112,8 +112,8 @@ Webhook notifications and subscriptions; limit-hit projections; `auto_continue`,
 
 | Item | Owner of the next decision |
 | --- | --- |
-| Task store recovery actions (inspect, backup and reset) beyond status display, given Rust's fresh store | R01 store decisions, then affected native settings slice |
-| Worktree and scratch observation in the client (engine features retained; no v2 surface) | Owner, before M10 |
+| Task store recovery actions (inspect, backup and reset) beyond status display, given Rust's fresh store | Deferred (owner, 2026-11-08) until the Rust store design (R01) settles; then affected native settings slice |
+| Worktree and scratch observation in the client (engine features retained; no v2 surface) | Accepted (owner, 2026-11-08) as read-only observation, with no create or delete |
 
 ## Gap register
 
@@ -121,7 +121,7 @@ For a required retained or approved simplified feature, create missing states in
 
 | ID | Gap | Type and owner session | Evidence / required next decision |
 | --- | --- | --- | --- |
-| G-TASK-STATES | Task cancellation, timed out, settling and unknown outcome | DESIGN — M01-Gxx / M04–M05 | Design and approve safe status and action states; preserve uncertainty and avoid automatic retry. |
+| G-TASK-STATES | Task cancellation, timed out, settling and unknown outcome | DESIGN — M01-Gxx / M04–M05 | Design and approve safe status and action states; preserve uncertainty and avoid automatic retry. Contract blockers (`task/cancelled-partial`, the chain-stop marker behind `task/continue-refused`) are not drawn until the HarflowMCP contract lands (2026-11-08). |
 | G-NEWTASK-ADVANCED | Effort, turn limit, caller approvals, enforcement preview and harness qualification in the composer | DESIGN — M01-Gxx / M04–M05 | Approved: the task options popover holds effort, turn limit, caller approvals and the enforcement preview (`new-task/centered-options`, `centered-options-closed`; `decisions/README.md:16-17`, `decisions/m04-proposal.md:62`). Open: check the caller-approvals and enforcement fixtures against real engine capability (`decisions/m04-proposal.md:14`); harness qualification is G-HARNESS. |
 | G-QUEUE | Queue refusal and delivery uncertainty | DESIGN — M01-Gxx / M06 | Approve queued, refused, unknown and unsupported states. |
 | G-APPROVAL-STATES | Approval/checkpoint stale, expiry and shared responder | DESIGN — M01-Gxx / M07 | Approve inline failure and refresh states that refuse obsolete decisions across surfaces. |
@@ -132,7 +132,7 @@ For a required retained or approved simplified feature, create missing states in
 | G-EDITOR | Editor validation, conflicts, missing child references, proposal loading/failure | DESIGN — M01-Gxx / M08 | Approve recoverable states preserving unsaved edits and explicit proposal review. |
 | G-WORKFLOW-MENU | Workflow overflow menu with Delete and its confirmation | DESIGN — M01-Gxx / M08 | Native confirmation states that existing run snapshots remain available; no Duplicate or Rename entry. |
 | G-GENERATE | Generate workflow with agent | DESIGN — M01-Gxx / M08 | New-workflow entry, description form and builder progress, consistent with `34c3b05`. |
-| G-RUN-ACTIONS | Workflow node/orchestrator messages and revise goal | DESIGN — M01-Gxx / M09 | Not drawn in the approved run states. |
+| G-RUN-ACTIONS | Workflow node/orchestrator messages and revise goal | DESIGN — M01-Gxx / M09 | Not drawn in the approved run states. The capability is accepted (owner, 2026-11-08); the gap stays open until it is drawn. |
 | G-HISTORY | History paging, retention, reconnect and read-only unavailable | CONTRACT reads delivered, DESIGN direction approved — S04 / M03–M05 | Contract: S04 and its follow-up deliver bounded event and prompt reads, cursor and retention semantics, successor discovery and live workflow node activity; receipt acceptance pending. Design: loss, reconnect and unavailable states approved by the owner on 2026-11-05 as `d2b-proposal/*` (now `task/activity-*`, retired; now opens `task/transcript-*`) at `227da87` (`d2b-observation-approval.md`, now `decisions/d2b-observation-approval.md`); sidebar paging approved as `m04-proposal/history-*` (now `sidebar/history-*`) (`m04-proposal.md`, now `decisions/m04-proposal.md`). No design remains open. Native fidelity and product acceptance remain with M05. |
 | G-RESOURCES | Resource over-limit, permission, not-enabled and unsupported responses | DESIGN — M01-Gxx / M10 | Distinct safe responses without new capacity tiers. |
 | G-STATS | Statistics empty, error and incomplete; unsupported metrics | DESIGN + CONTRACT — S04 / M10 | Follow-up adds cost, coverage and observed model with provenance; null remains unknown, not zero. All-time history beyond retention remains unavailable; success rate/median require a complete generation client-side. Empty, error, incomplete and unsupported presentations still need design approval. |
@@ -141,7 +141,7 @@ For a required retained or approved simplified feature, create missing states in
 | G-PLATFORM | macOS window chrome, tray, notifications | DESIGN — M01 / M11 | Native macOS adaptation first; Web browser/Linux access later; Windows native adaptations only after W05 and WIN01. |
 | G-ADAPTIVE | Keyboard, narrow windows, Reduce Motion and focus | DESIGN — M01-Gxx / M04–M12 | Approve adaptive and interaction states, then validate production pixels and accessibility. Approved minimum window states (the owner, 2026-11-08) for the static screens, the lanes, the editor inspector, canvas and top bar and the popover: `needs-you/waiting-minimum`, `parallel-group/lanes-minimum`, `workflow-run/parallel-minimum`, `workflow-editor/node-selected-minimum`, `workflow-editor/orchestrator-minimum`, `menu-bar/busy-minimum`, and their loading states `needs-you/loading-minimum`, `parallel-group/loading-minimum`, `workflow-run/loading-parallel-minimum`, `workflow-editor/loading-minimum`, `menu-bar/loading-minimum`. Layout only; no capability changes. |
 
-M05 task screen, 2026-11-07: the owner approved the recommended options, relayed by the coordinator. See [the approval record](decisions/m05-task-screen-approval.md). It covers G-TASK-STATES, G-OVERFLOW, G-DIFF, G-ADAPTIVE, the G-PLATFORM task top bar and the task-pane part of the right-pane rows, and names Stop as the action word for Cancel task above. `state-cancel-partial` (now `task/cancelled-partial`) and all `artifacts-*` routes (now `task/artifacts-*`) stay provisional on open contract gaps. Rows above keep their statuses unless named here.
+M05 task screen, 2026-11-07: the owner approved the recommended options, relayed by the coordinator. See [the approval record](decisions/m05-task-screen-approval.md). It covers G-TASK-STATES, G-OVERFLOW, G-DIFF, G-ADAPTIVE, the G-PLATFORM task top bar and the task-pane part of the right-pane rows, and names Stop as the action word for Cancel task above. `state-cancel-partial` (now `task/cancelled-partial`) and all `artifacts-*` routes (now `task/artifacts-*`) stay provisional on open contract gaps. On 2026-11-08 the owner confirmed that the M05 contract blockers are not drawn until the HarflowMCP contract lands (Codex is working on them in HarflowMCP): `task/cancelled-partial` (G-TASK-STATES), `task/artifacts-*` and `task/continue-refused`, whose chain-stop marker is not on status or in `contracts.md`. Rows above keep their statuses unless named here.
 
 ## Contract receipt reconciliation — 2026-11-04
 

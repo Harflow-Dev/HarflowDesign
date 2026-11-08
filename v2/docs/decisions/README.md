@@ -17,6 +17,7 @@ Routes are written as the current route, with the route used before the informat
 | Centered and transcript redraws | Start work; Task | Approved | The owner, 2026-11-08 ("Yes, accept all", relayed by the coordinator) | `b19520c` (base `3f12d29`); the hint under the Harness select of `new-task/centered-harness-open` follows in `48a54d3`; the gated option follows in `19365d9` | `new-task/centered-loading`, `centered-unqualified`, `centered-invalid`, `centered-starting`, `centered-refused`, `centered-options-closed`, `centered-harness-open`; `sidebar/centered-collapsed`, `centered-minimum`; `task/transcript-observed`, `transcript-loading`, `transcript-partial`, `transcript-unavailable`, `transcript-integrity-failed`, `transcript-reconnecting`, `transcript-capacity`, `transcript-sources`. Eighteen earlier states are retired (see Retired designs) | This file ([Centered and transcript redraws](#centered-and-transcript-redraws)), [m04-centered-composer-proposal.md](m04-centered-composer-proposal.md) |
 | Loading states | All screens with a first load | Approved | The owner, 2026-11-08 (`sidebar/loading` in the redraw decision; the other 15 states and the shimmer primitive: "I see the design and I think all looks good. I approve", relayed by the coordinator) | `8f52ad3` (the primitive and specs), `28f5066` (the start work and task states, the sidebar approval and the retirement of `sidebar/history-loading`), `a4a2c82` (the other states); review fixes `abb416c` and `ba8c928` (the approved design); approval recorded in the commit titled "Approve the loading states" | `new-task/loading`, `sidebar/loading`, `task/loading`, `task/loading-pane`, `parallel-group/loading`, `needs-you/loading`, `menu-bar/loading`, `workflows/loading`, `workflow-editor/loading`, `workflow-run/loading`, `workflow-run/loading-parallel`, `resources/loading`, `statistics/loading`, `settings/loading-general`, `settings/loading-harnesses`, `settings/loading-mcp-approvals`, `components/skeleton-shimmer` | `v2/scripts/skeleton.js`, `v2/scripts/skeleton-specs.js`, `v2/styles/skeleton.css`, `v2/scripts/screens-loading-work.js`, `v2/scripts/screens-loading-more.js` |
 | Minimum window (1000 × 620) | Needs you, Parallel group, Workflow run, Workflow editor, Menu bar | Approved | The owner, 2026-11-08: "Yes, approve", the answer to "Approve the 11 minimum-window screens with my three fixes?", relayed by the coordinator. The three fixes: the canvas scrolls, as on Mac; the meta dot is keyboard-focusable and shows its text on focus; the wrapped label at 288 is accepted. Sizes decided earlier the same day ("Yes, take them") | `9fca1fb`, `70ba6ab`, `c15dae3`, `6428285`, `1279752` and `c147372` (the states, the sizing decisions, the orchestrator and loading states, review fixes, and the canvas and meta fixes, in the commit titled "Scroll the workflow canvas and make the top bar meta focusable at the minimum window"); approval recorded in the commit titled "Approve the minimum window states" | `workflow-editor/orchestrator-minimum`, `needs-you/loading-minimum`, `parallel-group/loading-minimum`, `workflow-run/loading-parallel-minimum`, `workflow-editor/loading-minimum`, `menu-bar/loading-minimum`, `needs-you/waiting-minimum`, `parallel-group/lanes-minimum`, `workflow-run/parallel-minimum`, `workflow-editor/node-selected-minimum`, `menu-bar/busy-minimum` | `v2/scripts/screens-minimum.js`, `v2/scripts/minimum-frame.js`, `v2/styles/minimum-frame.css`, `tests/minimum-frame.test.mjs` |
+| Open design questions (five answers) | Task, Workflow run, Settings, Task store, Task contract blockers | Recorded | The owner, 2026-11-08: "Yes, all five", the answer to the coordinator's five recommendations, relayed by the coordinator | The commit titled "Record the owner's decisions on the open design questions" | `task/loading` (title note only); no state is added or changed | This file ([Open design questions](#open-design-questions)), [migration-coverage.md](../migration-coverage.md) |
 | Task screen states (statuses, actions, top bar, changes, events, artifacts, layout) | Task | Approved, except the provisional routes below | The owner, 2026-11-07, relayed by the coordinator | `17739e4` (proposal `3e85e26`, `a9c65fe`) | `task/running-stop` (`m05-proposal/state-running`), the other status, action, top bar, changes, events and layout routes, and the decision boards under `records/` (`m05-proposal/overview`, `retry-options`, `stop-options`, `adaptive-options`, `platform-options`). Provisional, not approved: `task/cancelled-partial` and `task/artifacts-*`, until the contract gaps close | [m05-task-screen-approval.md](m05-task-screen-approval.md), [m05-task-screen-proposal.md](m05-task-screen-proposal.md) |
 
 ## Retired designs
@@ -69,6 +70,20 @@ The templates that other states clone (`task/running`, `task/done`, `task/failed
 | Q5: is the base running Task screen replaced by the running state with Stop in the composer? | Yes. Retired, see above |
 
 "Task options closed" in Q3 means `new-task/options-closed`.
+
+<a id="open-design-questions"></a>
+
+### Open design questions
+
+On 2026-11-08 the owner answered "Yes, all five" to the coordinator's five recommendations (relayed by the coordinator). Records only: no drawing changed.
+
+| # | Question | Decision |
+| --- | --- | --- |
+| 1 | Task title while loading | When the task's title is already known, for example from the sidebar, the screen shows it while the task loads. The question under Loading states is closed. The approved `task/loading` drawing still shimmers the title: the drawing follows as a provisional redraw; the approved drawing is unchanged until then |
+| 2 | Run messages and revising the goal (M09) | Accepted as kept capabilities, consistent with full parity including steering. The ledger row is Accepted (owner, 2026-11-08). G-RUN-ACTIONS stays a DESIGN gap because nothing is drawn yet |
+| 3 | Worktree and scratch observation (M10) | Accepted as read-only observation, with no create or delete |
+| 4 | Task store recovery actions (M11) | Deferred until the Rust store design (R01) settles |
+| 5 | M05 contract blockers | Not drawn until the HarflowMCP contract lands; Codex is working on them in HarflowMCP. Affected: `task/cancelled-partial`, `task/artifacts-*` and `task/continue-refused` (the chain-stop marker). The routes stay as recorded (see the Task screen states row) |
 
 Resolved (QA), 2026-11-08: `task/activity-sources` opens `task/transcript-sources`, the transcript state redrawn inside the task screen frame (owner item 3 in [Centered and transcript redraws](#centered-and-transcript-redraws)).
 
@@ -190,13 +205,13 @@ The owner asked on 2026-11-08 for "the shimmer page for each page", each "resemb
 | Workflow editor and run | A fixed graph skeleton of four nodes (`WorkflowLoadingView.swift:36-46`), and header blocks, `WorkflowView.swift:65-70, 551` | The same four-node graph at the loaded node size |
 | Parallel lanes | Deferred lane placeholders, `ParallelView.swift:204-243` | The same lane structure on the real lane frames |
 | Accessibility | One label, "Loading workflow run" or "Loading workflow canvas", `WorkflowLoadingView.swift:26-27` | `aria-busy` and one label per screen, "Loading <screen>" |
-| Task title | The real title and repository when already known, `TaskLoadingSkeleton.swift:55-62` | Shimmered in `task/loading` |
+| Task title | The real title and repository when already known, `TaskLoadingSkeleton.swift:55-62` | Shimmered in `task/loading`; the owner decided on 2026-11-08 that a known title shows for real (see [Open design questions](#open-design-questions)), and the drawing follows as a provisional redraw |
 | Task toolbar | Fixed-size blocks, `TaskLoadingSkeleton.swift:216-290` | Blocks at the approved top bar's own geometry |
 
 **Loaded-screen gaps at 1000 × 620.** The drawings keep the static families at their native frame, but the check renders each loaded static screen and its loading state at 1000 × 620 as well. They agree, and the check showed gaps in the loaded designs. The first measurements were corrected when the minimum window states were drawn; their status is in [Minimum window](#minimum-window). The five loading states at 1000 × 620 are approved; the approved loading states at 1280 × 800 are not redrawn.
 
 **Questions for the owner.**
-- Is a known task title shown for real while the rest loads (not drawn)?
+- Closed on 2026-11-08: a known task title is shown for real while the rest loads. See [Open design questions](#open-design-questions).
 
 <a id="minimum-window-drafts"></a>
 
