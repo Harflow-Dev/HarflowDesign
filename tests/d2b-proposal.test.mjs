@@ -212,7 +212,8 @@ test('activity approval is per state and preserves the earlier catalog approval'
   assert.equal(registry.approval.canvas, '1793668079-d8d9');
   assert.equal(registry.approval.designSystem, '1793668064-9e04');
   const base = task.states.filter(item => !item.source);
-  assert.ok(base.length >= 1 && base.every(item => item.status === 'approved' && item.approval === undefined), 'base task states keep the original catalog approval');
+  assert.deepEqual(Array.from(base, item => item.id), ['approval']);
+  assert.ok(base.every(item => item.status === 'approved' && item.approval === undefined), 'base task states keep the original catalog approval');
   assert.match(H.approvalLine(task, base[0]), /^Approved by the owner on 2026-11-03 · canvas /);
   assert.equal(task.approval, undefined, 'task family keeps the original catalog approval');
   assert.equal(H.catalogStrips.d2b.controls, 'Review controls · catalog only');

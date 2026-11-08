@@ -34,6 +34,21 @@ const routeSet = new Set(keys);
 const descriptors = keys.map(route => HFV2.describe(route));
 const templateKeys = [...new Set(descriptors.map(d => d.templateKey))];
 const STATUSES = ['approved', 'provisional', 'record'];
+// Hash links that were never routes: buttons and specimens drawn as links. The catalog ignores a click on
+// them, because only `#family/state[/appearance]` hashes parse as routes. Every other hash link must
+// resolve, through aliases and at most one redirect, to a registered state.
+const INERT_LINKS = new Set(['#', '#new', '#revise-goal', '#install-antigravity', '#settings', '#needs-you', '#workflows', '#resources', '#statistics', '#needs-you-empty', '#needs-you-active']);
+const INERT_PATTERN = /^#t\d+$/; // anchors of the tab and table-of-contents specimens
+const LINK_SHAPE = /^#[a-z0-9-]+\/[a-z0-9-]+(\/(light|dark|system))?$/;
+function checkHash(href, where) {
+  if (INERT_LINKS.has(href) || INERT_PATTERN.test(href)) return;
+  assert.match(href, LINK_SHAPE, `${where}: ${href} is neither a route link nor an allowlisted inert link`);
+  const resolved = HFV2.resolveRoute(href);
+  const target = resolved.replace(/\/(light|dark|system)$/, '').slice(1);
+  assert.ok(routeSet.has(target), `${where}: ${href} resolves to unregistered ${target}`);
+  assert.ok(!(target in HFV2.routeRedirects), `${where}: ${href} settles on a retired route`);
+  assert.ok(HFV2.describe(target), `${where}: ${href} is not renderable`);
+}
 const NAMING_RULE = /\bm0\d\b|d2b|propos(al|ed)|native entry|\bG-[A-Z]+\b/i;
 
 test('registry routes are unique and every descriptor resolves to a template, guide and mount', () => {
@@ -105,15 +120,13 @@ test('internal links inside templates resolve to a canonical route or an alias o
   let routed = 0;
   for (const key of Object.keys(HFV2.templates)) {
     for (const [, href] of HFV2.templates[key].matchAll(/href="([^"]*)"/g)) {
-      const match = /^#([a-z0-9-]+\/[a-z0-9-]+)$/.exec(href);
-      if (match) {
+      if (href.startsWith('#')) {
         routed += 1;
-        const target = HFV2.resolveRoute(href).slice(1);
-        assert.ok(routeSet.has(target), `${key} links to unknown route ${href}`);
+        checkHash(href, key);
       } else if (key === 'overview/areas') {
         assert.ok(fs.existsSync(path.join(v2, href.split('#')[0])), `${key} links to a missing document ${href}`);
       } else {
-        assert.ok(href.startsWith('#'), `${key} has a non-local link ${href}`);
+        assert.fail(`${key} has a non-local link ${href}`);
       }
     }
   }
@@ -485,7 +498,8 @@ test('retired states are gone from the registry; superseded-state handling no lo
     assert.ok(decisions.includes(`\`${entry.route}\``), `${entry.route} is recorded in the decisions README`);
     assert.ok(decisions.includes(`\`${entry.redirect}\``), `${entry.redirect} is recorded in the decisions README`);
   }
-  assert.ok(decisions.includes('Q2 owner answer 2026-11-08; target confirmed by the coordinator 2026-11-08'));
+  assert.ok(decisions.includes('Q2 owner answer 2026-11-08; target confirmed by the coordinator 2026-11-08'), 'the decisions README keeps the coordinator wording');
+  assert.equal(retiredByRoute.get('new-task/default').basis, 'Owner answer 2026-11-08 (Q2); target confirmed by the coordinator 2026-11-08');
 });
 
 test('hidden families and states stay out of navigation, the picker and the overview counts', () => {
@@ -568,11 +582,24 @@ test('the route map lists every earlier route and its current route', () => {
   for (const [from, to] of Object.entries(HFV2.routeRedirects)) assert.ok(map.includes(`| \`${from}\` | \`${to}\` |`), `${from} redirects to ${to} in the map`);
 });
 
-test('the coverage ledger keeps its headings and anchor and names current routes', () => {
+test('the coverage ledger keeps its headings and anchor, cites registered routes and annotates retired ones', () => {
   const ledger = read(path.join(v2, 'docs', 'migration-coverage.md'));
   assert.match(ledger, /^## Capability disposition ledger \(S03\)$/m);
   for (const [, now] of ledger.matchAll(/\(now `([a-z0-9/*-]+)`/g)) assert.ok(/^[a-z-]+\/[a-z0-9-]+\*?$/.test(now), `${now} is a current route`);
-  for (const [, route] of ledger.matchAll(/`((?:task|new-task|sidebar)\/[a-z-]+)`/g)) assert.ok(routeSet.has(route), `${route} in the ledger exists`);
+  let retiredCitations = 0;
+  for (const match of ledger.matchAll(/`((?:task|new-task|sidebar)\/[a-z-]+)`/g)) {
+    const route = match[1];
+    if (route in HFV2.routeRedirects) {
+      // A historical citation stays as written, followed by where it opens now.
+      const rest = ledger.slice(match.index + match[0].length);
+      const note = /^ \((?:retired|now)[^`]*`([a-z0-9/-]+)`/.exec(rest);
+      if (note && note[1] === HFV2.routeRedirects[route]) { retiredCitations += 1; continue; }
+      assert.fail(`${route} is retired and must be followed by "(retired; now opens \`${HFV2.routeRedirects[route]}\`"`);
+    }
+    // The target of a "now opens" note is itself cited right after a retired route; check it directly.
+    assert.ok(routeSet.has(route), `${route} in the ledger exists`);
+  }
+  assert.ok(retiredCitations >= 8, 'the S03 ledger keeps its original route citations');
 });
 
 // ---- Strip literals and link behaviour ----
@@ -614,23 +641,33 @@ test('only the overview and decision boards may navigate to documents from a spe
 
 // ---- Links resolve to current states ----
 
-// Only route-shaped links are checked. Bare fragments such as `#new` (the New task link of the base
-// task templates) and `#needs-you` (design-system specimens) have never been routes; clicking one does
-// nothing, and the pixel harness lists them separately.
+test('renderer string literals that build hash links resolve to registered states', () => {
+  // Chosen approach for renderer-generated hrefs: scan the string literals of the renderer sources
+  // here, and check every rendered link in the pixel harness (a DOM check over every route).
+  let found = 0;
+  for (const name of ['m04-proposal.js', 'm05-proposal.js', 'd2b-proposal.js', 'catalog.js', 'screens-overview.js']) {
+    for (const [, route] of stripComments(read_(name)).matchAll(/#([a-z0-9-]+\/[a-z0-9-]+(?:\/(?:light|dark|system))?)(?=['"\s>)\\]|$)/g)) {
+      found += 1;
+      checkHash('#' + route, name);
+    }
+  }
+  assert.ok(found >= 3, 'the renderers build route links from literals');
+  assert.match(read_('d2b-proposal.js'), /replace\('href="#new"', 'href="#new-task\/default"'\)/, 'the literal that builds the New task link is scanned');
+  for (const d of descriptors.filter(x => x.renderer === 'd2b')) assert.equal(HFV2.routeFor('d2b', d.mount), d.route, 'generated d2b links name a registered route');
+  for (const entry of HFV2.m05ProposalStates) assert.ok(routeSet.has(HFV2.routeFor('m05', entry.id)), `m05 link to ${entry.id}`);
+  assert.deepEqual(Array.from(HFV2.templates['overview/areas'].matchAll(/href="(#[^"]*)"/g), m => m[1]).filter(h => !LINK_SHAPE.test(h)), []);
+});
 
 test('every in-page link of a template resolves, through aliases and redirects, to a registered state', () => {
   let checked = 0;
-  for (const key of Object.keys(HFV2.templates).filter(k => k !== 'overview/areas')) {
-    for (const [, href] of HFV2.templates[key].matchAll(/href="(#[a-z0-9-]+\/[a-z0-9-]+)"/g)) {
-      checked += 1;
-      const resolved = HFV2.resolveRoute(href);
-      const target = resolved.slice(1);
-      assert.ok(routeSet.has(target), `${key} links to ${href}, which resolves to ${target}`);
-      assert.ok(!(target in redirects), `${key} link ${href} settles on a retired route`);
-      assert.notEqual(HFV2.describe(target), null);
-    }
+  for (const key of Object.keys(HFV2.templates)) {
+    for (const [, href] of HFV2.templates[key].matchAll(/href="(#[^"]*)"/g)) { checked += 1; checkHash(href, key); }
   }
   assert.ok(checked > 100);
+  assert.throws(() => checkHash('#task/running/sepia', 'probe'), 'a malformed link fails');
+  assert.throws(() => checkHash('#nowhere/state', 'probe'), 'an unknown route fails');
+  assert.doesNotThrow(() => checkHash('#task/running/dark', 'probe'), 'a retired route with a suffix redirects');
+  assert.throws(() => checkHash('#something-else', 'probe'), 'an unlisted fragment fails');
 });
 
 test('strip links of the m04 renderer point at current states, never at retired ones', () => {

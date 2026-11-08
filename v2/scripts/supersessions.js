@@ -23,7 +23,7 @@
     { route: 'task/running', title: 'Task · Running', redirect: 'task/running-stop', template: 'task/running', basis: Q + ' (Q5)' },
     { route: 'task/done', title: 'Task · Done, changes pane', redirect: 'task/changes-single', template: 'task/done', basis: Q + ' (Q1)' },
     { route: 'task/failed', title: 'Task · Failed', redirect: 'task/failed-continue', template: 'task/failed', basis: 'The approved row for the failed state replaces Retry with Continue in a new session.' },
-    { route: 'new-task/default', title: 'New task · Default', redirect: 'new-task/centered-empty', template: 'new-task/default', basis: 'Q2 owner answer 2026-11-08; target confirmed by the coordinator 2026-11-08' },
+    { route: 'new-task/default', title: 'New task · Default', redirect: 'new-task/centered-empty', template: 'new-task/default', basis: Q + ' (Q2); target confirmed by the coordinator 2026-11-08' },
     { route: 'new-task/sidebar-collapsed', title: 'New task · Sidebar collapsed', redirect: 'sidebar/collapsed', template: 'new-task/sidebar-collapsed', basis: Q + ' (Q2)' },
     { route: 'new-task/harness-menu', title: 'New task · Harness menu open', redirect: 'new-task/centered-ready', template: 'new-task/harness-menu', basis: Q + ' (Q2, Q3); the open harness pill is not drawn in the centered layout' },
     { route: 'new-task/composer-ready', title: 'New task · Composer · Ready', redirect: 'new-task/centered-ready', renderer: 'm04', mount: 'composer-ready', template: 'm04-proposal/composer-ready', basis: Q + ' (Q3)' },
