@@ -31,16 +31,16 @@
   }
 
   // The sidebar's data: the Needs you count, the attention dot, and the Running and Recent work lists.
-  function sidebarOps(scope, optional) {
+  function sidebarOps(scope, collapsible) {
     var s = scope ? scope + ' ' : '';
     return [
-      { sel: s + '.hd-nav-item__count', kind: 'text', w: 14, h: 12, shape: 'pill', optional: !!optional },
-      { sel: s + '.hd-nav .hd-dot', kind: 'hide', optional: !!optional },
+      { sel: s + '.hd-nav-item__count', kind: 'text', w: 14, h: 12, shape: 'pill', expandedOnly: !!collapsible },
+      { sel: s + '.hd-nav .hd-dot', kind: 'hide', expandedOnly: !!collapsible },
       { sel: s + '.hd-rail-item__badge', kind: 'text', w: 14, h: 10, shape: 'pill', optional: true },
       { sel: s + '.hd-rail .hd-dot', kind: 'hide', optional: true },
-      { sel: s + '[aria-label="Running"] .hd-section__count', kind: 'text', w: 14, h: 12, shape: 'pill', optional: !!optional },
-      { sel: s + '[aria-label="Running"] .hd-section__list', kind: 'rows', count: 2, row: taskRow, pin: 'fixed', optional: !!optional },
-      { sel: s + '[aria-label="Recent work"] .hd-section__list', kind: 'rows', count: 8, row: taskRow, pin: 'fixed', optional: !!optional }
+      { sel: s + '[aria-label="Running"] .hd-section__count', kind: 'text', w: 14, h: 12, shape: 'pill', expandedOnly: !!collapsible },
+      { sel: s + '[aria-label="Running"] .hd-section__list', kind: 'rows', count: 2, row: taskRow, pin: 'fixed', expandedOnly: !!collapsible },
+      { sel: s + '[aria-label="Recent work"] .hd-section__list', kind: 'rows', count: 8, row: taskRow, pin: 'fixed', expandedOnly: !!collapsible }
     ];
   }
 

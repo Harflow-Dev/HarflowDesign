@@ -389,9 +389,9 @@
   // `options` is optional and passed by no existing route: { loading, approved, afterRender(stage) }. A loading mount draws
   // the loaded state, ignores every in-frame action except the pane and its tabs, keeps the catalog Frame
   // control, and calls afterRender(stage) after every render of the app frame.
-  // The actions a loading mount lets through: the right pane and its tabs, and the sidebar toggle, are chrome. Everything else
+  // The actions a loading mount lets through: the right pane and its tabs are chrome (this frame has no sidebar toggle). Everything else
   // acts on task data.
-  function loadingAllows(a) { return a === 'pane' || a === 'collapse' || String(a).indexOf('tab-') === 0; }
+  function loadingAllows(a) { return a === 'pane' || String(a).indexOf('tab-') === 0; }
   function mount(root, id, options) {
     var state = (H.m05ProposalStates || []).filter(function (s) { return s.id === id; })[0];
     if (!state) return function () {};

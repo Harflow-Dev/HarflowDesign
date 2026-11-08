@@ -203,9 +203,10 @@ test('the shimmer component is drawn in both appearances and its reduced-motion 
 test('a loading mount refuses blocked actions and lets chrome through (called, not matched)', () => {
   const m04 = HFV2.m04Proposal.model.loadingAllows, m05 = HFV2.m05Proposal.loadingAllows;
   for (const blocked of ['options', 'reset', 'recent', 'older', 'settings', 'qualified', 'created', 'install']) assert.equal(m04(blocked), false, `m04 refuses ${blocked}`);
-  assert.equal(m04('collapse'), true, 'the sidebar toggle is chrome');
+  assert.equal(m04('collapse'), true, 'the sidebar toggle is chrome in the m04 frames');
   for (const blocked of ['menu', 'stop', 'takeover', 'load-more', 'dialog-close', 'dialog-confirm', 'reveal-notices', 'reveal-enforcement']) assert.equal(m05(blocked), false, `m05 refuses ${blocked}`);
-  for (const chrome of ['pane', 'tab-changes', 'tab-artifacts', 'tab-events', 'collapse']) assert.equal(m05(chrome), true, `m05 allows ${chrome}`);
+  for (const chrome of ['pane', 'tab-changes', 'tab-artifacts', 'tab-events']) assert.equal(m05(chrome), true, `m05 allows ${chrome}`);
+  assert.equal(m05('collapse'), false, 'the task frame has no sidebar toggle action');
 });
 
 test('the sidebar spec touches only the sidebar listing and inert controls', () => {

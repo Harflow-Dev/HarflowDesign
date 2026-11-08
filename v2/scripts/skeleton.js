@@ -133,7 +133,8 @@
     if (frame.hasAttribute('data-skeleton')) return report;
     spec.ops.forEach(function (op) {
       var found = matches(frame, op.sel);
-      if (!found.length) { if (!op.optional) report.unmatched.push(op.sel); return; }
+      // A list op of a collapsible sidebar is not expected once the frame shows the rail; any other op must match.
+      if (!found.length) { if (!op.optional && !(op.expandedOnly && frame.querySelector('.hd-rail'))) report.unmatched.push(op.sel); return; }
       found.forEach(function (el, i) { if (el.isConnected) { KINDS[op.kind](el, op, i); report.applied += 1; } });
     });
     frame.setAttribute('data-skeleton', '');
