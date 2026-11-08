@@ -93,6 +93,7 @@
           "Actions",
           "Top bar",
           "Transcript",
+          "Messages",
           "Changes",
           "Events",
           "Artifacts",
@@ -711,7 +712,8 @@
   HFV2.RENDERERS = {
     m04: { api: 'm04Proposal', wrapper: 'hdc-specimen hdc-specimen--m04' },
     m05: { api: 'm05Proposal', wrapper: 'hdc-specimen hdc-specimen--m05' },
-    transcript: { api: 'transcriptScreen', wrapper: 'hdc-specimen hdc-specimen--m05 hdc-specimen--transcript' }
+    transcript: { api: 'transcriptScreen', wrapper: 'hdc-specimen hdc-specimen--m05 hdc-specimen--transcript' },
+    messages: { api: 'messagesScreen', wrapper: 'hdc-specimen hdc-specimen--m05 hdc-specimen--messages' }
   };
 
   // Adds a state to a family and keeps the family's states in group order.

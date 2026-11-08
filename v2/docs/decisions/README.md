@@ -15,6 +15,7 @@ Routes are written as the current route, with the route used before the informat
 | Entry, sidebar and runtime states (entry direction) | Start work; Settings and setup | Approved | The owner, 2026-11-05 | `5b37a3d` (earlier `ad80bcd`, `bd5d349`) | 24 states, thirteen of them now retired (see Retired designs): `sidebar/expanded`, `collapsed`, `minimum` and `history-loading` (now `sidebar/loading`); `new-task/composer-loading`, `composer-unqualified`, `composer-invalid`, `composer-starting`, `composer-refused`, `options-open`, `options-closed`, `composer-ready` and `composer-unknown`. The other `history-*` and the `harness-runtime/*` states stay. Old routes `m04-proposal/*`, listed in the route map | [m04-proposal.md](m04-proposal.md), [approval.md](approval.md) |
 | Centered composer amendment, with the unified sidebar scroll | Start work | Approved, separately from the entry direction | The owner, 2026-11-06 | `9d64bfd` | `new-task/centered-empty`, `centered-ready`, `centered-growing`, `centered-capped`, `centered-options`, `centered-unknown` (`m04-proposal/amendment-*`) | [m04-centered-composer-proposal.md](m04-centered-composer-proposal.md) |
 | Centered and transcript redraws | Start work; Task | Approved | The owner, 2026-11-08 ("Yes, accept all", relayed by the coordinator) | `b19520c` (base `3f12d29`); the hint under the Harness select of `new-task/centered-harness-open` follows in `48a54d3`; the gated option follows in `19365d9` | `new-task/centered-loading`, `centered-unqualified`, `centered-invalid`, `centered-starting`, `centered-refused`, `centered-options-closed`, `centered-harness-open`; `sidebar/centered-collapsed`, `centered-minimum`; `task/transcript-observed`, `transcript-loading`, `transcript-partial`, `transcript-unavailable`, `transcript-integrity-failed`, `transcript-reconnecting`, `transcript-capacity`, `transcript-sources`. Eighteen earlier states are retired (see Retired designs) | This file ([Centered and transcript redraws](#centered-and-transcript-redraws)), [m04-centered-composer-proposal.md](m04-centered-composer-proposal.md) |
+| Queued messages and approval states (provisional drafts) | Task; Needs you; Menu bar | Provisional, not approved | None. Drawn on 2026-11-08 at the coordinator's request, from existing contract meaning only | The commits titled "Add provisional queued-message and approval state drafts" (base `fec5719`) | `task/message-*` (nine states), `task/approval-exact`, `task/approval-stale`, `task/approval-expired`, `task/approval-answered-elsewhere`, `task/approval-refused`, `task/approval-uncertain`, `needs-you/approval-stale`, `needs-you/approval-expired`, `needs-you/answered-elsewhere`, `needs-you/checkpoint-stale`, `needs-you/interaction-answered-elsewhere`, `menu-bar/approval-stale`, `menu-bar/answered-elsewhere`. Pending redraw: `task/approval` by `task/approval-exact` | `v2/scripts/screens-messages.js`, `v2/scripts/messages-screen.js`, `v2/styles/messages-screen.css`, `v2/scripts/screens-approval-states.js`, `v2/styles/approval-states.css` |
 | Loading states | All screens with a first load | Approved | The owner, 2026-11-08 (`sidebar/loading` in the redraw decision; the other 15 states and the shimmer primitive: "I see the design and I think all looks good. I approve", relayed by the coordinator) | `8f52ad3` (the primitive and specs), `28f5066` (the start work and task states, the sidebar approval and the retirement of `sidebar/history-loading`), `a4a2c82` (the other states); review fixes `abb416c` and `ba8c928` (the approved design); approval recorded in the commit titled "Approve the loading states" | `new-task/loading`, `sidebar/loading`, `task/loading`, `task/loading-pane`, `parallel-group/loading`, `needs-you/loading`, `menu-bar/loading`, `workflows/loading`, `workflow-editor/loading`, `workflow-run/loading`, `workflow-run/loading-parallel`, `resources/loading`, `statistics/loading`, `settings/loading-general`, `settings/loading-harnesses`, `settings/loading-mcp-approvals`, `components/skeleton-shimmer` | `v2/scripts/skeleton.js`, `v2/scripts/skeleton-specs.js`, `v2/styles/skeleton.css`, `v2/scripts/screens-loading-work.js`, `v2/scripts/screens-loading-more.js` |
 | Minimum window (1000 × 620) | Needs you, Parallel group, Workflow run, Workflow editor, Menu bar | Approved | The owner, 2026-11-08: "Yes, approve", the answer to "Approve the 11 minimum-window screens with my three fixes?", relayed by the coordinator. The three fixes: the canvas scrolls, as on Mac; the meta dot is keyboard-focusable and shows its text on focus; the wrapped label at 288 is accepted. Sizes decided earlier the same day ("Yes, take them") | `9fca1fb`, `70ba6ab`, `c15dae3`, `6428285`, `1279752` and `c147372` (the states, the sizing decisions, the orchestrator and loading states, review fixes, and the canvas and meta fixes, in the commit titled "Scroll the workflow canvas and make the top bar meta focusable at the minimum window"); approval recorded in the commit titled "Approve the minimum window states" | `workflow-editor/orchestrator-minimum`, `needs-you/loading-minimum`, `parallel-group/loading-minimum`, `workflow-run/loading-parallel-minimum`, `workflow-editor/loading-minimum`, `menu-bar/loading-minimum`, `needs-you/waiting-minimum`, `parallel-group/lanes-minimum`, `workflow-run/parallel-minimum`, `workflow-editor/node-selected-minimum`, `menu-bar/busy-minimum` | `v2/scripts/screens-minimum.js`, `v2/scripts/minimum-frame.js`, `v2/styles/minimum-frame.css`, `tests/minimum-frame.test.mjs` |
 | Open design questions (five answers) | Task, Workflow run, Settings, Task store, Task contract blockers | Recorded | The owner, 2026-11-08: "Yes, all five", the answer to the coordinator's five recommendations, relayed by the coordinator | The commit titled "Record the owner's decisions on the open design questions" | `task/loading` (title note only); no state is added or changed | This file ([Open design questions](#open-design-questions)), [migration-coverage.md](../migration-coverage.md) |
@@ -102,7 +103,7 @@ The owner decided on 2026-11-08, answering "Yes, accept all", relayed by the coo
 | 5 | The open harness pill menu is drawn in the centered composer as the new state `new-task/centered-harness-open`, approved by extension |
 | 6 | Sidebar loading: option B. `sidebar/loading` (skeleton rows) is approved and `sidebar/history-loading` is retired and opens it; see [Loading states](#loading-states) |
 
-Sixteen redraws survive as approved states, and `sidebar/centered-expanded` is retired as a duplicate. Eighteen earlier states are retired (see [Retired designs](#retired-designs)): the 17 earlier states and the duplicate. `HFV2.pendingRedraw` (`v2/scripts/supersessions.js`) is empty; the mechanism stays for the next redraw. Each redraw reuses the fixtures and copy of its earlier state; only the layout changes, and no in-app copy is invented. The earlier states stay in Git history at `3f12d29`.
+Sixteen redraws survive as approved states, and `sidebar/centered-expanded` is retired as a duplicate. Eighteen earlier states are retired (see [Retired designs](#retired-designs)): the 17 earlier states and the duplicate. `HFV2.pendingRedraw` (`v2/scripts/supersessions.js`) was empty when these were approved; the mechanism stays for the next redraw, and one redraw is pending now (see [Queued messages and approval states](#queued-messages-and-approval-states-provisional)). Each of these redraws reuses the fixtures and copy of its earlier state; only the layout changes, and no in-app copy is invented. A pending redraw may also change copy when an owner decision requires it: `task/approval-exact` removes a button because of the exact-action decision of S03. The earlier states stay in Git history at `3f12d29`.
 
 ### The harness picker open
 
@@ -153,6 +154,123 @@ Append `/light`, `/dark` or `/system` for an appearance, for example `#task/tran
 On sign-off a pair moves into the retired designs table above: the earlier state, its templates and its guides are removed, and a redirect that already targeted the earlier state is repointed to the redraw (`new-task/sidebar-collapsed` and `new-task/harness-menu`).
 
 The questions the redraws left open were answered by the items above: the `new-task/centered-invalid` popover (item 4), the open harness pill (item 5), `task/activity-sources` (item 3) and the four Events elements (item 2).
+
+<a id="queued-messages-and-approval-states-provisional"></a>
+
+## Queued messages and approval states (provisional)
+
+Drawn on 2026-11-08 at the coordinator's request, on top of `fec5719`. **Nothing here is approved.** Every state carries `status: 'provisional'`, no approval object and the note "Provisional · not approved"; the suffix "· contract gap open" is added only where the contract has a gap. Covers the open ledger rows G-QUEUE (M06), G-APPROVAL-STATES and G-APPROVAL-WORDING (M07). M05 items 1 to 3 are not drawn.
+
+**Sources.** Meaning comes only from the contract, read in place at HarflowMCP `0936746`: `docs/contracts.md` (queued messaging, lines 1667 to 1720; approval ledgers and typed refusals, line 258), `docs/harness-permissions.md` (lines 605 and 702 to 717) and `contracts/v1` (fixtures and `mcp-v1/tools.json`). Copy comes from the contract, from the approved v2 copy, or from HarflowMac at `3fdf0e8` (read with `git show`; behavioural evidence for parity). Nothing is copied from `archive/v1`. Where only a gap existed, the line is neutral wording that states the contract meaning, marked "neutral" below for the owner to replace.
+
+### Queued messages
+
+All nine states draw the task screen frame (`task/running-stop`, `task/cancelled` or `task/failed-continue`) with queued-message bubbles added to the transcript and, where stated, a change to the composer. The composer of the approved states is untouched. The bubbles follow the Mac bubble: captioned, pinned ones below the live activity, settled ones above it.
+
+| Route | Base | Shows | Source |
+| --- | --- | --- | --- |
+| `task/message-queued` | `task/running-stop` | Two pinned bubbles captioned Queued, each with Cancel. The composer adds Send now beside Send. Cancel removes the bubble, shows "Queued message cancelled." and moves focus to that line | `contracts.md:1679-1681` (a queued send never folds into the live turn), `:1707` (statuses), `:1713` (cancel only while queued); `tools.json` `send_message`, `cancel_queued_message` |
+| `task/message-delivering` | same | One bubble still captioned Queued, no Cancel, with "Delivery is in progress." | `contracts.md:1708-1713` (`reserved` maps to `delivering`; claims are atomic) |
+| `task/message-delivered` | same | No bubble, the line "Message delivered." | `contracts.md:1709-1710` (delivered means handed to an issued process, not successful execution; delivered records keep metadata only); `ctl-workflow-messages.json`, sequence 2, `delivery_task_id` |
+| `task/message-cancelled` | same | One bubble left, the line "Queued message cancelled." | `contracts.md:1707`, `:1710` (cancelled records keep metadata only) |
+| `task/message-send-now-refused` | same | The bubble stays queued with the refusal under it and Cancel stays | `ctl-messaging-queued.json` (`interrupt_unsupported`, status `queued`), `contracts.md:1692-1695`, `send_message`: "preserving the message for later" |
+| `task/message-uncertain` | same | A bubble captioned Delivery uncertain with a reason, above the live activity, no Cancel, not requeued | `contracts.md:1709-1712` (uncertain delivery never requeues; uncertain consumption stays `delivering` with a reason) |
+| `task/message-undeliverable` | `task/cancelled` | A bubble captioned Undeliverable with a reason | `contracts.md:1683-1685`, `:1707` (completed or cancelled non-builder workflows mark waiting messages undeliverable with a reason), `send_message` description |
+| `task/message-unsupported` | `task/running-stop` | The composer is locked: no placeholder, no hint, no Send now | `contracts.md:1669-1671` (consumers must require `messaging.v1`); Mac `CtlClient.swift:217-218` requires it too |
+| `task/message-queued-settled` | `task/failed-continue` | Queued bubbles with Cancel beside the one Continue in a new session | `contracts.md:1697-1702` (`target_settled`, `target_status`; the message waits for `resume_task` or `continue_task`), `:1680-1681` (automatic continuation never consumes it) |
+
+Choices made while drawing:
+
+- **One vocabulary.** The drafts bind only to messaging.v1 (queued, delivering, delivered, undeliverable, cancelled). `conversation_delivery_v1` (`contracts.md:2446-2447`: queued, claimed, consumed, unknown, cancelled) is not used, and no `ctl-conversation-*` fixture is cited.
+- **Undeliverable base.** No approved state shows a terminal owning run. The state is drawn on `task/cancelled`, which shows the node's task and not the run; the run's status is carried by the reason line. A standalone task never reaches this state, because its messages wait.
+- **Delivered and cancelled.** The contract keeps metadata only for both, so no message text is drawn for them.
+- **Send now.** The approved composer has one Send button and a hint that already mentions Send now (`m05-proposal.js` composer). The drafts add a separate Send now button, as the Mac composer has, to show one answer. Whether Send now is a separate control, or only the hint and the existing behaviour, is an owner question.
+
+### Approval states
+
+Each approval state starts from an approved template and replaces exactly one block: the row of decision buttons (`task/approval-exact`), or one approval card (the others, derived in `v2/scripts/screens-approval-states.js`). The head and body of the card stay as approved, the card takes the approved settled style (`hd-approval--settled`), and a result block replaces the buttons. Counts, badges and waiting times outside the card are those of the approved state.
+
+| Route | Base | Shows | Source |
+| --- | --- | --- | --- |
+| `task/approval-exact` | `task/approval` | "Approve for this task" is removed; Approve once and Reject stay | `scope: "exact_action_once"` (`ctl-approval-get-claude-bash.json`), `harness-permissions.md:605-607`, `:674-676`, `respond_approval_request`: never installs reusable grants |
+| `task/approval-stale`, `needs-you/approval-stale`, `menu-bar/approval-stale` | `task/approval-exact`; the first card of `needs-you/waiting`; the first card of `menu-bar/busy` | No decision buttons, the refusal sentence and Refresh | `contracts.md:258` (`not_current`, its precedence, the unchanged ledger, read-only refresh); `ctl-approval-error-not-current.json` |
+| `task/approval-expired` | `task/approval-exact` | Expired; recorded decision approve, effective and delivered decision reject; delivery sent; execution unknown | `ctl-approval-state-expired-override.json`; `harness-permissions.md:702-717` (expiry rejects, never approves; delivery and outcome are separate facts) |
+| `needs-you/approval-expired` | first card of `needs-you/waiting` | Expired with no caller decision; the same rejection facts | `ctl-approval-state-expired-unanswered.json` |
+| `task/approval-answered-elsewhere` | `task/approval-exact` | Answered in Harflow, the decision and the time | `ctl-approval-error-already-answered.json` (`answered_by` monitor, `answer`, `answered_at`); `contracts.md:245`, `harness-permissions.md:689-700` (`responder`) |
+| `needs-you/answered-elsewhere`, `menu-bar/answered-elsewhere` | first card of `needs-you/waiting`; first card of `menu-bar/busy` | Already answered by the caller, the time and the decision | the same fixture with the caller as responder |
+| `task/approval-refused` | `task/approval-exact` | The `settled` refusal sentence, no buttons | `ctl-approval-error-settled.json` |
+| `task/approval-uncertain` | `task/approval-exact` | Decision recorded, delivery unknown, never retried | `ctl-approval-state-delivery-unknown.json`; `contracts.md:258`, `harness-permissions.md:676-678` (`sent` is not proof of execution) |
+| `needs-you/checkpoint-stale` | second card of `needs-you/waiting` | The checkpoint changed; no decision; Refresh | `ctl-workflow-attention-stale.json` (`attention_checkpoint_stale`, product 0.0.5) |
+| `needs-you/interaction-answered-elsewhere` | second card of `needs-you/waiting` | Already answered by the caller, the time and the answer | synthetic `ctl-workflow-shared-already-answered-synthetic.json` (`interaction_already_answered`, action `resume`). A workflow interaction, not an approval |
+
+**The exact-action relabel (G-APPROVAL-WORDING).** S03 decided exact-action approval with no task-wide authority. "Approve for this task" occurs only on `task/approval`; Needs you already says "Approve once". Removing the button is how the draft applies S03, because Approve once already names the exact action. This is the drafted reading of S03, for the owner to confirm. `task/approval` is not changed. The pair is registered in `HFV2.pendingRedraw`, and the catalog notes it in `#hdc-note`, outside the specimen. When the owner approves the redraw, `task/approval` is retired and redirects to `task/approval-exact`. The menu bar and the workflow cards say "Approve"; none of them grants task-wide authority, and whether the menu bar should say "Approve once" is an owner question, not part of this relabel.
+
+### Provisional wording for owner review
+
+Every line the specimens show, with its source. "Neutral" lines state the contract meaning in plain words because no source has a line for it; the owner should replace them. Mac paths are in `macos/HfFeatures/MainWindowFeature/Sources/MainWindowFeature/` unless they start with `macos/`; line numbers are at `3fdf0e8`.
+
+| Line | Source | Neutral |
+| --- | --- | --- |
+| Queued; Undeliverable; Delivery uncertain | `TaskDetail/Component/WorkMessageQueue.swift:49-51`; a claimed message keeps Queued (`:114`) | |
+| Cancel; accessible name "Cancel queued message" | `Component/PromptBubbleView.swift:93`, `:98` | |
+| Send now; its tooltip "Ask for immediate delivery; an engine refusal keeps the message queued" | `TaskDetail/Component/MessageBoxView.swift:258`, `:262` | |
+| Send now isn't available. This operation can't be interrupted safely. | `WorkMessageQueue.swift:67` | |
+| Delivery is in progress. | `macos/HfCore/HfRepository/Sources/HfRepository/TaskAction/TaskActionRepositoryImpl.swift:129`; `TaskDetail/Component/WorkMessageOutcome.swift:15` | |
+| Message delivered. | `TaskActionRepositoryImpl.swift:130`; `WorkMessageOutcome.swift:17` | |
+| Queued message cancelled. | `Parallel/ParallelViewRepository.swift:111` | |
+| Queue a message…; Send queues. Send now requests delivery when safe. (unchanged) | approved composer, `m05-proposal.js` | |
+| Delivery could not be confirmed. The message is not requeued. | `contracts.md:1709-1712` | Neutral |
+| The run was cancelled, so no further dispatch will consume this message. | `contracts.md:1683-1685`; `send_message` description | Neutral |
+| Refresh | approved Refresh button, `m05-proposal.js` banners; `CallerApprovalPresentation.swift:8` | |
+| The request changed or is no longer current. This response did not change it. Refresh to review the current action. | `TaskDetail/CallerApprovalPresentation.swift:8` | |
+| This request already has an answer. This response did not change it. | `CallerApprovalPresentation.swift:10` | |
+| This request has already settled. This response did not change it. | `CallerApprovalPresentation.swift:12` | |
+| This request changed. Review it again. | `macos/HfCore/HfRepository/Sources/HfRepository/NeedsYou/NeedsYouModels.swift:190` | |
+| Delivery is unknown. The decision will not be retried. | `TaskDetail/CallerApprovalController.swift:349` | |
+| Answered in Harflow · approve | `CallerApprovalController.swift:328` | |
+| Already answered by the caller; Already answered by the caller (Needs you and the workflow receipt) | `NeedsYou/NeedsYouVM+Actions.swift:87`; `Workflow/WorkflowInteractionOutcomeView.swift:16` | |
+| Answered in Harflow · {time}; Answered by the caller · {time} | `CallerApprovalPresentation.swift:50` | |
+| Recorded decision: approve; Effective decision: reject; Delivered decision: reject | `CallerApprovalPresentation.swift:54-56` | |
+| Delivery: sent; Delivery: delivery_unknown; Observed execution: unknown | `TaskDetail/CallerApprovalCard.swift:165-166` | |
+| Expired | `disposition: expired` (`ctl-approval-state-expired-*.json`); Mac shows the raw value (`CallerApprovalCard.swift:120`) | Neutral |
+| Harflow sent a rejection when the request expired. | `harness-permissions.md:710-714`; fixtures `delivered_decision: reject`, `delivery: sent`, `expiry_rejection: true` | Neutral |
+| It can't be approved later. Recovery is a new continuation of the task. | `harness-permissions.md:718`; `respond_approval_request` description | Neutral |
+| Times such as "Oct 14, 2026, 17:46 UTC" | the fixture's `answered_at` or `decided_at`, shown in UTC; Mac formats in the local style | Neutral |
+| Use staging, and postpone the Thursday release. | the synthetic fixture's answer | Fixture content |
+| Once the fix is in, run the whole slots suite one more time.; Then summarise what changed in two sentences. | mock messages a person typed | Fixture content |
+| Open task; Open run; the card heads and bodies | the approved templates, unchanged | |
+| Provisional · not approved[ · contract gap open] | the registry's provisional convention | |
+
+Typed refusals with a Mac line that no state draws: `expired` ("The request's deadline has passed. This response did not change it.", `CallerApprovalPresentation.swift:14`), `ownership_lost` ("No new decision was applied. The request owner is gone; Harflow may have invalidated the request.", `:16`, the only refusal without the unchanged-ledger guarantee, `contracts.md:258`), `unauthorized` (`:18`), `unsupported` (`:20`), `caller_undecidable` (`:22`) and `incomplete` (`:25`). The untyped failure line is `CallerApprovalController.swift:~340` ("The result could not be confirmed. This request is read-only here and your answer will not be retried.").
+
+### Open gaps
+
+Contract gaps:
+
+1. **Answered elsewhere.** The contract names only the channel, caller or Monitor. It does not name the surface, device or person, and Monitor identity is not authenticated (`contracts.md:245`; `harness-permissions.md:699-700`, issue 43).
+2. **messaging.v1 fixtures.** There is none for cancel, uncertain (`delivering` with a reason), undeliverable, delivered with text, or the now-refusals `workflow_checkpoint_required` and `continuation_refused`. Reason texts are supplied by the engine, so the reasons drawn are neutral.
+3. **Two status vocabularies.** messaging.v1 and `conversation_delivery_v1` differ (`contracts.md:2446-2447`). The drafts follow messaging.v1, which the Mac client sends through (`CtlClient.swift:217-224`). Which one the product binds to is for the owner and HarflowMCP.
+4. **Settled-target note.** `target_settled` has a note in the contract and no fixture or copy. None is drawn.
+5. **Unsupported engine.** The contract defines a usage error, no copy. The composer is locked with no text.
+
+Design gaps (the contract defines the meaning; the drawing is missing):
+
+6. **Approval delivery uncertain after expiry.** `delivery_unknown` after an expiry rejection is not drawn; the contract says it is never resent and the outcome stays unknown.
+7. **Untyped `approval_error` or a transport timeout.** The contract says to refresh read-only without resubmitting (`contracts.md:258`). Mac has a line (`CallerApprovalController.swift:~340`); no state is drawn.
+8. **Other typed refusals.** `expired`, `ownership_lost`, `unauthorized`, `unsupported`, `caller_undecidable` and `incomplete` have Mac lines (listed above) and no drawing.
+9. **Placement.** Where a delivered message appears in the transcript is not defined, because delivered records keep metadata only. Settled bubbles are drawn above the live activity as the Mac bubble does; native placement is unchecked.
+10. **Needs you has no workflow question card.** `needs-you/interaction-answered-elsewhere` is drawn on the workflow card, which asks for an approval; the answer text is the fixture's, so the two do not match.
+11. **Unchanged context.** The derived Needs you and menu bar states keep the approved counts, badges and waiting times, because only one block changes.
+
+Owner questions:
+
+- Is Send now a separate control in the composer, or only the hint and the existing behaviour?
+- Does the exact-action relabel match S03, and may the menu bar say "Approve once"?
+- Which message vocabulary does the product bind to (gap 3)?
+
+### Evidence and limits
+
+Checked in headless Chrome 157, in light and dark: every route registered at `fec5719` compared with `fec5719` on its app frame, DOM and pixels (594 captures; the only pixel differences are intermittent ones on `workflow-run/on-demand`, `workflow-editor/edit-with-agent` and `task/topbar-facts`, which also differ between two runs of `fec5719` against itself, with identical DOM); text contrast of the new bubbles and result blocks (at least 4.5); decision buttons absent from every settled card; Cancel by click and by Enter, with focus moving to the outcome line; overflow of the nine message states at 1280 × 800 and 1000 × 620. The approval states are static 1280 × 800 specimens like their bases, and were not drawn at 1000 × 620. Not checked: native Mac rendering, VoiceOver, a real engine. Approval of any state is a separate owner decision.
 
 ## Loading states
 
@@ -300,7 +418,7 @@ Not a design state. It indexes the current design.
 
 ### `task`
 
-[approval.md](approval.md) (base states), [d2b-observation-approval.md](d2b-observation-approval.md) (activity transcript), [m05-task-screen-approval.md](m05-task-screen-approval.md) (status, actions, top bar, changes, events, artifacts, layout). Transcript redraws: [Centered and transcript redraws](#centered-and-transcript-redraws).
+[approval.md](approval.md) (base states), [d2b-observation-approval.md](d2b-observation-approval.md) (activity transcript), [m05-task-screen-approval.md](m05-task-screen-approval.md) (status, actions, top bar, changes, events, artifacts, layout). Transcript redraws: [Centered and transcript redraws](#centered-and-transcript-redraws). Queued messages and approval states: [Queued messages and approval states](#queued-messages-and-approval-states-provisional) (provisional drafts).
 
 ### `parallel-group`
 
@@ -308,11 +426,11 @@ Not a design state. It indexes the current design.
 
 ### `needs-you`
 
-[approval.md](approval.md).
+[approval.md](approval.md). Approval states: [Queued messages and approval states](#queued-messages-and-approval-states-provisional) (provisional drafts).
 
 ### `menu-bar`
 
-[approval.md](approval.md).
+[approval.md](approval.md). Approval states: [Queued messages and approval states](#queued-messages-and-approval-states-provisional) (provisional drafts).
 
 ### `workflows`
 

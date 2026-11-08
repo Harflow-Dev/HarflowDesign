@@ -89,7 +89,8 @@ test('registry routes are unique and every descriptor resolves to a template, gu
   }
   const mountIds = {
     m04: [...HFV2.m04ProposalStates, ...HFV2.m04AmendmentStates, ...HFV2.m04RedrawStates].map(x => x.id),
-    m05: HFV2.m05ProposalStates.map(x => x.id)
+    m05: HFV2.m05ProposalStates.map(x => x.id),
+    messages: HFV2.messageStates.map(x => x.id)
   };
   for (const d of descriptors.filter(x => x.renderer)) {
     if (d.renderer === 'transcript') assert.equal(HFV2.d2bProposal.createState(d.mount).name, d.mount, `${d.route} is a known fixture`);
@@ -366,11 +367,11 @@ function rendererReads() {
 
 test('aliases resolve old routes without shadowing or chaining, and land on a live route or a retired one', () => {
   const entries = Object.entries(aliases);
-  // The transcript renderer and the centered redraws are excluded: their routes are new canonical routes with no earlier name.
+  // The transcript and queued-message renderers and the centered redraws are excluded: their routes are new canonical routes with no earlier name.
   // The retired duplicate shell state had no earlier name either.
   const redrawMounts = new Set(HFV2.m04RedrawStates.map(x => x.id));
   const nameless = new Set(['sidebar/centered-expanded']);
-  assert.equal(entries.length, descriptors.filter(d => d.renderer && !d.skeleton && d.renderer !== 'transcript' && !(d.renderer === 'm04' && redrawMounts.has(d.mount))).length + retired.filter(e => e.renderer && !nameless.has(e.route)).length, 'every renderer route has exactly one old route, retired ones included, except the redraws');
+  assert.equal(entries.length, descriptors.filter(d => d.renderer && !d.skeleton && d.renderer !== 'transcript' && d.renderer !== 'messages' && !(d.renderer === 'm04' && redrawMounts.has(d.mount))).length + retired.filter(e => e.renderer && !nameless.has(e.route)).length, 'every renderer route has exactly one old route, retired ones included, except the redraws');
   for (const [old, target] of entries) {
     assert.match(old, /^[a-z0-9-]+\/[a-z0-9-]+$/);
     assert.ok(!routeSet.has(old), `${old} is an alias and must not also be canonical`);
@@ -735,8 +736,12 @@ const TRANSCRIPT_REDRAWS = ['observed', 'loading', 'partial', 'unavailable', 'in
 const stateOfRoute = route => { const [f, s] = route.split('/'); return [HFV2.findFamily(f), HFV2.findState(HFV2.findFamily(f), s)]; };
 const DECISION = { 'new-task': 'Centered composer', sidebar: 'Sidebar', task: 'Task transcript' };
 
-test('no redraw is pending, and the catalog keeps the mechanism for the next one', () => {
-  assert.deepEqual(Array.from(pending), []);
+test('one redraw is pending, the exact-action approval, and the catalog notes the pair outside the specimen', () => {
+  assert.deepEqual(JSON.parse(JSON.stringify(pending)), [{ older: 'task/approval', newer: 'task/approval-exact' }]);
+  for (const route of ['task/approval', 'task/approval-exact']) assert.ok(routeSet.has(route), `${route} stays listed`);
+  assert.equal(stateOfRoute('task/approval')[1].status, 'approved', 'the earlier state keeps its approval');
+  assert.equal(stateOfRoute('task/approval-exact')[1].status, 'provisional');
+  assert.equal(HFV2.describe('task/approval-exact').approval, 'Provisional · not approved');
   const catalog = read(path.join(v2, 'scripts', 'catalog.js'));
   assert.match(catalog, /var PENDING = 'Earlier layout; redraw awaiting owner approval';/);
   assert.match(catalog, /pendingRedrawOf/);
@@ -744,7 +749,10 @@ test('no redraw is pending, and the catalog keeps the mechanism for the next one
   const page = read(path.join(v2, 'index.html'));
   assert.ok(page.indexOf('id="hdc-note"') > page.indexOf('id="hdc-approval"') && page.indexOf('id="hdc-note"') < page.indexOf('id="hdc-specimen"'), 'the note sits beside the approval line, outside the specimen');
   assert.match(read_('screens-overview.js'), /Redraws awaiting approval/);
-  assert.ok(!HFV2.templates['overview/areas'].includes('Redraws awaiting approval'), 'the overview lists no pending redraw');
+  const overview = HFV2.templates['overview/areas'];
+  assert.ok(overview.includes('Redraws awaiting approval') && overview.includes('<a href="#task/approval">') && overview.includes('<a href="#task/approval-exact">'), 'the overview lists the pending redraw');
+  // Nothing else is waiting: the approved redraws of 2026-11-08 are retired pairs, not pending ones.
+  for (const pair of pending) assert.ok(!(pair.older in HFV2.routeRedirects) && !(pair.newer in HFV2.routeRedirects));
 });
 
 test('the 16 redraws are approved by the owner on 2026-11-08, with the decision of their screen', () => {

@@ -62,6 +62,6 @@
   // Redraws awaiting owner approval. Both states of a pair stay listed. On sign-off the pair moves into
   // RETIRED above, the earlier state, its templates and guides are removed, and a redirect that already
   // targets the earlier state is repointed to the redraw. The catalog notes each pair outside the specimen.
-  // No redraw is waiting at present; the mechanism stays for the next one.
-  HFV2.pendingRedraw = [];
+  // One redraw is waiting: the exact-action approval, which removes the task-wide choice from the approval card.
+  HFV2.pendingRedraw = [{ older: 'task/approval', newer: 'task/approval-exact' }];
 })();

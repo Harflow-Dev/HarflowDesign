@@ -93,7 +93,7 @@ test('sidebar/loading replaced sidebar/history-loading; no pending redraw pair n
   assert.equal(HFV2.findState(HFV2.findFamily('sidebar'), 'history-loading'), null);
   assert.equal(HFV2.resolveRoute('#sidebar/history-loading/dark'), '#sidebar/loading/dark');
   assert.equal(HFV2.resolveRoute('#m04-proposal/history-loading/light'), '#sidebar/loading/light', 'the earlier alias reaches it in one redirect');
-  assert.equal(json(HFV2.pendingRedraw).length, 0);
+  assert.ok(json(HFV2.pendingRedraw).every(pair => !/sidebar\/(loading|history-loading)/.test(pair.older + pair.newer)), 'no pending redraw names a sidebar loading state');
   assert.ok(!('sidebar/loading' in HFV2.routeRedirects));
 });
 

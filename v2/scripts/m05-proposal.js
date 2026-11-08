@@ -292,17 +292,23 @@
     return '<details class="hd-m05-request"><summary>' + icon('chevron-right') + 'Original request</summary><p class="hd-m05-caption">Complete stored request</p><pre>' + esc(TASKS[spec.task].prompt) + '</pre><div class="hd-row hd-m05-actions">' + btn('Copy original request') + '</div></details>';
   }
   function columnHtml(spec, hooks) {
-    if (hooks && hooks.transcriptSlot) return '<section class="hd-m05-column" aria-label="Task conversation">' + hooks.transcriptSlot(spec) + composer(spec.composer) + '</section>';
+    var composerHtml = composer(spec.composer);
+    if (hooks && hooks.composerSlot) composerHtml = hooks.composerSlot(spec, composerHtml);
+    if (hooks && hooks.transcriptSlot) return '<section class="hd-m05-column" aria-label="Task conversation">' + hooks.transcriptSlot(spec) + composerHtml + '</section>';
     var kind = spec.task === 'empty' ? 'empty' : spec.task;
     var head = spec.composer === 'pending' ? '<div class="hd-m05-request"><span class="hd-faint">Original request is readable once this task starts.</span></div>' : promptHtml(spec);
     if (spec.subtask) head += '<div class="hd-m05-prov-line">' + icon('branch') + 'Sub-task started by another agent</div>';
     if (spec.resource) head += resourceCard(spec.resource);
     var flow = transcript(kind);
-    return '<section class="hd-m05-column" aria-label="Task conversation"><div class="hd-scroll hd-m05-scroll"><div class="hd-transcript">' + head + (spec.notice ? notice(spec.notice) : '') + flow + (spec.banner ? BANNERS[spec.banner]() : '') + '</div></div>' + composer(spec.composer) + '</section>';
+    var body = flow + (spec.banner ? BANNERS[spec.banner]() : '');
+    if (hooks && hooks.transcriptTail) body = hooks.transcriptTail(spec, body);
+    return '<section class="hd-m05-column" aria-label="Task conversation"><div class="hd-scroll hd-m05-scroll"><div class="hd-transcript">' + head + (spec.notice ? notice(spec.notice) : '') + body + '</div></div>' + composerHtml + '</section>';
   }
   // Optional hooks, passed by no existing route: transcriptSlot(spec) replaces the prompt and transcript
-  // column body, eventsBody(spec, ui) replaces the Events tab body, and identity replaces the task identity
-  // ({ title, meta, badge, chips, sidebarTitle, href, menu, disabledTabs }).
+  // column body, transcriptTail(spec, bodyHtml) returns the default transcript body with extra rows added,
+  // composerSlot(spec, composerHtml) returns the composer to draw in place of the standard one (it applies
+  // with or without transcriptSlot), eventsBody(spec, ui) replaces the Events tab body, and identity replaces
+  // the task identity ({ title, meta, badge, chips, sidebarTitle, href, menu, disabledTabs }).
   function screenHtml(spec, ui, selection, resolved, hooks) {
     var frameId = ui.frame, narrow = ui.narrow || FRAMES[frameId][0] < 1100, mode = paneMode(frameId, false);
     var identity = hooks && hooks.identity;
@@ -405,7 +411,7 @@
     }
     return mountState(root, state, null);
   }
-  // `ext` is optional and passed by no existing route: { hooks, strip(state, ui, frameLabel),
+  // `ext` is optional and passed by no existing route: { hooks, strip(state, ui, frameLabel), act(action),
   // beforeRender(), afterRender(stage, saved) }. beforeRender runs before the specimen is replaced and returns
   // what afterRender needs to restore the view once the new specimen is in place.
   function mountState(root, state, ext) {
@@ -430,6 +436,8 @@
     }
     function act(a) {
       if (ext && ext.loading && !loadingAllows(a)) return;
+      // ext.act(action) handles the actions a screen adds to the frame. It returns true, or a selector to focus, to redraw.
+      if (ext && ext.act) { var handled = ext.act(a); if (handled) return render(handled === true ? undefined : handled); }
       if (a === 'pane') { ui.pane = !ui.pane; ui.reveal = ''; return render('[data-m05="pane"]'); }
       if (a === 'menu') { ui.menu = !ui.menu; return render(ui.menu ? '.hd-m05-menu [role="menuitem"]' : '[data-m05="menu"]'); }
       if (a === 'load-more') { ui.paged[ui.tab] = true; return render('[data-m05="tab-' + ui.tab + '"]'); }

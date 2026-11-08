@@ -77,6 +77,25 @@ These routes are canonical routes with no earlier name; they are not aliases or 
 
 A route is `#family/state[/view][/appearance]`. A state may declare views (`views` in the registry); only the eight transcript routes do, and each declares `events`, which opens the right pane on Events at load. The segment after the state is a view only when that state declares it, and an appearance only when it is `light`, `dark` or `system`. Any other segment is dropped when the address is canonicalised, so an undeclared view never opens the overview. An alias or a redirect carries the view to its target and drops it when the target does not declare it. Opening or closing the pane by clicking does not rewrite the address.
 
+## Provisional routes
+
+These are canonical routes with no earlier name; they are not aliases or redirects, and none is approved ([decisions](decisions/README.md#queued-messages-and-approval-states-provisional)). Each draws the approved state in the second column with one block changed.
+
+| Provisional route | Draws |
+| --- | --- |
+| `task/message-queued`, `task/message-delivering`, `task/message-delivered`, `task/message-cancelled`, `task/message-send-now-refused`, `task/message-uncertain`, `task/message-unsupported` | `task/running-stop` |
+| `task/message-undeliverable` | `task/cancelled` |
+| `task/message-queued-settled` | `task/failed-continue` |
+| `task/approval-exact` | `task/approval` |
+| `task/approval-stale`, `task/approval-expired`, `task/approval-answered-elsewhere`, `task/approval-refused`, `task/approval-uncertain` | `task/approval-exact` |
+| `needs-you/approval-stale`, `needs-you/approval-expired`, `needs-you/answered-elsewhere` | `needs-you/waiting`, first request |
+| `needs-you/checkpoint-stale`, `needs-you/interaction-answered-elsewhere` | `needs-you/waiting`, second request |
+| `menu-bar/approval-stale`, `menu-bar/answered-elsewhere` | `menu-bar/busy`, first request |
+
+### Redraw awaiting approval
+
+`task/approval-exact` redraws `task/approval` and removes its "Approve for this task" button. Both stay listed until the owner decides; the catalog notes the pair beside the approval line. When the owner approves the redraw, `task/approval` is retired and opens `task/approval-exact`.
+
 ## Loading routes
 
 These are canonical routes with no earlier name; they are not aliases or redirects. Each mirrors the loaded state in the second column ([decisions](decisions/README.md#loading-states)). Append `/light`, `/dark` or `/system` for an appearance, for example `#task/loading/dark`. None declares a view.
