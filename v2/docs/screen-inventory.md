@@ -75,15 +75,15 @@ Each screen with a first load has one Loading state, drawn from the loaded state
 
 ## Minimum window drafts
 
-Five provisional states draw loaded screens at 1000 × 620 (see [the decisions record](decisions/README.md#minimum-window-drafts)). Each is derived from its loaded state; the loaded states are unchanged.
+Five provisional states draw loaded screens at 1000 × 620 (see [the decisions record](decisions/README.md#minimum-window-drafts)). Each is derived from its loaded state; the loaded states are unchanged. The owner decided the sizes on 2026-11-08 (lanes 360, inspector 288, popover 380, meta drops first); the drafts stay provisional.
 
 | Family | State | Route | Derived from |
 | --- | --- | --- | --- |
 | Needs you | Waiting · 1000 × 620 | `needs-you/waiting-minimum` | `needs-you/waiting`; the representative drawing of the sidebar rule for every static screen |
-| Parallel group | Lanes · 1000 × 620 | `parallel-group/lanes-minimum` | `parallel-group/lanes` |
-| Workflow run | Parallel view · 1000 × 620 | `workflow-run/parallel-minimum` | `workflow-run/parallel` |
-| Workflow editor | Node selected · 1000 × 620 | `workflow-editor/node-selected-minimum` | `workflow-editor/node-selected` |
-| Menu bar | Busy · 1000 × 620 | `menu-bar/busy-minimum` | `menu-bar/busy` |
+| Parallel group | Lanes · 1000 × 620 | `parallel-group/lanes-minimum` | `parallel-group/lanes`; 360 point lanes, the top bar meta drops first |
+| Workflow run | Parallel view · 1000 × 620 | `workflow-run/parallel-minimum` | `workflow-run/parallel`; 360 point lanes, the top bar meta drops first |
+| Workflow editor | Node selected · 1000 × 620 | `workflow-editor/node-selected-minimum` | `workflow-editor/node-selected`; inspector 288, the top bar meta drops first |
+| Menu bar | Busy · 1000 × 620 | `menu-bar/busy-minimum` | `menu-bar/busy`; popover 380 × 560 |
 
 ## Decisions recorded from the owner's feedback rounds
 

@@ -27,22 +27,26 @@
   // Lanes keep a floor and scroll horizontally; the floor is set in CSS.
   function lanes() {}
 
-  // The meta text is the first thing to leave the editor top bar. The dot stays, and the same text stays in the
-  // accessibility tree once, as visually hidden text; the dot's wrapper carries it as a title for pointer users.
-  function editorTopbar(host) {
-    var meta = host.querySelector('.hd-topbar__meta');
-    if (!meta) return;
-    var node = null;
-    Array.prototype.slice.call(meta.childNodes).forEach(function (child) {
-      if (child.nodeType === 3 && child.nodeValue.trim()) node = child;
+  // The meta text is the first thing to leave a top bar. Every meta element of the top bar keeps its text in the
+  // accessibility tree once, as visually hidden text, and carries the same text as a title for pointer users. A dot
+  // beside the text, if any, stays.
+  function topbarMeta(host) {
+    Array.prototype.slice.call(host.querySelectorAll('.hd-topbar__meta')).forEach(function (meta) {
+      var node = null;
+      Array.prototype.slice.call(meta.childNodes).forEach(function (child) {
+        if (child.nodeType === 3 && child.nodeValue.trim()) node = child;
+      });
+      if (!node) return;
+      var hidden = document.createElement('span');
+      hidden.className = 'hd-sr';
+      meta.replaceChild(hidden, node);
+      hidden.appendChild(node);
+      meta.setAttribute('title', node.nodeValue.trim());
     });
-    if (!node) return;
-    var hidden = document.createElement('span');
-    hidden.className = 'hd-sr';
-    meta.replaceChild(hidden, node);
-    hidden.appendChild(node);
-    meta.setAttribute('title', node.nodeValue.trim());
   }
+
+  // Mac: the inspector opens at 288 points. The width is set in CSS.
+  function inspector() {}
 
   // Mac: a fixed-size popover with a fixed header and footer; the sections between them scroll.
   function popover(host) {
@@ -57,7 +61,7 @@
     middle.forEach(function (node) { wrap.appendChild(node); });
   }
 
-  var FIXES = { sidebar: sidebar, lanes: lanes, 'editor-topbar': editorTopbar, popover: popover };
+  var FIXES = { sidebar: sidebar, lanes: lanes, inspector: inspector, 'topbar-meta': topbarMeta, 'editor-topbar': topbarMeta, popover: popover };
 
   H.minimumFixes = Object.keys(FIXES);
   H.applyMinimum = function (host, fixes) {

@@ -18,22 +18,22 @@
   });
   minimum('parallel-group', {
     id: 'lanes-minimum', title: 'Lanes · 1000 × 620',
-    description: 'The lanes of a parallel group in the minimum window. Each lane keeps a 360 point floor and the lanes scroll horizontally; the sidebar body scrolls.',
-    minimum: { of: 'parallel-group/lanes', fixes: ['sidebar', 'lanes'] }
+    description: 'The lanes of a parallel group in the minimum window. Each lane keeps a 360 point floor and the lanes scroll horizontally; the top bar drops its meta text so the title stays whole; the sidebar body scrolls.',
+    minimum: { of: 'parallel-group/lanes', fixes: ['sidebar', 'lanes', 'topbar-meta'] }
   });
   minimum('workflow-run', {
     id: 'parallel-minimum', title: 'Parallel view · 1000 × 620',
-    description: 'A run as lanes in the minimum window. Each lane keeps a 360 point floor and the lanes scroll horizontally; the sidebar body scrolls.',
-    minimum: { of: 'workflow-run/parallel', fixes: ['sidebar', 'lanes'] }
+    description: 'A run as lanes in the minimum window. Each lane keeps a 360 point floor and the lanes scroll horizontally; the top bar drops its meta text so the title stays whole; the sidebar body scrolls.',
+    minimum: { of: 'workflow-run/parallel', fixes: ['sidebar', 'lanes', 'topbar-meta'] }
   });
   minimum('workflow-editor', {
     id: 'node-selected-minimum', title: 'Node selected · 1000 × 620',
-    description: 'The editor with a node selected in the minimum window. The top bar drops its meta text so the title stays whole; the sidebar body scrolls.',
-    minimum: { of: 'workflow-editor/node-selected', fixes: ['sidebar', 'editor-topbar'] }
+    description: 'The editor with a node selected in the minimum window. The inspector is 288 points wide; the top bar drops its meta text so the title stays whole; the sidebar body scrolls.',
+    minimum: { of: 'workflow-editor/node-selected', fixes: ['sidebar', 'inspector', 'topbar-meta'] }
   });
   minimum('menu-bar', {
     id: 'busy-minimum', title: 'Busy · 1000 × 620',
-    description: 'The popover with work in progress, in the minimum window. It is 560 points tall; the header and footer stay fixed and the sections between them scroll.',
+    description: 'The popover with work in progress, in the minimum window. It is 380 points wide and 560 points tall; the header and footer stay fixed and the sections between them scroll.',
     minimum: { of: 'menu-bar/busy', fixes: ['popover'] }
   });
 })();

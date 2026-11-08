@@ -22,9 +22,9 @@ const NAMING_RULE = /\bm0\d\b|d2b|propos(al|ed)|native entry|\bG-[A-Z]+\b/i;
 
 const STATES = {
   'needs-you/waiting-minimum': { of: 'needs-you/waiting', fixes: ['sidebar'], title: 'Waiting · 1000 × 620' },
-  'parallel-group/lanes-minimum': { of: 'parallel-group/lanes', fixes: ['sidebar', 'lanes'], title: 'Lanes · 1000 × 620' },
-  'workflow-run/parallel-minimum': { of: 'workflow-run/parallel', fixes: ['sidebar', 'lanes'], title: 'Parallel view · 1000 × 620' },
-  'workflow-editor/node-selected-minimum': { of: 'workflow-editor/node-selected', fixes: ['sidebar', 'editor-topbar'], title: 'Node selected · 1000 × 620' },
+  'parallel-group/lanes-minimum': { of: 'parallel-group/lanes', fixes: ['sidebar', 'lanes', 'topbar-meta'], title: 'Lanes · 1000 × 620' },
+  'workflow-run/parallel-minimum': { of: 'workflow-run/parallel', fixes: ['sidebar', 'lanes', 'topbar-meta'], title: 'Parallel view · 1000 × 620' },
+  'workflow-editor/node-selected-minimum': { of: 'workflow-editor/node-selected', fixes: ['sidebar', 'inspector', 'topbar-meta'], title: 'Node selected · 1000 × 620' },
   'menu-bar/busy-minimum': { of: 'menu-bar/busy', fixes: ['popover'], title: 'Busy · 1000 × 620' }
 };
 
@@ -141,6 +141,22 @@ test('every static template with a sidebar has the top, nav, sections and foot s
   assert.deepEqual(odd, []);
 });
 
+test('the fix names and their host classes name the product screen only, and the old top bar name is an alias', () => {
+  for (const name of HFV2.minimumFixes) { assert.ok(!NAMING_RULE.test(name), name); assert.ok(!NAMING_RULE.test(`hdc-min-${name}`)); }
+  const css = read('styles/minimum-frame.css');
+  for (const cls of new Set(css.match(/hdc-min-[a-z-]+|hd-[a-z-]+scroll/g))) assert.ok(!NAMING_RULE.test(cls), cls);
+  assert.ok(HFV2.minimumFixes.includes('topbar-meta') && HFV2.minimumFixes.includes('editor-topbar'));
+  assert.deepEqual([...HFV2.minimumFixes].sort(), ['editor-topbar', 'inspector', 'lanes', 'popover', 'sidebar', 'topbar-meta']);
+});
+
+test('the sizing decisions are in the stylesheet: inspector 288, popover 380 by 560, lane floor 360', () => {
+  const css = read('styles/minimum-frame.css').replace(/\/\*[\s\S]*?\*\//g, '');
+  assert.match(css, /\.hdc-min-inspector \.hd-inspector\{flex:0 0 288px!important;width:288px!important\}/);
+  assert.match(css, /section\[aria-label="Harflow menu"\]\{width:380px!important;height:560px\}/);
+  assert.match(css, /\.hd-lane\{flex:0 0 360px!important;min-width:360px!important\}/);
+  assert.match(css, /\.hdc-min-inspector \.hd-inspector__body\{position:relative\}/);
+});
+
 test('the drafts name the product screen only', () => {
   for (const route of Object.keys(STATES)) {
     const [familyId, stateId] = route.split('/');
@@ -177,16 +193,18 @@ function runMinimum(host, fixes) {
   context.HFV2.applyMinimum(host, fixes);
 }
 
-test('applyMinimum on a hand-written node tree: sidebar, popover and editor meta', () => {
+test('applyMinimum on a hand-written node tree: sidebar, popover and top bar meta', () => {
   const sidebar = el('aside', 'hd-sidebar', [el('div', 'hd-sidebar__top'), el('nav', 'hd-nav'), el('section', 'hd-section'), el('section', 'hd-section hd-section--fill'), el('div', 'hd-sidebar__foot')]);
   const pop = el('section', '', [el('div', 'h'), el('section', 'a'), el('section', 'b'), el('section', 'c'), el('div', 'f')], { 'aria-label': 'Harflow menu' });
-  const phrase = 'Unsaved changes · Revision 7';
+  const phrase = 'Unsaved changes · Revision 7', phrase2 = 'Enforced for every agent here: Network: not controlled.';
   const meta = el('span', 'hd-topbar__meta', [el('span', 'hd-dot', [], { 'aria-hidden': 'true' })]);
   meta.appendChild(new FakeText(phrase));
-  const host = el('div', 'hdc-specimen', [sidebar, pop, el('div', 'hd-topbar', [meta])]);
+  const meta2 = el('span', 'hd-topbar__meta');
+  meta2.appendChild(new FakeText(phrase2));
+  const host = el('div', 'hdc-specimen', [sidebar, pop, el('div', 'hd-topbar', [meta, meta2])]);
   sidebar.children[2].appendChild(new FakeText('Running'));
   const before = texts(host);
-  runMinimum(host, ['sidebar', 'popover', 'editor-topbar', 'lanes']);
+  runMinimum(host, ['sidebar', 'popover', 'topbar-meta', 'lanes', 'inspector']);
 
   const side = sidebar.children.map(c => [...c.classes][0]);
   assert.deepEqual(side, ['hd-sidebar__top', 'hd-sidebar__scroll', 'hd-sidebar__foot']);
@@ -195,14 +213,30 @@ test('applyMinimum on a hand-written node tree: sidebar, popover and editor meta
   assert.deepEqual(pop.children.map(c => [...c.classes][0]), ['h', 'hd-popover__scroll', 'f']);
   assert.deepEqual(pop.children[1].children.map(c => [...c.classes][0]), ['a', 'b', 'c']);
 
-  const hidden = meta.children.find(c => c.classes.has('hd-sr'));
-  assert.ok(hidden, 'the meta text sits in .hd-sr');
-  assert.equal(hidden.childNodes.length, 1);
-  assert.equal(hidden.childNodes[0].nodeValue, phrase);
-  assert.equal(meta.getAttribute('title'), phrase);
-  assert.deepEqual(meta.childNodes.filter(n => n.nodeType === 3), [], 'no bare text is left in the meta');
+  for (const [node, text] of [[meta, phrase], [meta2, phrase2]]) {
+    const hidden = node.children.find(c => c.classes.has('hd-sr'));
+    assert.ok(hidden, 'the meta text sits in .hd-sr');
+    assert.equal(hidden.childNodes.length, 1);
+    assert.equal(hidden.childNodes[0].nodeValue, text);
+    assert.equal(node.getAttribute('title'), text);
+    assert.equal(node.children.filter(c => c.classes.has('hd-sr')).length, 1, 'the text is exposed once');
+    assert.deepEqual(node.childNodes.filter(n => n.nodeType === 3), [], 'no bare text is left in the meta');
+  }
+  assert.ok(meta.children.some(c => c.classes.has('hd-dot')), 'the dot stays');
 
   assert.deepEqual(texts(host), before, 'the text multiset is unchanged');
-  for (const fix of ['sidebar', 'popover', 'editor-topbar', 'lanes']) assert.ok(host.classes.has(`hdc-min-${fix}`));
+  for (const fix of ['sidebar', 'popover', 'topbar-meta', 'lanes', 'inspector']) assert.ok(host.classes.has(`hdc-min-${fix}`));
   assert.throws(() => runMinimum(host, ['unknown']), /Unknown minimum fix/);
+});
+
+test('the inspector fix touches no node, and the old top bar name still applies the same fix', () => {
+  const meta = el('span', 'hd-topbar__meta');
+  meta.appendChild(new FakeText('Run started 02:00 · HarflowMCP'));
+  const inspector = el('aside', 'hd-inspector', [el('div', 'hd-inspector__body')]);
+  const host = el('div', 'hdc-specimen', [el('div', 'hd-topbar', [meta]), inspector]);
+  runMinimum(host, ['inspector', 'editor-topbar']);
+  assert.deepEqual(inspector.children.map(c => [...c.classes][0]), ['hd-inspector__body']);
+  assert.equal(inspector.children[0].children.length, 0);
+  assert.equal(meta.getAttribute('title'), 'Run started 02:00 · HarflowMCP');
+  assert.ok(host.classes.has('hdc-min-inspector') && host.classes.has('hdc-min-editor-topbar'));
 });

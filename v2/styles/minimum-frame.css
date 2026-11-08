@@ -14,7 +14,12 @@
 .hdc-specimen--minimum.hdc-min-lanes .hd-lanes{position:relative;scrollbar-width:thin}
 .hdc-specimen--minimum.hdc-min-lanes .hd-lane{flex:0 0 360px!important;min-width:360px!important}
 
-/* Popover: 560 tall, fixed header and footer, scrolling sections between them. */
-.hdc-specimen--minimum.hdc-min-popover section[aria-label="Harflow menu"]{height:560px}
+/* Inspector: 288 wide, as on Mac. The templates give it 340. Its body scrolls, so it is the containing block of the
+   visually hidden labels inside it. */
+.hdc-specimen--minimum.hdc-min-inspector .hd-inspector{flex:0 0 288px!important;width:288px!important}
+.hdc-specimen--minimum.hdc-min-inspector .hd-inspector__body{position:relative}
+
+/* Popover: 380 wide and 560 tall, fixed header and footer, scrolling sections between them. */
+.hdc-specimen--minimum.hdc-min-popover section[aria-label="Harflow menu"]{width:380px!important;height:560px}
 .hdc-specimen--minimum.hdc-min-popover section[aria-label="Harflow menu"]>*{flex-shrink:0}
 .hdc-specimen--minimum.hdc-min-popover section[aria-label="Harflow menu"]>.hd-popover__scroll{position:relative;flex:1 1 auto;min-height:0;overflow-y:auto;scrollbar-width:thin}
