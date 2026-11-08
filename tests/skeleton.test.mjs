@@ -44,6 +44,7 @@ const REFERENCES = {
 };
 
 test('every loading state mirrors a pinned, approved and current loaded state', () => {
+  assert.ok(loadingStates.length > 0);
   for (const { route, state, family } of loadingStates) {
     assert.ok(route in REFERENCES, `${route} is a known loading state`);
     assert.equal(state.skeleton.of, REFERENCES[route], `${route} mirrors ${REFERENCES[route]}`);
@@ -71,6 +72,15 @@ test('only sidebar/loading is approved; every other loading state is provisional
       assert.ok(!state.approval, `${route} carries no approval`);
     }
   }
+});
+
+test('sidebar/loading replaced sidebar/history-loading; no pending redraw pair names it', () => {
+  assert.equal(HFV2.routeRedirects['sidebar/history-loading'], 'sidebar/loading');
+  assert.equal(HFV2.findState(HFV2.findFamily('sidebar'), 'history-loading'), null);
+  assert.equal(HFV2.resolveRoute('#sidebar/history-loading/dark'), '#sidebar/loading/dark');
+  assert.equal(HFV2.resolveRoute('#m04-proposal/history-loading/light'), '#sidebar/loading/light', 'the earlier alias reaches it in one redirect');
+  assert.equal(json(HFV2.pendingRedraw).length, 0);
+  assert.ok(!('sidebar/loading' in HFV2.routeRedirects));
 });
 
 test('specs are complete: frame, label, region ops, valid kinds and an allowlist', () => {
@@ -169,7 +179,7 @@ test('existing templates are byte-identical to the base commit apart from the to
   const CHANGED = new Set(['foundations/colour', 'brand/visual-foundations', 'overview/areas']);
   const RETIRED = new Set(['m04-proposal/history-loading']);
   for (const [key, sha] of Object.entries(manifest)) {
-    if (RETIRED.has(key)) continue;
+    if (RETIRED.has(key)) { assert.equal(HFV2.templates[key], undefined, `${key} is removed with its state`); continue; }
     assert.equal(typeof HFV2.templates[key], 'string', `${key} still exists`);
     if (CHANGED.has(key)) continue;
     assert.equal(crypto.createHash('sha1').update(HFV2.templates[key]).digest('hex'), sha, `${key} is unchanged`);

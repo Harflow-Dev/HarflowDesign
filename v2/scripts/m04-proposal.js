@@ -65,7 +65,7 @@
     if (route === 'composer-invalid') { s.draft = 'Review the delivery queue'; s.turns = '0'; s.advanced = true; }
     if (/composer-(starting|refused|unknown)/.test(route)) { s.draft = 'Review the delivery queue'; s.status = route.split('-')[1]; }
     if (route === 'history-retained') s.rows=['events-reader'];
-    if (route === 'history-empty' || route === 'history-loading') s.rows = [];
+    if (route === 'history-empty') s.rows = [];
     if (route.indexOf('runtime-') === 0) { s.runtime = route.slice(8); s.listing = 'pending'; if (s.runtime === 'listing') s.runtime = 'qualified'; }
     return s;
   }
@@ -156,7 +156,7 @@
       }
       var main = app.querySelector('.hd-main');
       var topbar=main.querySelector('.hd-topbar'); if(topbar)topbar.innerHTML='<span class="caption hd-faint">'+esc(route.indexOf('runtime-')===0?'Harflow · Setup':s.repository+' · New task')+'</span><span class="hd-topbar__spacer"></span>';
-      if(route==='history-empty'||route==='history-loading'){var running=app.querySelector('[aria-label="Running"]');if(running){running.querySelector('.hd-section__list').textContent=route==='history-loading'?'Loading running work…':'No running work';var count=running.querySelector('.hd-section__count');if(count)count.textContent=route==='history-loading'?'':'0';}}
+      if(route==='history-empty'){var running=app.querySelector('[aria-label="Running"]');if(running){running.querySelector('.hd-section__list').textContent='No running work';var count=running.querySelector('.hd-section__count');if(count)count.textContent='0';}}
       var collapse = app.querySelector('[aria-label="Collapse sidebar"], [aria-label="Expand sidebar"]'); if(collapse) collapse.dataset.m04='collapse';
       var recent = app.querySelector('[aria-label="Recent work"] .hd-section__list');
       if (recent && route.indexOf('history-') === 0) {
@@ -165,7 +165,7 @@
         var rows = s.rows.map(function(id){var row=identityRows[id]; if(row)row.dataset.identity=id;return row;}).filter(Boolean);
         rows.forEach(function(row) { if (row.dataset.identity===s.selected) { row.classList.add('is-active'); row.setAttribute('aria-current','true'); } });
         recent.replaceChildren.apply(recent,rows);
-        var messages = {'history-empty':'No recent work yet.','history-loading':'Loading recent work…','history-older':'Loading older work…','history-error':'Older work could not be loaded. Loaded work is retained.','history-reconnecting':'Reconnecting… Loaded work may be incomplete.','history-retained':'Older history is outside this retained page. Selection is preserved.'};
+        var messages = {'history-empty':'No recent work yet.','history-older':'Loading older work…','history-error':'Older work could not be loaded. Loaded work is retained.','history-reconnecting':'Reconnecting… Loaded work may be incomplete.','history-retained':'Older history is outside this retained page. Selection is preserved.'};
         var note=document.createElement('div'); note.className='hd-m04-history-note caption'; note.textContent=messages[route]; recent.appendChild(note);
         if(route==='history-error') note.insertAdjacentHTML('beforeend',button('Retry older work','older'));
       }

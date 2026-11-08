@@ -51,6 +51,28 @@ The owner approved these redraws on 2026-11-08; each replaced an earlier state, 
 | Sidebar | Centered shell · Collapsed rail, Minimum window | `sidebar/centered-collapsed`, `centered-minimum` | The shell states with the New task area in the centered layout. The expanded shell is `new-task/centered-empty` |
 | Task | Task transcript · Observed activity, Loading observations, Incomplete history, Observation unavailable, Request integrity failure, Reconnect and source change, Reading window at capacity, Normalized and recovered sources | `task/transcript-observed`, `transcript-loading`, `transcript-partial`, `transcript-unavailable`, `transcript-integrity-failed`, `transcript-reconnecting`, `transcript-capacity`, `transcript-sources` | The eight transcript states inside the task screen frame. The right pane opens on Events, with the captured activity sections; open it from the top bar or with `/events` after the route |
 
+## Loading states
+
+Each screen with a first load has one Loading state, drawn from the loaded state it mirrors (see [the decisions record](decisions/README.md#loading-states)). `sidebar/loading` is approved; the others are provisional until the owner decides.
+
+| Family | State | Route | Mirrors |
+| --- | --- | --- | --- |
+| New task | Loading | `new-task/loading` | `new-task/centered-empty` |
+| Sidebar | Loading | `sidebar/loading` | `new-task/centered-empty`, sidebar rows only |
+| Task | Loading, Loading · Right pane open | `task/loading`, `task/loading-pane` | `task/running-stop`, `task/pane-running-open` |
+| Parallel group | Loading | `parallel-group/loading` | `parallel-group/lanes` |
+| Needs you | Loading | `needs-you/loading` | `needs-you/waiting` |
+| Menu bar | Loading | `menu-bar/loading` | `menu-bar/busy` |
+| Workflows | Loading | `workflows/loading` | `workflows/list` |
+| Workflow editor | Loading | `workflow-editor/loading` | `workflow-editor/node-selected` |
+| Workflow run | Loading, Loading · Parallel view | `workflow-run/loading`, `workflow-run/loading-parallel` | `workflow-run/on-demand`, `workflow-run/parallel` |
+| Resources | Loading | `resources/loading` | `resources/slots` |
+| Statistics | Loading | `statistics/loading` | `statistics/overview` |
+| Settings | Loading · General, Harnesses, MCP approvals | `settings/loading-general`, `loading-harnesses`, `loading-mcp-approvals` | `settings/general`, `harnesses`, `mcp-approvals` |
+| Components | Skeleton shimmer | `components/skeleton-shimmer` | The primitive in both appearances and its reduced-motion form |
+
+`sidebar/history-loading` was retired for `sidebar/loading` and opens it. The partial loads (`task/changes-loading`, `events-loading`, `artifacts-loading`, `sidebar/history-older`, `new-task/centered-loading`) and the first-load screens of App states and Harness runtime are unchanged.
+
 ## Decisions recorded from the owner's feedback rounds
 
 - The Workflows list shows no run status. The same workflow can run concurrently; runs appear only in the sidebar under Running and Recent work.

@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   var H = window.HFV2 = window.HFV2 || {};
-  var ids = ['history-empty','history-loading','history-older','history-error','history-reconnecting','history-retained','runtime-checking','runtime-install-required','runtime-update-required','runtime-installing','runtime-failed','runtime-listing'];
+  var ids = ['history-empty','history-older','history-error','history-reconnecting','history-retained','runtime-checking','runtime-install-required','runtime-update-required','runtime-installing','runtime-failed','runtime-listing'];
   H.m04ProposalStates = ids.map(function (id) { return { id: id, title: id.replace(/-/g, ' '), description: 'Approved M04 visual direction (2026-11-05): ' + id.replace(/-/g, ' ') + ' review fixture.', status: 'Approved', approved: true }; });
   // Owner-approved centered-composer amendment (2026-11-06), recorded separately
   // from the baseline approval above. Separate routes with their own root class
@@ -32,7 +32,6 @@
   // Routes: [renderer id, family, state, group, title, description]. The renderer id stays the template key.
   var ROWS = [
     ["history-empty", "sidebar", "history-empty", "Recent work", "History · Empty", "No running or recent work in the available listing."],
-    ["history-loading", "sidebar", "history-loading", "Recent work", "History · Loading", "Initial listing has no fabricated work rows."],
     ["history-older", "sidebar", "history-older", "Recent work", "History · Loading older", "Older-page loading retains already loaded rows."],
     ["history-error", "sidebar", "history-error", "Recent work", "History · Read failure", "Failed reads preserve loaded work and offer explicit retry."],
     ["history-reconnecting", "sidebar", "history-reconnecting", "Recent work", "History · Reconnecting", "Reconnect preserves identity and uncertainty."],

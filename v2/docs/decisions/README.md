@@ -15,6 +15,7 @@ Routes are written as the current route, with the route used before the informat
 | Entry, sidebar and runtime states (entry direction) | Start work; Settings and setup | Approved | The owner, 2026-11-05 | `5b37a3d` (earlier `ad80bcd`, `bd5d349`) | 24 states, twelve of them now retired (see Retired designs): `sidebar/expanded`, `collapsed`, `minimum`; `history-*`; `new-task/composer-*`, `options-open`, `options-closed`, and `composer-ready` and `composer-unknown`; `harness-runtime/*`. Old routes `m04-proposal/*`, listed in the route map | [m04-proposal.md](m04-proposal.md), [approval.md](approval.md) |
 | Centered composer amendment, with the unified sidebar scroll | Start work | Approved, separately from the entry direction | The owner, 2026-11-06 | `9d64bfd` | `new-task/centered-empty`, `centered-ready`, `centered-growing`, `centered-capped`, `centered-options`, `centered-unknown` (`m04-proposal/amendment-*`) | [m04-centered-composer-proposal.md](m04-centered-composer-proposal.md) |
 | Centered and transcript redraws | Start work; Task | Approved | The owner, 2026-11-08 ("Yes, accept all", relayed by the coordinator) | `b19520c` (base `3f12d29`); the hint under the Harness select of `new-task/centered-harness-open` follows in `48a54d3`; the gated option follows in `19365d9` | `new-task/centered-loading`, `centered-unqualified`, `centered-invalid`, `centered-starting`, `centered-refused`, `centered-options-closed`, `centered-harness-open`; `sidebar/centered-collapsed`, `centered-minimum`; `task/transcript-observed`, `transcript-loading`, `transcript-partial`, `transcript-unavailable`, `transcript-integrity-failed`, `transcript-reconnecting`, `transcript-capacity`, `transcript-sources`. Eighteen earlier states are retired (see Retired designs) | This file ([Centered and transcript redraws](#centered-and-transcript-redraws)), [m04-centered-composer-proposal.md](m04-centered-composer-proposal.md) |
+| Loading states | All screens with a first load | `sidebar/loading` approved, the other states provisional | The owner, 2026-11-08 (sidebar only) | The commits that add each loading state (`git log --grep="loading states"`) | `new-task/loading`, `sidebar/loading`, `task/loading`, `task/loading-pane`, `parallel-group/loading`, `components/skeleton-shimmer` | `v2/scripts/skeleton.js`, `v2/scripts/skeleton-specs.js`, `v2/styles/skeleton.css`, `v2/scripts/screens-loading-work.js`, `v2/scripts/screens-loading-more.js` |
 | Task screen states (statuses, actions, top bar, changes, events, artifacts, layout) | Task | Approved, except the provisional routes below | The owner, 2026-11-07, relayed by the coordinator | `17739e4` (proposal `3e85e26`, `a9c65fe`) | `task/running-stop` (`m05-proposal/state-running`), the other status, action, top bar, changes, events and layout routes, and the decision boards under `records/` (`m05-proposal/overview`, `retry-options`, `stop-options`, `adaptive-options`, `platform-options`). Provisional, not approved: `task/cancelled-partial` and `task/artifacts-*`, until the contract gaps close | [m05-task-screen-approval.md](m05-task-screen-approval.md), [m05-task-screen-proposal.md](m05-task-screen-proposal.md) |
 
 ## Retired designs
@@ -52,6 +53,7 @@ Pins use the route names at each commit: the old milestone routes (`m04-proposal
 | `task/activity-reconnecting` | `task/transcript-reconnecting` | Owner answer 2026-11-08: redraws accepted | `task/activity-reconnecting` at `3f12d29` (mount `reconnecting`) |
 | `task/activity-capacity` | `task/transcript-capacity` | Owner answer 2026-11-08: redraws accepted | `task/activity-capacity` at `3f12d29` (mount `capacity`) |
 | `task/activity-sources` | `task/transcript-sources` | Owner answer 2026-11-08: redraws accepted; owner item 3 | `task/activity-sources` at `3f12d29` (mount `events`) |
+| `sidebar/history-loading` | `sidebar/loading` | Owner answer 2026-11-08 (option B): the first listing shows skeleton rows instead of text only. The earlier state said the initial listing has no fabricated work rows; the skeleton rows carry no work data | `sidebar/history-loading` at `854caae` (mount `history-loading`) |
 
 The templates that other states clone (`task/running`, `task/done`, `task/failed`, `new-task/default`, `new-task/sidebar-collapsed`) stay in the code. Deleted with their states: the `new-task/harness-menu` template; the `m04-proposal/*` templates and mounts of the retired composer and shell states; and the activity transcript wrapper templates, guides, mount and renderer (`d2b-proposal/*`). The transcript fixtures and builders stay, because the transcript routes use them.
 
@@ -82,7 +84,7 @@ The owner decided on 2026-11-08, answering "Yes, accept all", relayed by the coo
 | 3 | `task/activity-sources` opens `task/transcript-sources`. This resolves the open question (QA) of the earlier Q4 answer |
 | 4 | The `new-task/centered-invalid` task options popover over the greeting is accepted at the minimum frame |
 | 5 | The open harness pill menu is drawn in the centered composer as the new state `new-task/centered-harness-open`, approved by extension |
-| 6 | Sidebar loading: option B. It is not part of this commit; the loading skeleton work carries it |
+| 6 | Sidebar loading: option B. `sidebar/loading` (skeleton rows) is approved and `sidebar/history-loading` is retired and opens it; see [Loading states](#loading-states) |
 
 Sixteen redraws survive as approved states, and `sidebar/centered-expanded` is retired as a duplicate. Eighteen earlier states are retired (see [Retired designs](#retired-designs)): the 17 earlier states and the duplicate. `HFV2.pendingRedraw` (`v2/scripts/supersessions.js`) is empty; the mechanism stays for the next redraw. Each redraw reuses the fixtures and copy of its earlier state; only the layout changes, and no in-app copy is invented. The earlier states stay in Git history at `3f12d29`.
 
@@ -135,6 +137,56 @@ Append `/light`, `/dark` or `/system` for an appearance, for example `#task/tran
 On sign-off a pair moves into the retired designs table above: the earlier state, its templates and its guides are removed, and a redirect that already targeted the earlier state is repointed to the redraw (`new-task/sidebar-collapsed` and `new-task/harness-menu`).
 
 The questions the redraws left open were answered by the items above: the `new-task/centered-invalid` popover (item 4), the open harness pill (item 5), `task/activity-sources` (item 3) and the four Events elements (item 2).
+
+## Loading states
+
+The owner asked on 2026-11-08 for "the shimmer page for each page", each "resembling the new design". Every screen with a first load has one state named Loading, in a Loading group under its own screen. Each is drawn from the loaded state it mirrors: the loaded template and renderer run, then the data regions of that screen are replaced by shimmering blocks and everything else stays real (`v2/scripts/skeleton.js`; the regions and patterns are authored in `v2/scripts/skeleton-specs.js`). The region boxes, column widths, top bar, pane geometry and row height therefore equal the loaded screen's; the patterns inside a region (row counts, line widths, the four-node graph) are fixed and authored, not measured from fixtures.
+
+**Sidebar.** The owner chose option B (item 6 of [Centered and transcript redraws](#centered-and-transcript-redraws)): `sidebar/loading` shows skeleton rows while the work listing is read, and it is **approved** (the owner, 2026-11-08, decision "Sidebar"). `sidebar/history-loading`, which showed text only ("Initial listing has no fabricated work rows"), is retired and opens it. The skeleton rows carry no work data, which is what the earlier state's rule protected.
+
+**Partial loads stay as approved.** These depict part of a screen loading while the rest is known, and they are not changed: `task/changes-loading`, `task/events-loading`, `task/artifacts-loading`, `task/transcript-loading`, `sidebar/history-older`, `new-task/centered-loading` (re-checking options that are already known), `harness-runtime/checking` and `listing`, and `app-states/loading` (connecting to the engine; they are the first-load screens of their own areas).
+
+**Provisional loading states (awaiting owner approval).** Each mirrors the region geometry of an approved state. Static families are drawn at their native frame (1280 × 800) only, because their loaded screens have no 1000 × 620 drawing; the New task, Sidebar and Task states offer both frames through their Frame control.
+
+| Route | Mirrors | What shimmers |
+| --- | --- | --- |
+| `new-task/loading` | `new-task/centered-empty` | The repository, the three option pills, the status line and the sidebar work rows and counts. The greeting, composer frame, task options trigger and navigation are real |
+| `sidebar/loading` (approved) | `new-task/centered-empty` | The sidebar counts and the Running and Recent work rows, and the option pills the window draws. The repository is not named in the top bar. It differs from `new-task/loading` in what stays real: here the status line and the title "New task" are |
+| `task/loading` | `task/running-stop` | Title, status badge, meta and chips; the transcript; the Stop button; the sidebar rows. The right pane toggle, composer and sidebar navigation are real |
+| `task/loading-pane` | `task/pane-running-open` | As `task/loading`, plus the pane body. Tab names are real |
+| `parallel-group/loading` | `parallel-group/lanes` | The top bar facts and, in each of the three lanes (as the loaded state draws), the header and transcript. Lane frames and composers are real |
+
+**Rules the drawings follow.**
+- No data: names, counts, digits and times do not appear. Count slots are empty pills. A hand-written allowlist per screen (`chrome` in the spec) lists every string the screen may show, with its count; a check compares both ways. The only digits are numeric chrome: `⌘N`, the editor and run zoom (65%, 70%), the range control (7 days, 30 days), and the clock of the operating system menu bar around the popover.
+- Motion: a sheen sweeps each block every 1.4 s (`cubic-bezier(0.37, 0, 0.63, 1)`), clipped to the block. Under reduced motion the block is static: no sweep and no pulse. Both are drawn on `components/skeleton-shimmer`.
+- Interaction: data-dependent actions are `aria-disabled` or replaced; navigation and other chrome stay focusable. Each screen carries `aria-busy` and one label, "Loading <screen>"; blocks are hidden from assistive technology. The catalog Frame control keeps working.
+- Handoff: the catalog draws states, not transitions. When content arrives Mac crossfades the placeholder (0.18 s, ease-out, instant under Reduce Motion); this is a note for implementers, not drawn. A task title that is already known may render for real instead of shimmering; this is also not drawn as a separate state.
+
+**Differences from HarflowMac** (evidence at HarflowMac `3fdf0e8`, not a target; Mac and Web implement from the drawings):
+
+| | Mac | Drawings |
+| --- | --- | --- |
+| Fill | Black at 6% (light) and white at 7% (dark), `Shimmer.swift:20` | The opaque `--surface-active` |
+| Sheen | White at 75% (light) and 8% (dark), `Shimmer.swift:25`; a 1.4 s clock-driven cosine sweep clipped to each block, `Shimmer.swift:48-53` | The same colours as `--skeleton-sheen`; the same period; a cubic-bezier approximation of the cosine |
+| Reduced motion | The block pulses its opacity between 0.55 and 1.0 every 1.6 s, `Shimmer.swift:45-46` | Static: no sweep and no pulse |
+| Layout ownership | While loading, only the placeholder is rendered; the real content takes over layout in the prepared and revealing phases, `SkeletonContent.swift:101-120` | The data regions inside the loaded layout are replaced, so the loaded geometry holds by construction |
+| Sidebar headings | Hidden during the skeleton in the unified sidebar, `SidebarListReconciler.swift:186-191`; kept in the sectioned roles, `:214-218` | Kept (the section headings are static chrome) |
+| Screens with a spinner or text | New task first load: a pulsing 260 × 12 status capsule, `StartScreenView.swift:49-57`; `InitialWorkLoadingView.swift:21-24` is a spinner and "Loading your work for the first time…" (the runtime listing screen); Needs you: a spinner, `NeedsYouListView.swift:62-65`; Statistics: a spinner, `StatisticsView.swift:57-60`; the workflow runner sheet: a disabled picker and a spinner, `WorkflowRunnerView.swift:51,56`; Events and Artifacts: text, `ObservationViews.swift:181,211,223`; menu bar counts: "…", `MenuBarLabelView.swift:60` | Skeletons. Workflows, the sidebar, Resources (`ResourceSlotsContent.swift:43-44`) and the workflow screens already use skeletons on Mac |
+| Workflow editor and run | A fixed graph skeleton of four nodes (`WorkflowLoadingView.swift:36-46`), and header blocks, `WorkflowView.swift:65-70, 551` | The same four-node graph at the loaded node size |
+| Parallel lanes | Deferred lane placeholders, `ParallelView.swift:204-243` | The same lane structure on the real lane frames |
+| Accessibility | One label, "Loading workflow run" or "Loading workflow canvas", `WorkflowLoadingView.swift:26-27` | `aria-busy` and one label per screen, "Loading <screen>" |
+| Task title | The real title and repository when already known, `TaskLoadingSkeleton.swift:55-62` | Shimmered in `task/loading` |
+| Task toolbar | Fixed-size blocks, `TaskLoadingSkeleton.swift:216-290` | Blocks at the approved top bar's own geometry |
+
+**Loaded-screen gaps at 1000 × 620.** The drawings keep the static families at their native frame, but the check renders each loaded static screen and its loading state at 1000 × 620 as well. They agree, and the check shows these gaps in the loaded designs. They are not fixed here:
+- Every static screen's sidebar lacks the bounded scrolling body of the 2026-11-06 correction (the New task, Sidebar and Task frames have it): its header shrinks to about 32 points and its sections compress.
+- `parallel-group/lanes` and `workflow-run/parallel`: three lanes of at least 360 points need 962 points and the detail area is 736, so the lanes scroll horizontally and the third lane's composer is off screen.
+- `workflow-editor/node-selected`: the top bar content overflows by about 2 points.
+- `menu-bar/busy`: the popover is 739 points tall and the frame is 620.
+
+**Questions for the owner.**
+- Are the provisional loading states and the shimmer primitive accepted?
+- Is a known task title shown for real while the rest loads (not drawn)?
 
 ## By screen
 

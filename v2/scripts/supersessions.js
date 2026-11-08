@@ -48,7 +48,8 @@
     { route: 'task/activity-integrity-failed', title: 'Task · Request integrity failure', redirect: 'task/transcript-integrity-failed', renderer: 'd2b', mount: 'integrity-failed', template: 'd2b-proposal/integrity-failed', basis: R, pins: 'task/activity-integrity-failed at 3f12d29 (mount integrity-failed)' },
     { route: 'task/activity-reconnecting', title: 'Task · Reconnect and source change', redirect: 'task/transcript-reconnecting', renderer: 'd2b', mount: 'reconnecting', template: 'd2b-proposal/reconnecting', basis: R, pins: 'task/activity-reconnecting at 3f12d29 (mount reconnecting)' },
     { route: 'task/activity-capacity', title: 'Task · Reading window at capacity', redirect: 'task/transcript-capacity', renderer: 'd2b', mount: 'capacity', template: 'd2b-proposal/capacity', basis: R, pins: 'task/activity-capacity at 3f12d29 (mount capacity)' },
-    { route: 'task/activity-sources', title: 'Task · Normalized and recovered sources', redirect: 'task/transcript-sources', renderer: 'd2b', mount: 'events', template: 'd2b-proposal/events', basis: R, pins: 'task/activity-sources at 3f12d29 (mount events)' }
+    { route: 'task/activity-sources', title: 'Task · Normalized and recovered sources', redirect: 'task/transcript-sources', renderer: 'd2b', mount: 'events', template: 'd2b-proposal/events', basis: R, pins: 'task/activity-sources at 3f12d29 (mount events)' },
+    { route: 'sidebar/history-loading', title: 'Sidebar · History · Loading', redirect: 'sidebar/loading', renderer: 'm04', mount: 'history-loading', template: 'm04-proposal/history-loading', basis: Q + ': skeleton rows chosen for the first listing', pins: 'sidebar/history-loading at 854caae (mount history-loading)' }
   ];
 
   HFV2.retired = RETIRED.map(function (entry) {

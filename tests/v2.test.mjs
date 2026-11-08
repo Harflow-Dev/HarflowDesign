@@ -411,7 +411,7 @@ test('resolveRoute canonicalises old routes and keeps the appearance suffix', ()
 
 test('redirects send retired routes to live states and obey their invariants', () => {
   const entries = Object.entries(redirects);
-  assert.equal(entries.length, 27);
+  assert.equal(entries.length, 28);
   assert.deepEqual(Array.from(retired, e => e.route).sort(), entries.map(([from]) => from).sort(), 'every redirect is a recorded retirement');
   for (const [from, to] of entries) {
     assert.match(from, /^[a-z0-9-]+\/[a-z0-9-]+$/);
@@ -481,7 +481,7 @@ test('retired states are gone from the registry; superseded-state handling no lo
   assert.deepEqual(Array.from(retired, e => e.route).sort(), [
     'new-task/composer-invalid', 'new-task/composer-loading', 'new-task/composer-ready', 'new-task/composer-refused', 'new-task/composer-starting',
     'new-task/composer-unknown', 'new-task/composer-unqualified', 'new-task/default', 'new-task/harness-menu', 'new-task/options-closed', 'new-task/options-open',
-    'new-task/sidebar-collapsed', 'sidebar/centered-expanded', 'sidebar/collapsed', 'sidebar/expanded', 'sidebar/minimum',
+    'new-task/sidebar-collapsed', 'sidebar/centered-expanded', 'sidebar/collapsed', 'sidebar/expanded', 'sidebar/history-loading', 'sidebar/minimum',
     'task/activity-capacity', 'task/activity-integrity-failed', 'task/activity-loading', 'task/activity-observed', 'task/activity-partial', 'task/activity-reconnecting',
     'task/activity-sources', 'task/activity-unavailable', 'task/done', 'task/failed', 'task/running'
   ]);
@@ -605,7 +605,7 @@ test('the route map lists every redraw with the route it replaces and the Events
   assert.ok(map.includes('## Redraw routes') && map.includes('### Route grammar'));
   assert.ok(!map.includes('provisional-redraws-awaiting-owner-review') && !map.includes('Provisional redraw'));
   assert.ok(map.includes('decisions/README.md#centered-and-transcript-redraws'));
-  assert.ok(map.includes('27 retired routes'));
+  assert.ok(map.includes('28 retired routes'));
   const redraws = [...COMPOSER_REDRAWS, ...SHELL_REDRAWS, ...TRANSCRIPT_REDRAWS, ['new-task/harness-menu', 'new-task/centered-harness-open']].map(([older, newer]) => ({ older, newer }));
   for (const { older, newer } of redraws) {
     const row = map.split('\n').find(line => line.startsWith(`| \`${newer}\` |`));
@@ -798,7 +798,10 @@ test('18 states are retired by the redraws and 20 redirects point at the redraws
     assert.match(entry.pins, /^[a-z0-9/-]+ at 3f12d29/);
     assert.ok(entry.renderer && entry.mount, `${entry.route} keeps its renderer and mount for the link fallback`);
   }
-  for (const entry of retired.filter(e => !(e.pins || '').includes('3f12d29'))) assert.ok(/at 17739e4/.test(entry.pins), `${entry.route} keeps its generated pins`);
+  for (const entry of retired.filter(e => !(e.pins || '').includes('3f12d29') && !(e.pins || '').includes('854caae'))) assert.ok(/at 17739e4/.test(entry.pins), `${entry.route} keeps its generated pins`);
+  const sidebarLoading = retired.filter(e => (e.pins || '').includes('854caae'));
+  assert.deepEqual(JSON.parse(JSON.stringify(sidebarLoading.map(e => [e.route, e.redirect, e.mount]))), [['sidebar/history-loading', 'sidebar/loading', 'history-loading']]);
+  assert.equal(sidebarLoading[0].pins, 'sidebar/history-loading at 854caae (mount history-loading)');
   // An alias followed by a redirect is still one resolution.
   assert.equal(HFV2.resolveRoute('#m04-proposal/shell/dark'), '#new-task/centered-empty/dark');
   assert.equal(HFV2.resolveRoute('#m04-proposal/shell-collapsed'), '#sidebar/centered-collapsed');

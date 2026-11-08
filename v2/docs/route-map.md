@@ -6,7 +6,7 @@ The aliases and the route grammar are defined in `v2/scripts/route-aliases.js`. 
 
 ## Unchanged routes
 
-The routes of the base screens, the brand book, the foundations and the components keep their ids (for example `needs-you/waiting`, `workflow-editor/node-selected`, `components/button`), except the 27 retired routes listed under "Retired routes".
+The routes of the base screens, the brand book, the foundations and the components keep their ids (for example `needs-you/waiting`, `workflow-editor/node-selected`, `components/button`), except the 28 retired routes listed under "Retired routes".
 
 ## Retired routes
 
@@ -41,6 +41,7 @@ The owner replaced these designs on 2026-11-08, nine of them by answering the re
 | `task/activity-reconnecting` | `task/transcript-reconnecting` | Task · Task transcript · Reconnect and source change |
 | `task/activity-capacity` | `task/transcript-capacity` | Task · Task transcript · Reading window at capacity |
 | `task/activity-sources` | `task/transcript-sources` | Task · Task transcript · Normalized and recovered sources |
+| `sidebar/history-loading` | `sidebar/loading` | Sidebar · Loading |
 
 The earlier routes `m04-proposal/*` and `d2b-proposal/*` of the retired states (listed below) reach the same replacements through their alias followed by the redirect. `sidebar/centered-expanded` was a duplicate of `new-task/centered-empty` and opens it.
 
@@ -76,6 +77,32 @@ These routes are canonical routes with no earlier name; they are not aliases or 
 
 A route is `#family/state[/view][/appearance]`. A state may declare views (`views` in the registry); only the eight transcript routes do, and each declares `events`, which opens the right pane on Events at load. The segment after the state is a view only when that state declares it, and an appearance only when it is `light`, `dark` or `system`. Any other segment is dropped when the address is canonicalised, so an undeclared view never opens the overview. An alias or a redirect carries the view to its target and drops it when the target does not declare it. Opening or closing the pane by clicking does not rewrite the address.
 
+## Loading routes
+
+These are canonical routes with no earlier name; they are not aliases or redirects. Each mirrors the loaded state in the second column ([decisions](decisions/README.md#loading-states)). Append `/light`, `/dark` or `/system` for an appearance, for example `#task/loading/dark`. None declares a view.
+
+| Loading route | Mirrors |
+| --- | --- |
+| `new-task/loading` | `new-task/centered-empty` |
+| `sidebar/loading` | `new-task/centered-empty` |
+| `task/loading` | `task/running-stop` |
+| `task/loading-pane` | `task/pane-running-open` |
+| `parallel-group/loading` | `parallel-group/lanes` |
+| `needs-you/loading` | `needs-you/waiting` |
+| `menu-bar/loading` | `menu-bar/busy` |
+| `workflows/loading` | `workflows/list` |
+| `workflow-editor/loading` | `workflow-editor/node-selected` |
+| `workflow-run/loading` | `workflow-run/on-demand` |
+| `workflow-run/loading-parallel` | `workflow-run/parallel` |
+| `resources/loading` | `resources/slots` |
+| `statistics/loading` | `statistics/overview` |
+| `settings/loading-general` | `settings/general` |
+| `settings/loading-harnesses` | `settings/harnesses` |
+| `settings/loading-mcp-approvals` | `settings/mcp-approvals` |
+| `components/skeleton-shimmer` | The primitive |
+
+`sidebar/history-loading` is retired and opens `sidebar/loading`.
+
 ## Moved routes
 
 | Earlier route | Current route | Screen and state | Listed in navigation |
@@ -107,7 +134,7 @@ A route is `#family/state[/view][/appearance]`. A state may declare views (`view
 | `m04-proposal/shell-collapsed` | `sidebar/collapsed` | Sidebar · Shell · Collapsed rail | No, retired: opens `sidebar/centered-collapsed` |
 | `m04-proposal/shell-narrow` | `sidebar/minimum` | Sidebar · Shell · Minimum window | No, retired: opens `sidebar/centered-minimum` |
 | `m04-proposal/history-empty` | `sidebar/history-empty` | Sidebar · History · Empty | Yes |
-| `m04-proposal/history-loading` | `sidebar/history-loading` | Sidebar · History · Loading | Yes |
+| `m04-proposal/history-loading` | `sidebar/history-loading` | Sidebar · History · Loading | No, retired: opens `sidebar/loading` |
 | `m04-proposal/history-older` | `sidebar/history-older` | Sidebar · History · Loading older | Yes |
 | `m04-proposal/history-error` | `sidebar/history-error` | Sidebar · History · Read failure | Yes |
 | `m04-proposal/history-reconnecting` | `sidebar/history-reconnecting` | Sidebar · History · Reconnecting | Yes |

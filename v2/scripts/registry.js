@@ -66,7 +66,8 @@
         "groups": [
           "Entry",
           "Composer",
-          "Task options"
+          "Task options",
+          "Loading"
         ],
         "description": "Starting a task: the greeting, the composer with its option pills and the task options.",
         "states": []
@@ -77,7 +78,8 @@
         "area": "start-work",
         "groups": [
           "Layout",
-          "Recent work"
+          "Recent work",
+          "Loading"
         ],
         "description": "The navigation column expanded, collapsed to the icon rail and at the minimum window, with Running and Recent work and their loading, failure and reconnecting states. Owner correction (2026-11-06): the sidebar body (navigation, Running, Recent work) scrolls as one bounded area with the header and the Settings and appearance footer fixed, in every layout.",
         "states": []
@@ -94,7 +96,8 @@
           "Changes",
           "Events",
           "Artifacts",
-          "Layout"
+          "Layout",
+          "Loading"
         ],
         "description": "Task detail: a slim top bar, the transcript, inline approvals and the composer, with every status, the actions menu, the changes, events and artifacts panes and the adaptive layout.",
         "states": [
@@ -111,13 +114,18 @@
         "id": "parallel-group",
         "title": "Parallel group",
         "area": "task",
+        "groups": [
+          "Parallel group",
+          "Loading"
+        ],
         "description": "One flat sidebar row with the parallel icon; its page shows the lanes.",
         "states": [
           {
             "id": "lanes",
             "title": "Lanes",
             "description": "Agents side by side, each in its own lane with its own composer. Started only through MCP.",
-            "status": "approved"
+            "status": "approved",
+            "group": "Parallel group"
           }
         ]
       },

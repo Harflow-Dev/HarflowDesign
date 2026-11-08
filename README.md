@@ -35,6 +35,8 @@ The default page, `#overview/areas`, lists every area and screen with its curren
 
 The catalog names screens and components only. Milestone, proposal, approval and gap history is recorded in [v2/docs/decisions/](v2/docs/decisions/README.md), which indexes each decision with its status, who approved it and when, the recording commit, its routes and its files.
 
+Each screen with a first load also has a Loading state drawn from its loaded screen: `sidebar/loading` is approved and the others are provisional ([decisions](v2/docs/decisions/README.md#loading-states)).
+
 A design that the owner replaces is retired: it leaves navigation and its route opens the replacement (see "Retired routes" in the [route map](v2/docs/route-map.md)); the decisions record keeps the basis and the commits where the old design can be seen. A redraw that awaits approval is a provisional state, and the earlier layout stays listed with a link to it until the owner decides (`HFV2.pendingRedraw`, empty at present).
 
 ### Source layout
@@ -44,6 +46,7 @@ A design that the owner replaces is retired: it leaves navigation and its route 
 - `v2/scripts/route-aliases.js`: old routes and `HFV2.resolveRoute`. `v2/scripts/supersessions.js`: retired states, their redirects and the redraws awaiting approval.
 - `v2/scripts/screens-*.js`: the screen templates, one script per screen, and the registration of states drawn by a renderer. `components.js`, `foundations.js` and `component-docs.js`: the design system pages and guidelines. `screens-overview.js`: the overview page.
 - `v2/scripts/d2b-proposal.js`, `m04-proposal.js`, `m05-proposal.js`: renderers for the interactive task and entry states. The file names are historical; they do not appear in the catalog. `d2b-proposal.js` holds the transcript builders, the fixtures and the controller that `transcript-screen.js` uses; that file is the renderer of the task transcript states (registered in `screens-transcript.js`), which draws them inside the `m05-proposal.js` task screen frame through its optional hooks.
+- `v2/scripts/skeleton.js`, `skeleton-specs.js`, `screens-loading-work.js`, `screens-loading-more.js`, `v2/styles/skeleton.css`: the loading states. A loading state renders the loaded screen it mirrors and replaces its data regions with shimmering blocks; the regions, patterns and chrome allowlists are in `skeleton-specs.js`.
 - `v2/styles/tokens.css`, `bundle.css`: the design system tokens and components, copied as-is. `catalog.css` and the renderer stylesheets style the catalog chrome and those renderers.
 - `v2/docs/`: [screen inventory](v2/docs/screen-inventory.md), [terminology](v2/docs/terminology.md), the [migration coverage ledger](v2/docs/migration-coverage.md), the [route map](v2/docs/route-map.md) and the [decisions](v2/docs/decisions/README.md).
 
