@@ -19,10 +19,10 @@ function loadRuntime() {
 }
 const H = loadRuntime();
 const NAMING_RULE = /\bm0\d\b|d2b|propos(al|ed)|native entry|\bG-[A-Z]+\b|milestone/i;
-const MESSAGE_IDS = ['queued', 'delivering', 'delivered', 'cancelled', 'send-now-refused', 'uncertain', 'undeliverable', 'unsupported', 'queued-settled'].map(x => `message-${x}`);
+const MESSAGE_IDS = ['queued', 'delivering', 'delivered', 'cancelled', 'send-now-refused', 'uncertain', 'unsupported', 'queued-settled'].map(x => `message-${x}`);
 const APPROVALS = [
   'task/approval-exact', 'task/approval-stale', 'task/approval-expired', 'task/approval-answered-elsewhere', 'task/approval-refused', 'task/approval-uncertain',
-  'needs-you/approval-stale', 'needs-you/approval-expired', 'needs-you/answered-elsewhere', 'needs-you/checkpoint-stale', 'needs-you/interaction-answered-elsewhere',
+  'needs-you/approval-stale', 'needs-you/approval-expired', 'needs-you/answered-elsewhere', 'needs-you/checkpoint-stale',
   'menu-bar/approval-stale', 'menu-bar/answered-elsewhere'
 ];
 const GAP_NOTE = 'Provisional · not approved · contract gap open';
@@ -45,14 +45,13 @@ function added(base, now) {
 
 // Every line a specimen adds to its base, with its source (HarflowMac lines are read at 3fdf0e8). The decision record lists the same lines.
 const MESSAGE_COPY = new Set([
-  'Queued', 'Undeliverable', 'Delivery uncertain',                                          // WorkMessageQueue.swift:49-51
+  'Queued', 'Delivery uncertain',                                                           // WorkMessageQueue.swift:49, :51
   'Cancel', 'Cancel queued message',                                                        // PromptBubbleView.swift:93, :98
   'Send now', 'Ask for immediate delivery; an engine refusal keeps the message queued',     // MessageBoxView.swift:258, :262
   'Send now isn\'t available. This operation can\'t be interrupted safely.',                // WorkMessageQueue.swift:67
   'Delivery is in progress.', 'Message delivered.',                                         // TaskActionRepositoryImpl.swift:129-130
   'Queued message cancelled.',                                                              // ParallelViewRepository.swift:111
   'Delivery could not be confirmed. The message is not requeued.',                          // neutral: contracts.md:1709-1712
-  'The run was cancelled, so no further dispatch will consume this message.',               // neutral: contracts.md:1683-1685
   'Once the fix is in, run the whole slots suite one more time.', 'Then summarise what changed in two sentences.' // fixture content
 ]);
 const APPROVAL_COPY = new Set([
@@ -70,14 +69,13 @@ const APPROVAL_COPY = new Set([
   'Expired',                                                                                                             // neutral: disposition expired
   'Harflow sent a rejection when the request expired.',                                                                  // neutral: harness-permissions.md:710-714
   'It can\'t be approved later. Recovery is a new continuation of the task.',                                            // neutral: harness-permissions.md:718
-  'Oct 14, 2026, 17:46 UTC', 'Nov 2, 2026, 01:00 UTC',                                                                   // fixture times
-  'Use staging, and postpone the Thursday release.'                                                                      // fixture answer
+  'Oct 14, 2026, 17:46 UTC'                                                                    // fixture time
 ]);
-const NEUTRAL = ['Delivery could not be confirmed. The message is not requeued.', 'The run was cancelled, so no further dispatch will consume this message.', 'Expired', 'Harflow sent a rejection when the request expired.', 'It can\'t be approved later. Recovery is a new continuation of the task.'];
+const NEUTRAL = ['Delivery could not be confirmed. The message is not requeued.', 'Expired', 'Harflow sent a rejection when the request expired.', 'It can\'t be approved later. Recovery is a new continuation of the task.'];
 
 // ---- Registration ----
 
-test('the nine queued-message states are provisional, in the Messages group, with their own note and no approval', () => {
+test('the eight queued-message states are provisional, in the Messages group, with their own note and no approval', () => {
   const task = H.findFamily('task');
   assert.ok(task.groups.includes('Messages'));
   assert.deepEqual(Array.from(H.messageStates, s => s.id), MESSAGE_IDS);
@@ -93,13 +91,13 @@ test('the nine queued-message states are provisional, in the Messages group, wit
     assert.equal(H.routeFor('messages', id), `task/${id}`);
   }
   // The suffix is only on states with a real contract gap; the queued, delivering, delivered and cancelled states have only the design question.
-  assert.deepEqual(MESSAGE_IDS.filter(id => stateOf(`task/${id}`)[1].approvalNote === GAP_NOTE), ['message-send-now-refused', 'message-uncertain', 'message-undeliverable', 'message-unsupported', 'message-queued-settled']);
+  assert.deepEqual(MESSAGE_IDS.filter(id => stateOf(`task/${id}`)[1].approvalNote === GAP_NOTE), ['message-send-now-refused', 'message-uncertain', 'message-unsupported', 'message-queued-settled']);
   // The states sit after the transcript states and before the Changes group.
   const groups = task.states.map(s => s.group);
   assert.ok(groups.lastIndexOf('Transcript') < groups.indexOf('Messages') && groups.lastIndexOf('Messages') < groups.indexOf('Changes'));
 });
 
-test('the thirteen approval states are provisional with no approval object, and only real gaps carry the gap suffix', () => {
+test('the twelve approval states are provisional with no approval object, and only real gaps carry the gap suffix', () => {
   for (const route of APPROVALS) {
     const [family, state] = stateOf(route);
     assert.equal(state.status, 'provisional', route);
@@ -109,8 +107,8 @@ test('the thirteen approval states are provisional with no approval object, and 
     assert.equal(H.approvalLine(family, state), state.approvalNote);
   }
   const gap = APPROVALS.filter(route => stateOf(route)[1].approvalNote === GAP_NOTE).sort();
-  assert.deepEqual(gap, ['menu-bar/answered-elsewhere', 'needs-you/answered-elsewhere', 'needs-you/interaction-answered-elsewhere', 'task/approval-answered-elsewhere']);
-  assert.equal(H.approvalStates.length, 13);
+  assert.deepEqual(gap, ['menu-bar/answered-elsewhere', 'needs-you/answered-elsewhere', 'task/approval-answered-elsewhere']);
+  assert.equal(H.approvalStates.length, 12);
 });
 
 test('titles, descriptions, guides and the queued-message strip name the product screen only', () => {
@@ -131,7 +129,7 @@ test('titles, descriptions, guides and the queued-message strip name the product
 // ---- Approval states are derived from approved templates by replacing one block ----
 
 test('each approval template equals its base with exactly one block replaced, and the base is not changed', () => {
-  assert.equal(H.approvalDerivations.length, 13);
+  assert.equal(H.approvalDerivations.length, 12);
   const bases = new Set();
   for (const d of H.approvalDerivations) {
     const base = H.templates[d.base], find = d.find(), replace = d.build(find), now = H.templates[d.route];
@@ -240,21 +238,35 @@ test('each queued-message state draws what the contract defines and nothing else
   assert.equal(cancel(html), 0);
   assert.ok(html.indexOf('Delivery uncertain') < html.indexOf('<div class="hd-working">'), 'settled bubbles stay above the live activity');
   assert.match(html, /The message is not requeued\./);
-  // undeliverable: on the cancelled task, no Cancel
-  html = draw('message-undeliverable');
-  assert.equal(cancel(html), 0);
-  assert.match(html, /Undeliverable/);
-  assert.match(html, /Cancelled 04:31/);
-  // unsupported: locked composer, no placeholder, no hint, no Send now, no bubbles
+  // unsupported: Send now removed, input locked, no placeholder, no hint, no bubbles; the disabled Send button stays
   html = draw('message-unsupported');
   assert.match(html, /placeholder="" disabled/);
   assert.ok(!/Send now|Send queues|Queue a message/.test(html));
+  assert.match(html, /<button type="submit" class="hd-composer__send" aria-label="Send" disabled>/);
   assert.equal(count(html, /hd-msgq/g), 0);
   // settled: the failed task keeps its one Continue beside the queued bubbles
   html = draw('message-queued-settled');
   assert.equal(count(html, /Continue in a new session/g), 1);
   assert.equal(cancel(html), 2);
+  assert.ok(!/>Send now<\/button>/.test(html), 'the settled composer has no Send now button');
   assert.ok(!/target_settled|waits for|will be delivered/i.test(text('message-queued-settled')), 'no settled-target note is drawn');
+});
+
+test('the dropped drafts are gone and recorded as design gaps, and the altered fixtures are said so', () => {
+  for (const route of ['task/message-undeliverable', 'needs-you/interaction-answered-elsewhere']) {
+    assert.ok(!(route in H.templates), `${route} has no template`);
+    assert.equal(H.describe(route), null, `${route} is not registered`);
+  }
+  assert.ok(!/Undeliverable|Use staging/.test(JSON.stringify(H.messageStates)) && !H.templates['needs-you/waiting'].includes('Use staging'));
+  const decisions = read('v2/docs/decisions/README.md');
+  assert.ok(decisions.includes('No approved surface shows a node task of a terminal workflow run; undeliverable (`contracts.md:1683-1685`) waits for one.'));
+  assert.ok(decisions.includes('Needs a v2 workflow question card.') && decisions.includes('WorkflowInteractionOutcomeView.swift:16') && decisions.includes('ctl-workflow-shared-already-answered-synthetic.json'));
+  assert.ok(decisions.includes('Send now removed; input locked'));
+  assert.ok(H.messageStates.find(s => s.id === 'message-unsupported').description.startsWith('Send now removed; input locked'));
+  for (const route of ['needs-you/answered-elsewhere', 'menu-bar/answered-elsewhere']) assert.match(H.componentDocs[route], /Altered fixture: responder changed to the caller; the time is the fixture's/);
+  const ledger = read('v2/docs/migration-coverage.md');
+  for (const route of ['needs-you/answered-elsewhere', 'needs-you/checkpoint-stale', 'menu-bar/answered-elsewhere']) assert.ok(/Approvals and questions answered inline[^\n]*/.exec(ledger)[0].includes(`\`${route}\``), `${route} is in the accepted row`);
+  assert.match(decisions, /The commit titled "Add provisional queued-message and approval state drafts" \(base `fec5719`\), and the commit titled "Drop the two drafts without a contract surface and tidy records"/);
 });
 
 test('Cancel removes a queued message, says so, and only a queued message can be cancelled', () => {
@@ -309,7 +321,7 @@ test('the decision record lists every new route, every neutral line, the gaps an
   for (const route of [...MESSAGE_IDS.map(id => `task/${id}`), ...APPROVALS]) assert.ok(inventory.includes(`\`${route.split('/')[1]}\``) || inventory.includes(`\`${route}\``), `${route} is in the inventory`);
   assert.ok(read('CHANGELOG.md').includes('Add provisional queued-message and approval state drafts'));
   const ledger = read('v2/docs/migration-coverage.md');
-  assert.ok(/G-QUEUE[^\n]*Provisional drafts of nine states/.test(ledger) && /G-APPROVAL-STATES[^\n]*Provisional drafts exist/.test(ledger));
+  assert.ok(/G-QUEUE[^\n]*Provisional drafts of eight states/.test(ledger) && /G-APPROVAL-STATES[^\n]*Provisional drafts exist/.test(ledger));
 });
 
 test('the pages load the new scripts and styles in order, and no sibling repository or archive is touched by them', () => {

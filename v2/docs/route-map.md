@@ -84,12 +84,11 @@ These are canonical routes with no earlier name; they are not aliases or redirec
 | Provisional route | Draws |
 | --- | --- |
 | `task/message-queued`, `task/message-delivering`, `task/message-delivered`, `task/message-cancelled`, `task/message-send-now-refused`, `task/message-uncertain`, `task/message-unsupported` | `task/running-stop` |
-| `task/message-undeliverable` | `task/cancelled` |
 | `task/message-queued-settled` | `task/failed-continue` |
 | `task/approval-exact` | `task/approval` |
 | `task/approval-stale`, `task/approval-expired`, `task/approval-answered-elsewhere`, `task/approval-refused`, `task/approval-uncertain` | `task/approval-exact` |
 | `needs-you/approval-stale`, `needs-you/approval-expired`, `needs-you/answered-elsewhere` | `needs-you/waiting`, first request |
-| `needs-you/checkpoint-stale`, `needs-you/interaction-answered-elsewhere` | `needs-you/waiting`, second request |
+| `needs-you/checkpoint-stale` | `needs-you/waiting`, second request |
 | `menu-bar/approval-stale`, `menu-bar/answered-elsewhere` | `menu-bar/busy`, first request |
 
 ### Redraw awaiting approval

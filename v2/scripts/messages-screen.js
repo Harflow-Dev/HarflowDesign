@@ -11,7 +11,7 @@
   }
 
   // Captions are the labels of the native bubble: a claimed message is still captioned Queued.
-  var CAPTION = { queued: 'Queued', delivering: 'Queued', uncertain: 'Delivery uncertain', undeliverable: 'Undeliverable' };
+  var CAPTION = { queued: 'Queued', delivering: 'Queued', uncertain: 'Delivery uncertain' };
   var SEND_NOW = '<button type="button" class="hd-btn hd-btn--ghost hd-btn--sm" data-m05="noop" disabled title="Ask for immediate delivery; an engine refusal keeps the message queued">Send now</button>';
   var CANCEL_LABEL = 'Cancel queued message';
 

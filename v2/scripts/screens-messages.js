@@ -18,11 +18,10 @@
   var FIRST = 'Once the fix is in, run the whole slots suite one more time.';
   var SECOND = 'Then summarise what changed in two sentences.';
   var NOT_REQUEUED = 'Delivery could not be confirmed. The message is not requeued.';
-  var RUN_CANCELLED = 'The run was cancelled, so no further dispatch will consume this message.';
   var CANT_INTERRUPT = 'Send now isn\'t available. This operation can\'t be interrupted safely.';
 
   // [id, title, description, base task screen state, bubbles, composer, outcome line, approval note, how to read it]
-  // A bubble is { id, kind: queued | delivering | uncertain | undeliverable, text, note }. A queued bubble can be cancelled.
+  // A bubble is { id, kind: queued | delivering | uncertain, text, note }. A queued bubble can be cancelled.
   var NOTE_PLAIN = 'Provisional · not approved';
   var NOTE_GAP = 'Provisional · not approved · contract gap open';
   var ROWS = [
@@ -50,17 +49,13 @@
       'A claimed message whose delivery cannot be confirmed is not requeued, has no Cancel and is not pinned below the live activity.',
       'state-running', [{ id: 'a', kind: 'uncertain', text: FIRST, note: NOT_REQUEUED }], 'sendNow', '', NOTE_GAP,
       '<p>Uncertain delivery stays <code>delivering</code> with a reason and never requeues. messaging.v1 has no distinct status or fixture for it, so the reason line is neutral provisional wording.</p>'],
-    ['message-undeliverable', 'Message undeliverable',
-      'A message for a workflow-owned task whose run was cancelled stays in the transcript, captioned Undeliverable with its reason.',
-      'state-cancelled', [{ id: 'a', kind: 'undeliverable', text: FIRST, note: RUN_CANCELLED }], 'sendNow', '', NOTE_GAP,
-      '<p>Completed or cancelled non-builder workflows mark waiting messages <code>undeliverable</code> with a reason. A standalone task never reaches this state: its messages wait. No approved state shows a terminal owning run, so this is drawn on the cancelled task screen, which shows the node\'s task and not the run. There is no fixture, and the reason line is neutral provisional wording.</p>'],
     ['message-unsupported', 'Messages unavailable',
-      'The composer is locked, with no Send or Send now, when the engine does not offer queued messages.',
+      'Send now removed; input locked, when the engine does not offer queued messages. The disabled Send button stays.',
       'state-running', [], 'locked', '', NOTE_GAP,
-      '<p>Consumers must require the <code>messaging.v1</code> capability before sending. The contract defines a usage error and no copy, so the locked composer carries no placeholder or hint.</p>'],
+      '<p>Consumers must require the <code>messaging.v1</code> capability before sending. The contract defines a usage error and no copy, so the locked composer carries no placeholder or hint. Send now is removed and the input is locked; the disabled Send button stays.</p>'],
     ['message-queued-settled', 'Queued on a finished task',
       'Queued messages on a failed task keep waiting, with Cancel, beside the one way to continue the task.',
-      'state-failed', [{ id: 'a', kind: 'queued', text: FIRST }, { id: 'b', kind: 'queued', text: SECOND }], 'sendNow', '', NOTE_GAP,
+      'state-failed', [{ id: 'a', kind: 'queued', text: FIRST }, { id: 'b', kind: 'queued', text: SECOND }], 'standard', '', NOTE_GAP,
       '<p>A queued send to a settled task adds <code>target_settled</code> and <code>target_status</code>, and the message waits for <code>resume_task</code> or <code>continue_task</code>. Automatic continuation never consumes it. The failed task screen offers only Continue in a new session. The contract gives no text for the settled-target note, so none is drawn.</p>']
   ];
 

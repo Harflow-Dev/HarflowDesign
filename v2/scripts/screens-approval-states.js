@@ -68,7 +68,7 @@
     recovery: 'It can\'t be approved later. Recovery is a new continuation of the task.'
   };
   // Fixture times, read from the checked-in examples and shown in UTC.
-  var AT = { answered: 'Oct 14, 2026, 17:46 UTC', unknown: 'Oct 14, 2026, 17:46 UTC', override: 'Oct 14, 2026, 17:47 UTC', resume: 'Nov 2, 2026, 01:00 UTC' };
+  var AT = { answered: 'Oct 14, 2026, 17:46 UTC', unknown: 'Oct 14, 2026, 17:46 UTC', override: 'Oct 14, 2026, 17:47 UTC' };
 
   var DECIDED = {
     stale: { lines: [COPY.notCurrent], refresh: true },
@@ -78,8 +78,7 @@
     uncertain: { title: COPY.unknown, lines: [COPY.byMonitor + ' · ' + AT.unknown, 'Recorded decision: approve', 'Delivery: delivery_unknown', 'Observed execution: unknown'] },
     expiredOverride: { title: COPY.expired, lines: [COPY.byCaller + ' · ' + AT.override, 'Recorded decision: approve', 'Effective decision: reject', 'Delivered decision: reject', COPY.rejectionSent, 'Delivery: sent', 'Observed execution: unknown', COPY.recovery] },
     expiredUnanswered: { title: COPY.expired, lines: ['Effective decision: reject', 'Delivered decision: reject', COPY.rejectionSent, 'Delivery: sent', 'Observed execution: unknown', COPY.recovery] },
-    checkpointStale: { lines: [COPY.changed], refresh: true },
-    interactionAnswered: { title: COPY.raceCaller, lines: [AT.resume, 'Use staging, and postpone the Thursday release.'] }
+    checkpointStale: { lines: [COPY.changed], refresh: true }
   };
 
   var derivations = H.approvalDerivations = [];
@@ -118,7 +117,6 @@
   settledNeeds('needs-you/approval-expired', NEEDS_FIRST, DECIDED.expiredUnanswered);
   settledNeeds('needs-you/answered-elsewhere', NEEDS_FIRST, DECIDED.answeredCaller);
   settledNeeds('needs-you/checkpoint-stale', NEEDS_SECOND, DECIDED.checkpointStale);
-  settledNeeds('needs-you/interaction-answered-elsewhere', NEEDS_SECOND, DECIDED.interactionAnswered);
 
   function settledMenu(route, result) {
     lazy(route, 'menu-bar/busy', function () {
@@ -160,19 +158,16 @@
       '<p>The expired disposition with no caller decision and an expiry rejection (fixture <code>ctl-approval-state-expired-unanswered.json</code>). The counts and the waiting time are those of the approved state.</p>'],
     ['needs-you', 'answered-elsewhere', 'Needs you', 'Approval answered elsewhere',
       'The first waiting request was answered by the caller first. The card is closed.', GAP,
-      '<p>The refusal <code>already_answered</code>; the contract names only the channel. The counts and the waiting time are those of the approved state.</p>'],
+      '<p>The refusal <code>already_answered</code>; the contract names only the channel. Altered fixture: responder changed to the caller; the time is the fixture\'s. The counts and the waiting time are those of the approved state.</p>'],
     ['needs-you', 'checkpoint-stale', 'Needs you', 'Checkpoint no longer current',
       'The workflow checkpoint changed after it was shown. The card offers no decision and offers Refresh.', PLAIN,
       '<p>The refusal <code>attention_checkpoint_stale</code>: the answer and grants were not applied (fixture <code>ctl-workflow-attention-stale.json</code>). It is drawn on the second card of <a href="#needs-you/waiting">Waiting items</a>.</p>'],
-    ['needs-you', 'interaction-answered-elsewhere', 'Needs you', 'Workflow question answered elsewhere',
-      'A workflow question was answered by the caller first. The card shows who answered, when, and the answer.', GAP,
-      '<p>The refusal <code>interaction_already_answered</code> for a <code>resume</code> interaction (synthetic fixture <code>ctl-workflow-shared-already-answered-synthetic.json</code>). It is a workflow interaction, not an approval. The approved Needs you has no workflow question card, so it is drawn on the workflow card, which asks for an approval; the answer text is the fixture\'s.</p>'],
     ['menu-bar', 'approval-stale', 'Menu bar', 'Approval no longer current',
       'The request in the popover changed after it was shown. It offers no decision and offers Refresh.', PLAIN,
       '<p>The refusal <code>not_current</code>, drawn on the first request of <a href="#menu-bar/busy">Busy</a>.</p>'],
     ['menu-bar', 'answered-elsewhere', 'Menu bar', 'Approval answered elsewhere',
       'The request in the popover was answered by the caller first. It is closed.', GAP,
-      '<p>The refusal <code>already_answered</code>; the contract names only the channel. Drawn on the first request of <a href="#menu-bar/busy">Busy</a>.</p>']
+      '<p>The refusal <code>already_answered</code>; the contract names only the channel. Altered fixture: responder changed to the caller; the time is the fixture\'s. Drawn on the first request of <a href="#menu-bar/busy">Busy</a>.</p>']
   ];
   H.approvalStates = ROWS.map(function (r) { return { route: r[0] + '/' + r[1], title: r[3] }; });
   ROWS.forEach(function (r) {

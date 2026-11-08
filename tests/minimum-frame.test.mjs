@@ -97,11 +97,11 @@ test('no existing template changed: the digests equal those of the base commit a
   // The only templates added since are the provisional queued-message and approval states.
   const added = [
     ...['stale', 'expired', 'answered-elsewhere', 'refused', 'uncertain', 'exact'].map(x => `task/approval-${x}`),
-    'needs-you/approval-stale', 'needs-you/approval-expired', 'needs-you/answered-elsewhere', 'needs-you/checkpoint-stale', 'needs-you/interaction-answered-elsewhere',
+    'needs-you/approval-stale', 'needs-you/approval-expired', 'needs-you/answered-elsewhere', 'needs-you/checkpoint-stale',
     'menu-bar/approval-stale', 'menu-bar/answered-elsewhere',
-    ...['queued', 'delivering', 'delivered', 'cancelled', 'send-now-refused', 'uncertain', 'undeliverable', 'unsupported', 'queued-settled'].map(x => `messages/message-${x}`)
+    ...['queued', 'delivering', 'delivered', 'cancelled', 'send-now-refused', 'uncertain', 'unsupported', 'queued-settled'].map(x => `messages/message-${x}`)
   ];
-  assert.equal(added.length, 22);
+  assert.equal(added.length, 20);
   for (const key of added) assert.ok(key in HFV2.templates, `${key} is a template`);
   assert.deepEqual(Object.keys(HFV2.templates).filter(key => !added.includes(key)).sort(), Object.keys(manifest).sort());
   // The overview page is generated from the registry (state counts and links), so it changes with every state added.
@@ -312,8 +312,8 @@ function sidebarChildren(html) {
 test('every static template with a sidebar has the top, nav, sections and foot structure the rule needs', () => {
   const keys = Object.keys(HFV2.templates).filter(k => HFV2.templates[k].includes('<aside class="hd-sidebar"'));
   // 22 static screens, plus the four templates the New task and Task renderers read and components/sidebar,
-  // plus the eleven provisional approval states that start from a task or Needs you screen.
-  assert.equal(keys.length, 27 + 11);
+  // plus the ten provisional approval states that start from a task or Needs you screen.
+  assert.equal(keys.length, 27 + 10);
   const odd = [];
   for (const key of keys) {
     const kids = sidebarChildren(HFV2.templates[key]);
