@@ -202,3 +202,10 @@ test('redraw descriptions carry the approval of 2026-11-08 and no provisional wo
     assert.doesNotMatch(s.description,/Provisional|earlier layout/i);
   }
 });
+test('only the open harness picker repeats the status message under the Harness select',()=>{
+  const src=fs.readFileSync(new URL('../v2/scripts/m04-proposal.js',import.meta.url),'utf8');
+  assert.match(src,/route==='centered-harness-open'&&key==='harness'&&problem\(s\)/);
+  assert.match(src,/aria-describedby="m04-harness-hint"/);
+  assert.match(src,/class="hd-field__hint" id="m04-harness-hint"/);
+  assert.equal(M.problem(M.create('centered-harness-open')),'Choose a qualified harness and model.');
+});
