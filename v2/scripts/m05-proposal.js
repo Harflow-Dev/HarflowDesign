@@ -405,7 +405,7 @@
       var strip = ext && ext.strip ? ext.strip(state, ui, frameLabel(ui)) : '<div class="hd-m05-strip"><strong>' + H.catalogStrips.m05[state.kind] + esc(state.gap) + '</strong><a href="#' + H.routeFor('m05', 'overview') + '/' + theme + '">' + H.catalogStrips.m05.overviewLink + '</a>' + (spec.board ? '' : frameLabel(ui)) + '</div><p>' + esc(state.summary) + '</p><p class="hd-faint">Contract basis: ' + esc(state.basis) + '</p>' + (state.flag ? '<p class="hd-m05-flag">' + esc(state.flag) + '</p>' : '') + ((!state.flag || state.flag.indexOf('task-artifacts') < 0) && ui.pane && ui.tab === 'artifacts' ? '<p class="hd-m05-flag">Needs contract: task-artifacts has no canonical fixture or capability string yet.</p>' : '');
       host.querySelector('.hd-m05-catalog').innerHTML = strip;
       var stage = host.querySelector('.hd-m05-stage');
-      if (spec.board) { stage.innerHTML = boardHtml(spec.board, selection, host.dataset.theme, theme); return; }
+      if (spec.board) { stage.innerHTML = boardHtml(spec.board, selection, host.dataset.theme, theme); if (ext && ext.afterRender) ext.afterRender(stage, saved); return; }
       var f = FRAMES[ui.frame];
       stage.innerHTML = '<div class="hd-m05-window" style="width:' + f[0] + 'px;height:' + f[1] + 'px">' + screenHtml(spec, ui, selection, host.dataset.theme, ext && ext.hooks) + '</div>';
       if (ext && ext.afterRender) ext.afterRender(stage, saved);

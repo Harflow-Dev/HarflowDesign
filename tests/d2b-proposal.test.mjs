@@ -364,8 +364,8 @@ test('the transcript builders and the controller are pure and available without 
   for (const name of ['request', 'history', 'summaryCoverage']) assert.ok(T.controlsHtml(model, false).includes(`data-variant="${name}"`), name);
 });
 
-// The digest was computed from the output of the same builders after the activity routes were captured
-// byte for byte in a headless browser, before and after the extraction.
+// The digest was captured from the builders after the extraction. Equivalence with the markup before the
+// extraction rests on the headless capture of the activity routes against 2a797ea, not on this digest.
 test('builder markup for every activity fixture, variant and action is unchanged by the extraction', () => {
   const lines = [];
   for (const name of ['observed', 'loading', 'partial', 'unavailable', 'integrity-failed', 'reconnecting', 'capacity', 'events']) {

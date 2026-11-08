@@ -116,7 +116,7 @@
         : [['shell','Shell'],['amendment-ready','Composer'],['amendment-options','Advanced'],['history-retained','History'],['runtime-checking','Runtime']];
       var boardLinks = boards.map(function (board) { return '<a href="#' + H.routeFor('m04', board[0]) + '/' + theme + '">' + board[1] + '</a>'; }).join('');
       var strips = H.catalogStrips.m04;
-      var notice = isRedraw(route) ? strips.provisionalNotice : amendment ? strips.centeredNotice : strips.baselineNotice;
+      var notice = isRedraw(route) ? (route.indexOf('centered-shell')===0 ? strips.provisionalShellNotice : strips.provisionalNotice) : amendment ? strips.centeredNotice : strips.baselineNotice;
       var heading = isRedraw(route) ? strips.provisionalHeading : amendment ? strips.centeredHeading : strips.baselineHeading;
       catalog.innerHTML = '<div class="hd-m04-actions"><strong>' + heading + '</strong>' + boardLinks + '<label>Frame <select data-m04-field="size"><option value="reference"' + (!s.narrow?' selected':'') + '>1280 × 800</option><option value="minimum"' + (s.narrow?' selected':'') + '>1000 × 620</option></select></label>' + button('Reset fixture','reset') + '</div><p>' + notice + '</p><details class="hd-m04-fixtures"'+(s.fixtures?' open':'')+'><summary>Fixture controls</summary><div class="hd-m04-actions">' + controls + '</div></details>';
       var base = template(s.collapsed ? 'new-task/sidebar-collapsed' : 'new-task/default');

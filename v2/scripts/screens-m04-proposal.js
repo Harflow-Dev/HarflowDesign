@@ -23,6 +23,7 @@
     baselineNotice: 'Local preview · appearance preserves draft · route changes reset · Reduce Motion: instant changes. Native titlebar and OS controls are browser approximations.',
     provisionalHeading: 'Provisional · needs owner approval',
     provisionalNotice: 'Provisional · needs owner approval. Centered redraw of the earlier composer layout with the same content. Local preview · appearance preserves draft · route changes reset · Reduce Motion: instant changes. Native titlebar and OS controls are browser approximations.',
+    provisionalShellNotice: 'Provisional · needs owner approval. Centered redraw of the earlier layout with the same content. Local preview · appearance preserves draft · route changes reset · Reduce Motion: instant changes. Native titlebar and OS controls are browser approximations.',
     centeredNotice: 'Approved amendment (owner, 2026-11-06), separate from the 2026-11-05 approval; the 2026-11-06 sidebar body-scroll correction applies to every entry, composer and sidebar state. Local preview · appearance preserves draft · route changes reset · Reduce Motion: instant changes. Native titlebar and OS controls are browser approximations; native validation is pending.'
   };
   ids.forEach(function (id) { T['m04-proposal/' + id] = '<div class="hd-m04-proposal" data-theme="{{theme}}"><div class="hd-m04-catalog" aria-label="' + STRIPS.baselineLabel + '"></div><div class="hd-m04-window"></div></div>'; });

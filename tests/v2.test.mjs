@@ -751,8 +751,13 @@ test('provisional redraw strips say so, with no approval date and no approved-am
   const strips = HFV2.catalogStrips.m04;
   assert.equal(strips.provisionalHeading, 'Provisional · needs owner approval');
   assert.match(strips.provisionalNotice, /^Provisional · needs owner approval\./);
+  assert.match(strips.provisionalNotice, /Centered redraw of the earlier composer layout with the same content\./, 'the composer redraws keep their wording');
+  assert.match(strips.provisionalShellNotice, /^Provisional · needs owner approval\. Centered redraw of the earlier layout with the same content\./);
+  assert.ok(!/composer layout/.test(strips.provisionalShellNotice), 'the shell redraws do not name the composer');
+  const m04source = read(path.join(v2, 'scripts', 'm04-proposal.js'));
+  assert.match(m04source, /route\.indexOf\('centered-shell'\)===0 \? strips\.provisionalShellNotice : strips\.provisionalNotice/);
   assert.equal(HFV2.catalogStrips.transcript.provisional, 'Provisional · needs owner approval');
-  for (const text of [strips.provisionalHeading, strips.provisionalNotice, ...Object.values(HFV2.catalogStrips.transcript)]) {
+  for (const text of [strips.provisionalHeading, strips.provisionalNotice, strips.provisionalShellNotice, ...Object.values(HFV2.catalogStrips.transcript)]) {
     assert.ok(!/\d{4}-\d{2}-\d{2}/.test(text), 'no date');
     assert.ok(!/Approved|Owner 20/.test(text), 'no approval wording');
   }

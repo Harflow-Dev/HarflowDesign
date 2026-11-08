@@ -117,7 +117,7 @@ Not a design state. It indexes the current design.
 
 ### `sidebar`
 
-[m04-proposal.md](m04-proposal.md) and [m04-centered-composer-proposal.md](m04-centered-composer-proposal.md) (the sidebar body scrolls as one bounded area)). Provisional centered shell redraws: [awaiting owner review](#provisional-redraws-awaiting-owner-review).
+[m04-proposal.md](m04-proposal.md) and [m04-centered-composer-proposal.md](m04-centered-composer-proposal.md) (the sidebar body scrolls as one bounded area). Provisional centered shell redraws: [awaiting owner review](#provisional-redraws-awaiting-owner-review).
 
 ### `task`
 

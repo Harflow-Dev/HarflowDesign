@@ -278,8 +278,13 @@
     function q(sel) {
       return host.querySelector(sel);
     }
+    var lastAnnounced = null;
+    // Disclosure states and the Events scroll kept across slots that are absent for a while (the Events pane
+    // while it is closed). Only the surrounding screen's re-render path reads it.
+    var kept = { disclosures: {}, factsScroll: 0 };
     function announce(message) {
       var live = sl().live;
+      lastAnnounced = message;
       if (live) live.textContent = message;
     }
     function captureVisibleAnchor() {
@@ -351,8 +356,15 @@
       if (slot.rows) slot.rows.innerHTML = rowsHtml(s);
       if (slot.facts) slot.facts.innerHTML = asideSectionsHtml(s);
     }
-    function render(resetHistory) {
+    // Where the history is replaced, the kept states of its replaced disclosures are dropped.
+    function invalidateKept() {
+      Object.keys(kept.disclosures).forEach(function (key) {
+        if (key.indexOf('tool-') === 0 || key.indexOf('event-') === 0) delete kept.disclosures[key];
+      });
+    }
+    function render(resetHistory, replaced) {
       var savedView = captureView();
+      if (resetHistory || replaced) invalidateKept();
       fill();
       restoreView(savedView, resetHistory);
       announce(s.message||'');
@@ -360,14 +372,19 @@
     // Before the surrounding screen replaces the slot elements.
     function snapshot() {
       var history = sl().history;
-      return { view: captureView(), anchor: captureVisibleAnchor(), historyScroll: history ? history.scrollTop : 0 };
+      var view = captureView();
+      Object.assign(kept.disclosures, view.disclosures);
+      var slot = sl();
+      if (slot.factsScroll || slot.facts) kept.factsScroll = view.factsScroll;
+      return { view: view, anchor: captureVisibleAnchor(), historyScroll: history ? history.scrollTop : 0 };
     }
     // After the surrounding screen replaced them. A history at its top stays at its top; otherwise the
     // reading anchor keeps its offset, and the live region says when the view edge limited that.
     function refresh(saved) {
       fill();
-      if (saved) restoreView(saved.view, false);
-      announce(s.message||'');
+      if (saved) restoreView({ disclosures: kept.disclosures, requestScroll: saved.view.requestScroll, factsScroll: kept.factsScroll }, false);
+      // The message was announced when it happened; a re-render of the screen does not announce it again.
+      if ((s.message || '') !== lastAnnounced) announce(s.message || '');
       var history = sl().history;
       if (!saved || !history) return;
       if (saved.anchor && saved.historyScroll > 0) restoreVisibleAnchor(saved.anchor);
@@ -408,7 +425,7 @@
       var visibleAnchor = captureVisibleAnchor();
       var oldScroll = scroll.scrollTop;
       s=transition(s,action);
-      render(action==='rebase');
+      render(action==='rebase', action==='earlier' || action==='new' || action==='rebase');
       if(action==='earlier') {
         restoreVisibleAnchor(visibleAnchor);
         var restored=q('[data-action="earlier"]');
