@@ -96,3 +96,4 @@
 .hd-m04-sidebar-runtime{margin:var(--space-2) 0;padding:var(--space-3);display:flex;flex-direction:column;gap:var(--space-1);background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);color:var(--text-secondary);font-size:12px;line-height:16px}
 .hd-m04-sidebar-runtime h2{margin:0;color:var(--text);font-size:13px;line-height:18px;font-weight:500}
 .hd-m04-sidebar-runtime p{margin:0}
+.hd-m04-proposal .hd-sidebar__top [aria-label="Collapse sidebar"][aria-disabled="true"]{opacity:.45}

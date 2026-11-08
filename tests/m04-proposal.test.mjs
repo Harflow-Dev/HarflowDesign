@@ -242,3 +242,14 @@ test('the runtime card draft is installing and locks the composer',()=>{
   s.runtime='qualified';
   assert.equal(M.start(s),true);
 });
+
+test('source gates of the provisional drafts',()=>{
+  const src=fs.readFileSync(new URL('../v2/scripts/m04-proposal.js',import.meta.url),'utf8');
+  assert.match(src,/plainStarting = route === 'centered-starting-plain' && s\.status === 'starting'/);
+  assert.match(src,/hd-m04-status'\+\(plainStarting\?' hd-sr':''\)/);
+  assert.match(src,/aria-label="'\+\(plainStarting\?'Starting task':'Start task'\)\+'"/);
+  assert.match(src,/function runtimeIsLocked\(\) \{ return route === 'runtime-installing-sidebar' && s\.runtime !== 'qualified'; \}/);
+  assert.match(src,/send\.disabled=!!problem\(s\)\|\|runtimeIsLocked\(\)/);
+  assert.match(src,/status\.textContent=runtimeIsLocked\(\)\?'Set up the required runtime first\.'/);
+  assert.match(src,/if\(a==='collapse'&&!runtimeIsLocked\(\)\)s\.collapsed=!s\.collapsed;/);
+});

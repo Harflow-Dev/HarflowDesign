@@ -292,7 +292,7 @@
     function change(e) { var key=e.target.dataset.m04Field; if(!key || key==='draft')return;if(loading && key!=='size')return;if(key==='turns' && s.turns===e.target.value)return;if(['effort','turns','approvals'].includes(key)){select(s,key,e.target.value);syncOptions();return;} if(key==='size')s.narrow=e.target.value==='minimum'; else if(key==='repository'||key==='harness'||key==='model'||key==='access'||key==='effort'||key==='turns'||key==='approvals') select(s,key,e.target.value); else if(!['starting','unknown','created'].includes(s.status)) s[key]=e.target.value; render(); }
     function click(e) { var b=e.target.closest('[data-m04]'); if(loading){ if(e.target.closest('summary'))e.preventDefault(); if(!b||!loadingAllows(b.dataset.m04))return; } if(!b)return; var a=b.dataset.m04;
       if(a==='options'){optionsOpen(s,!s.advanced);syncOptions();if(s.advanced&&e.detail===0){var first=frame.querySelector('#m04-task-options select');if(first)first.focus();}return;}
-      if(a==='reset'){s=create(route);lastState=s;} if(a==='collapse'&&route!=='runtime-installing-sidebar')s.collapsed=!s.collapsed;
+      if(a==='reset'){s=create(route);lastState=s;} if(a==='collapse'&&!runtimeIsLocked())s.collapsed=!s.collapsed;
       if(a==='qualified')qualify(s,s.revision,s.repository==='Unavailable folder'||s.harness==='Unavailable harness'?'unqualified':'ready');
       if(a==='unqualified')qualify(s,s.revision,'unqualified');
       if(['created','refused','unknown'].includes(a))settle(s,a);
