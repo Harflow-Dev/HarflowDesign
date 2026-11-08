@@ -638,7 +638,6 @@
   // Renderers draw the app frame of their states themselves. Each is exposed as HFV2[api]
   // with mount(root, mountId); `wrapper` is the class list of the specimen that hosts it.
   HFV2.RENDERERS = {
-    d2b: { api: 'd2bProposal', wrapper: 'hdc-specimen hdc-specimen--d2b' },
     m04: { api: 'm04Proposal', wrapper: 'hdc-specimen hdc-specimen--m04' },
     m05: { api: 'm05Proposal', wrapper: 'hdc-specimen hdc-specimen--m05' },
     transcript: { api: 'transcriptScreen', wrapper: 'hdc-specimen hdc-specimen--m05 hdc-specimen--transcript' }

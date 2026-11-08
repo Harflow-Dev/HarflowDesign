@@ -1,4 +1,4 @@
-/* Renderer of the provisional task transcript states. The m05 task screen frame is reused through its hooks;
+/* Renderer of the task transcript states. The m05 task screen frame is reused through its hooks;
    the transcript builders and the controller come from d2b-proposal.js. Deterministic browser-only fixtures. */
 (function () {
   'use strict';
@@ -35,13 +35,13 @@
         }
       },
       strip: function (state, ui, frameLabel) {
-        return '<div class="hd-m05-strip"><strong>' + strips.provisional + '</strong>' + frameLabel + '<span class="hd-tr-controls" data-d2b-controls></span></div><p class="hd-faint">' + strips.note + '</p>';
+        return '<div class="hd-m05-strip"><strong>' + strips.approved + '</strong>' + frameLabel + '<span class="hd-tr-controls" data-d2b-controls></span></div><p class="hd-faint">' + strips.note + '</p>';
       },
       beforeRender: function () { return controller.snapshot(); },
       afterRender: function (stage, saved) { controller.refresh(saved); }
     };
     var spec = { badge: running ? 'running' : 'done', task: running ? 'running' : 'done', composer: running ? 'running' : 'settled', pane: !!(options && options.view === 'events'), tab: 'events' };
-    var dispose = H.m05Proposal.mountState(root, { id: mountId, spec: spec, kind: 'provisional', gap: '', summary: '', basis: '', flag: '' }, ext);
+    var dispose = H.m05Proposal.mountState(root, { id: mountId, spec: spec, kind: 'approved', gap: '', summary: '', basis: '', flag: '' }, ext);
     return function () { controller.dispose(); dispose(); };
   }
   H.transcriptScreen = { mount: mount };

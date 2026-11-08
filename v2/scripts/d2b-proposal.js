@@ -160,34 +160,17 @@
       return '<option'+(v===value?' selected':'')+'>'+v+'</option>';
     }).join('');
   }
-  // One canonical sidebar source; only the selected fixture row is adapted.
-  function sidebarForState(state, selection, resolved) {
-    var key = state.status === 'Running' ? 'task/running' : 'task/done';
-    var template = H.templates && H.templates[key];
-    if (!template || typeof H.fill !== 'function') return '';
-    var match = template.match(/<aside class="hd-sidebar"[\s\S]*?<\/aside>/);
-    if (!match) return '';
-    var sidebar = match[0].replace('href="#new"', 'href="#new-task/default"').replace(/<a class="hd-task-row[^"]*is-active[^"]*"[\s\S]*?<\/a>/, function (row) {
-      return row.replace(/href="[^"]*"/, 'href="#' + esc((H.routeFor && H.routeFor('d2b', state.name)) || 'd2b-proposal/' + state.name) + '"')
-        .replace(/(<span class="hd-task-row__title">)[\s\S]*?(<\/span>)/, '$1Fix slot release test$2');
-    });
-    return H.fill(sidebar, selection, resolved);
-  }
   /* ---------- Pure builders: markup of the transcript regions from a state ---------- */
   function statusHtml(s) {
     return '<span class="hd-badge">'+(s.status==='Done'?'<span class="hd-glyph hd-glyph--done" aria-hidden="true"><span class="hd-i hd-i--sm hd-i-check"></span></span>':'<span class="hd-glyph hd-glyph--running" aria-hidden="true"></span>') +
       s.status+'</span>';
   }
-  // The review controls. `withSize` adds the catalog heading, the Size select and the note around them.
-  function controlsHtml(s, withSize) {
-    var core = '<label>Request <select data-variant="request">'+options(variants.request,
+  // The review controls: the Request, History and Totals selects.
+  function controlsHtml(s) {
+    return '<label>Request <select data-variant="request">'+options(variants.request,
       s.request)+'</select></label><label>History <select data-variant="history">'+options(variants.history,
       s.history)+'</select></label><label>Totals <select data-variant="summaryCoverage">'+options(variants.summaryCoverage,
       s.summaryCoverage)+'</select></label>';
-    if (!withSize) return core;
-    return '<strong>'+H.catalogStrips.d2b.controls+'</strong><label>Size <select data-variant="size"><option value="reference"' +
-      (s.size==='reference'?' selected':'')+'>Reference 1280 × 800</option><option value="minimum"'+(s.size==='minimum'?' selected':'') +
-      '>Minimum 1000 × 620</option></select></label>' + core + '<span>'+H.catalogStrips.d2b.note+'</span>';
   }
   function requestHtml(s) {
     var r=requestView(s);
@@ -268,7 +251,7 @@
   /* ---------- Controller: owns the view state of one transcript and survives re-renders of its slots ---------- */
   // attach(root, state, slots, opts): `root` receives the click and change listeners once. `slots` returns the
   // current slot elements ({controls, status, request, boundary, rows, history, live, facts, factsScroll}); every
-  // slot may be null. opts.size adds the catalog Size control and writes data-size on the root.
+  // slot may be null.
   // The state object belongs to the controller. After the surrounding screen replaced the slot elements,
   // refresh(snapshot) fills them again and restores the view from the snapshot taken before.
   function attach(root, state, slots, opts) {
@@ -347,8 +330,7 @@
     }
     function fill() {
       var slot = sl();
-      if (opts.size) host.dataset.size = s.size;
-      if (slot.controls) slot.controls.innerHTML = controlsHtml(s, !!opts.size);
+      if (slot.controls) slot.controls.innerHTML = controlsHtml(s);
       if (slot.status) slot.status.innerHTML = statusHtml(s);
       if (slot.request) slot.request.innerHTML = requestHtml(s);
       if (slot.boundary) slot.boundary.innerHTML = boundaryHtml(s);
@@ -472,27 +454,9 @@
       }
     };
   }
-  function mount(root,name) {
-    var host=root.matches && root.matches('.hd-d2b')?root:root.querySelector('.hd-d2b');
-    if(!host)return function() {
-    };
-    var s=createState(name||host.dataset.d2bState);
-    var selection = host.dataset.systemOn === 'true' ? 'system' : host.dataset.darkOn === 'true' ? 'dark' : 'light';
-    host.querySelector('[data-d2b-sidebar]').innerHTML = sidebarForState(s, selection, host.dataset.theme);
-    var controller = attach(host, s, function () {
-      return {
-        controls: host.querySelector('[data-d2b-controls]'), status: host.querySelector('[data-d2b-status]'),
-        request: host.querySelector('[data-d2b-request]'), boundary: host.querySelector('[data-d2b-boundary]'),
-        rows: host.querySelector('[data-d2b-rows]'), history: host.querySelector('.hd-d2b-history'),
-        live: host.querySelector('[data-d2b-live]'), facts: host.querySelector('[data-d2b-facts]')
-      };
-    }, { size: true });
-    controller.render();
-    return controller.dispose;
-  }
   H.d2bProposal= {
-    mount:mount,createState:createState,transition:transition,requestView:requestView,activityView:activityView,
-    variants:variants,rowKey:rowKey,sidebarForState:sidebarForState
+    createState:createState,transition:transition,requestView:requestView,activityView:activityView,
+    variants:variants,rowKey:rowKey
   };
   H.d2bTranscript= {
     attach:attach,statusHtml:statusHtml,controlsHtml:controlsHtml,requestHtml:requestHtml,boundaryHtml:boundaryHtml,

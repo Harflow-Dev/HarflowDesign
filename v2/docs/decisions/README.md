@@ -11,9 +11,10 @@ Routes are written as the current route, with the route used before the informat
 | Decision | Area | Status | Approved by and date | Recording commit | Routes | Files |
 | --- | --- | --- | --- | --- | --- | --- |
 | Harflow Desktop redesign, design system, foundations, brand and components | All areas | Approved; nine of its states are retired (see [Retired designs](#retired-designs)) | The owner, 2026-11-03; design system republished 2026-11-04 | `24958cf` (amendments `3643d08`, `d7d3f46`; foundations and brand `c3fc670`) | Every base route (six now retired, see Retired designs): `new-task/default`, `harness-menu`, `sidebar-collapsed`, `needs-you/*`, `workflows/*`, `workflow-editor/*`, `task/running`, `approval`, `done`, `failed`, `parallel-group/*`, `workflow-run/*`, `resources/*`, `statistics/*`, `settings/*`, `menu-bar/*`, `app-states/*`, `brand/*`, `foundations/*`, `components/*` | [approval.md](approval.md) |
-| Activity transcript states of the task screen (observation design) | Task | Approved | The owner, 2026-11-05, with spacing and sidebar corrections applied | `227da87` (proposal `ba10e2d`) | `task/activity-observed` (`d2b-proposal/observed`), `activity-loading` (`loading`), `activity-partial` (`partial`), `activity-unavailable` (`unavailable`), `activity-integrity-failed` (`integrity-failed`), `activity-reconnecting` (`reconnecting`), `activity-capacity` (`capacity`), `activity-sources` (`events`) | [d2b-observation-approval.md](d2b-observation-approval.md), [d2b-observation-proposal.md](d2b-observation-proposal.md) |
-| Entry, sidebar and runtime states (entry direction) | Start work; Settings and setup | Approved | The owner, 2026-11-05 | `5b37a3d` (earlier `ad80bcd`, `bd5d349`) | 24 states, three of them now retired: `sidebar/expanded`, `collapsed`, `minimum`, `history-*`; `new-task/composer-*`, `options-open` (retired), `options-closed`; retired `composer-ready` and `composer-unknown`; `harness-runtime/*`. Old routes `m04-proposal/*`, listed in the route map | [m04-proposal.md](m04-proposal.md), [approval.md](approval.md) |
+| Activity transcript states of the task screen (observation design) | Task | Approved | The owner, 2026-11-05, with spacing and sidebar corrections applied | `227da87` (proposal `ba10e2d`) | `task/activity-observed` (`d2b-proposal/observed`), `activity-loading` (`loading`), `activity-partial` (`partial`), `activity-unavailable` (`unavailable`), `activity-integrity-failed` (`integrity-failed`), `activity-reconnecting` (`reconnecting`), `activity-capacity` (`capacity`), `activity-sources` (`events`). Retired 2026-11-08: each opens `task/transcript-<state>` (`transcript-sources` for `activity-sources`) | [d2b-observation-approval.md](d2b-observation-approval.md), [d2b-observation-proposal.md](d2b-observation-proposal.md) |
+| Entry, sidebar and runtime states (entry direction) | Start work; Settings and setup | Approved | The owner, 2026-11-05 | `5b37a3d` (earlier `ad80bcd`, `bd5d349`) | 24 states, twelve of them now retired (see Retired designs): `sidebar/expanded`, `collapsed`, `minimum`; `history-*`; `new-task/composer-*`, `options-open`, `options-closed`, and `composer-ready` and `composer-unknown`; `harness-runtime/*`. Old routes `m04-proposal/*`, listed in the route map | [m04-proposal.md](m04-proposal.md), [approval.md](approval.md) |
 | Centered composer amendment, with the unified sidebar scroll | Start work | Approved, separately from the entry direction | The owner, 2026-11-06 | `9d64bfd` | `new-task/centered-empty`, `centered-ready`, `centered-growing`, `centered-capped`, `centered-options`, `centered-unknown` (`m04-proposal/amendment-*`) | [m04-centered-composer-proposal.md](m04-centered-composer-proposal.md) |
+| Centered and transcript redraws | Start work; Task | Approved | The owner, 2026-11-08 ("Yes, accept all", relayed by the coordinator) | The commit that adds this row (base `3f12d29`) | `new-task/centered-loading`, `centered-unqualified`, `centered-invalid`, `centered-starting`, `centered-refused`, `centered-options-closed`, `centered-harness-open`; `sidebar/centered-collapsed`, `centered-minimum`; `task/transcript-observed`, `transcript-loading`, `transcript-partial`, `transcript-unavailable`, `transcript-integrity-failed`, `transcript-reconnecting`, `transcript-capacity`, `transcript-sources`. Eighteen earlier states are retired (see Retired designs) | This file ([Centered and transcript redraws](#centered-and-transcript-redraws)), [m04-centered-composer-proposal.md](m04-centered-composer-proposal.md) |
 | Task screen states (statuses, actions, top bar, changes, events, artifacts, layout) | Task | Approved, except the provisional routes below | The owner, 2026-11-07, relayed by the coordinator | `17739e4` (proposal `3e85e26`, `a9c65fe`) | `task/running-stop` (`m05-proposal/state-running`), the other status, action, top bar, changes, events and layout routes, and the decision boards under `records/` (`m05-proposal/overview`, `retry-options`, `stop-options`, `adaptive-options`, `platform-options`). Provisional, not approved: `task/cancelled-partial` and `task/artifacts-*`, until the contract gaps close | [m05-task-screen-approval.md](m05-task-screen-approval.md), [m05-task-screen-proposal.md](m05-task-screen-proposal.md) |
 
 ## Retired designs
@@ -28,13 +29,31 @@ Pins use the route names at each commit: the old milestone routes (`m04-proposal
 | `task/done` | `task/changes-single` | Q1, owner answer 2026-11-08. The approved Changes state shows the done screen with the pane open; `task/pane-split` is a layout state, not the done screen | `task/done` at `17739e4` and `bce377c` |
 | `task/failed` | `task/failed-continue` | The approved row for the failed state replaces Retry with Continue in a new session. Previously applied as a hidden state with a note; now a redirect like the others | `task/failed` at `17739e4` and `bce377c` |
 | `new-task/default` | `new-task/centered-empty` | Q2 owner answer 2026-11-08; target confirmed by the coordinator 2026-11-08 | `new-task/default` at `17739e4` and `bce377c` |
-| `new-task/sidebar-collapsed` | `sidebar/collapsed` | Q2, owner answer 2026-11-08 | `new-task/sidebar-collapsed` at `17739e4` and `bce377c` |
-| `new-task/harness-menu` | `new-task/centered-ready` | Q2 and Q3, owner answers 2026-11-08. The open harness pill is not drawn in the centered layout: open design question | `new-task/harness-menu` at `17739e4` and `bce377c` |
+| `new-task/sidebar-collapsed` | `sidebar/centered-collapsed` | Q2, owner answer 2026-11-08; repointed on 2026-11-08 when `sidebar/collapsed` was retired for its centered redraw | `new-task/sidebar-collapsed` at `17739e4` and `bce377c` |
+| `new-task/harness-menu` | `new-task/centered-harness-open` | Q2 and Q3, owner answers 2026-11-08; repointed on 2026-11-08 to the centered composer's harness picker open (item 5 of the owner decision below) | `new-task/harness-menu` at `17739e4` and `bce377c` |
 | `new-task/composer-ready` | `new-task/centered-ready` | Q3, owner answer 2026-11-08. A centered drawing exists | `m04-proposal/composer-ready` at `17739e4`; `new-task/composer-ready` at `bce377c` |
 | `new-task/composer-unknown` | `new-task/centered-unknown` | Q3, owner answer 2026-11-08. A centered drawing exists | `m04-proposal/composer-unknown` at `17739e4`; `new-task/composer-unknown` at `bce377c` |
 | `new-task/options-open` | `new-task/centered-options` | Q3, owner answer 2026-11-08. A centered drawing exists | `m04-proposal/advanced` at `17739e4`; `new-task/options-open` at `bce377c` |
+| `new-task/composer-loading` | `new-task/centered-loading` | Owner answer 2026-11-08: redraws accepted | `new-task/composer-loading` at `3f12d29` |
+| `new-task/composer-unqualified` | `new-task/centered-unqualified` | Owner answer 2026-11-08: redraws accepted | `new-task/composer-unqualified` at `3f12d29` |
+| `new-task/composer-invalid` | `new-task/centered-invalid` | Owner answer 2026-11-08: redraws accepted | `new-task/composer-invalid` at `3f12d29` |
+| `new-task/composer-starting` | `new-task/centered-starting` | Owner answer 2026-11-08: redraws accepted | `new-task/composer-starting` at `3f12d29` |
+| `new-task/composer-refused` | `new-task/centered-refused` | Owner answer 2026-11-08: redraws accepted | `new-task/composer-refused` at `3f12d29` |
+| `new-task/options-closed` | `new-task/centered-options-closed` | Owner answer 2026-11-08: redraws accepted | `new-task/options-closed` at `3f12d29` (mount `advanced-closed`) |
+| `sidebar/expanded` | `new-task/centered-empty` | Owner answer 2026-11-08: redraws accepted; owner item 1: the expanded shell and its centered redraw both drew the window of `new-task/centered-empty` | `sidebar/expanded` at `3f12d29` (mount `shell`) |
+| `sidebar/centered-expanded` | `new-task/centered-empty` | Owner answer 2026-11-08: redraws accepted; accepted, then retired as a duplicate (owner item 1) | `sidebar/centered-expanded` at `3f12d29` (mount `centered-shell`) |
+| `sidebar/collapsed` | `sidebar/centered-collapsed` | Owner answer 2026-11-08: redraws accepted | `sidebar/collapsed` at `3f12d29` (mount `shell-collapsed`) |
+| `sidebar/minimum` | `sidebar/centered-minimum` | Owner answer 2026-11-08: redraws accepted | `sidebar/minimum` at `3f12d29` (mount `shell-narrow`) |
+| `task/activity-observed` | `task/transcript-observed` | Owner answer 2026-11-08: redraws accepted | `task/activity-observed` at `3f12d29` (mount `observed`) |
+| `task/activity-loading` | `task/transcript-loading` | Owner answer 2026-11-08: redraws accepted | `task/activity-loading` at `3f12d29` (mount `loading`) |
+| `task/activity-partial` | `task/transcript-partial` | Owner answer 2026-11-08: redraws accepted | `task/activity-partial` at `3f12d29` (mount `partial`) |
+| `task/activity-unavailable` | `task/transcript-unavailable` | Owner answer 2026-11-08: redraws accepted | `task/activity-unavailable` at `3f12d29` (mount `unavailable`) |
+| `task/activity-integrity-failed` | `task/transcript-integrity-failed` | Owner answer 2026-11-08: redraws accepted | `task/activity-integrity-failed` at `3f12d29` (mount `integrity-failed`) |
+| `task/activity-reconnecting` | `task/transcript-reconnecting` | Owner answer 2026-11-08: redraws accepted | `task/activity-reconnecting` at `3f12d29` (mount `reconnecting`) |
+| `task/activity-capacity` | `task/transcript-capacity` | Owner answer 2026-11-08: redraws accepted | `task/activity-capacity` at `3f12d29` (mount `capacity`) |
+| `task/activity-sources` | `task/transcript-sources` | Owner answer 2026-11-08: redraws accepted; owner item 3 | `task/activity-sources` at `3f12d29` (mount `events`) |
 
-The templates that other states clone (`task/running`, `task/done`, `task/failed`, `new-task/default`, `new-task/sidebar-collapsed`) stay in the code; the `new-task/harness-menu` template and the `m04-proposal/composer-ready`, `composer-unknown` and `advanced` templates were deleted.
+The templates that other states clone (`task/running`, `task/done`, `task/failed`, `new-task/default`, `new-task/sidebar-collapsed`) stay in the code. Deleted with their states: the `new-task/harness-menu` template; the `m04-proposal/*` templates and mounts of the retired composer and shell states; and the activity transcript wrapper templates, guides, mount and renderer (`d2b-proposal/*`). The transcript fixtures and builders stay, because the transcript routes use them.
 
 ### Owner answers of 2026-11-08
 
@@ -42,19 +61,36 @@ The templates that other states clone (`task/running`, `task/done`, `task/failed
 | --- | --- |
 | Q1: is `task/done` replaced by the Changes states? | Yes. Retired, see above |
 | Q2: is the base New task screen replaced by the entry states? | Yes. `new-task/default` opens `new-task/centered-empty`; the collapsed variant opens `sidebar/collapsed` |
-| Q3: composer states drawn only in the bottom layout | Redraw the six (loading, unqualified, invalid, starting, refused, task options closed) in the centered layout with the same content and copy. The redraws are provisional and need owner approval |
-| Q4: is the standalone Events pane replaced by the Events tab? | Replaced. `task/activity-sources` waits for the coordinator's scope decision (QA) and stays listed unchanged until then |
+| Q3: composer states drawn only in the bottom layout | Redraw the six (loading, unqualified, invalid, starting, refused, task options closed) in the centered layout with the same content and copy. The redraws were provisional; the owner approved them on 2026-11-08 (see [Centered and transcript redraws](#centered-and-transcript-redraws)) |
+| Q4: is the standalone Events pane replaced by the Events tab? | Replaced. `task/activity-sources` was resolved on 2026-11-08: it opens `task/transcript-sources` |
 | Q5: is the base running Task screen replaced by the running state with Stop in the composer? | Yes. Retired, see above |
 
 "Task options closed" in Q3 means `new-task/options-closed`.
 
-Open (QA): whether `task/activity-sources` is redirected to `task/events-populated`, or kept while the transcript states are redrawn inside the task screen frame (see [Provisional redraws awaiting owner review](#provisional-redraws-awaiting-owner-review)). Until the owner decides, the state stays as it is.
+Resolved (QA), 2026-11-08: `task/activity-sources` opens `task/transcript-sources`, the transcript state redrawn inside the task screen frame (owner item 3 in [Centered and transcript redraws](#centered-and-transcript-redraws)).
 
-## Provisional redraws awaiting owner review
+## Centered and transcript redraws
 
-Seventeen routes are provisional redraws. None is approved: each carries no approval date, its strip reads "Provisional · needs owner approval", and the earlier state stays listed, labelled "Earlier layout; redraw awaiting owner approval" outside the specimen, with a link to its redraw. The pairs are in `HFV2.pendingRedraw` (`v2/scripts/supersessions.js`). Each redraw reuses the fixtures and copy of its earlier state; only the layout changes, and no in-app copy is invented.
+The owner decided on 2026-11-08, answering "Yes, accept all", relayed by the coordinator: all 17 redraws of the batch at `3f12d29` are accepted, with the coordinator's six recommendations.
 
-| Provisional redraw | Earlier state | Basis | Owner question |
+| Item | Decision |
+| --- | --- |
+| 1 | `sidebar/expanded` is retired and opens `new-task/centered-empty`. `sidebar/centered-expanded` is identical, so it is accepted and then retired the same way |
+| 2 | The four Events elements the approved Events tab omits (Copy record, the Recovered message disclosure, Record ordering and "independent of captured activity") are kept and approved on the eight `task/transcript-*` routes |
+| 3 | `task/activity-sources` opens `task/transcript-sources`. This resolves the open question (QA) of the earlier Q4 answer |
+| 4 | The `new-task/centered-invalid` task options popover over the greeting is accepted at the minimum frame |
+| 5 | The open harness pill menu is drawn in the centered composer as the new state `new-task/centered-harness-open`, approved by extension |
+| 6 | Sidebar loading: option B. It is not part of this commit; the loading skeleton work carries it |
+
+Sixteen redraws survive as approved states, and `sidebar/centered-expanded` is retired as a duplicate. Eighteen earlier states are retired (see [Retired designs](#retired-designs)): the 17 earlier states and the duplicate. `HFV2.pendingRedraw` (`v2/scripts/supersessions.js`) is empty; the mechanism stays for the next redraw. Each redraw reuses the fixtures and copy of its earlier state; only the layout changes, and no in-app copy is invented. The earlier states stay in Git history at `3f12d29`.
+
+### The harness picker open
+
+`new-task/centered-harness-open` is the centered composer's own harness pill picker, opened, with the fixtures of the closed centered states. Basis: item 5 of the owner decision above, relayed by the coordinator, and the coordinator's confirmation of 2026-11-08 of the content, option (a). The retired `new-task/harness-menu` list is not drawn and none of its content is used. The coordinator added one requirement: the unavailable harness must show its gated treatment with an explanation. The fixtures already hold the pieces, so the state selects "Unavailable harness" (model Default, qualification unqualified): Start is disabled and the status line reads "Choose a qualified harness and model.", the existing copy of the composer when the qualification is not ready. No other copy is added. The picker is a native `<details>` and `<summary>`, anchored by the existing picker placement; Escape is left to the native control and there is no custom handler. Reset restores this fixture, with the picker open.
+
+### Redraws and the questions put to the owner
+
+| Redraw | Earlier state | Basis | Question put to the owner |
 | --- | --- | --- | --- |
 | `new-task/centered-loading` | `new-task/composer-loading` | Q3, owner answer 2026-11-08: redraw the six composer states drawn only in the bottom layout, in the centered layout, with the same content and copy | Is the centered layout accepted for this state? |
 | `new-task/centered-unqualified` | `new-task/composer-unqualified` | Q3 | Is the centered layout accepted for this state? |
@@ -62,7 +98,7 @@ Seventeen routes are provisional redraws. None is approved: each carries no appr
 | `new-task/centered-starting` | `new-task/composer-starting` | Q3 | Is the centered layout accepted for this state? |
 | `new-task/centered-refused` | `new-task/composer-refused` | Q3 | Is the centered layout accepted for this state? |
 | `new-task/centered-options-closed` | `new-task/options-closed` | Q3 | Is the centered layout accepted for this state? |
-| `sidebar/centered-expanded` | `sidebar/expanded` | Q2, owner answer 2026-11-08, and the coordinator's confirmation of 2026-11-08 that the three shell states still draw the bottom composer | See the duplication note below |
+| `sidebar/centered-expanded` (retired) | `sidebar/expanded` | Q2, owner answer 2026-11-08, and the coordinator's confirmation of 2026-11-08 that the three shell states still draw the bottom composer | See the duplication note below |
 | `sidebar/centered-collapsed` | `sidebar/collapsed` | Q2 and the same confirmation. `new-task/sidebar-collapsed` already redirects to `sidebar/collapsed`; on sign-off that redirect is repointed to this redraw | Is the centered layout accepted beside the collapsed rail? |
 | `sidebar/centered-minimum` | `sidebar/minimum` | Q2 and the same confirmation | Does the centered layout fit the minimum window without clipping, as drawn? |
 | `task/transcript-observed` | `task/activity-observed` | Q4, owner answer 2026-11-08: the Events side pane is replaced by the Events tab. None of the eight activity states has an approved equivalent, because the approved Events states draw different content | Is the transcript, drawn inside the task screen frame with the Events pane, accepted for this state? |
@@ -92,16 +128,11 @@ Append `/light`, `/dark` or `/system` for an appearance, for example `#task/tran
 
 **Catalog limitations of the transcript redraws.** The top bar shows only the facts the earlier state has: title, meta, status and the Events toggle. It has no notices or continuity chips and no More menu, because the earlier state has none; at the minimum frame the meta drops, as it does on the approved top bar. The Changes and Artifacts tabs keep their approved chrome but are disabled, with no content and no new copy, because the earlier state has no changes or artifacts data and the task screen fixtures would invent it. The earlier request disclosure replaces the task screen's "Complete stored request" disclosure in these routes only.
 
-**Duplication.** `sidebar/centered-expanded` duplicates `new-task/centered-empty`. Its fixture equals the centered empty draft apart from the route, and a headless browser comparison found the window markup and pixels identical in both appearances at 1280 × 800 and 1000 × 620, so the two routes differ only in their catalog strips. It is drawn anyway, as instructed, and nothing is retired. On sign-off the owner can retire `sidebar/expanded` as a redirect to `new-task/centered-empty` instead of keeping both states. The sidebar region of all three shell redraws is identical to its earlier state (markup and pixels), and their New task area equals the one of `new-task/centered-empty`.
+**Duplication, resolved.** `sidebar/centered-expanded` duplicated `new-task/centered-empty`: its fixture equals the centered empty draft apart from the route, and a headless browser comparison found the window markup and pixels identical in both appearances at 1280 × 800 and 1000 × 620. Item 1 retires it, together with `sidebar/expanded`.
 
-On sign-off, a pair moves into the retired designs table above: the earlier state, its templates and its guides are removed, and a redirect that already targets the earlier state is repointed to the redraw (`new-task/sidebar-collapsed` and `sidebar/collapsed` are the only such case among these pairs).
+On sign-off a pair moves into the retired designs table above: the earlier state, its templates and its guides are removed, and a redirect that already targeted the earlier state is repointed to the redraw (`new-task/sidebar-collapsed` and `new-task/harness-menu`).
 
-Open design questions for the redraws:
-
-- `new-task/centered-invalid` opens the task options popover, as its source does. Where it sits in the centered layout follows the placement rule of `new-task/centered-options` (above or below, by the space available), and at the minimum frame the available space is smaller. The owner decides whether that is acceptable.
-- Whether the open harness pill (the retired `new-task/harness-menu`) is drawn in the centered layout.
-- Whether `task/activity-sources` is kept, redirected to `task/events-populated`, or replaced by `task/transcript-sources` (QA).
-- Whether the four elements named above belong in the approved Events tab.
+The questions the redraws left open were answered by the items above: the `new-task/centered-invalid` popover (item 4), the open harness pill (item 5), `task/activity-sources` (item 3) and the four Events elements (item 2).
 
 ## By screen
 
@@ -117,11 +148,11 @@ Not a design state. It indexes the current design.
 
 ### `sidebar`
 
-[m04-proposal.md](m04-proposal.md) and [m04-centered-composer-proposal.md](m04-centered-composer-proposal.md) (the sidebar body scrolls as one bounded area). Provisional centered shell redraws: [awaiting owner review](#provisional-redraws-awaiting-owner-review).
+[m04-proposal.md](m04-proposal.md) and [m04-centered-composer-proposal.md](m04-centered-composer-proposal.md) (the sidebar body scrolls as one bounded area). Centered shell redraws: [Centered and transcript redraws](#centered-and-transcript-redraws).
 
 ### `task`
 
-[approval.md](approval.md) (base states), [d2b-observation-approval.md](d2b-observation-approval.md) (activity transcript), [m05-task-screen-approval.md](m05-task-screen-approval.md) (status, actions, top bar, changes, events, artifacts, layout). Provisional transcript redraws: [awaiting owner review](#provisional-redraws-awaiting-owner-review).
+[approval.md](approval.md) (base states), [d2b-observation-approval.md](d2b-observation-approval.md) (activity transcript), [m05-task-screen-approval.md](m05-task-screen-approval.md) (status, actions, top bar, changes, events, artifacts, layout). Transcript redraws: [Centered and transcript redraws](#centered-and-transcript-redraws).
 
 ### `parallel-group`
 

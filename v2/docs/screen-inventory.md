@@ -38,17 +38,18 @@ Migration intent and unresolved coverage are tracked in the [migration coverage 
 | Foundations | Colour, typography, spacing-radius, elevation | `foundations/<name>` | Every design token with light and dark values and usage |
 | Components | One state per component | `components/<name>` | Design system components, starting with the cover; each shows its full guideline text below the preview |
 
-The base New task states (`new-task/default`, `harness-menu`, `sidebar-collapsed`) and the base Task states Running, Done, changes pane and Failed were replaced by later designs on the owner's decision. Their routes still open the replacement; see [the decisions record](decisions/README.md#retired-designs) and the [route map](route-map.md).
+The base New task states (`new-task/default`, `harness-menu`, `sidebar-collapsed`), the bottom-layout composer and shell states, the activity transcript states and the base Task states Running, Done, changes pane and Failed were replaced by later designs on the owner's decision. Their routes still open the replacement; see [the decisions record](decisions/README.md#retired-designs) and the [route map](route-map.md).
 
-## Provisional redraws
+## Centered and transcript redraws
 
-Seventeen states are redraws that await the owner's approval. Each earlier state stays listed with a link to its redraw. See [the decisions record](decisions/README.md#provisional-redraws-awaiting-owner-review) for the source, basis and owner question of each.
+The owner approved these redraws on 2026-11-08; each replaced an earlier state, and the earlier route opens the redraw. See [the decisions record](decisions/README.md#centered-and-transcript-redraws) for the basis of each.
 
 | Family | State | Route | Shows |
 | --- | --- | --- | --- |
 | New task | Centered composer · Checking options, Unavailable options, Validation, Starting, Refused, Task options closed | `new-task/centered-loading`, `centered-unqualified`, `centered-invalid`, `centered-starting`, `centered-refused`, `centered-options-closed` | The six composer states drawn only in the bottom layout, in the centered layout |
-| Sidebar | Centered shell · Expanded, Collapsed rail, Minimum window | `sidebar/centered-expanded`, `centered-collapsed`, `centered-minimum` | The shell states with the New task area in the centered layout. `centered-expanded` draws the same window as `new-task/centered-empty` |
-| Task | Task transcript · Observed activity, Loading observations, Incomplete history, Observation unavailable, Request integrity failure, Reconnect and source change, Reading window at capacity, Normalized and recovered sources | `task/transcript-observed`, `transcript-loading`, `transcript-partial`, `transcript-unavailable`, `transcript-integrity-failed`, `transcript-reconnecting`, `transcript-capacity`, `transcript-sources` | The eight activity transcript states inside the task screen frame. The right pane opens on Events, with the earlier side pane sections; open it from the top bar or with `/events` after the route |
+| New task | Centered composer · Harness picker open | `new-task/centered-harness-open` | The centered composer's harness picker open, with a harness that is not available selected |
+| Sidebar | Centered shell · Collapsed rail, Minimum window | `sidebar/centered-collapsed`, `centered-minimum` | The shell states with the New task area in the centered layout. The expanded shell is `new-task/centered-empty` |
+| Task | Task transcript · Observed activity, Loading observations, Incomplete history, Observation unavailable, Request integrity failure, Reconnect and source change, Reading window at capacity, Normalized and recovered sources | `task/transcript-observed`, `transcript-loading`, `transcript-partial`, `transcript-unavailable`, `transcript-integrity-failed`, `transcript-reconnecting`, `transcript-capacity`, `transcript-sources` | The eight transcript states inside the task screen frame. The right pane opens on Events, with the captured activity sections; open it from the top bar or with `/events` after the route |
 
 ## Decisions recorded from the owner's feedback rounds
 

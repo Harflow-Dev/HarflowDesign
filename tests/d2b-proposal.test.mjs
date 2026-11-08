@@ -16,7 +16,9 @@ const state = (request, history = 'observed') => api.transition(api.transition(a
 
 // These assertions exercise observation permissions, rather than reproducing render branches.
 test('pure fixture runtime loads without a document or browser service', () => {
-  for (const method of ['createState', 'transition', 'requestView', 'activityView', 'mount']) assert.equal(typeof api[method], 'function');
+  for (const method of ['createState', 'transition', 'requestView', 'activityView']) assert.equal(typeof api[method], 'function');
+  assert.equal(api.mount, undefined, 'the unreachable activity mount is gone');
+  assert.equal(api.sidebarForState, undefined);
   assert.equal(context.document, undefined);
 });
 
@@ -178,36 +180,12 @@ test('new activity is admitted explicitly and leaves the retained anchor intact'
 function loadCatalog() {
   const ctx = vm.createContext({ window: {} });
   ctx.window = ctx;
-  for (const name of ['registry.js', 'screens-task.js', 'screens-d2b-proposal.js', 'd2b-proposal.js']) vm.runInContext(script(name), ctx);
+  for (const name of ['registry.js', 'screens-task.js', 'd2b-proposal.js']) vm.runInContext(script(name), ctx);
   return ctx.HFV2;
 }
-const ROUTES = {
-  observed: 'task/activity-observed', loading: 'task/activity-loading', partial: 'task/activity-partial', unavailable: 'task/activity-unavailable',
-  'integrity-failed': 'task/activity-integrity-failed', reconnecting: 'task/activity-reconnecting', capacity: 'task/activity-capacity', events: 'task/activity-sources'
-};
-
-test('activity templates cover eight focused states with accessible local observation surfaces', () => {
-  const H = loadCatalog();
-  const keys = Object.keys(H.templates).filter(key => key.startsWith('d2b-proposal/'));
-  assert.deepEqual(Array.from(keys).sort(), Object.keys(ROUTES).map(name => `d2b-proposal/${name}`).sort());
-  for (const key of keys) assert.match(H.templates[key], /data-d2b-controls/, key);
-});
-
-test('activity approval is per state and preserves the earlier catalog approval', () => {
+test('the registry keeps the original catalog approval for the base task states', () => {
   const H = loadCatalog();
   const task = H.registry.families.find(item => item.id === 'task');
-  const states = task.states.filter(item => item.source && item.source.renderer === 'd2b');
-  assert.equal(states.length, 8);
-  assert.deepEqual(Array.from(states, item => `task/${item.id}`).sort(), Object.values(ROUTES).sort());
-  for (const item of states) {
-    assert.equal(item.status, 'approved');
-    assert.equal(item.approval.date, '2026-11-05');
-    assert.equal(item.approval.by, 'the owner');
-    assert.match(item.approval.decision, /requested corrections applied/);
-    assert.equal(item.approval.canvas, undefined, 'state approval uses its explicit decision');
-    assert.match(H.approvalLine(task, item), /^Approved by the owner on 2026-11-05 · /);
-  }
-  assert.equal(H.routeFor('d2b', 'observed'), 'task/activity-observed');
   const registry = H.registry;
   assert.equal(registry.approval.date, '2026-11-03');
   assert.equal(registry.approval.canvas, '1793668079-d8d9');
@@ -217,9 +195,7 @@ test('activity approval is per state and preserves the earlier catalog approval'
   assert.ok(base.every(item => item.status === 'approved' && item.approval === undefined), 'base task states keep the original catalog approval');
   assert.match(H.approvalLine(task, base[0]), /^Approved by the owner on 2026-11-03 · canvas /);
   assert.equal(task.approval, undefined, 'task family keeps the original catalog approval');
-  assert.equal(H.catalogStrips.d2b.controls, 'Review controls · catalog only');
-  assert.equal(H.catalogStrips.d2b.note, 'Deterministic mock · design reference');
-  assert.match(script('d2b-proposal.js'), /H\.catalogStrips\.d2b\.controls/);
+  assert.equal(H.catalogStrips, undefined, 'the activity strip labels left with the activity mount');
 });
 
 test('consumer rebase cannot erase capture loss or admit sound totals after an unknown source', () => {
@@ -309,43 +285,13 @@ test('known captured tool evidence rejects contradictory zero even in a forged v
   }
 });
 
-test('proposal sidebar preserves the canonical task navigation and appearance while adapting only its active fixture', () => {
-  const H = loadCatalog();
-  const activeRow = /<a class="hd-task-row[^"]*is-active[^"]*"[\s\S]*?<\/a>/;
-  const normalizeActive = html => html.replace(activeRow, '<active-task-fixture>');
-  for (const name of ['observed', 'loading', 'reconnecting', 'capacity']) {
-    const model = H.d2bProposal.createState(name);
-    const canonical = H.templates[model.status === 'Running' ? 'task/running' : 'task/done'].match(/<aside class="hd-sidebar"[\s\S]*?<\/aside>/)[0];
-    for (const [selection, resolved] of [['light', 'light'], ['dark', 'dark'], ['system', 'light'], ['system', 'dark']]) {
-      const sidebar = H.d2bProposal.sidebarForState(model, selection, resolved);
-      assert.equal(normalizeActive(sidebar), normalizeActive(H.fill(canonical.replace('href="#new"', 'href="#new-task/default"'), selection, resolved)), `${name}/${selection}/${resolved} preserves canonical sidebar outside active row`);
-      assert.match(sidebar, /href="#new-task\/default"/);
-      assert.doesNotMatch(sidebar, /href="#new"/);
-      assert.equal((sidebar.match(/<aside class="hd-sidebar"/g) || []).length, 1);
-      assert.equal((sidebar.match(/is-active/g) || []).length, 1);
-      const active = sidebar.match(activeRow)[0];
-      assert.match(active, new RegExp(`href="#${ROUTES[name]}"`));
-      assert.match(active, />Fix slot release test</);
-      for (const label of ['Running', 'Recent work', 'Settings', 'Appearance']) assert.ok(sidebar.includes(label), label);
-      for (const icon of ['plus', 'hand', 'workflow', 'gauge', 'chart', 'settings']) assert.ok(sidebar.includes(`hd-i-${icon}`), icon);
-      for (const mode of ['System', 'Light', 'Dark']) assert.ok(sidebar.includes(`aria-pressed="${String(selection === mode.toLowerCase())}" aria-label="${mode}"`), `${selection}/${mode}`);
-      assert.ok(!sidebar.includes('{{'), 'sidebar has no theme placeholders');
-      const filledTemplate = H.fill(H.templates[`d2b-proposal/${name}`], selection, resolved);
-      assert.ok(!filledTemplate.includes('{{'), 'proposal host has no theme placeholders');
-      for (const mode of ['system', 'light', 'dark']) assert.ok(filledTemplate.includes(`data-${mode}-on="${String(selection === mode)}"`), `${mode} selection survives host fill`);
-      assert.equal((filledTemplate.match(/data-d2b-sidebar/g) || []).length, 1);
-      assert.doesNotMatch(filledTemplate, /<aside class="hd-sidebar"/, 'proposal template has one mount placeholder instead of a duplicate static sidebar');
-    }
-  }
-});
-
 // ---- Transcript builders and controller (shared by the activity routes and the task transcript redraws) ----
 
 const BUILDERS = ['statusHtml', 'controlsHtml', 'requestHtml', 'boundaryHtml', 'rowsHtml', 'asideSectionsHtml'];
 const catalog = loadCatalog();
 const regionsOf = model => {
   const T = catalog.d2bTranscript;
-  return [T.statusHtml(model), T.requestHtml(model), T.boundaryHtml(model), T.rowsHtml(model), T.asideSectionsHtml(model), T.controlsHtml(model, true)].join('\u0001');
+  return [T.statusHtml(model), T.requestHtml(model), T.boundaryHtml(model), T.rowsHtml(model), T.asideSectionsHtml(model), T.controlsHtml(model)].join('\u0001');
 };
 
 test('the transcript builders and the controller are pure and available without a document', () => {
@@ -359,13 +305,14 @@ test('the transcript builders and the controller are pure and available without 
   assert.match(T.requestHtml(model), /<details data-disclosure="request" class="hd-d2b-request" open>/);
   assert.match(T.boundaryHtml(model), /data-action="earlier"/);
   assert.match(T.asideSectionsHtml(model), /<h3>Recovered transcript<\/h3>/);
-  assert.equal(T.controlsHtml(model, false).includes('data-variant="size"'), false, 'the size control is catalog-only for the activity routes');
-  assert.equal(T.controlsHtml(model, true).includes('data-variant="size"'), true);
-  for (const name of ['request', 'history', 'summaryCoverage']) assert.ok(T.controlsHtml(model, false).includes(`data-variant="${name}"`), name);
+  assert.equal(T.controlsHtml(model).includes('data-variant="size"'), false, 'the transcript has no catalog Size control');
+  for (const name of ['request', 'history', 'summaryCoverage']) assert.ok(T.controlsHtml(model).includes(`data-variant="${name}"`), name);
 });
 
 // The digest was captured from the builders after the extraction. Equivalence with the markup before the
 // extraction rests on the headless capture of the activity routes against 2a797ea, not on this digest.
+// It was recomputed when the catalog Size control left controlsHtml: the other regions and the Request,
+// History and Totals controls of all 272 cases were checked equal to the earlier builders.
 test('builder markup for every activity fixture, variant and action is unchanged by the extraction', () => {
   const lines = [];
   for (const name of ['observed', 'loading', 'partial', 'unavailable', 'integrity-failed', 'reconnecting', 'capacity', 'events']) {
@@ -376,7 +323,7 @@ test('builder markup for every activity fixture, variant and action is unchanged
     for (const action of ['read-more', 'earlier', 'new', 'retry', 'retry-request', 'rebase']) lines.push(`${name}:${action}:` + digest(regionsOf(api.transition(model, action))));
   }
   assert.equal(lines.length, 272);
-  assert.equal(crypto.createHash('sha256').update(lines.join('\n')).digest('hex'), '75c6b696a4cdddbb10dca6c8171ba438a80251dcc2220d93c2d3fdb99a0ad173');
+  assert.equal(crypto.createHash('sha256').update(lines.join('\n')).digest('hex'), 'd836b4af4decc48f210991a51c971220889f002430ccd32d292a5783d3089f03');
 });
 
 test('the controller tolerates missing slots and registers its handlers once', () => {

@@ -6,11 +6,11 @@ The aliases and the route grammar are defined in `v2/scripts/route-aliases.js`. 
 
 ## Unchanged routes
 
-The routes of the base screens, the brand book, the foundations and the components keep their ids (for example `needs-you/waiting`, `workflow-editor/node-selected`, `components/button`), except the nine retired routes listed under "Retired routes".
+The routes of the base screens, the brand book, the foundations and the components keep their ids (for example `needs-you/waiting`, `workflow-editor/node-selected`, `components/button`), except the 27 retired routes listed under "Retired routes".
 
 ## Retired routes
 
-The owner replaced these designs on 2026-11-08. The route still opens, and it shows the replacement. The address bar then shows the replacement route. The decisions record gives the basis and the commits where the old design can be seen.
+The owner replaced these designs on 2026-11-08, nine of them by answering the replacement questions and eighteen by accepting the centered and transcript redraws. The route still opens, and it shows the replacement. The address bar then shows the replacement route. The decisions record gives the basis and the commits where the old design can be seen.
 
 | Retired route | Opens | Screen and state |
 | --- | --- | --- |
@@ -18,19 +18,39 @@ The owner replaced these designs on 2026-11-08. The route still opens, and it sh
 | `task/done` | `task/changes-single` | Task · Changes · one repository |
 | `task/failed` | `task/failed-continue` | Task · Failed · Continue in a new session |
 | `new-task/default` | `new-task/centered-empty` | New task · Centered composer · Empty |
-| `new-task/sidebar-collapsed` | `sidebar/collapsed` | Sidebar · Shell · Collapsed rail |
-| `new-task/harness-menu` | `new-task/centered-ready` | New task · Centered composer · One line ready |
+| `new-task/sidebar-collapsed` | `sidebar/centered-collapsed` | Sidebar · Centered shell · Collapsed rail |
+| `new-task/harness-menu` | `new-task/centered-harness-open` | New task · Centered composer · Harness picker open |
 | `new-task/composer-ready` | `new-task/centered-ready` | New task · Centered composer · One line ready |
 | `new-task/composer-unknown` | `new-task/centered-unknown` | New task · Centered composer · Outcome unknown |
 | `new-task/options-open` | `new-task/centered-options` | New task · Centered composer · Options open |
+| `new-task/composer-loading` | `new-task/centered-loading` | New task · Centered composer · Checking options |
+| `new-task/composer-unqualified` | `new-task/centered-unqualified` | New task · Centered composer · Unavailable options |
+| `new-task/composer-invalid` | `new-task/centered-invalid` | New task · Centered composer · Validation |
+| `new-task/composer-starting` | `new-task/centered-starting` | New task · Centered composer · Starting |
+| `new-task/composer-refused` | `new-task/centered-refused` | New task · Centered composer · Refused |
+| `new-task/options-closed` | `new-task/centered-options-closed` | New task · Centered composer · Task options closed |
+| `sidebar/expanded` | `new-task/centered-empty` | New task · Centered composer · Empty |
+| `sidebar/centered-expanded` | `new-task/centered-empty` | New task · Centered composer · Empty |
+| `sidebar/collapsed` | `sidebar/centered-collapsed` | Sidebar · Centered shell · Collapsed rail |
+| `sidebar/minimum` | `sidebar/centered-minimum` | Sidebar · Centered shell · Minimum window |
+| `task/activity-observed` | `task/transcript-observed` | Task · Task transcript · Observed activity |
+| `task/activity-loading` | `task/transcript-loading` | Task · Task transcript · Loading observations |
+| `task/activity-partial` | `task/transcript-partial` | Task · Task transcript · Incomplete history |
+| `task/activity-unavailable` | `task/transcript-unavailable` | Task · Task transcript · Observation unavailable |
+| `task/activity-integrity-failed` | `task/transcript-integrity-failed` | Task · Task transcript · Request integrity failure |
+| `task/activity-reconnecting` | `task/transcript-reconnecting` | Task · Task transcript · Reconnect and source change |
+| `task/activity-capacity` | `task/transcript-capacity` | Task · Task transcript · Reading window at capacity |
+| `task/activity-sources` | `task/transcript-sources` | Task · Task transcript · Normalized and recovered sources |
 
-The earlier routes `m04-proposal/composer-ready`, `m04-proposal/composer-unknown` and `m04-proposal/advanced` (listed below) reach the same replacements through their alias followed by the redirect.
+The earlier routes `m04-proposal/*` and `d2b-proposal/*` of the retired states (listed below) reach the same replacements through their alias followed by the redirect. `sidebar/centered-expanded` was a duplicate of `new-task/centered-empty` and opens it.
 
-## Provisional redraw routes
+A redirect carries a view only when the replacement declares it. The eight `task/activity-*` routes declared no views, so `#task/activity-observed/events` opens `#task/transcript-observed/events` because the replacement declares `events`. A redirect that carries no view opens the replacement with the right pane closed; the pane opens at load only with the `/events` view.
 
-These routes are new canonical routes with no earlier name. Each redraws an earlier state that stays listed until the owner decides ([decisions](decisions/README.md#provisional-redraws-awaiting-owner-review)). They are not aliases or redirects.
+## Redraw routes
 
-| Provisional redraw | Earlier route | Events open |
+These routes are canonical routes with no earlier name; they are not aliases or redirects. The owner accepted them on 2026-11-08 ([decisions](decisions/README.md#centered-and-transcript-redraws)), and each earlier layout they redraw is now a retired route above.
+
+| Redraw route | Replaces | Events open |
 | --- | --- | --- |
 | `new-task/centered-loading` | `new-task/composer-loading` | |
 | `new-task/centered-unqualified` | `new-task/composer-unqualified` | |
@@ -38,7 +58,7 @@ These routes are new canonical routes with no earlier name. Each redraws an earl
 | `new-task/centered-starting` | `new-task/composer-starting` | |
 | `new-task/centered-refused` | `new-task/composer-refused` | |
 | `new-task/centered-options-closed` | `new-task/options-closed` | |
-| `sidebar/centered-expanded` | `sidebar/expanded` | |
+| `new-task/centered-harness-open` | `new-task/harness-menu` | |
 | `sidebar/centered-collapsed` | `sidebar/collapsed` | |
 | `sidebar/centered-minimum` | `sidebar/minimum` | |
 | `task/transcript-observed` | `task/activity-observed` | `#task/transcript-observed/events` |
@@ -50,6 +70,8 @@ These routes are new canonical routes with no earlier name. Each redraws an earl
 | `task/transcript-capacity` | `task/activity-capacity` | `#task/transcript-capacity/events` |
 | `task/transcript-sources` | `task/activity-sources` | `#task/transcript-sources/events` |
 
+`sidebar/centered-expanded` is listed under "Retired routes": it duplicated `new-task/centered-empty`.
+
 ### Route grammar
 
 A route is `#family/state[/view][/appearance]`. A state may declare views (`views` in the registry); only the eight transcript routes do, and each declares `events`, which opens the right pane on Events at load. The segment after the state is a view only when that state declares it, and an appearance only when it is `light`, `dark` or `system`. Any other segment is dropped when the address is canonicalised, so an undeclared view never opens the overview. An alias or a redirect carries the view to its target and drops it when the target does not declare it. Opening or closing the pane by clicking does not rewrite the address.
@@ -58,32 +80,32 @@ A route is `#family/state[/view][/appearance]`. A state may declare views (`view
 
 | Earlier route | Current route | Screen and state | Listed in navigation |
 | --- | --- | --- | --- |
-| `d2b-proposal/observed` | `task/activity-observed` | Task · Observed captured activity | Yes |
-| `d2b-proposal/loading` | `task/activity-loading` | Task · Loading observations | Yes |
-| `d2b-proposal/partial` | `task/activity-partial` | Task · Incomplete captured history | Yes |
-| `d2b-proposal/unavailable` | `task/activity-unavailable` | Task · Observation unavailable | Yes |
-| `d2b-proposal/integrity-failed` | `task/activity-integrity-failed` | Task · Request integrity failure | Yes |
-| `d2b-proposal/reconnecting` | `task/activity-reconnecting` | Task · Reconnect and source change | Yes |
-| `d2b-proposal/capacity` | `task/activity-capacity` | Task · Reading window at capacity | Yes |
-| `d2b-proposal/events` | `task/activity-sources` | Task · Normalized and recovered sources | Yes |
+| `d2b-proposal/observed` | `task/activity-observed` | Task · Observed captured activity | No, retired: opens `task/transcript-observed` |
+| `d2b-proposal/loading` | `task/activity-loading` | Task · Loading observations | No, retired: opens `task/transcript-loading` |
+| `d2b-proposal/partial` | `task/activity-partial` | Task · Incomplete captured history | No, retired: opens `task/transcript-partial` |
+| `d2b-proposal/unavailable` | `task/activity-unavailable` | Task · Observation unavailable | No, retired: opens `task/transcript-unavailable` |
+| `d2b-proposal/integrity-failed` | `task/activity-integrity-failed` | Task · Request integrity failure | No, retired: opens `task/transcript-integrity-failed` |
+| `d2b-proposal/reconnecting` | `task/activity-reconnecting` | Task · Reconnect and source change | No, retired: opens `task/transcript-reconnecting` |
+| `d2b-proposal/capacity` | `task/activity-capacity` | Task · Reading window at capacity | No, retired: opens `task/transcript-capacity` |
+| `d2b-proposal/events` | `task/activity-sources` | Task · Normalized and recovered sources | No, retired: opens `task/transcript-sources` |
 | `m04-proposal/amendment-empty` | `new-task/centered-empty` | New task · Centered composer · Empty | Yes |
-| `m04-proposal/composer-loading` | `new-task/composer-loading` | New task · Composer · Checking options | Yes |
+| `m04-proposal/composer-loading` | `new-task/composer-loading` | New task · Composer · Checking options | No, retired: opens `new-task/centered-loading` |
 | `m04-proposal/composer-ready` | `new-task/composer-ready` | New task · Composer · Ready | No, retired: opens `new-task/centered-ready` |
-| `m04-proposal/composer-unqualified` | `new-task/composer-unqualified` | New task · Composer · Unavailable options | Yes |
-| `m04-proposal/composer-invalid` | `new-task/composer-invalid` | New task · Composer · Validation | Yes |
-| `m04-proposal/composer-starting` | `new-task/composer-starting` | New task · Composer · Starting | Yes |
-| `m04-proposal/composer-refused` | `new-task/composer-refused` | New task · Composer · Refused | Yes |
+| `m04-proposal/composer-unqualified` | `new-task/composer-unqualified` | New task · Composer · Unavailable options | No, retired: opens `new-task/centered-unqualified` |
+| `m04-proposal/composer-invalid` | `new-task/composer-invalid` | New task · Composer · Validation | No, retired: opens `new-task/centered-invalid` |
+| `m04-proposal/composer-starting` | `new-task/composer-starting` | New task · Composer · Starting | No, retired: opens `new-task/centered-starting` |
+| `m04-proposal/composer-refused` | `new-task/composer-refused` | New task · Composer · Refused | No, retired: opens `new-task/centered-refused` |
 | `m04-proposal/composer-unknown` | `new-task/composer-unknown` | New task · Composer · Outcome unknown | No, retired: opens `new-task/centered-unknown` |
 | `m04-proposal/amendment-ready` | `new-task/centered-ready` | New task · Centered composer · One line ready | Yes |
 | `m04-proposal/amendment-growing` | `new-task/centered-growing` | New task · Centered composer · Growing | Yes |
 | `m04-proposal/amendment-capped` | `new-task/centered-capped` | New task · Centered composer · Capped at six lines | Yes |
 | `m04-proposal/amendment-unknown` | `new-task/centered-unknown` | New task · Centered composer · Outcome unknown | Yes |
 | `m04-proposal/advanced` | `new-task/options-open` | New task · Task options · Open | No, retired: opens `new-task/centered-options` |
-| `m04-proposal/advanced-closed` | `new-task/options-closed` | New task · Task options · Closed | Yes |
+| `m04-proposal/advanced-closed` | `new-task/options-closed` | New task · Task options · Closed | No, retired: opens `new-task/centered-options-closed` |
 | `m04-proposal/amendment-options` | `new-task/centered-options` | New task · Centered composer · Options open | Yes |
-| `m04-proposal/shell` | `sidebar/expanded` | Sidebar · Shell · Expanded | Yes |
-| `m04-proposal/shell-collapsed` | `sidebar/collapsed` | Sidebar · Shell · Collapsed rail | Yes |
-| `m04-proposal/shell-narrow` | `sidebar/minimum` | Sidebar · Shell · Minimum window | Yes |
+| `m04-proposal/shell` | `sidebar/expanded` | Sidebar · Shell · Expanded | No, retired: opens `new-task/centered-empty` |
+| `m04-proposal/shell-collapsed` | `sidebar/collapsed` | Sidebar · Shell · Collapsed rail | No, retired: opens `sidebar/centered-collapsed` |
+| `m04-proposal/shell-narrow` | `sidebar/minimum` | Sidebar · Shell · Minimum window | No, retired: opens `sidebar/centered-minimum` |
 | `m04-proposal/history-empty` | `sidebar/history-empty` | Sidebar · History · Empty | Yes |
 | `m04-proposal/history-loading` | `sidebar/history-loading` | Sidebar · History · Loading | Yes |
 | `m04-proposal/history-older` | `sidebar/history-older` | Sidebar · History · Loading older | Yes |

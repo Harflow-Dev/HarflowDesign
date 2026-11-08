@@ -15,8 +15,8 @@
     'amendment-options': 'Review the delivery queue',
     'amendment-unknown': 'Review the nightly dependency audit results for the HarflowMCP repository and prepare a short written digest. For each failed run, name the owning workflow, the failing node, the harness and model that reported it, and the turn where the failure appeared. Separate genuine regressions from known upstream flakes by checking the two most recent audited revisions side by side. Where a fix is obvious, open a follow-up task that names the repository, quotes the failing node, and lists the affected workflows so the next reviewer can start immediately. Do not start any code changes yourself. Post the finished digest with one line per failure, a short overall conclusion, and the follow-up task link, so the queue can be triaged before the next nightly run.'
   };
-  // Provisional centered redraws of six bottom-layout composer states and three shell states. Each mount
-  // copies the fixture of its source mount; only the layout differs.
+  // Owner-approved centered redraws of six bottom-layout composer states and two shell states, and the open
+  // harness picker. Each mount copies the fixture of its source mount; only the layout differs.
   var REDRAW_SOURCES = {
     'centered-loading': 'composer-loading',
     'centered-unqualified': 'composer-unqualified',
@@ -24,13 +24,13 @@
     'centered-starting': 'composer-starting',
     'centered-refused': 'composer-refused',
     'centered-options-closed': 'advanced-closed',
-    'centered-shell': 'shell',
+    'centered-harness-open': 'amendment-ready',
     'centered-shell-collapsed': 'shell-collapsed',
     'centered-shell-narrow': 'shell-narrow'
   };
   function has(map, key) { return Object.prototype.hasOwnProperty.call(map, key); }
   function isRedraw(route) { return has(REDRAW_SOURCES, route); }
-  // The centered layout: the six approved amendment mounts and the six provisional redraws.
+  // The centered layout: the six amendment mounts and the redraw mounts.
   function isAmendment(route) { return has(AMENDMENT_DRAFTS, route) || isRedraw(route); }
   function promptOneLineHeight(lineHeight, verticalExtra) { return lineHeight + verticalExtra; }
   function promptCapHeight(lineHeight, verticalExtra) { return lineHeight * AMENDMENT_LINE_CAP + verticalExtra; }
@@ -44,8 +44,16 @@
     return { above: above, below: below, belowWins: below > above, maxHeight: Math.max(0, Math.min(400, Math.max(above, below))) };
   }
   function create(route) {
-    if (isRedraw(route)) { var copy = create(REDRAW_SOURCES[route]); copy.route = route; return copy; }
-    var s = { route: route, draft: '', repository: 'HarflowMCP', harness: 'Claude Code', model: 'Opus 5.5', qualification: 'ready', revision: 0, status: 'idle', effort: 'default', turns: '12', approvals: 'harness', access: 'write_in_repo', enforcement: 'supported', advanced: route === 'advanced', collapsed: route === 'shell-collapsed', narrow: route === 'shell-narrow', runtime: 'qualified', listing: 'ready', selected: 'retry-budget', rows: ['retry-budget','events-reader'], fixtures: false, remembered: {} };
+    if (isRedraw(route)) {
+      var copy = create(REDRAW_SOURCES[route]); copy.route = route;
+      if (route === 'centered-harness-open') {
+        // The harness picker is open and an unavailable harness is selected, so the gated state shows with
+        // the qualification message the composer already gives.
+        copy.harness = 'Unavailable harness'; copy.model = 'Default'; copy.qualification = 'unqualified'; copy.picker = 'harness';
+      }
+      return copy;
+    }
+    var s = { route: route, draft: '', repository: 'HarflowMCP', harness: 'Claude Code', model: 'Opus 5.5', qualification: 'ready', revision: 0, status: 'idle', effort: 'default', turns: '12', approvals: 'harness', access: 'write_in_repo', enforcement: 'supported', advanced: route === 'advanced', collapsed: route === 'shell-collapsed', narrow: route === 'shell-narrow', runtime: 'qualified', listing: 'ready', selected: 'retry-budget', picker: '', rows: ['retry-budget','events-reader'], fixtures: false, remembered: {} };
     if (route.indexOf('composer-')===0 || route==='advanced' || route==='advanced-closed') s.draft='Review the delivery queue';
     if (isAmendment(route)) {
       s.draft = AMENDMENT_DRAFTS[route] !== undefined ? AMENDMENT_DRAFTS[route] : '';
@@ -110,14 +118,14 @@
       var boards = amendment
         ? (isRedraw(route)
           ? (route.indexOf('centered-shell')===0
-            ? [['centered-shell','Expanded'],['centered-shell-collapsed','Collapsed'],['centered-shell-narrow','Minimum']]
-            : [['centered-loading','Loading'],['centered-unqualified','Unavailable'],['centered-invalid','Validation'],['centered-starting','Starting'],['centered-refused','Refused'],['centered-options-closed','Options closed']])
+            ? [['amendment-empty','Expanded'],['centered-shell-collapsed','Collapsed'],['centered-shell-narrow','Minimum']]
+            : [['centered-loading','Loading'],['centered-unqualified','Unavailable'],['centered-invalid','Validation'],['centered-starting','Starting'],['centered-refused','Refused'],['centered-options-closed','Options closed'],['centered-harness-open','Harness open']])
           : [['amendment-empty','Empty'],['amendment-ready','One line'],['amendment-growing','Growing'],['amendment-capped','Capped'],['amendment-options','Options open'],['amendment-unknown','Unknown']])
-        : [['shell','Shell'],['amendment-ready','Composer'],['amendment-options','Advanced'],['history-retained','History'],['runtime-checking','Runtime']];
+        : [['amendment-empty','Shell'],['amendment-ready','Composer'],['amendment-options','Advanced'],['history-retained','History'],['runtime-checking','Runtime']];
       var boardLinks = boards.map(function (board) { return '<a href="#' + H.routeFor('m04', board[0]) + '/' + theme + '">' + board[1] + '</a>'; }).join('');
       var strips = H.catalogStrips.m04;
-      var notice = isRedraw(route) ? (route.indexOf('centered-shell')===0 ? strips.provisionalShellNotice : strips.provisionalNotice) : amendment ? strips.centeredNotice : strips.baselineNotice;
-      var heading = isRedraw(route) ? strips.provisionalHeading : amendment ? strips.centeredHeading : strips.baselineHeading;
+      var notice = isRedraw(route) ? strips.redrawNotice : amendment ? strips.centeredNotice : strips.baselineNotice;
+      var heading = isRedraw(route) ? (route.indexOf('centered-shell')===0 ? strips.redrawShellHeading : strips.redrawHeading) : amendment ? strips.centeredHeading : strips.baselineHeading;
       catalog.innerHTML = '<div class="hd-m04-actions"><strong>' + heading + '</strong>' + boardLinks + '<label>Frame <select data-m04-field="size"><option value="reference"' + (!s.narrow?' selected':'') + '>1280 × 800</option><option value="minimum"' + (s.narrow?' selected':'') + '>1000 × 620</option></select></label>' + button('Reset fixture','reset') + '</div><p>' + notice + '</p><details class="hd-m04-fixtures"'+(s.fixtures?' open':'')+'><summary>Fixture controls</summary><div class="hd-m04-actions">' + controls + '</div></details>';
       var base = template(s.collapsed ? 'new-task/sidebar-collapsed' : 'new-task/default');
       var app = base.querySelector('.hd-app'); app.removeAttribute('style'); app.classList.add('hd-m04-app'); app.setAttribute('data-theme',theme);
@@ -172,9 +180,9 @@
       var bar=app.querySelector('.hd-composer__bar');
       var locked=['starting','unknown','created'].includes(s.status);
       function options(values,current){var all=values.slice();if(!all.includes(current))all.push(current);return all.map(function(v){return '<option value="'+esc(v)+'"'+(v===current?' selected':'')+'>'+esc(v)+(values.includes(v)?'':' — unavailable for this harness')+'</option>';}).join('');}
-      function pill(label,icon,content){return '<details class="hd-m04-picker"><summary class="hd-pill"><span class="hd-i hd-i-'+icon+'" aria-hidden="true"></span><span class="hd-pill__label">'+esc(label)+'</span><span class="hd-i hd-i-chevron-down" aria-hidden="true"></span></summary><div class="hd-menu hd-m04-picker-menu">'+content+'</div></details>';}
+      function pill(label,icon,content,key){return '<details class="hd-m04-picker"'+(key&&s.picker===key?' open':'')+(key&&route==='centered-harness-open'?' data-m04-picker="'+key+'"':'')+'><summary class="hd-pill"><span class="hd-i hd-i-'+icon+'" aria-hidden="true"></span><span class="hd-pill__label">'+esc(label)+'</span><span class="hd-i hd-i-chevron-down" aria-hidden="true"></span></summary><div class="hd-menu hd-m04-picker-menu">'+content+'</div></details>';}
       function field(label,key,values){return '<label class="hd-m04-menu-field">'+label+'<select data-m04-field="'+key+'"'+(locked?' disabled':'')+'>'+options(values,s[key])+'</select></label>';}
-      bar.innerHTML='<span class="hd-m04-options-anchor"><button type="button" class="hd-btn hd-btn--icon hd-m04-options-trigger" data-m04="options" aria-label="More task options" title="More task options" aria-expanded="'+s.advanced+'" aria-controls="m04-task-options" aria-describedby="m04-options-description"><span class="hd-i hd-i-plus" aria-hidden="true"></span><span class="hd-m04-options-dot"'+(customized(s)?'':' hidden')+' aria-hidden="true"></span><span class="hd-sr" id="m04-options-description">'+(customized(s)?'Customized options':'Default options')+'</span></button></span>'+pill(s.repository,'folder',field('Repository / recent folders','repository',['HarflowMCP','HarflowDesign','Unavailable folder']))+pill(s.harness+' · '+s.model,'harness',field('Harness','harness',['Claude Code','Codex','Mistral Vibe','Unavailable harness'])+field('Model','model',models(s.harness)))+pill({'read_only':'Read only','write_in_repo':'Can edit this repo','publish':'Can publish','unrestricted':'Broad access'}[s.access],'shield','<label class="hd-m04-menu-field">Access<select data-m04-field="access"'+(locked?' disabled':'')+'>'+['read_only','write_in_repo','publish','unrestricted'].map(function(v){return '<option value="'+v+'"'+(s.access===v?' selected':'')+'>'+({'read_only':'Read only','write_in_repo':'Can edit this repo','publish':'Can publish','unrestricted':'Broad access'})[v]+'</option>';}).join('')+'</select></label>')+'<span class="hd-composer__spacer"></span><button type="submit" class="hd-composer__send" aria-label="Start task"'+(problem(s)||s.status==='created'?' disabled':'')+'><span class="hd-i hd-i-arrow-up" aria-hidden="true"></span></button>';
+      bar.innerHTML='<span class="hd-m04-options-anchor"><button type="button" class="hd-btn hd-btn--icon hd-m04-options-trigger" data-m04="options" aria-label="More task options" title="More task options" aria-expanded="'+s.advanced+'" aria-controls="m04-task-options" aria-describedby="m04-options-description"><span class="hd-i hd-i-plus" aria-hidden="true"></span><span class="hd-m04-options-dot"'+(customized(s)?'':' hidden')+' aria-hidden="true"></span><span class="hd-sr" id="m04-options-description">'+(customized(s)?'Customized options':'Default options')+'</span></button></span>'+pill(s.repository,'folder',field('Repository / recent folders','repository',['HarflowMCP','HarflowDesign','Unavailable folder']))+pill(s.harness+' · '+s.model,'harness',field('Harness','harness',['Claude Code','Codex','Mistral Vibe','Unavailable harness'])+field('Model','model',models(s.harness)),'harness')+pill({'read_only':'Read only','write_in_repo':'Can edit this repo','publish':'Can publish','unrestricted':'Broad access'}[s.access],'shield','<label class="hd-m04-menu-field">Access<select data-m04-field="access"'+(locked?' disabled':'')+'>'+['read_only','write_in_repo','publish','unrestricted'].map(function(v){return '<option value="'+v+'"'+(s.access===v?' selected':'')+'>'+({'read_only':'Read only','write_in_repo':'Can edit this repo','publish':'Can publish','unrestricted':'Broad access'})[v]+'</option>';}).join('')+'</select></label>')+'<span class="hd-composer__spacer"></span><button type="submit" class="hd-composer__send" aria-label="Start task"'+(problem(s)||s.status==='created'?' disabled':'')+'><span class="hd-i hd-i-arrow-up" aria-hidden="true"></span></button>';
 
       var wrap=app.querySelector('.hd-composer').parentElement;
       var oldCaption=wrap.querySelector('p'); if(oldCaption) oldCaption.remove();
@@ -255,7 +263,7 @@
       if(a==='older'){location.hash='#'+H.routeFor('m04','history-older')+'/'+(host.getAttribute('data-theme')||'light');return;} render();
     }
     function submit(e){if(e.target.matches('.hd-composer')){e.preventDefault();start(s);render();}}
-    function toggle(e){if(e.target.matches('.hd-m04-fixtures'))s.fixtures=e.target.open;}
+    function toggle(e){if(e.target.matches('.hd-m04-fixtures'))s.fixtures=e.target.open;else if(route==='centered-harness-open'&&e.target.matches('.hd-m04-picker[data-m04-picker]'))s.picker=e.target.open?e.target.dataset.m04Picker:'';}
     host.addEventListener('input',input);host.addEventListener('change',change);host.addEventListener('click',click);host.addEventListener('submit',submit);host.addEventListener('toggle',toggle,true);
     host.addEventListener('keydown',keydown);document.addEventListener('click',outside);
     // Amendment only: prompt wrapping depends on the width, not the height, so

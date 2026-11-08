@@ -41,8 +41,8 @@ Recorded by [S03](../../../HarflowMCP/docs/migration-receipts/S03.md) against Ha
 
 | Capability | Status | v2 reference / gap |
 | --- | --- | --- |
-| Start task: repository, harness and model, access level, prompt | Accepted | `new-task/default` (retired; now opens `new-task/centered-empty`), `new-task/harness-menu` (retired; now opens `new-task/centered-ready`) |
-| Harness menu lists every harness the selected engine reports and qualifies, gated by its capability cells | Accepted (S03) | `new-task/harness-menu` (retired; now opens `new-task/centered-ready`, which does not draw the open harness menu, an open design question in the decisions README); Rust v1 backend scope is unchanged (below) |
+| Start task: repository, harness and model, access level, prompt | Accepted | `new-task/default` (retired; now opens `new-task/centered-empty`), `new-task/harness-menu` (retired; now opens `new-task/centered-harness-open`) |
+| Harness menu lists every harness the selected engine reports and qualifies, gated by its capability cells | Accepted (S03) | `new-task/harness-menu` (retired; now opens `new-task/centered-harness-open`, the centered composer's own harness picker open, with the fixtures of the closed centered states); Rust v1 backend scope is unchanged (below) |
 | Reasoning effort, turn limit and caller approvals where the backend supports them | Proposed | Gap G-NEWTASK-ADVANCED |
 | Permission/enforcement preview before start | Proposed | Safety observability; gap G-NEWTASK-ADVANCED |
 | Running and Recent work with older-history paging | Accepted | `new-task/default` (retired; now opens `new-task/centered-empty`); paging gap G-HISTORY |
@@ -70,7 +70,7 @@ Recorded by [S03](../../../HarflowMCP/docs/migration-receipts/S03.md) against Ha
 | Harness MCP registration install/update/remove and qualification | Accepted | `settings/harnesses` |
 | Global MCP approvals (existing human-only `mcp-allowlist`) | Accepted | `settings/mcp-approvals`; gap G-ALLOWLIST |
 | First run, runtime install/update, loading, engine unavailable | Accepted | `app-states/*`; gap G-TRANSPORT |
-| Appearance System/Light/Dark in sidebar footer and rail | Accepted | Components; `new-task/sidebar-collapsed` (retired; now opens `sidebar/collapsed`) |
+| Appearance System/Light/Dark in sidebar footer and rail | Accepted | Components; `new-task/sidebar-collapsed` (retired; now opens `sidebar/centered-collapsed`) |
 | Keyboard, focus, Reduce Motion, accessibility, narrow windows | Accepted | Gap G-ADAPTIVE |
 | Truthful enforcement, unknown and failure states | Accepted | Required on whichever surface displays the task; not a panel requirement |
 | Terminal takeover entry (human-only and ctl-only on the engine) | Accepted (owner, 2026-11-07) | `m05-proposal/overflow-running`, `m05-proposal/takeover-dialog` (now `task/overflow-running`, `task/takeover-dialog`); moved back into v1 from D12 |
