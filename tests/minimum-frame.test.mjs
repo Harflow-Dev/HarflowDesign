@@ -148,7 +148,7 @@ test('the loading drafts keep the approved specs; the variants drop the top bar 
     assert.deepEqual(v.slice(0, kept.length).map(op => `${op.kind} ${op.sel}`), kept.map(op => `${op.kind} ${mapSel(op.sel)}`), `${variant} keeps the other ops in order`);
     const added = v.slice(kept.length);
     assert.deepEqual(json(added.map(op => [op.kind, op.sel, op.name === undefined ? '-' : op.name, op.value === undefined ? '-' : op.value])), [
-      ['attr', meta, 'title', null], ['attr', meta, 'tabindex', null], ['attr', meta, 'role', null], ['remove', meta + ' .hd-sr', '-', '-'],
+      ['attr', meta, 'tabindex', null], ['attr', meta, 'role', null], ['remove', meta + ' .hd-sr', '-', '-'],
       ['hide', meta + ' .hd-dot', '-', '-'], ['hide', meta + ' .hd-topbar__meta-dot', '-', '-']]);
     assert.deepEqual(HFV2.skeletonSpecs[variant].chrome, HFV2.skeletonSpecs[base].chrome, `${variant} has the allowlist of ${base}`);
     assert.equal(HFV2.skeletonSpecs[variant].frame, HFV2.skeletonSpecs[base].frame);
@@ -530,4 +530,31 @@ test('the stylesheet: the canvas viewport scrolls, the meta layout is unchanged 
   assert.match(css, /\.hd-topbar__meta\[tabindex\]\{position:relative;z-index:6;/);
   // The neutral dot is the tertiary text colour, not the attention colour of an unsaved change.
   assert.match(css, /\.hd-topbar__meta-dot\{[^}]*background:var\(--text-tertiary\)/);
+});
+
+test('a render that is not a minimum state clears the Escape listener a minimum render left on the document', () => {
+  // The catalog calls clearMinimum for a route without a minimum, and only for those.
+  const run = runCatalog('menu-bar/busy-minimum');
+  const cleared = [];
+  run.H.clearMinimum = host => cleared.push(host);
+  run.rerender('#menu-bar/busy-minimum/dark');
+  assert.equal(cleared.length, 0, 'a minimum route does not call it');
+  run.rerender('#needs-you/waiting/light');
+  assert.equal(cleared.length, 1, 'a plain route calls it');
+  assert.ok(/if \(!d\.minimum\) HFV2\.clearMinimum\(els\.specimen\);/.test(read('scripts/catalog.js')));
+
+  // The real cleanup, on the fake DOM: render a minimum route, then clear it as the plain route does.
+  const meta = el('span', 'hd-topbar__meta');
+  meta.appendChild(new FakeText('Revision 7'));
+  const host = el('div', 'hdc-specimen', [el('div', 'hd-topbar', [meta])]);
+  const document = makeDocument();
+  const context = vm.createContext({ window: {}, document });
+  context.window = context;
+  vm.runInContext(read('scripts/minimum-frame.js'), context);
+  context.HFV2.applyMinimum(host, ['topbar-meta']);
+  assert.equal(document.listeners.filter(l => l.type === 'keydown').length, 1);
+  context.HFV2.clearMinimum(host);
+  assert.equal(document.listeners.length, 0, 'no listener is left on the document');
+  context.HFV2.clearMinimum(host);
+  assert.equal(document.removed.length, 1, 'clearing twice removes nothing more');
 });

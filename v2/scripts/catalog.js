@@ -230,6 +230,7 @@
 
     var html = HFV2.fill(HFV2.templates[d.templateKey] || '', mode, resolved);
     var meta = d.componentMeta;
+    if (!d.minimum) HFV2.clearMinimum(els.specimen);
     els.specimen.className = d.wrapperClass + (d.minimum ? ' hdc-specimen--minimum' : '');
     if (meta) {
       els.specimen.style.minHeight = meta.height + 'px';

@@ -423,7 +423,6 @@
       if (op.sel === graphLayer) return Object.assign({}, op, { sel: APP + ' .hd-canvas__scroll > div:first-child' });
       return op;
     });
-    ops.push({ sel: meta, kind: 'attr', name: 'title', value: null });
     ops.push({ sel: meta, kind: 'attr', name: 'tabindex', value: null });
     ops.push({ sel: meta, kind: 'attr', name: 'role', value: null });
     ops.push({ sel: meta + ' .hd-sr', kind: 'remove' });

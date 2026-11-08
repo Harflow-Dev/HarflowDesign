@@ -75,7 +75,7 @@ Each screen with a first load has one Loading state, drawn from the loaded state
 
 ## Minimum window
 
-Eleven approved states draw six loaded screens and five loading states at 1000 × 620 (see [the decisions record](decisions/README.md#minimum-window-drafts)). Each is derived from its loaded state; the loaded states are unchanged. The owner decided the sizes on 2026-11-08 (lanes 360, inspector 288, popover 380, meta drops first) and approved the states the same day, with three fixes: the canvas scrolls, the meta dot is focusable and shows its text on focus, and the wrapped label at 288 is accepted.
+Eleven approved states draw six loaded screens and five loading states at 1000 × 620 (see [the decisions record](decisions/README.md#minimum-window)). Each is derived from its loaded state; the loaded states are unchanged. The owner decided the sizes on 2026-11-08 (lanes 360, inspector 288, popover 380, meta drops first) and approved the states the same day, with three fixes: the canvas scrolls, the meta dot is focusable and shows its text on focus, and the wrapped label at 288 is accepted.
 
 | Family | State | Route | Derived from |
 | --- | --- | --- | --- |

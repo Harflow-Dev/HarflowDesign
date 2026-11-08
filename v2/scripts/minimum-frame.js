@@ -1,8 +1,9 @@
 // Minimum window drafts. HFV2.applyMinimum(host, fixes) runs after a loaded static screen has rendered into a
 // specimen that is drawn at 1000 × 620. It wraps, moves or hides existing nodes, wraps a bare text node, creates empty
 // wrapper elements and one empty decorative dot per top bar meta, sets tabindex, role and aria-hidden, moves an
-// aria-label verbatim, and installs the listeners that show the meta text on hover and focus. It never creates text
-// content. The CSS is minimum-frame.css.
+// aria-label verbatim, and installs the listeners that show the meta text on hover and focus. The only runtime state is
+// the is-dismissed class, which the Escape handling toggles on a meta. It never creates text content. The CSS is
+// minimum-frame.css.
 (function () {
   'use strict';
   var H = (window.HFV2 = window.HFV2 || {});
@@ -121,8 +122,12 @@
   var FIXES = { sidebar: sidebar, lanes: lanes, canvas: canvas, inspector: inspector, 'topbar-meta': topbarMeta, 'editor-topbar': topbarMeta, popover: popover };
 
   H.minimumFixes = Object.keys(FIXES);
-  H.applyMinimum = function (host, fixes) {
+  // Removes the Escape listener a render left on the document. A render that is not a minimum state calls this.
+  H.clearMinimum = function (host) {
     if (host.__hdcMinEscape) { document.removeEventListener('keydown', host.__hdcMinEscape); host.__hdcMinEscape = null; }
+  };
+  H.applyMinimum = function (host, fixes) {
+    H.clearMinimum(host);
     (fixes || []).forEach(function (name) {
       if (!FIXES[name]) throw new Error('Unknown minimum fix ' + name);
       FIXES[name](host);
