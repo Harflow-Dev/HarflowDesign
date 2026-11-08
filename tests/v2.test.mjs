@@ -88,7 +88,7 @@ test('registry routes are unique and every descriptor resolves to a template, gu
     }
   }
   const mountIds = {
-    m04: [...HFV2.m04ProposalStates, ...HFV2.m04AmendmentStates, ...HFV2.m04RedrawStates].map(x => x.id),
+    m04: [...HFV2.m04ProposalStates, ...HFV2.m04AmendmentStates, ...HFV2.m04RedrawStates, ...HFV2.m04PendingStates].map(x => x.id),
     m05: HFV2.m05ProposalStates.map(x => x.id),
     messages: HFV2.messageStates.map(x => x.id)
   };
@@ -369,7 +369,7 @@ test('aliases resolve old routes without shadowing or chaining, and land on a li
   const entries = Object.entries(aliases);
   // The transcript and queued-message renderers and the centered redraws are excluded: their routes are new canonical routes with no earlier name.
   // The retired duplicate shell state had no earlier name either.
-  const redrawMounts = new Set(HFV2.m04RedrawStates.map(x => x.id));
+  const redrawMounts = new Set([...HFV2.m04RedrawStates, ...HFV2.m04PendingStates].map(x => x.id));
   const nameless = new Set(['sidebar/centered-expanded']);
   assert.equal(entries.length, descriptors.filter(d => d.renderer && !d.skeleton && d.renderer !== 'transcript' && d.renderer !== 'messages' && !(d.renderer === 'm04' && redrawMounts.has(d.mount))).length + retired.filter(e => e.renderer && !nameless.has(e.route)).length, 'every renderer route has exactly one old route, retired ones included, except the redraws');
   for (const [old, target] of entries) {
@@ -736,8 +736,15 @@ const TRANSCRIPT_REDRAWS = ['observed', 'loading', 'partial', 'unavailable', 'in
 const stateOfRoute = route => { const [f, s] = route.split('/'); return [HFV2.findFamily(f), HFV2.findState(HFV2.findFamily(f), s)]; };
 const DECISION = { 'new-task': 'Centered composer', sidebar: 'Sidebar', task: 'Task transcript' };
 
-test('one redraw is pending, the exact-action approval, and the catalog notes the pair outside the specimen', () => {
-  assert.deepEqual(JSON.parse(JSON.stringify(pending)), [{ older: 'task/approval', newer: 'task/approval-exact' }]);
+test('two redraws are pending, the exact-action approval and the starting state without a status row, and the catalog notes the pairs outside the specimen', () => {
+  assert.deepEqual(JSON.parse(JSON.stringify(pending)), [{ older: 'task/approval', newer: 'task/approval-exact' }, { older: 'new-task/centered-starting', newer: 'new-task/centered-starting-plain' }]);
+  assert.equal(stateOfRoute('new-task/centered-starting')[1].status, 'approved', 'the earlier starting state keeps its approval');
+  assert.equal(stateOfRoute('new-task/centered-starting-plain')[1].status, 'provisional');
+  assert.equal(HFV2.describe('new-task/centered-starting-plain').approval, 'Provisional · not approved');
+  // The runtime card in the sidebar is a standalone draft: no pair, and the approved runtime and setup states stay as they are.
+  assert.equal(stateOfRoute('harness-runtime/installing-sidebar')[1].status, 'provisional');
+  assert.ok(/open owner question: card placement/.test(HFV2.describe('harness-runtime/installing-sidebar').approval));
+  for (const route of ['harness-runtime/installing', 'app-states/setup']) { assert.equal(stateOfRoute(route)[1].status, 'approved'); assert.ok(!pending.some(pair => pair.older === route || pair.newer === route), `${route} has no pending pair`); }
   for (const route of ['task/approval', 'task/approval-exact']) assert.ok(routeSet.has(route), `${route} stays listed`);
   assert.equal(stateOfRoute('task/approval')[1].status, 'approved', 'the earlier state keeps its approval');
   assert.equal(stateOfRoute('task/approval-exact')[1].status, 'provisional');

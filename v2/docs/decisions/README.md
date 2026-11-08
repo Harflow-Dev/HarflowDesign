@@ -16,6 +16,7 @@ Routes are written as the current route, with the route used before the informat
 | Centered composer amendment, with the unified sidebar scroll | Start work | Approved, separately from the entry direction | The owner, 2026-11-06 | `9d64bfd` | `new-task/centered-empty`, `centered-ready`, `centered-growing`, `centered-capped`, `centered-options`, `centered-unknown` (`m04-proposal/amendment-*`) | [m04-centered-composer-proposal.md](m04-centered-composer-proposal.md) |
 | Centered and transcript redraws | Start work; Task | Approved | The owner, 2026-11-08 ("Yes, accept all", relayed by the coordinator) | `b19520c` (base `3f12d29`); the hint under the Harness select of `new-task/centered-harness-open` follows in `48a54d3`; the gated option follows in `19365d9` | `new-task/centered-loading`, `centered-unqualified`, `centered-invalid`, `centered-starting`, `centered-refused`, `centered-options-closed`, `centered-harness-open`; `sidebar/centered-collapsed`, `centered-minimum`; `task/transcript-observed`, `transcript-loading`, `transcript-partial`, `transcript-unavailable`, `transcript-integrity-failed`, `transcript-reconnecting`, `transcript-capacity`, `transcript-sources`. Eighteen earlier states are retired (see Retired designs) | This file ([Centered and transcript redraws](#centered-and-transcript-redraws)), [m04-centered-composer-proposal.md](m04-centered-composer-proposal.md) |
 | Queued messages and approval states (provisional drafts) | Task; Needs you; Menu bar | Provisional, not approved | None. Drawn on 2026-11-08 at the coordinator's request, from existing contract meaning only | The commit titled "Add provisional queued-message and approval state drafts" (base `fec5719`), and the commit titled "Drop the two drafts without a contract surface and tidy records" | `task/message-*` (eight states), `task/approval-exact`, `task/approval-stale`, `task/approval-expired`, `task/approval-answered-elsewhere`, `task/approval-refused`, `task/approval-uncertain`, `needs-you/approval-stale`, `needs-you/approval-expired`, `needs-you/answered-elsewhere`, `needs-you/checkpoint-stale`, `menu-bar/approval-stale`, `menu-bar/answered-elsewhere`. Pending redraw: `task/approval` by `task/approval-exact` | `v2/scripts/screens-messages.js`, `v2/scripts/messages-screen.js`, `v2/styles/messages-screen.css`, `v2/scripts/screens-approval-states.js`, `v2/styles/approval-states.css` |
+| Starting row and runtime card (provisional drafts) | Start work; Settings and setup | Provisional, not approved | None. Drawn on 2026-11-08 after owner testing; open owner question: card placement; parked for the already-set-up, runtime-updating case; not-ready first run stays as approved | The commit titled "Add provisional redraws without the starting row and with the runtime card in the sidebar" (base `6ed567f`) | `new-task/centered-starting-plain`, `harness-runtime/installing-sidebar` | [Starting row and runtime card](#starting-row-and-runtime-card-provisional) |
 | Loading states | All screens with a first load | Approved | The owner, 2026-11-08 (`sidebar/loading` in the redraw decision; the other 15 states and the shimmer primitive: "I see the design and I think all looks good. I approve", relayed by the coordinator) | `8f52ad3` (the primitive and specs), `28f5066` (the start work and task states, the sidebar approval and the retirement of `sidebar/history-loading`), `a4a2c82` (the other states); review fixes `abb416c` and `ba8c928` (the approved design); approval recorded in the commit titled "Approve the loading states" | `new-task/loading`, `sidebar/loading`, `task/loading`, `task/loading-pane`, `parallel-group/loading`, `needs-you/loading`, `menu-bar/loading`, `workflows/loading`, `workflow-editor/loading`, `workflow-run/loading`, `workflow-run/loading-parallel`, `resources/loading`, `statistics/loading`, `settings/loading-general`, `settings/loading-harnesses`, `settings/loading-mcp-approvals`, `components/skeleton-shimmer` | `v2/scripts/skeleton.js`, `v2/scripts/skeleton-specs.js`, `v2/styles/skeleton.css`, `v2/scripts/screens-loading-work.js`, `v2/scripts/screens-loading-more.js` |
 | Minimum window (1000 × 620) | Needs you, Parallel group, Workflow run, Workflow editor, Menu bar | Approved | The owner, 2026-11-08: "Yes, approve", the answer to "Approve the 11 minimum-window screens with my three fixes?", relayed by the coordinator. The three fixes: the canvas scrolls, as on Mac; the meta dot is keyboard-focusable and shows its text on focus; the wrapped label at 288 is accepted. Sizes decided earlier the same day ("Yes, take them") | `9fca1fb`, `70ba6ab`, `c15dae3`, `6428285`, `1279752` and `c147372` (the states, the sizing decisions, the orchestrator and loading states, review fixes, and the canvas and meta fixes, in the commit titled "Scroll the workflow canvas and make the top bar meta focusable at the minimum window"); approval recorded in the commit titled "Approve the minimum window states" | `workflow-editor/orchestrator-minimum`, `needs-you/loading-minimum`, `parallel-group/loading-minimum`, `workflow-run/loading-parallel-minimum`, `workflow-editor/loading-minimum`, `menu-bar/loading-minimum`, `needs-you/waiting-minimum`, `parallel-group/lanes-minimum`, `workflow-run/parallel-minimum`, `workflow-editor/node-selected-minimum`, `menu-bar/busy-minimum` | `v2/scripts/screens-minimum.js`, `v2/scripts/minimum-frame.js`, `v2/styles/minimum-frame.css`, `tests/minimum-frame.test.mjs` |
 | Open design questions (five answers) | Task, Workflow run, Settings, Task store, Task contract blockers | Recorded | The owner, 2026-11-08: "Yes, all five", the answer to the coordinator's five recommendations, relayed by the coordinator | The commit titled "Record the owner's decisions on the open design questions" | `task/loading` (title note only); no state is added or changed | This file ([Open design questions](#open-design-questions)), [migration-coverage.md](../migration-coverage.md) |
@@ -103,7 +104,7 @@ The owner decided on 2026-11-08, answering "Yes, accept all", relayed by the coo
 | 5 | The open harness pill menu is drawn in the centered composer as the new state `new-task/centered-harness-open`, approved by extension |
 | 6 | Sidebar loading: option B. `sidebar/loading` (skeleton rows) is approved and `sidebar/history-loading` is retired and opens it; see [Loading states](#loading-states) |
 
-Sixteen redraws survive as approved states, and `sidebar/centered-expanded` is retired as a duplicate. Eighteen earlier states are retired (see [Retired designs](#retired-designs)): the 17 earlier states and the duplicate. `HFV2.pendingRedraw` (`v2/scripts/supersessions.js`) was empty when these were approved; the mechanism stays for the next redraw, and one redraw is pending now (see [Queued messages and approval states](#queued-messages-and-approval-states-provisional)). Each of these redraws reuses the fixtures and copy of its earlier state; only the layout changes, and no in-app copy is invented. A pending redraw may also change copy when an owner decision requires it: `task/approval-exact` removes a button because of the exact-action decision of S03. The earlier states stay in Git history at `3f12d29`.
+Sixteen redraws survive as approved states, and `sidebar/centered-expanded` is retired as a duplicate. Eighteen earlier states are retired (see [Retired designs](#retired-designs)): the 17 earlier states and the duplicate. `HFV2.pendingRedraw` (`v2/scripts/supersessions.js`) was empty when these were approved; the mechanism stays for the next redraw, and two redraws are pending now: the exact-action approval and the starting state without its status row (see [Queued messages and approval states](#queued-messages-and-approval-states-provisional)). Each of these redraws reuses the fixtures and copy of its earlier state; only the layout changes, and no in-app copy is invented. A pending redraw may also change copy when an owner decision requires it: `task/approval-exact` removes a button because of the exact-action decision of S03. The earlier states stay in Git history at `3f12d29`.
 
 ### The harness picker open
 
@@ -154,6 +155,28 @@ Append `/light`, `/dark` or `/system` for an appearance, for example `#task/tran
 On sign-off a pair moves into the retired designs table above: the earlier state, its templates and its guides are removed, and a redirect that already targeted the earlier state is repointed to the redraw (`new-task/sidebar-collapsed` and `new-task/harness-menu`).
 
 The questions the redraws left open were answered by the items above: the `new-task/centered-invalid` popover (item 4), the open harness pill (item 5), `task/activity-sources` (item 3) and the four Events elements (item 2).
+
+<a id="starting-row-and-runtime-card-provisional"></a>
+
+## Starting row and runtime card (provisional)
+
+Drawn on 2026-11-08 on top of `6ed567f` after the owner tested the candidate app. **Nothing here is approved.** Both states carry `status: 'provisional'`, no approval object and a "Provisional · not approved" note. Each is drawn by the existing entry renderer from the fixture of its source state; the approved states are unchanged byte for byte.
+
+**Starting row.** The owner's words, relayed by the coordinator: the loading under the composer looks bad, and the spinner after sending a task should go. The catalog has no spinner; its `new-task/centered-starting` shows the text row "Starting task…" under the composer, which is the drawn equivalent, so removing that row is the reading drafted here. HarflowMac shows a `ProgressView` there (`NewSessionView.swift:329`) and would follow the same change when Mac implements an approved redraw; HarflowMac is not edited.
+
+| Provisional route | Earlier state | Change |
+| --- | --- | --- |
+| `new-task/centered-starting-plain` | `new-task/centered-starting` | No visible row under the composer. Start stays disabled and is named "Starting task" (as in Mac), so a task cannot be submitted twice. The existing text "Starting task…" stays in the single status element, visually hidden, so it is announced once. Refused, created and unknown outcomes bring the row back. Focus moves to the document body after submit, as on the approved routes. |
+
+This is a pending redraw: both states stay listed and the catalog notes the pair. When the owner approves it, `new-task/centered-starting` is retired and opens the plain state.
+
+**Runtime card in the sidebar.** The owner's words, relayed by the coordinator: the runtime preparation card moves into the sidebar, under Statistics and directly above Running, with the Harflow title and the collapse button unobstructed. A later owner message narrowed the scope: Mac implements first run to match the approved `harness-runtime/installing` and `app-states/setup`, with no sidebar card in the not-ready state. The placement is parked for the case where the app is already set up and the runtime is updating, and it is not decided. So `harness-runtime/installing-sidebar` is a standalone draft with no pending pair; neither approved state is superseded.
+
+| Provisional route | Draws |
+| --- | --- |
+| `harness-runtime/installing-sidebar` | The card ("Installing runtime", "Preparing and verifying the required runtime…", one status "Installation in progress", no buttons) inside the sidebar scroll, after Statistics and before Running. The nav is disabled and Running and Recent work show headings only, as in `app-states/setup`. The main area shows the centered composer, locked, with the existing line "Set up the required runtime first." Fixture controls: Installing and Ready; Ready removes the card and unlocks the composer. Collapse is ignored and marked `aria-disabled` in this draft. |
+
+Open owner questions: card placement; parked for the already-set-up, runtime-updating case; not-ready first run stays as approved. Also: (1) is the main area blank or this locked composer (new drawing, no new copy); (2) where does the card go when the sidebar is collapsed to the rail, which is not drawn; (3) do checking, install-required, update-required and failed follow, and does Settings stay enabled (it is here); (4) Mac copy ("Preparing Harflow runtime…") or the catalog copy used here; (5) the setup checklist, "View log" and harness registration of `app-states/setup` are not in this card; (6) is the `new-task/loading` status capsule part of "get rid of them" (it is unchanged).
 
 <a id="queued-messages-and-approval-states-provisional"></a>
 
@@ -407,6 +430,8 @@ Not a design state. It indexes the current design.
 
 ### `new-task`
 
+Provisional: `new-task/centered-starting-plain` ([record](#starting-row-and-runtime-card-provisional)).
+
 [approval.md](approval.md) (base states), [m04-proposal.md](m04-proposal.md) (composer and task options), [m04-centered-composer-proposal.md](m04-centered-composer-proposal.md) (centered composer).
 
 ### `sidebar`
@@ -455,11 +480,11 @@ Not a design state. It indexes the current design.
 
 ### `app-states`
 
-[approval.md](approval.md).
+[approval.md](approval.md). `app-states/setup` stays as approved; the runtime card in the sidebar does not supersede it ([record](#starting-row-and-runtime-card-provisional)).
 
 ### `harness-runtime`
 
-[m04-proposal.md](m04-proposal.md).
+[m04-proposal.md](m04-proposal.md). Provisional, standalone: `harness-runtime/installing-sidebar` (open owner question: card placement; parked for the already-set-up, runtime-updating case; not-ready first run stays as approved; [record](#starting-row-and-runtime-card-provisional)).
 
 ### `brand`
 

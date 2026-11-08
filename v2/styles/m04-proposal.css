@@ -92,3 +92,7 @@
 .hd-m04-amendment .hd-composer__input::-webkit-scrollbar{width:6px;background:transparent}
 .hd-m04-amendment .hd-composer__input::-webkit-scrollbar-track{background:transparent}
 .hd-m04-amendment .hd-composer__input::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--text-tertiary) 72%,transparent);border-radius:999px}
+/* Provisional draft: the runtime preparation card inside the sidebar scroll, between Statistics and Running. */
+.hd-m04-sidebar-runtime{margin:var(--space-2) 0;padding:var(--space-3);display:flex;flex-direction:column;gap:var(--space-1);background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);color:var(--text-secondary);font-size:12px;line-height:16px}
+.hd-m04-sidebar-runtime h2{margin:0;color:var(--text);font-size:13px;line-height:18px;font-weight:500}
+.hd-m04-sidebar-runtime p{margin:0}

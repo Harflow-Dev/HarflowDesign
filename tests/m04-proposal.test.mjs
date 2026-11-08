@@ -59,7 +59,7 @@ test('amendment routes are separate and approved by the owner on 2026-11-06',()=
     assert.doesNotMatch(H.templates[key],/Approved/);
   }
 });
-const m04States=()=>H.registry.families.flatMap(f=>f.states.filter(s=>s.source&&s.source.renderer==='m04').map(s=>Object.assign({route:f.id+'/'+s.id},s)));
+const m04States=()=>H.registry.families.flatMap(f=>f.states.filter(s=>s.source&&s.source.renderer==='m04'&&!H.m04PendingStates.some(x=>x.id===s.source.mount)).map(s=>Object.assign({route:f.id+'/'+s.id},s)));
 test('registry lists 26 approved entry states: 11 baseline, six amendment and nine redraws on separate provenance',()=>{
   const registered=m04States();
   assert.equal(registered.length,26,'11 baseline states (history loading is retired), the six centered composer states and nine redraws');
@@ -215,4 +215,30 @@ test('the open harness picker disables the unavailable option and shows the hint
   
   assert.match(src,/gated&&v===gated\?' disabled'/);
   assert.match(src,/options\(values,s\[key\],gate\?'Unavailable harness':''\)/);
+});
+
+// Provisional drafts: the starting state without a status row, and the runtime card in the sidebar.
+test('provisional drafts copy their source fixture apart from the route and are centered',()=>{
+  assert.deepEqual(Array.from(H.m04PendingStates,x=>x.id),['centered-starting-plain','runtime-installing-sidebar']);
+  assert.ok(H.m04PendingStates.every(x=>x.approved===false&&x.status==='Provisional'));
+  for(const [route,source] of Object.entries(M.pendingSources)){
+    const draft=M.create(route),from=M.create(source);
+    assert.equal(M.isPending(route),true);assert.equal(M.isAmendment(route),true);assert.equal(M.isRedraw(route),false);
+    assert.equal(draft.route,route);
+    assert.deepEqual(Object.assign({},draft,{route:''}),Object.assign({},from,{route:''}));
+    assert.match(H.templates['m04-proposal/'+route],/hd-m04-amendment/);
+  }
+  assert.equal(M.isPending('centered-starting'),false);
+});
+test('a start already in flight cannot start again on the draft without the row',()=>{
+  const s=M.create('centered-starting-plain');
+  assert.equal(s.status,'starting');assert.equal(M.start(s),false);assert.equal(s.status,'starting');
+});
+test('the runtime card draft is installing and locks the composer',()=>{
+  const s=M.create('runtime-installing-sidebar');
+  assert.equal(s.runtime,'installing');
+  s.draft='Review the queue';
+  assert.equal(M.start(s),false);
+  s.runtime='qualified';
+  assert.equal(M.start(s),true);
 });

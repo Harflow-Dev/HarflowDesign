@@ -316,7 +316,7 @@ test('the decision record lists every new route, every neutral line, the gaps an
   assert.ok(decisions.includes('| Queued messages and approval states (provisional drafts) |'));
   const map = read('v2/docs/route-map.md');
   for (const route of [...MESSAGE_IDS.map(id => `task/${id}`), ...APPROVALS]) assert.ok(map.includes(`\`${route}\``), `${route} is in the route map`);
-  assert.ok(map.includes('## Provisional routes') && map.includes('### Redraw awaiting approval'));
+  assert.ok(map.includes('## Provisional routes') && map.includes('### Redraws awaiting approval'));
   const inventory = read('v2/docs/screen-inventory.md');
   for (const route of [...MESSAGE_IDS.map(id => `task/${id}`), ...APPROVALS]) assert.ok(inventory.includes(`\`${route.split('/')[1]}\``) || inventory.includes(`\`${route}\``), `${route} is in the inventory`);
   assert.ok(read('CHANGELOG.md').includes('Add provisional queued-message and approval state drafts'));

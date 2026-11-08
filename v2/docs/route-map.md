@@ -90,10 +90,14 @@ These are canonical routes with no earlier name; they are not aliases or redirec
 | `needs-you/approval-stale`, `needs-you/approval-expired`, `needs-you/answered-elsewhere` | `needs-you/waiting`, first request |
 | `needs-you/checkpoint-stale` | `needs-you/waiting`, second request |
 | `menu-bar/approval-stale`, `menu-bar/answered-elsewhere` | `menu-bar/busy`, first request |
+| `new-task/centered-starting-plain` | `new-task/centered-starting` ([decisions](decisions/README.md#starting-row-and-runtime-card-provisional)) |
+| `harness-runtime/installing-sidebar` | `harness-runtime/installing`, with the card in the sidebar; standalone, no pending pair (open owner question: card placement; parked for the already-set-up, runtime-updating case; not-ready first run stays as approved) |
 
-### Redraw awaiting approval
+### Redraws awaiting approval
 
 `task/approval-exact` redraws `task/approval` and removes its "Approve for this task" button. Both stay listed until the owner decides; the catalog notes the pair beside the approval line. When the owner approves the redraw, `task/approval` is retired and opens `task/approval-exact`.
+
+`new-task/centered-starting-plain` redraws `new-task/centered-starting` and removes the status row under the composer. The same rules apply: on approval, `new-task/centered-starting` is retired and opens `new-task/centered-starting-plain`.
 
 ## Loading routes
 

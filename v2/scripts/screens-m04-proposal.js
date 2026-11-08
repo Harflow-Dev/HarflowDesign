@@ -13,6 +13,9 @@
   // and the open harness picker. The fixture of each comes from its source mount, named in m04-proposal.js.
   var redrawIds = ['centered-loading','centered-unqualified','centered-invalid','centered-starting','centered-refused','centered-options-closed','centered-harness-open','centered-shell-collapsed','centered-shell-narrow'];
   H.m04RedrawStates = redrawIds.map(function (id) { return { id: id, title: id.replace(/-/g, ' '), description: 'Owner-approved centered redraw (2026-11-08): ' + id.replace(/-/g, ' ') + ' review fixture.', status: 'Approved', approved: true }; });
+  // Provisional drafts, not approved. The fixture of each comes from its source mount, named in m04-proposal.js.
+  var pendingIds = ['centered-starting-plain','runtime-installing-sidebar'];
+  H.m04PendingStates = pendingIds.map(function (id) { return { id: id, title: id.replace(/-/g, ' '), description: 'Provisional draft: ' + id.replace(/-/g, ' ') + ' review fixture.', status: 'Provisional', approved: false }; });
   var T = H.templates = H.templates || {};
   // Labels of the catalog-only strip above the app frame. The Node test scans them for process names.
   var STRIPS = (H.catalogStrips = H.catalogStrips || {}).m04 = {
@@ -24,10 +27,12 @@
     redrawHeading: 'Approved · Centered composer · Owner 2026-11-08',
     redrawShellHeading: 'Approved · Sidebar · Owner 2026-11-08',
     redrawNotice: 'Approved by the owner, 2026-11-08. Local preview · appearance preserves draft · route changes reset · Reduce Motion: instant changes. Native titlebar and OS controls are browser approximations; native validation is pending.',
+    pendingHeading: 'Draft · Not approved',
+    pendingNotice: 'Draft, not approved. Local preview · appearance preserves draft · route changes reset · Reduce Motion: instant changes. Native titlebar and OS controls are browser approximations; native validation is pending.',
     centeredNotice: 'Approved amendment (owner, 2026-11-06), separate from the 2026-11-05 approval; the 2026-11-06 sidebar body-scroll correction applies to every entry, composer and sidebar state. Local preview · appearance preserves draft · route changes reset · Reduce Motion: instant changes. Native titlebar and OS controls are browser approximations; native validation is pending.'
   };
   ids.forEach(function (id) { T['m04-proposal/' + id] = '<div class="hd-m04-proposal" data-theme="{{theme}}"><div class="hd-m04-catalog" aria-label="' + STRIPS.baselineLabel + '"></div><div class="hd-m04-window"></div></div>'; });
-  amendmentIds.concat(redrawIds).forEach(function (id) { T['m04-proposal/' + id] = '<div class="hd-m04-proposal hd-m04-amendment" data-theme="{{theme}}"><div class="hd-m04-catalog" aria-label="' + STRIPS.centeredLabel + '"></div><div class="hd-m04-window"></div></div>'; });
+  amendmentIds.concat(redrawIds, pendingIds).forEach(function (id) { T['m04-proposal/' + id] = '<div class="hd-m04-proposal hd-m04-amendment" data-theme="{{theme}}"><div class="hd-m04-catalog" aria-label="' + STRIPS.centeredLabel + '"></div><div class="hd-m04-window"></div></div>'; });
 
   // Routes: [renderer id, family, state, group, title, description]. The renderer id stays the template key.
   var ROWS = [
@@ -56,7 +61,9 @@
     ["centered-refused", "new-task", "centered-refused", "Composer", "Centered composer · Refused", "A definitive refusal preserves the draft for review.", "composer-refused"],
     ["centered-options-closed", "new-task", "centered-options-closed", "Task options", "Centered composer · Task options closed", "Customized task options retained behind the bottom-left plus button.", "advanced-closed"],
     ["centered-shell-collapsed", "sidebar", "centered-collapsed", "Layout", "Centered shell · Collapsed rail", "Native collapsed rail and accessible navigation.", "shell-collapsed"],
-    ["centered-shell-narrow", "sidebar", "centered-minimum", "Layout", "Centered shell · Minimum window", "Minimum-size composition without font scaling.", "shell-narrow"]
+    ["centered-shell-narrow", "sidebar", "centered-minimum", "Layout", "Centered shell · Minimum window", "Minimum-size composition without font scaling.", "shell-narrow"],
+    ["centered-starting-plain", "new-task", "centered-starting-plain", "Composer", "Centered composer · Starting, no status row", "One in-flight start retains the draft and prevents duplicates. Nothing shows under the composer; the status is announced to assistive technology.", "centered-starting"],
+    ["runtime-installing-sidebar", "harness-runtime", "installing-sidebar", null, "Runtime · Preparing, in the sidebar", "The runtime preparation card sits in the sidebar between Statistics and Running. The composer stays locked until the runtime is ready.", "runtime-installing"]
   ];
   var APPROVAL = {
     baseline: { by: 'the owner', date: '2026-11-05', decision: 'Entry visual direction · native and runtime qualification separate' },
@@ -66,12 +73,19 @@
   };
   ROWS.forEach(function (row) {
     var id = row[0];
-    var redraw = redrawIds.indexOf(id) >= 0;
+    var redraw = redrawIds.indexOf(id) >= 0, pending = pendingIds.indexOf(id) >= 0;
     var state = {
       id: row[2], title: row[4], description: row[5], group: row[3] || undefined,
       source: { template: 'm04-proposal/' + id, renderer: 'm04', mount: id, guide: 'm04-proposal/' + id },
-      status: 'approved'
+      status: pending ? 'provisional' : 'approved'
     };
+    if (pending) {
+      state.approvalNote = id === 'runtime-installing-sidebar'
+        ? 'Provisional · not approved · open owner question: card placement; parked for the already-set-up, runtime-updating case; not-ready first run stays as approved'
+        : 'Provisional · not approved';
+      H.registerState(row[1], state);
+      return;
+    }
     state.approval = redraw ? (row[1] === 'sidebar' ? APPROVAL.redrawSidebar : APPROVAL.redraw) : amendmentIds.indexOf(id) >= 0 ? APPROVAL.centered : APPROVAL.baseline;
     H.registerState(row[1], state);
   });
