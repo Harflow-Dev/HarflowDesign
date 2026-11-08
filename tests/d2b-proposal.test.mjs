@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
@@ -336,4 +337,58 @@ test('proposal sidebar preserves the canonical task navigation and appearance wh
       assert.doesNotMatch(filledTemplate, /<aside class="hd-sidebar"/, 'proposal template has one mount placeholder instead of a duplicate static sidebar');
     }
   }
+});
+
+// ---- Transcript builders and controller (shared by the activity routes and the task transcript redraws) ----
+
+const BUILDERS = ['statusHtml', 'controlsHtml', 'requestHtml', 'boundaryHtml', 'rowsHtml', 'asideSectionsHtml'];
+const catalog = loadCatalog();
+const regionsOf = model => {
+  const T = catalog.d2bTranscript;
+  return [T.statusHtml(model), T.requestHtml(model), T.boundaryHtml(model), T.rowsHtml(model), T.asideSectionsHtml(model), T.controlsHtml(model, true)].join('\u0001');
+};
+
+test('the transcript builders and the controller are pure and available without a document', () => {
+  const T = catalog.d2bTranscript;
+  assert.equal(typeof T.attach, 'function');
+  for (const name of BUILDERS) assert.equal(typeof T[name], 'function', name);
+  assert.equal(context.document, undefined);
+  const model = api.createState('observed');
+  assert.equal(regionsOf(model), regionsOf(model), 'a builder depends on its state only');
+  assert.equal(model.status, 'Done');
+  assert.match(T.requestHtml(model), /<details data-disclosure="request" class="hd-d2b-request" open>/);
+  assert.match(T.boundaryHtml(model), /data-action="earlier"/);
+  assert.match(T.asideSectionsHtml(model), /<h3>Recovered transcript<\/h3>/);
+  assert.equal(T.controlsHtml(model, false).includes('data-variant="size"'), false, 'the size control is catalog-only for the activity routes');
+  assert.equal(T.controlsHtml(model, true).includes('data-variant="size"'), true);
+  for (const name of ['request', 'history', 'summaryCoverage']) assert.ok(T.controlsHtml(model, false).includes(`data-variant="${name}"`), name);
+});
+
+// The digest was computed from the output of the same builders after the activity routes were captured
+// byte for byte in a headless browser, before and after the extraction.
+test('builder markup for every activity fixture, variant and action is unchanged by the extraction', () => {
+  const lines = [];
+  for (const name of ['observed', 'loading', 'partial', 'unavailable', 'integrity-failed', 'reconnecting', 'capacity', 'events']) {
+    const model = api.createState(name);
+    const digest = value => crypto.createHash('sha256').update(value).digest('hex');
+    lines.push(name + ':' + digest(regionsOf(model)));
+    for (const dim of ['request', 'history', 'summaryCoverage', 'size']) for (const value of api.variants[dim]) lines.push(`${name}:${dim}:${value}:` + digest(regionsOf(api.transition(model, dim, value))));
+    for (const action of ['read-more', 'earlier', 'new', 'retry', 'retry-request', 'rebase']) lines.push(`${name}:${action}:` + digest(regionsOf(api.transition(model, action))));
+  }
+  assert.equal(lines.length, 272);
+  assert.equal(crypto.createHash('sha256').update(lines.join('\n')).digest('hex'), '75c6b696a4cdddbb10dca6c8171ba438a80251dcc2220d93c2d3fdb99a0ad173');
+});
+
+test('the controller tolerates missing slots and registers its handlers once', () => {
+  const T = catalog.d2bTranscript;
+  const listeners = [];
+  const host = { addEventListener: (type, fn) => listeners.push(['add', type, fn]), removeEventListener: (type, fn) => listeners.push(['remove', type, fn]), querySelector: () => null, querySelectorAll: () => [] };
+  const controller = T.attach(host, api.createState('capacity'), () => ({}), {});
+  assert.deepEqual(listeners.map(x => x.slice(0, 2).join(':')), ['add:change', 'add:click']);
+  assert.doesNotThrow(() => controller.render());
+  assert.doesNotThrow(() => controller.refresh(controller.snapshot()));
+  assert.doesNotThrow(() => controller.refresh(null));
+  assert.equal(controller.state().name, 'capacity');
+  controller.dispose();
+  assert.deepEqual(listeners.slice(2).map(x => x.slice(0, 2).join(':')), ['remove:change', 'remove:click']);
 });

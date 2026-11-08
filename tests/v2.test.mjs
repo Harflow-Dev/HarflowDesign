@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
@@ -610,7 +611,7 @@ test('the coverage ledger keeps its headings and anchor, cites registered routes
 test('string literals in the strip builders carry no process names', () => {
   const sources = [
     ['m04-proposal.js', 'var controls=', 'var base = template('],
-    ['d2b-proposal.js', "q('[data-d2b-controls]').innerHTML", "q('[data-d2b-status]')"],
+    ['d2b-proposal.js', 'function controlsHtml', 'function requestHtml'],
     ['m05-proposal.js', 'var strip =', "host.querySelector('.hd-m05-catalog')"]
   ];
   const hits = [];
@@ -744,4 +745,48 @@ test('a redirect target is never retired by a later sign-off without repointing 
   const targets = new Set(Object.values(redirects));
   for (const key of Object.keys(redirects)) assert.ok(!targets.has(key), `${key} is both a redirect key and a target`);
   for (const { older } of pending) assert.ok(!(older in redirects));
+});
+
+// ---- Task screen hooks ----
+
+// The digest covers the markup of every task screen state that is not a decision board, in eight interface
+// variants and both appearances. It was computed before the hooks existed and must not change.
+test('the task screen markup of every existing state is unchanged by the optional hooks', () => {
+  const m05 = HFV2.m05Proposal;
+  assert.equal(typeof m05.screenHtml, 'function');
+  const lines = [];
+  for (const state of HFV2.m05ProposalStates) {
+    if (state.spec.board) continue;
+    const base = m05.initialUi(state.spec);
+    const variants = [base, { ...base, pane: true, tab: 'events' }, { ...base, pane: true, tab: 'changes' }, { ...base, pane: true, tab: 'artifacts' }, { ...base, frame: 'minimum' }, { ...base, frame: 'minimum', pane: true, tab: 'events' }, { ...base, menu: true }, { ...base, dialog: 'stop' }];
+    variants.forEach((ui, i) => {
+      for (const appearance of ['light', 'dark']) {
+        lines.push(`${state.id}:${i}:${appearance}:` + crypto.createHash('sha256').update(m05.screenHtml(state.spec, ui, appearance, appearance)).digest('hex'));
+        assert.equal(m05.screenHtml(state.spec, ui, appearance, appearance, {}), m05.screenHtml(state.spec, ui, appearance, appearance), `${state.id}: empty hooks change nothing`);
+      }
+    });
+  }
+  assert.equal(lines.length, 944);
+  assert.equal(crypto.createHash('sha256').update(lines.join('\n')).digest('hex'), 'c6e638e58ca7802bdcb5ca6dc40b8f6b942edbb2f18afec8eb4b5d0630b8dbff');
+});
+
+test('the task screen hooks replace the transcript column, the Events body and the task identity', () => {
+  const m05 = HFV2.m05Proposal;
+  const spec = { badge: 'done', task: 'done', composer: 'settled', pane: true, tab: 'events' };
+  const ui = { ...m05.initialUi(spec), pane: true, tab: 'events' };
+  const plain = m05.screenHtml(spec, ui, 'light', 'light');
+  const hooks = {
+    transcriptSlot: () => '<p data-slot="transcript"></p>',
+    eventsBody: () => '<p data-slot="events"></p>',
+    identity: { title: 'Task title', meta: 'Harness · Repo', badge: ['hd-badge--done', '', 'Done'], chips: '', menu: false, sidebarTitle: 'Task title', href: '#task/probe', disabledTabs: ['changes', 'artifacts'] }
+  };
+  const html = m05.screenHtml(spec, ui, 'light', 'light', hooks);
+  assert.ok(plain.includes('Original request') && plain.includes('hd-m05-more-anchor') && plain.includes('Can edit this repo'));
+  assert.ok(html.includes('data-slot="transcript"') && html.includes('data-slot="events"'));
+  assert.ok(!html.includes('Original request') && !html.includes('hd-m05-more-anchor') && !html.includes('Can edit this repo') && !html.includes('hd-m05-chip'));
+  assert.ok(html.includes('>Task title</span>') && html.includes('Harness · Repo'));
+  assert.match(html, /<a class="hd-task-row[^"]*is-active[^"]*" href="#task\/probe">/);
+  for (const tab of ['Changes', 'Artifacts']) assert.match(html, new RegExp(`aria-selected="false" aria-disabled="true" class="hd-tab is-disabled">${tab}</button>`));
+  assert.ok(!/data-m05="tab-(changes|artifacts)"/.test(html), 'a disabled tab has no action');
+  assert.ok(html.includes('data-m05="tab-events"') && html.includes('data-m05="pane"'));
 });

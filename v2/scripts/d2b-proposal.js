@@ -173,21 +173,118 @@
     });
     return H.fill(sidebar, selection, resolved);
   }
-  function mount(root,name) {
-    var host=root.matches && root.matches('.hd-d2b')?root:root.querySelector('.hd-d2b');
-    if(!host)return function() {
+  /* ---------- Pure builders: markup of the transcript regions from a state ---------- */
+  function statusHtml(s) {
+    return '<span class="hd-badge">'+(s.status==='Done'?'<span class="hd-glyph hd-glyph--done" aria-hidden="true"><span class="hd-i hd-i--sm hd-i-check"></span></span>':'<span class="hd-glyph hd-glyph--running" aria-hidden="true"></span>') +
+      s.status+'</span>';
+  }
+  // The review controls. `withSize` adds the catalog heading, the Size select and the note around them.
+  function controlsHtml(s, withSize) {
+    var core = '<label>Request <select data-variant="request">'+options(variants.request,
+      s.request)+'</select></label><label>History <select data-variant="history">'+options(variants.history,
+      s.history)+'</select></label><label>Totals <select data-variant="summaryCoverage">'+options(variants.summaryCoverage,
+      s.summaryCoverage)+'</select></label>';
+    if (!withSize) return core;
+    return '<strong>'+H.catalogStrips.d2b.controls+'</strong><label>Size <select data-variant="size"><option value="reference"' +
+      (s.size==='reference'?' selected':'')+'>Reference 1280 × 800</option><option value="minimum"'+(s.size==='minimum'?' selected':'') +
+      '>Minimum 1000 × 620</option></select></label>' + core + '<span>'+H.catalogStrips.d2b.note+'</span>';
+  }
+  function requestHtml(s) {
+    var r=requestView(s);
+    return '<details data-disclosure="request" class="hd-d2b-request" open><summary>'+r.title +
+      '</summary>'+ (r.text?'<p class="hd-muted">'+r.integrity+'</p><pre tabindex="0" data-copy-text>'+esc(r.text)+'</pre>' +
+      '<span class="hd-row hd-d2b-actions">'+button('copy-request',r.copy)+(['truncated','unverified'].indexOf(s.request)>=0&&s.maxBytes<128?button('read-more',
+      'Read more'):'')+(['truncated','unverified'].indexOf(s.request)>=0&&s.maxBytes===128?'</span><p class="hd-muted">View limit reached. Full request remains unavailable in this view.</p>':'</span>'):(s.request==='loading'?'<div class="hd-d2b-skeleton" aria-label="Loading request"></div>':'<p class="' +
+      (s.request==='integrity-failed'?'hd-d2b-error':'hd-muted')+'">'+(s.request==='integrity-failed'?'Content withheld because integrity verification failed.':'The original request could not be read.') +
+      '</p>'+button('retry-request','Retry request read')))+'</details>';
+  }
+  function boundaryHtml(s) {
+    var a=activityView(s);
+    var actions='';
+    if(['observed','partial','unknown'].indexOf(s.history)>=0&&!s.older)actions+=button('earlier',
+    'Load earlier');
+    if(s.history==='reconnecting'||s.history==='nonprogress')actions+=button('retry','Retry history read');
+    if(s.history==='capacity'||s.history==='reset') actions+='<p>Loading current activity replaces the rows in this view. Execution continues independently.</p>' +
+    button('rebase','Load current activity');
+    if(s.history==='observed'&&!s.fresh)actions+=button('new','New activity · show');
+    return '<div class="hd-d2b-boundary"><strong>'+a.title+'</strong>'+'<div class="hd-row hd-d2b-actions">'+actions+'</div></div>';
+  }
+  function rowsHtml(s) {
+    var earlierRow=s.older?'<article class="hd-d2b-row hd-msg-agent" data-row="earlier"><strong>Earlier captured activity</strong><p>Read slot release implementation.</p></article>':'';
+    return s.currentWindow?earlierRow+'<article class="hd-d2b-row hd-msg-agent" data-row="new">' +
+      '<strong>Current activity window</strong>' +
+      '<p>This view now shows current captured activity. Earlier rows are outside this view.</p>' +
+      '</article>':s.history==='loading'?'<div class="hd-d2b-skeleton" aria-label="Loading history">' +
+      '</div>':s.history==='empty'||s.history==='unsupported'||s.history==='unavailable'?'':(s.older?'<article class="hd-d2b-row hd-msg-agent" data-row="earlier">' +
+      '<strong>Earlier captured activity</strong>' +
+      '<p>Read slot release implementation.</p>' +
+      '</article>':'') +
+    '<article class="hd-d2b-row hd-msg-agent" data-row="anchor">' +
+      '<strong>Codex</strong>' +
+      '<p>I found the notification outside the lock. I will reproduce the race before changing it.</p>' +
+      '</article>' +
+      '<article class="hd-d2b-row hd-msg-agent" data-row="tool">' +
+      '<details data-disclosure="tool-regression">' +
+      '<summary class="hd-tool__head"><span class="hd-i hd-i--sm hd-i-terminal" aria-hidden="true"></span><span class="hd-tool__summary">Ran deterministic slot regression</span><span class="hd-i hd-i--sm hd-i-chevron-right hd-d2b-tool-chevron" aria-hidden="true"></span></summary>' +
+      '<pre class="hd-tool__body">Mock focused regression\nArrange: hold the release lock\nStart a waiting consumer\nRelease and notify under the lock\nAssert: consumer observes the free slot\nResult: deterministic race reproduced\nPatch: notification moved under lock\nResult after patch: focused regression passed</pre>' +
+      '</details>' +
+      '</article>' +
+      '<article class="hd-d2b-row hd-msg-agent" data-row="validation-summary">' +
+      '<strong>Codex</strong>' +
+      '<p>The notification now runs under the lock. The focused regression passed in this mock transcript.</p>' +
+      '</article>' +
+    (s.fresh?'<article class="hd-d2b-row hd-msg-agent" data-row="new"><strong>New captured activity</strong><p>Focused validation result received.</p></article>':'');
+  }
+  // The sections of the Events side pane: facts, task snapshot, captured records and recovered transcript.
+  function asideSectionsHtml(s) {
+    var a=activityView(s);
+    var envelope= {
+      format:'harflow.event',v:1,product:'harflow',product_version:'0.0.8',seq:7,observed_at:'2026-11-04T10:00:00Z'
     };
-    var s=createState(name||host.dataset.d2bState), disposed=false;
-    var selection = host.dataset.systemOn === 'true' ? 'system' : host.dataset.darkOn === 'true' ? 'dark' : 'light';
-    host.querySelector('[data-d2b-sidebar]').innerHTML = sidebarForState(s, selection, host.dataset.theme);
+    var record=Object.assign( {
+    },envelope, {
+      kind:'tool_result',call_id:'mock-call-1',ok:true,output_tail:'Mock regression reproduced'
+    });
+    var stub=Object.assign( {
+    },envelope, {
+      kind:'future_kind',truncated:true,oversized:true,bytes:20000
+    });
+    var extra=['partial','unknown'].indexOf(s.history)>=0?'<details data-disclosure="event-stub"><summary>Unsupported record · public stub</summary><pre>' +
+    esc(JSON.stringify(stub,null,2))+'</pre><p>No tool summary is inferred from this record.</p></details><details data-disclosure="event-order"><summary>Record ordering</summary><pre>' +
+    esc(JSON.stringify([ {
+      kind:'assistant_text',seq:7
+    }, {
+      kind:'future_kind',seq:7
+    }, {
+      kind:'assistant_text',seq:6
+    }],null,2))+'</pre><p>Duplicate and regressing sequence values remain in observed order.</p></details>':'';
+    var records=['loading','empty','unsupported','unavailable'].indexOf(s.history)>=0?'<p class="hd-muted">No records available in this view.</p>':'<details data-disclosure="event-result"><summary>Tool result · normalized record</summary><pre data-record>' +
+    esc(JSON.stringify(record,null,2))+'</pre>'+button('copy-record','Copy normalized record')+'</details>'+extra;
+    return '<h3>Captured activity facts</h3><p>'+a.count+'</p><p class="hd-muted">'+a.reason +
+    '</p><hr><h3>Task snapshot</h3><p>Status: '+s.status+' · independent of captured activity</p><hr><h3>Captured activity</h3><p class="hd-muted">Public normalized events · bounded record window</p>' +
+    records+'<hr><h3>Recovered transcript</h3><p class="hd-muted">Separate recovery source. Not used for captured activity totals.</p><details data-disclosure="recovery-message"><summary>Recovered message</summary><p>Mock recovery text: validation was requested.</p></details>';
+  }
+
+  /* ---------- Controller: owns the view state of one transcript and survives re-renders of its slots ---------- */
+  // attach(root, state, slots, opts): `root` receives the click and change listeners once. `slots` returns the
+  // current slot elements ({controls, status, request, boundary, rows, history, live, facts, factsScroll}); every
+  // slot may be null. opts.size adds the catalog Size control and writes data-size on the root.
+  // The state object belongs to the controller. After the surrounding screen replaced the slot elements,
+  // refresh(snapshot) fills them again and restores the view from the snapshot taken before.
+  function attach(root, state, slots, opts) {
+    opts = opts || {};
+    var host = root, s = state, disposed = false;
+    function sl() { return (typeof slots === 'function' ? slots() : slots) || {}; }
     function q(sel) {
       return host.querySelector(sel);
     }
-  function announce(message) {
-      q('[data-d2b-live]').textContent=message;
+    function announce(message) {
+      var live = sl().live;
+      if (live) live.textContent = message;
     }
     function captureVisibleAnchor() {
-      var history = q('.hd-d2b-history');
+      var history = sl().history;
+      if (!history) return null;
       var bounds = history.getBoundingClientRect();
       var visible = Array.from(history.querySelectorAll('[data-row]')).find(function (row) {
         var rect = row.getBoundingClientRect();
@@ -199,7 +296,8 @@
       } : null;
     }
     function restoreVisibleAnchor(anchor) {
-      var history = q('.hd-d2b-history');
+      var history = sl().history;
+      if (!history) return;
       var row = anchor && Array.from(history.querySelectorAll('[data-row]')).find(function (candidate) {
         return candidate.dataset.row === anchor.id;
       });
@@ -222,11 +320,13 @@
         disclosures[detail.dataset.disclosure] = detail.open;
       });
       var requestText = q('[data-copy-text]');
+      var slot = sl();
+      var factsScroller = slot.factsScroll || slot.facts;
       return {
-        disclosures: disclosures, requestScroll: requestText ? requestText.scrollTop : 0, factsScroll: q('[data-d2b-facts]').scrollTop
+        disclosures: disclosures, requestScroll: requestText ? requestText.scrollTop : 0, factsScroll: factsScroller ? factsScroller.scrollTop : 0
       };
     }
-  function restoreView(view, resetHistory) {
+    function restoreView(view, resetHistory) {
       host.querySelectorAll('[data-disclosure]').forEach(function (detail) {
         var key = detail.dataset.disclosure;
         var replaced = key.indexOf('tool-') === 0 || key.indexOf('event-') === 0;
@@ -237,86 +337,40 @@
       });
       var requestText = q('[data-copy-text]');
       if (requestText) requestText.scrollTop = view.requestScroll;
-      q('[data-d2b-facts]').scrollTop = view.factsScroll;
+      var slot = sl();
+      var factsScroller = slot.factsScroll || slot.facts;
+      if (factsScroller) factsScroller.scrollTop = view.factsScroll;
     }
-  function render(resetHistory) {
+    function fill() {
+      var slot = sl();
+      if (opts.size) host.dataset.size = s.size;
+      if (slot.controls) slot.controls.innerHTML = controlsHtml(s, !!opts.size);
+      if (slot.status) slot.status.innerHTML = statusHtml(s);
+      if (slot.request) slot.request.innerHTML = requestHtml(s);
+      if (slot.boundary) slot.boundary.innerHTML = boundaryHtml(s);
+      if (slot.rows) slot.rows.innerHTML = rowsHtml(s);
+      if (slot.facts) slot.facts.innerHTML = asideSectionsHtml(s);
+    }
+    function render(resetHistory) {
       var savedView = captureView();
-      var r=requestView(s),a=activityView(s);
-      host.dataset.size=s.size;
-      q('[data-d2b-controls]').innerHTML='<strong>'+H.catalogStrips.d2b.controls+'</strong><label>Size <select data-variant="size"><option value="reference"' +
-      (s.size==='reference'?' selected':'')+'>Reference 1280 × 800</option><option value="minimum"'+(s.size==='minimum'?' selected':'') +
-      '>Minimum 1000 × 620</option></select></label><label>Request <select data-variant="request">'+options(variants.request,
-      s.request)+'</select></label><label>History <select data-variant="history">'+options(variants.history,
-      s.history)+'</select></label><label>Totals <select data-variant="summaryCoverage">'+options(variants.summaryCoverage,
-      s.summaryCoverage)+'</select></label><span>'+H.catalogStrips.d2b.note+'</span>';
-      q('[data-d2b-status]').innerHTML='<span class="hd-badge">'+(s.status==='Done'?'<span class="hd-glyph hd-glyph--done" aria-hidden="true"><span class="hd-i hd-i--sm hd-i-check"></span></span>':'<span class="hd-glyph hd-glyph--running" aria-hidden="true"></span>') +
-      s.status+'</span>';
-      q('[data-d2b-request]').innerHTML='<details data-disclosure="request" class="hd-d2b-request" open><summary>'+r.title +
-      '</summary>'+ (r.text?'<p class="hd-muted">'+r.integrity+'</p><pre tabindex="0" data-copy-text>'+esc(r.text)+'</pre>' +
-      '<span class="hd-row hd-d2b-actions">'+button('copy-request',r.copy)+(['truncated','unverified'].indexOf(s.request)>=0&&s.maxBytes<128?button('read-more',
-      'Read more'):'')+(['truncated','unverified'].indexOf(s.request)>=0&&s.maxBytes===128?'</span><p class="hd-muted">View limit reached. Full request remains unavailable in this view.</p>':'</span>'):(s.request==='loading'?'<div class="hd-d2b-skeleton" aria-label="Loading request"></div>':'<p class="' +
-      (s.request==='integrity-failed'?'hd-d2b-error':'hd-muted')+'">'+(s.request==='integrity-failed'?'Content withheld because integrity verification failed.':'The original request could not be read.') +
-      '</p>'+button('retry-request','Retry request read')))+'</details>';
-      var actions='';
-      if(['observed','partial','unknown'].indexOf(s.history)>=0&&!s.older)actions+=button('earlier',
-      'Load earlier');
-      if(s.history==='reconnecting'||s.history==='nonprogress')actions+=button('retry','Retry history read');
-      if(s.history==='capacity'||s.history==='reset') actions+='<p>Loading current activity replaces the rows in this view. Execution continues independently.</p>' +
-      button('rebase','Load current activity');
-      if(s.history==='observed'&&!s.fresh)actions+=button('new','New activity · show');
-      q('[data-d2b-boundary]').innerHTML='<div class="hd-d2b-boundary"><strong>'+a.title+'</strong>'+'<div class="hd-row hd-d2b-actions">'+actions+'</div></div>';
-      var earlierRow=s.older?'<article class="hd-d2b-row hd-msg-agent" data-row="earlier"><strong>Earlier captured activity</strong><p>Read slot release implementation.</p></article>':'';
-      var rows=s.currentWindow?earlierRow+'<article class="hd-d2b-row hd-msg-agent" data-row="new">' +
-        '<strong>Current activity window</strong>' +
-        '<p>This view now shows current captured activity. Earlier rows are outside this view.</p>' +
-        '</article>':s.history==='loading'?'<div class="hd-d2b-skeleton" aria-label="Loading history">' +
-        '</div>':s.history==='empty'||s.history==='unsupported'||s.history==='unavailable'?'':(s.older?'<article class="hd-d2b-row hd-msg-agent" data-row="earlier">' +
-        '<strong>Earlier captured activity</strong>' +
-        '<p>Read slot release implementation.</p>' +
-        '</article>':'') +
-      '<article class="hd-d2b-row hd-msg-agent" data-row="anchor">' +
-        '<strong>Codex</strong>' +
-        '<p>I found the notification outside the lock. I will reproduce the race before changing it.</p>' +
-        '</article>' +
-        '<article class="hd-d2b-row hd-msg-agent" data-row="tool">' +
-        '<details data-disclosure="tool-regression">' +
-        '<summary class="hd-tool__head"><span class="hd-i hd-i--sm hd-i-terminal" aria-hidden="true"></span><span class="hd-tool__summary">Ran deterministic slot regression</span><span class="hd-i hd-i--sm hd-i-chevron-right hd-d2b-tool-chevron" aria-hidden="true"></span></summary>' +
-        '<pre class="hd-tool__body">Mock focused regression\nArrange: hold the release lock\nStart a waiting consumer\nRelease and notify under the lock\nAssert: consumer observes the free slot\nResult: deterministic race reproduced\nPatch: notification moved under lock\nResult after patch: focused regression passed</pre>' +
-        '</details>' +
-        '</article>' +
-        '<article class="hd-d2b-row hd-msg-agent" data-row="validation-summary">' +
-        '<strong>Codex</strong>' +
-        '<p>The notification now runs under the lock. The focused regression passed in this mock transcript.</p>' +
-        '</article>' +
-      (s.fresh?'<article class="hd-d2b-row hd-msg-agent" data-row="new"><strong>New captured activity</strong><p>Focused validation result received.</p></article>':'');
-      q('[data-d2b-rows]').innerHTML=rows;
-      var envelope= {
-        format:'harflow.event',v:1,product:'harflow',product_version:'0.0.8',seq:7,observed_at:'2026-11-04T10:00:00Z'
-      };
-      var record=Object.assign( {
-      },envelope, {
-        kind:'tool_result',call_id:'mock-call-1',ok:true,output_tail:'Mock regression reproduced'
-      });
-      var stub=Object.assign( {
-      },envelope, {
-        kind:'future_kind',truncated:true,oversized:true,bytes:20000
-      });
-      var extra=['partial','unknown'].indexOf(s.history)>=0?'<details data-disclosure="event-stub"><summary>Unsupported record · public stub</summary><pre>' +
-      esc(JSON.stringify(stub,null,2))+'</pre><p>No tool summary is inferred from this record.</p></details><details data-disclosure="event-order"><summary>Record ordering</summary><pre>' +
-      esc(JSON.stringify([ {
-        kind:'assistant_text',seq:7
-      }, {
-        kind:'future_kind',seq:7
-      }, {
-        kind:'assistant_text',seq:6
-      }],null,2))+'</pre><p>Duplicate and regressing sequence values remain in observed order.</p></details>':'';
-      var records=['loading','empty','unsupported','unavailable'].indexOf(s.history)>=0?'<p class="hd-muted">No records available in this view.</p>':'<details data-disclosure="event-result"><summary>Tool result · normalized record</summary><pre data-record>' +
-      esc(JSON.stringify(record,null,2))+'</pre>'+button('copy-record','Copy normalized record')+'</details>'+extra;
-      q('[data-d2b-facts]').innerHTML='<h3>Captured activity facts</h3><p>'+a.count+'</p><p class="hd-muted">'+a.reason +
-      '</p><hr><h3>Task snapshot</h3><p>Status: '+s.status+' · independent of captured activity</p><hr><h3>Captured activity</h3><p class="hd-muted">Public normalized events · bounded record window</p>' +
-      records+'<hr><h3>Recovered transcript</h3><p class="hd-muted">Separate recovery source. Not used for captured activity totals.</p><details data-disclosure="recovery-message"><summary>Recovered message</summary><p>Mock recovery text: validation was requested.</p></details>';
+      fill();
       restoreView(savedView, resetHistory);
       announce(s.message||'');
+    }
+    // Before the surrounding screen replaces the slot elements.
+    function snapshot() {
+      var history = sl().history;
+      return { view: captureView(), anchor: captureVisibleAnchor(), historyScroll: history ? history.scrollTop : 0 };
+    }
+    // After the surrounding screen replaced them.
+    function refresh(saved) {
+      fill();
+      if (saved) restoreView(saved.view, false);
+      announce(s.message||'');
+      var history = sl().history;
+      if (!saved || !history) return;
+      if (saved.anchor) restoreVisibleAnchor(saved.anchor);
+      else history.scrollTop = saved.historyScroll;
     }
     function onChange(e) {
       var kind = e.target.dataset.variant;
@@ -349,7 +403,7 @@
           announce('Text selected. Use your system copy command to copy it.');
         }return;
       }
-      var scroll=q('.hd-d2b-history');
+      var scroll=sl().history;
       var visibleAnchor = captureVisibleAnchor();
       var oldScroll = scroll.scrollTop;
       s=transition(s,action);
@@ -386,17 +440,42 @@
         } else q('[data-d2b-boundary]').focus({preventScroll:true});
       }
     }
-    render();
     host.addEventListener('change',onChange);
     host.addEventListener('click',onClick);
-    return function() {
-      disposed=true;
-      host.removeEventListener('change',onChange);
-      host.removeEventListener('click',onClick);
+    return {
+      render: render, snapshot: snapshot, refresh: refresh,
+      state: function () { return s; },
+      dispose: function () {
+        disposed=true;
+        host.removeEventListener('change',onChange);
+        host.removeEventListener('click',onClick);
+      }
     };
+  }
+  function mount(root,name) {
+    var host=root.matches && root.matches('.hd-d2b')?root:root.querySelector('.hd-d2b');
+    if(!host)return function() {
+    };
+    var s=createState(name||host.dataset.d2bState);
+    var selection = host.dataset.systemOn === 'true' ? 'system' : host.dataset.darkOn === 'true' ? 'dark' : 'light';
+    host.querySelector('[data-d2b-sidebar]').innerHTML = sidebarForState(s, selection, host.dataset.theme);
+    var controller = attach(host, s, function () {
+      return {
+        controls: host.querySelector('[data-d2b-controls]'), status: host.querySelector('[data-d2b-status]'),
+        request: host.querySelector('[data-d2b-request]'), boundary: host.querySelector('[data-d2b-boundary]'),
+        rows: host.querySelector('[data-d2b-rows]'), history: host.querySelector('.hd-d2b-history'),
+        live: host.querySelector('[data-d2b-live]'), facts: host.querySelector('[data-d2b-facts]')
+      };
+    }, { size: true });
+    controller.render();
+    return controller.dispose;
   }
   H.d2bProposal= {
     mount:mount,createState:createState,transition:transition,requestView:requestView,activityView:activityView,
     variants:variants,rowKey:rowKey,sidebarForState:sidebarForState
+  };
+  H.d2bTranscript= {
+    attach:attach,statusHtml:statusHtml,controlsHtml:controlsHtml,requestHtml:requestHtml,boundaryHtml:boundaryHtml,
+    rowsHtml:rowsHtml,asideSectionsHtml:asideSectionsHtml
   };
 })();

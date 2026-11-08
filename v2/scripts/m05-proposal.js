@@ -242,14 +242,15 @@
   };
 
   /* ---------- Screen composition ---------- */
-  function sidebarHtml(spec, selection, resolved) {
+  function sidebarHtml(spec, selection, resolved, identity) {
     var key = spec.badge === 'running' || spec.task === 'running' ? 'task/running' : spec.task === 'failed' ? 'task/failed' : 'task/done';
     var template = H.templates && H.templates[key];
     if (!template || typeof H.fill !== 'function') return '';
     var match = template.match(/<aside class="hd-sidebar"[\s\S]*?<\/aside>/);
     if (!match) return '';
-    var title = TASKS[spec.task].title;
+    var title = identity ? identity.sidebarTitle : TASKS[spec.task].title;
     var html = match[0].replace('href="#new"', 'href="#new-task/default"').replace(/(<a class="hd-task-row[^"]*is-active[^"]*"[\s\S]*?<span class="hd-task-row__title">)[\s\S]*?(<\/span>)/, '$1' + esc(title) + '$2');
+    if (identity && identity.href) html = html.replace(/(<a class="hd-task-row[^"]*is-active[^"]*"[^>]*?href=")[^"]*(")/, '$1' + esc(identity.href) + '$2');
     var glyph = { running: ['running', 'Running', ''], runningUnverified: ['attention', 'Not verified', 'alert'], runningOwnerLost: ['attention', 'Owner lost', 'alert'], takenOver: ['cancelled', 'Cancelled, taken over', 'stop'], failed: ['failed', 'Failed', 'x'], failedInferred: ['failed', 'Failed', 'x'], timedOut: ['failed', 'Timed out', 'clock'], cancelled: ['cancelled', 'Cancelled', 'stop'], pending: ['queued', 'Pending', ''], unavailable: ['cancelled', 'Status unavailable', 'alert'], done: ['done', 'Done', 'check'], doneInferred: ['done', 'Done', 'check'] }[spec.badge];
     html = html.replace(/(<a class="hd-task-row[^"]*is-active[^"]*"[^>]*>)<span class="hd-glyph[\s\S]*?<span class="hd-task-row__title">/, function (_, open) {
       return open + '<span class="hd-glyph hd-glyph--' + glyph[0] + '" aria-label="' + glyph[1] + '">' + (glyph[2] ? icon(glyph[2]) : '') + '</span><span class="hd-task-row__title">';
@@ -258,31 +259,40 @@
     html = html.replace('<nav class="hd-nav"', '<div class="hd-m05-sidebar-scroll"><nav class="hd-nav"').replace('<div class="hd-sidebar__foot">', '</div><div class="hd-sidebar__foot">');
     return H.fill(html, selection, resolved);
   }
-  function topbar(spec, ui, narrow) {
+  function topbar(spec, ui, narrow, identity) {
     var t = TASKS[spec.task], b = BADGES[spec.badge];
     var meta = t.meta + (spec.turns ? ' · ' + spec.turns + ' turns' : '');
+    if (identity) { t = { title: identity.title }; b = identity.badge; meta = identity.meta; }
     var chip = function (ic, label, group, title) { return '<button type="button" class="hd-m05-chip" data-m05="reveal-' + group + '" title="' + esc(title) + '" aria-label="' + esc(title) + '">' + icon(ic) + (label ? '<span>' + esc(label) + '</span>' : '') + '</button>'; };
     var chips = '';
-    if (spec.continuity) chips += chip('refresh', narrow ? '' : 'Observation resumed', 'continuity', 'Observation resumed after a restart. Show details.');
-    if (spec.notices) chips += chip('alert', narrow ? String(spec.notices) : spec.notices + (spec.notices === 1 ? ' notice' : ' notices'), 'notices', 'Show ' + spec.notices + (spec.notices === 1 ? ' notice' : ' notices'));
-    if (spec.composer !== 'pending') chips += chip('shield', narrow ? '' : 'Can edit this repo', 'enforcement', 'Can edit this repo. Show what was enforced.');
-    return '<div class="hd-m05-bar"><span></span><div class="hd-m05-bar__center"><span class="hd-topbar__title">' + esc(t.title) + '</span><span class="hd-badge ' + b[0] + '">' + b[1] + esc(b[2]) + '</span>' + (narrow || spec.composer === 'pending' || (ui.pane && (spec.notices || spec.continuity)) ? '' : '<span class="hd-topbar__meta">' + esc(meta) + '</span>') + '</div><div class="hd-m05-bar__right">' + chips + '<button type="button" class="hd-btn hd-btn--icon hd-btn--sm' + (ui.pane ? ' is-active' : '') + '" data-m05="pane" aria-pressed="' + (ui.pane ? 'true' : 'false') + '" aria-label="' + (ui.pane ? 'Hide right pane' : 'Show right pane') + '">' + icon('panel-right', false) + '</button><span class="hd-m05-more-anchor"><button type="button" class="hd-btn hd-btn--icon hd-btn--sm" data-m05="menu" aria-haspopup="menu" aria-expanded="' + (ui.menu ? 'true' : 'false') + '" aria-label="More actions">' + icon('more', false) + '</button>' + (ui.menu ? overflow(ui, spec) : '') + '</span></div></div>';
+    if (identity) chips = identity.chips || '';
+    else {
+      if (spec.continuity) chips += chip('refresh', narrow ? '' : 'Observation resumed', 'continuity', 'Observation resumed after a restart. Show details.');
+      if (spec.notices) chips += chip('alert', narrow ? String(spec.notices) : spec.notices + (spec.notices === 1 ? ' notice' : ' notices'), 'notices', 'Show ' + spec.notices + (spec.notices === 1 ? ' notice' : ' notices'));
+      if (spec.composer !== 'pending') chips += chip('shield', narrow ? '' : 'Can edit this repo', 'enforcement', 'Can edit this repo. Show what was enforced.');
+    }
+    return '<div class="hd-m05-bar"><span></span><div class="hd-m05-bar__center"><span class="hd-topbar__title">' + esc(t.title) + '</span><span class="hd-badge ' + b[0] + '">' + b[1] + esc(b[2]) + '</span>' + (narrow || spec.composer === 'pending' || (ui.pane && (spec.notices || spec.continuity)) ? '' : '<span class="hd-topbar__meta">' + esc(meta) + '</span>') + '</div><div class="hd-m05-bar__right">' + chips + '<button type="button" class="hd-btn hd-btn--icon hd-btn--sm' + (ui.pane ? ' is-active' : '') + '" data-m05="pane" aria-pressed="' + (ui.pane ? 'true' : 'false') + '" aria-label="' + (ui.pane ? 'Hide right pane' : 'Show right pane') + '">' + icon('panel-right', false) + '</button>' + (identity && identity.menu === false ? '' : '<span class="hd-m05-more-anchor"><button type="button" class="hd-btn hd-btn--icon hd-btn--sm" data-m05="menu" aria-haspopup="menu" aria-expanded="' + (ui.menu ? 'true' : 'false') + '" aria-label="More actions">' + icon('more', false) + '</button>' + (ui.menu ? overflow(ui, spec) : '') + '</span>') + '</div></div>';
   }
-  function paneHtml(spec, ui) {
+  function paneHtml(spec, ui, hooks) {
+    var identity = hooks && hooks.identity, disabled = (identity && identity.disabledTabs) || [];
     // Tabs a person can reach from any state follow that state's lifecycle, not populated defaults.
     var life = spec.composer === 'pending' ? 'notStarted' : spec.badge === 'unavailable' ? 'unavailable' : '';
     var liveRun = spec.badge === 'running' || spec.badge === 'runningUnverified' || spec.badge === 'runningOwnerLost';
     var noObservedExit = spec.badge === 'failedInferred' || spec.badge === 'doneInferred';
     var changes = CHANGES[life || spec.changes || (liveRun ? 'running' : noObservedExit ? 'notObserved' : 'single')], artifacts = ARTIFACTS[life || spec.artifacts || 'populated'];
     var paged = ui.paged || {};
-    var tab = function (id, label, count) { return '<button type="button" role="tab" aria-selected="' + (ui.tab === id) + '" class="hd-tab' + (ui.tab === id ? ' is-active' : '') + '" data-m05="tab-' + id + '">' + label + (count ? ' <span class="hd-tab__count">' + count + '</span>' : '') + '</button>'; };
-    var body = ui.tab === 'changes' ? changes.html() : ui.tab === 'artifacts' ? artifacts.html({ loaded: paged.artifacts }) : EVENTS[life || spec.events || 'populated'](spec, ui.reveal, { loaded: paged.events });
+    var tab = function (id, label, count) {
+      if (disabled.indexOf(id) >= 0) return '<button type="button" role="tab" aria-selected="false" aria-disabled="true" class="hd-tab is-disabled">' + label + '</button>';
+      return '<button type="button" role="tab" aria-selected="' + (ui.tab === id) + '" class="hd-tab' + (ui.tab === id ? ' is-active' : '') + '" data-m05="tab-' + id + '">' + label + (count ? ' <span class="hd-tab__count">' + count + '</span>' : '') + '</button>';
+    };
+    var body = ui.tab === 'events' && hooks && hooks.eventsBody ? hooks.eventsBody(spec, ui) : ui.tab === 'changes' ? changes.html() : ui.tab === 'artifacts' ? artifacts.html({ loaded: paged.artifacts }) : EVENTS[life || spec.events || 'populated'](spec, ui.reveal, { loaded: paged.events });
     return '<aside class="hd-pane hd-m05-pane" aria-label="Task details"><div class="hd-pane__head"><div class="hd-tabs" role="tablist">' + tab('changes', 'Changes', changes.count) + tab('artifacts', 'Artifacts', artifacts.count) + tab('events', 'Events') + '</div><span class="hd-topbar__spacer"></span><button type="button" class="hd-btn hd-btn--icon hd-btn--sm" data-m05="pane" aria-label="Close right pane">' + icon('x') + '</button></div><div class="hd-scroll hd-m05-panescroll">' + body + '</div></aside>';
   }
   function promptHtml(spec) {
     return '<details class="hd-m05-request"><summary>' + icon('chevron-right') + 'Original request</summary><p class="hd-m05-caption">Complete stored request</p><pre>' + esc(TASKS[spec.task].prompt) + '</pre><div class="hd-row hd-m05-actions">' + btn('Copy original request') + '</div></details>';
   }
-  function columnHtml(spec) {
+  function columnHtml(spec, hooks) {
+    if (hooks && hooks.transcriptSlot) return '<section class="hd-m05-column" aria-label="Task conversation">' + hooks.transcriptSlot(spec) + composer(spec.composer) + '</section>';
     var kind = spec.task === 'empty' ? 'empty' : spec.task;
     var head = spec.composer === 'pending' ? '<div class="hd-m05-request"><span class="hd-faint">Original request is readable once this task starts.</span></div>' : promptHtml(spec);
     if (spec.subtask) head += '<div class="hd-m05-prov-line">' + icon('branch') + 'Sub-task started by another agent</div>';
@@ -290,10 +300,14 @@
     var flow = transcript(kind);
     return '<section class="hd-m05-column" aria-label="Task conversation"><div class="hd-scroll hd-m05-scroll"><div class="hd-transcript">' + head + (spec.notice ? notice(spec.notice) : '') + flow + (spec.banner ? BANNERS[spec.banner]() : '') + '</div></div>' + composer(spec.composer) + '</section>';
   }
-  function screenHtml(spec, ui, selection, resolved) {
+  // Optional hooks, passed by no existing route: transcriptSlot(spec) replaces the prompt and transcript
+  // column body, eventsBody(spec, ui) replaces the Events tab body, and identity replaces the task identity
+  // ({ title, meta, badge, chips, sidebarTitle, href, menu, disabledTabs }).
+  function screenHtml(spec, ui, selection, resolved, hooks) {
     var frameId = ui.frame, narrow = ui.narrow || FRAMES[frameId][0] < 1100, mode = paneMode(frameId, false);
-    var pane = ui.pane ? paneHtml(spec, ui) : '';
-    return '<div class="hd-app hd-m05-app" data-theme="' + resolved + '">' + sidebarHtml(spec, selection, resolved) + '<main class="hd-main hd-m05-main">' + topbar(spec, ui, narrow) + '<div class="hd-m05-body hd-m05-body--' + (ui.pane ? mode : 'nopane') + '">' + columnHtml(spec) + pane + '</div>' + (ui.dialog ? DIALOGS[ui.dialog]() : '') + '</main></div>';
+    var identity = hooks && hooks.identity;
+    var pane = ui.pane ? paneHtml(spec, ui, hooks) : '';
+    return '<div class="hd-app hd-m05-app" data-theme="' + resolved + '">' + sidebarHtml(spec, selection, resolved, identity) + '<main class="hd-main hd-m05-main">' + topbar(spec, ui, narrow, identity) + '<div class="hd-m05-body hd-m05-body--' + (ui.pane ? mode : 'nopane') + '">' + columnHtml(spec, hooks) + pane + '</div>' + (ui.dialog ? DIALOGS[ui.dialog]() : '') + '</main></div>';
   }
 
   /* ---------- Boards ---------- */
@@ -369,22 +383,32 @@
   function initialUi(spec) {
     return { frame: spec.frame || 'reference', pane: !!spec.pane, tab: spec.tab || (spec.badge === 'running' || spec.composer === 'pending' ? 'events' : 'changes'), menu: !!spec.menu, dialog: spec.dialog || '', reveal: spec.reveal || '', paged: {} };
   }
+  function frameLabel(ui) {
+    return '<label>Frame <select data-m05-frame><option value="reference"' + (ui.frame === 'reference' ? ' selected' : '') + '>1280 × 800</option><option value="minimum"' + (ui.frame === 'minimum' ? ' selected' : '') + '>1000 × 620</option></select></label>';
+  }
   function mount(root, id) {
-    var host = root.matches && root.matches('.hd-m05') ? root : root.querySelector('.hd-m05');
-    if (!host) return function () {};
     var state = (H.m05ProposalStates || []).filter(function (s) { return s.id === id; })[0];
-    if (!state) return function () {};
+    return state ? mountState(root, state, null) : function () {};
+  }
+  // `ext` is optional and passed by no existing route: { hooks, strip(state, ui, frameLabel),
+  // beforeRender(), afterRender(stage, saved) }. beforeRender runs before the specimen is replaced and returns
+  // what afterRender needs to restore the view once the new specimen is in place.
+  function mountState(root, state, ext) {
+    var host = root.matches && root.matches('.hd-m05') ? root : root.querySelector('.hd-m05');
+    if (!host || !state) return function () {};
     var spec = state.spec, ui = initialUi(spec), disposed = false, returnFocus = null;
     var theme = host.dataset.theme || 'light';
     var selection = host.dataset.systemOn === 'true' ? 'system' : host.dataset.darkOn === 'true' ? 'dark' : 'light';
     function render(focusSel) {
       if (disposed) return;
-      var strip = '<div class="hd-m05-strip"><strong>' + H.catalogStrips.m05[state.kind] + esc(state.gap) + '</strong><a href="#' + H.routeFor('m05', 'overview') + '/' + theme + '">' + H.catalogStrips.m05.overviewLink + '</a>' + (spec.board ? '' : '<label>Frame <select data-m05-frame><option value="reference"' + (ui.frame === 'reference' ? ' selected' : '') + '>1280 × 800</option><option value="minimum"' + (ui.frame === 'minimum' ? ' selected' : '') + '>1000 × 620</option></select></label>') + '</div><p>' + esc(state.summary) + '</p><p class="hd-faint">Contract basis: ' + esc(state.basis) + '</p>' + (state.flag ? '<p class="hd-m05-flag">' + esc(state.flag) + '</p>' : '') + ((!state.flag || state.flag.indexOf('task-artifacts') < 0) && ui.pane && ui.tab === 'artifacts' ? '<p class="hd-m05-flag">Needs contract: task-artifacts has no canonical fixture or capability string yet.</p>' : '');
+      var saved = ext && ext.beforeRender ? ext.beforeRender() : null;
+      var strip = ext && ext.strip ? ext.strip(state, ui, frameLabel(ui)) : '<div class="hd-m05-strip"><strong>' + H.catalogStrips.m05[state.kind] + esc(state.gap) + '</strong><a href="#' + H.routeFor('m05', 'overview') + '/' + theme + '">' + H.catalogStrips.m05.overviewLink + '</a>' + (spec.board ? '' : frameLabel(ui)) + '</div><p>' + esc(state.summary) + '</p><p class="hd-faint">Contract basis: ' + esc(state.basis) + '</p>' + (state.flag ? '<p class="hd-m05-flag">' + esc(state.flag) + '</p>' : '') + ((!state.flag || state.flag.indexOf('task-artifacts') < 0) && ui.pane && ui.tab === 'artifacts' ? '<p class="hd-m05-flag">Needs contract: task-artifacts has no canonical fixture or capability string yet.</p>' : '');
       host.querySelector('.hd-m05-catalog').innerHTML = strip;
       var stage = host.querySelector('.hd-m05-stage');
       if (spec.board) { stage.innerHTML = boardHtml(spec.board, selection, host.dataset.theme, theme); return; }
       var f = FRAMES[ui.frame];
-      stage.innerHTML = '<div class="hd-m05-window" style="width:' + f[0] + 'px;height:' + f[1] + 'px">' + screenHtml(spec, ui, selection, host.dataset.theme) + '</div>';
+      stage.innerHTML = '<div class="hd-m05-window" style="width:' + f[0] + 'px;height:' + f[1] + 'px">' + screenHtml(spec, ui, selection, host.dataset.theme, ext && ext.hooks) + '</div>';
+      if (ext && ext.afterRender) ext.afterRender(stage, saved);
       var target = focusSel ? stage.querySelector(focusSel) : null;
       if (target) target.focus({ preventScroll: true });
       if (ui.reveal) { var open = stage.querySelector('[data-m05-focus]'); if (open) { open.focus({ preventScroll: true }); open.scrollIntoView({ block: 'nearest' }); } }
@@ -416,5 +440,5 @@
     render();
     return function () { disposed = true; host.removeEventListener('click', click); host.removeEventListener('change', change); host.removeEventListener('keydown', keydown); host.removeEventListener('submit', submit); };
   }
-  H.m05Proposal = { mount: mount, paneMode: paneMode, detailWidth: detailWidth, GAPS: GAPS };
+  H.m05Proposal = { mount: mount, mountState: mountState, screenHtml: screenHtml, initialUi: initialUi, icon: icon, BADGES: BADGES, FRAMES: FRAMES, paneMode: paneMode, detailWidth: detailWidth, GAPS: GAPS };
 })();
