@@ -48,27 +48,60 @@ The templates that other states clone (`task/running`, `task/done`, `task/failed
 
 "Task options closed" in Q3 means `new-task/options-closed`.
 
-Open (QA): whether `task/activity-sources` is redirected to `task/events-populated`, or kept while the transcript states are redrawn without the Events side pane. Until the owner decides, the state stays as it is.
+Open (QA): whether `task/activity-sources` is redirected to `task/events-populated`, or kept while the transcript states are redrawn inside the task screen frame (see [Provisional redraws awaiting owner review](#provisional-redraws-awaiting-owner-review)). Until the owner decides, the state stays as it is.
 
-## Provisional redraws
+## Provisional redraws awaiting owner review
 
-Six composer states are drawn only in the bottom layout. The owner asked for centered redraws with the same content and copy (Q3, 2026-11-08). The redraws are provisional and need owner approval; they carry no approval date. Each earlier state stays listed, labelled "Earlier layout; centered redraw awaiting owner approval", with a link to its redraw. The pairs are in `HFV2.pendingRedraw` (`v2/scripts/supersessions.js`).
+Seventeen routes are provisional redraws. None is approved: each carries no approval date, its strip reads "Provisional · needs owner approval", and the earlier state stays listed, labelled "Earlier layout; redraw awaiting owner approval" outside the specimen, with a link to its redraw. The pairs are in `HFV2.pendingRedraw` (`v2/scripts/supersessions.js`). Each redraw reuses the fixtures and copy of its earlier state; only the layout changes, and no in-app copy is invented.
 
-| Earlier state | Provisional redraw |
-| --- | --- |
-| `new-task/composer-loading` | `new-task/centered-loading` |
-| `new-task/composer-unqualified` | `new-task/centered-unqualified` |
-| `new-task/composer-invalid` | `new-task/centered-invalid` |
-| `new-task/composer-starting` | `new-task/centered-starting` |
-| `new-task/composer-refused` | `new-task/centered-refused` |
-| `new-task/options-closed` | `new-task/centered-options-closed` |
+| Provisional redraw | Earlier state | Basis | Owner question |
+| --- | --- | --- | --- |
+| `new-task/centered-loading` | `new-task/composer-loading` | Q3, owner answer 2026-11-08: redraw the six composer states drawn only in the bottom layout, in the centered layout, with the same content and copy | Is the centered layout accepted for this state? |
+| `new-task/centered-unqualified` | `new-task/composer-unqualified` | Q3 | Is the centered layout accepted for this state? |
+| `new-task/centered-invalid` | `new-task/composer-invalid` | Q3 | Is the task options popover acceptable where the placement rule of `new-task/centered-options` puts it, including at the minimum frame, where the space is smaller? |
+| `new-task/centered-starting` | `new-task/composer-starting` | Q3 | Is the centered layout accepted for this state? |
+| `new-task/centered-refused` | `new-task/composer-refused` | Q3 | Is the centered layout accepted for this state? |
+| `new-task/centered-options-closed` | `new-task/options-closed` | Q3 | Is the centered layout accepted for this state? |
+| `sidebar/centered-expanded` | `sidebar/expanded` | Q2, owner answer 2026-11-08, and the coordinator's confirmation of 2026-11-08 that the three shell states still draw the bottom composer | See the duplication note below |
+| `sidebar/centered-collapsed` | `sidebar/collapsed` | Q2 and the same confirmation. `new-task/sidebar-collapsed` already redirects to `sidebar/collapsed`; on sign-off that redirect is repointed to this redraw | Is the centered layout accepted beside the collapsed rail? |
+| `sidebar/centered-minimum` | `sidebar/minimum` | Q2 and the same confirmation | Does the centered layout fit the minimum window without clipping, as drawn? |
+| `task/transcript-observed` | `task/activity-observed` | Q4, owner answer 2026-11-08: the Events side pane is replaced by the Events tab. None of the eight activity states has an approved equivalent, because the approved Events states draw different content | Is the transcript, drawn inside the task screen frame with the Events pane, accepted for this state? |
+| `task/transcript-loading` | `task/activity-loading` | Q4 | The same. The loading placeholders are static |
+| `task/transcript-partial` | `task/activity-partial` | Q4 | The same. Events adds the unsupported-record stub and the record ordering disclosure |
+| `task/transcript-unavailable` | `task/activity-unavailable` | Q4 | The same |
+| `task/transcript-integrity-failed` | `task/activity-integrity-failed` | Q4 | The same. The request text stays withheld |
+| `task/transcript-reconnecting` | `task/activity-reconnecting` | Q4 | The same |
+| `task/transcript-capacity` | `task/activity-capacity` | Q4 | The same |
+| `task/transcript-sources` | `task/activity-sources` | Q4, and the owner's pending scope decision (QA) for this state. It holds the public stubs, the file order disclosure and a recovery source that `task/events-populated` lacks | The same, and whether `task/activity-sources` is redirected to `task/events-populated` instead |
+| Events content the approved Events tab omits (all eight `task/transcript-*` routes) | The approved `task/events-*` states | `v2/docs/decisions/m05-task-screen-proposal.md:168`: Events holds the activity transcript content "as D2B has them", but the approved Events states omit four elements the activity states have: Copy normalized record, the Recovered message disclosure, Record ordering and the "independent of captured activity" qualifier. The redraws draw all four, with the earlier side pane sections verbatim and their own headings, inside the approved Events tab frame | Does Events keep the four elements, or do the approved Events states stand as drawn? |
 
-On sign-off, a pair moves into the retired designs table above: the earlier state, its templates and its guides are removed, and a redirect that already targets the earlier state is repointed to the redraw.
+**Events open.** Each transcript route has an Events-open state, reached by the right pane toggle in the top bar or by the deep link below. It is a state of the route, not a separate route: the owner reviews eight routes and each has an open state. The deep link `/events` follows the state and precedes the appearance; opening or closing Events by clicking does not change the address.
+
+| Route | Closed | Events open |
+| --- | --- | --- |
+| `task/transcript-observed` | `#task/transcript-observed` | `#task/transcript-observed/events` |
+| `task/transcript-loading` | `#task/transcript-loading` | `#task/transcript-loading/events` |
+| `task/transcript-partial` | `#task/transcript-partial` | `#task/transcript-partial/events` |
+| `task/transcript-unavailable` | `#task/transcript-unavailable` | `#task/transcript-unavailable/events` |
+| `task/transcript-integrity-failed` | `#task/transcript-integrity-failed` | `#task/transcript-integrity-failed/events` |
+| `task/transcript-reconnecting` | `#task/transcript-reconnecting` | `#task/transcript-reconnecting/events` |
+| `task/transcript-capacity` | `#task/transcript-capacity` | `#task/transcript-capacity/events` |
+| `task/transcript-sources` | `#task/transcript-sources` | `#task/transcript-sources/events` |
+
+Append `/light`, `/dark` or `/system` for an appearance, for example `#task/transcript-observed/events/dark`. A view a state does not declare is dropped; it never opens the overview.
+
+**Catalog limitations of the transcript redraws.** The top bar shows only the facts the earlier state has: title, meta, status and the Events toggle. It has no notices or continuity chips and no More menu, because the earlier state has none; at the minimum frame the meta drops, as it does on the approved top bar. The Changes and Artifacts tabs keep their approved chrome but are disabled, with no content and no new copy, because the earlier state has no changes or artifacts data and the task screen fixtures would invent it. The earlier request disclosure replaces the task screen's "Complete stored request" disclosure in these routes only.
+
+**Duplication.** `sidebar/centered-expanded` duplicates `new-task/centered-empty`. Its fixture equals the centered empty draft apart from the route, and a headless browser comparison found the window markup and pixels identical in both appearances at 1280 × 800 and 1000 × 620, so the two routes differ only in their catalog strips. It is drawn anyway, as instructed, and nothing is retired. On sign-off the owner can retire `sidebar/expanded` as a redirect to `new-task/centered-empty` instead of keeping both states. The sidebar region of all three shell redraws is identical to its earlier state (markup and pixels), and their New task area equals the one of `new-task/centered-empty`.
+
+On sign-off, a pair moves into the retired designs table above: the earlier state, its templates and its guides are removed, and a redirect that already targets the earlier state is repointed to the redraw (`new-task/sidebar-collapsed` and `sidebar/collapsed` are the only such case among these pairs).
 
 Open design questions for the redraws:
 
 - `new-task/centered-invalid` opens the task options popover, as its source does. Where it sits in the centered layout follows the placement rule of `new-task/centered-options` (above or below, by the space available), and at the minimum frame the available space is smaller. The owner decides whether that is acceptable.
 - Whether the open harness pill (the retired `new-task/harness-menu`) is drawn in the centered layout.
+- Whether `task/activity-sources` is kept, redirected to `task/events-populated`, or replaced by `task/transcript-sources` (QA).
+- Whether the four elements named above belong in the approved Events tab.
 
 ## By screen
 
@@ -84,11 +117,11 @@ Not a design state. It indexes the current design.
 
 ### `sidebar`
 
-[m04-proposal.md](m04-proposal.md) and [m04-centered-composer-proposal.md](m04-centered-composer-proposal.md) (the sidebar body scrolls as one bounded area).
+[m04-proposal.md](m04-proposal.md) and [m04-centered-composer-proposal.md](m04-centered-composer-proposal.md) (the sidebar body scrolls as one bounded area)). Provisional centered shell redraws: [awaiting owner review](#provisional-redraws-awaiting-owner-review).
 
 ### `task`
 
-[approval.md](approval.md) (base states), [d2b-observation-approval.md](d2b-observation-approval.md) (activity transcript), [m05-task-screen-approval.md](m05-task-screen-approval.md) (status, actions, top bar, changes, events, artifacts, layout).
+[approval.md](approval.md) (base states), [d2b-observation-approval.md](d2b-observation-approval.md) (activity transcript), [m05-task-screen-approval.md](m05-task-screen-approval.md) (status, actions, top bar, changes, events, artifacts, layout). Provisional transcript redraws: [awaiting owner review](#provisional-redraws-awaiting-owner-review).
 
 ### `parallel-group`
 

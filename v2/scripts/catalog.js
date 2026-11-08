@@ -5,8 +5,7 @@
   var HFV2 = window.HFV2;
   var STORAGE_KEY = 'hf-v2-appearance';
   var MODES = ['system', 'light', 'dark'];
-  var PENDING = 'Earlier layout; centered redraw awaiting owner approval';
-  var ROUTE_PATTERN = /^#([a-z0-9-]+)\/([a-z0-9-]+)(?:\/(light|dark|system))?$/;
+  var PENDING = 'Earlier layout; redraw awaiting owner approval';
 
   var els = {
     nav: document.getElementById('hdc-nav'),
@@ -25,7 +24,7 @@
   };
 
   var media = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
-  var current = { family: null, state: null, override: null };
+  var current = { family: null, state: null, override: null, view: null };
 
   function readPreference() {
     try {
@@ -58,21 +57,22 @@
   var findFamily = HFV2.findFamily;
   var findState = HFV2.findState;
 
-  // Old routes resolve to their canonical route (alias, then redirect) before the route is looked up.
+  // Old routes resolve to their canonical route (alias, then redirect) before the route is looked up. The
+  // canonical route keeps a view only when its state declares it, so a view here is always a declared one.
   function parseHash(hash) {
-    var match = ROUTE_PATTERN.exec(HFV2.resolveRoute(hash || ''));
+    var match = HFV2.parseRoute(HFV2.resolveRoute(hash || ''));
     if (!match) return null;
-    var family = findFamily(match[1]);
-    if (!family || !findState(family, match[2])) return null;
-    return { family: match[1], state: match[2], override: match[3] || null };
+    var family = findFamily(match.family);
+    if (!family || !findState(family, match.state)) return null;
+    return { family: match.family, state: match.state, view: match.view, override: match.appearance };
   }
 
-  function hashFor(family, state, override) {
-    return '#' + family + '/' + state + (override ? '/' + override : '');
+  function hashFor(family, state, override, view) {
+    return '#' + family + '/' + state + (view ? '/' + view : '') + (override ? '/' + override : '');
   }
 
-  function go(family, state, override) {
-    var hash = hashFor(family, state, override);
+  function go(family, state, override, view) {
+    var hash = hashFor(family, state, override, view);
     if (window.location.hash === hash) render();
     else window.location.hash = hash;
   }
@@ -209,13 +209,13 @@
     var parsed = parseHash(hash);
     if (!parsed) {
       var fallback = HFV2.registry.defaultRoute.split('/');
-      parsed = { family: fallback[0], state: fallback[1], override: null };
+      parsed = { family: fallback[0], state: fallback[1], override: null, view: null };
       if (hash && window.history && window.history.replaceState) {
         window.history.replaceState(null, '', hashFor(parsed.family, parsed.state));
       }
-    } else if (hash !== hashFor(parsed.family, parsed.state, parsed.override) && window.history && window.history.replaceState) {
-      // An old route: show the canonical one in the address bar.
-      window.history.replaceState(null, '', hashFor(parsed.family, parsed.state, parsed.override));
+    } else if (hash !== hashFor(parsed.family, parsed.state, parsed.override, parsed.view) && window.history && window.history.replaceState) {
+      // An old route, or a view the state does not declare: show the canonical route in the address bar.
+      window.history.replaceState(null, '', hashFor(parsed.family, parsed.state, parsed.override, parsed.view));
     }
     current = parsed;
 
@@ -239,7 +239,7 @@
       els.specimen.innerHTML = html;
     }
     var renderer = d.renderer && HFV2[HFV2.RENDERERS[d.renderer].api];
-    if (renderer) specimenCleanup = renderer.mount(els.specimen, d.mount);
+    if (renderer) specimenCleanup = renderer.mount(els.specimen, d.mount, { view: current.view });
     var guide = HFV2.componentDocs && HFV2.componentDocs[d.guideKey];
     els.doc.innerHTML = guide || '';
     els.doc.hidden = !guide;
@@ -268,7 +268,7 @@
     if (MODES.indexOf(value) < 0) return;
     preference = value;
     writePreference(value);
-    go(current.family, current.state, null);
+    go(current.family, current.state, null, current.view);
   }
 
   els.theme.addEventListener('click', function (event) {

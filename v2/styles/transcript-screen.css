@@ -1,0 +1,15 @@
+/* Provisional task transcript states. The transcript regions of the activity states sit inside the task
+   screen frame, under .hd-tr-host. The rules below extend the activity rules of d2b-proposal.css that are
+   written as descendants of .hd-d2b, and nothing else: the row, boundary, request, facts and live-region
+   rules are class-only and already apply. The fixed minimum width of the activity frame is not extended. */
+.hd-tr-host .hd-tr-controls{display:contents}
+.hd-tr-host .hd-d2b-request,.hd-tr-host .hd-d2b-history{color:var(--text);font-family:var(--font-sans);font-size:14px;line-height:22px}
+.hd-tr-host .hd-d2b-request summary,.hd-tr-host .hd-d2b-history summary,.hd-tr-host .hd-d2b-facts summary{cursor:pointer;font-weight:500}
+.hd-tr-host .hd-d2b-request :focus-visible,.hd-tr-host .hd-d2b-history:focus-visible,.hd-tr-host .hd-d2b-history :focus-visible,.hd-tr-host .hd-d2b-facts :focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.hd-tr-host .hd-d2b-error{color:var(--danger)}
+/* The announcement can wrap to a second line in the narrower column. Reserve both lines so the history area keeps its height as messages come and go. */
+.hd-tr-host .hd-d2b-live{min-height:60px}
+.hd-tr-host .hd-d2b-facts{overflow-wrap:anywhere}
+.hd-tr-host .hd-tab.is-disabled{opacity:.45;cursor:default}
+.hd-tr-host .hd-tab.is-disabled:hover{background:transparent;color:var(--text-secondary)}
+@media(prefers-reduced-motion:reduce){.hd-tr-host *{animation:none!important;transition:none!important;scroll-behavior:auto!important}}

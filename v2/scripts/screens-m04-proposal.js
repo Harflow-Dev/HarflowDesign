@@ -9,9 +9,9 @@
   // (hd-m04-amendment); the 24 baseline states are unchanged.
   var amendmentIds = ['amendment-empty','amendment-ready','amendment-growing','amendment-capped','amendment-options','amendment-unknown'];
   H.m04AmendmentStates = amendmentIds.map(function (id) { return { id: id, title: id.replace(/-/g, ' '), description: 'Owner-approved centered-composer amendment (2026-11-06, separate from the M04 baseline approval of 2026-11-05): ' + id.replace(/-/g, ' ') + ' review fixture.', status: 'Approved', approved: true }; });
-  // Provisional centered redraws of six bottom-layout composer states (not approved). The fixture of each
+  // Provisional centered redraws of six bottom-layout composer states and three shell states (not approved). The fixture of each
   // comes from its source mount, named in m04-proposal.js.
-  var redrawIds = ['centered-loading','centered-unqualified','centered-invalid','centered-starting','centered-refused','centered-options-closed'];
+  var redrawIds = ['centered-loading','centered-unqualified','centered-invalid','centered-starting','centered-refused','centered-options-closed','centered-shell','centered-shell-collapsed','centered-shell-narrow'];
   H.m04RedrawStates = redrawIds.map(function (id) { return { id: id, title: id.replace(/-/g, ' '), description: 'Provisional centered redraw: ' + id.replace(/-/g, ' ') + ' review fixture.', status: 'Provisional', approved: false }; });
   var T = H.templates = H.templates || {};
   // Labels of the catalog-only strip above the app frame. The Node test scans them for process names.
@@ -62,7 +62,10 @@
     ["centered-invalid", "new-task", "centered-invalid", "Composer", "Centered composer · Validation", "Invalid input and requested options need correction.", "composer-invalid"],
     ["centered-starting", "new-task", "centered-starting", "Composer", "Centered composer · Starting", "One in-flight start retains the draft and prevents duplicates.", "composer-starting"],
     ["centered-refused", "new-task", "centered-refused", "Composer", "Centered composer · Refused", "A definitive refusal preserves the draft for review.", "composer-refused"],
-    ["centered-options-closed", "new-task", "centered-options-closed", "Task options", "Centered composer · Task options closed", "Customized task options retained behind the bottom-left plus button.", "advanced-closed"]
+    ["centered-options-closed", "new-task", "centered-options-closed", "Task options", "Centered composer · Task options closed", "Customized task options retained behind the bottom-left plus button.", "advanced-closed"],
+    ["centered-shell", "sidebar", "centered-expanded", "Layout", "Centered shell · Expanded", "Native shell adaptation of the composer.", "shell"],
+    ["centered-shell-collapsed", "sidebar", "centered-collapsed", "Layout", "Centered shell · Collapsed rail", "Native collapsed rail and accessible navigation.", "shell-collapsed"],
+    ["centered-shell-narrow", "sidebar", "centered-minimum", "Layout", "Centered shell · Minimum window", "Minimum-size composition without font scaling.", "shell-narrow"]
   ];
   var APPROVAL = {
     baseline: { by: 'the owner', date: '2026-11-05', decision: 'Entry visual direction · native and runtime qualification separate' },

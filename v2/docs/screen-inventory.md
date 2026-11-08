@@ -40,6 +40,16 @@ Migration intent and unresolved coverage are tracked in the [migration coverage 
 
 The base New task states (`new-task/default`, `harness-menu`, `sidebar-collapsed`) and the base Task states Running, Done, changes pane and Failed were replaced by later designs on the owner's decision. Their routes still open the replacement; see [the decisions record](decisions/README.md#retired-designs) and the [route map](route-map.md).
 
+## Provisional redraws
+
+Seventeen states are redraws that await the owner's approval. Each earlier state stays listed with a link to its redraw. See [the decisions record](decisions/README.md#provisional-redraws-awaiting-owner-review) for the source, basis and owner question of each.
+
+| Family | State | Route | Shows |
+| --- | --- | --- | --- |
+| New task | Centered composer · Checking options, Unavailable options, Validation, Starting, Refused, Task options closed | `new-task/centered-loading`, `centered-unqualified`, `centered-invalid`, `centered-starting`, `centered-refused`, `centered-options-closed` | The six composer states drawn only in the bottom layout, in the centered layout |
+| Sidebar | Centered shell · Expanded, Collapsed rail, Minimum window | `sidebar/centered-expanded`, `centered-collapsed`, `centered-minimum` | The shell states with the New task area in the centered layout. `centered-expanded` draws the same window as `new-task/centered-empty` |
+| Task | Task transcript · Observed activity, Loading observations, Incomplete history, Observation unavailable, Request integrity failure, Reconnect and source change, Reading window at capacity, Normalized and recovered sources | `task/transcript-observed`, `transcript-loading`, `transcript-partial`, `transcript-unavailable`, `transcript-integrity-failed`, `transcript-reconnecting`, `transcript-capacity`, `transcript-sources` | The eight activity transcript states inside the task screen frame. The right pane opens on Events, with the earlier side pane sections; open it from the top bar or with `/events` after the route |
+
 ## Decisions recorded from the owner's feedback rounds
 
 - The Workflows list shows no run status. The same workflow can run concurrently; runs appear only in the sidebar under Running and Recent work.

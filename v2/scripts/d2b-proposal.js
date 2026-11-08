@@ -362,14 +362,15 @@
       var history = sl().history;
       return { view: captureView(), anchor: captureVisibleAnchor(), historyScroll: history ? history.scrollTop : 0 };
     }
-    // After the surrounding screen replaced them.
+    // After the surrounding screen replaced them. A history at its top stays at its top; otherwise the
+    // reading anchor keeps its offset, and the live region says when the view edge limited that.
     function refresh(saved) {
       fill();
       if (saved) restoreView(saved.view, false);
       announce(s.message||'');
       var history = sl().history;
       if (!saved || !history) return;
-      if (saved.anchor) restoreVisibleAnchor(saved.anchor);
+      if (saved.anchor && saved.historyScroll > 0) restoreVisibleAnchor(saved.anchor);
       else history.scrollTop = saved.historyScroll;
     }
     function onChange(e) {

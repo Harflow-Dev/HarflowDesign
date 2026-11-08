@@ -15,15 +15,18 @@
     'amendment-options': 'Review the delivery queue',
     'amendment-unknown': 'Review the nightly dependency audit results for the HarflowMCP repository and prepare a short written digest. For each failed run, name the owning workflow, the failing node, the harness and model that reported it, and the turn where the failure appeared. Separate genuine regressions from known upstream flakes by checking the two most recent audited revisions side by side. Where a fix is obvious, open a follow-up task that names the repository, quotes the failing node, and lists the affected workflows so the next reviewer can start immediately. Do not start any code changes yourself. Post the finished digest with one line per failure, a short overall conclusion, and the follow-up task link, so the queue can be triaged before the next nightly run.'
   };
-  // Provisional centered redraws of six bottom-layout composer states. Each mount copies the fixture of
-  // its source mount; only the layout differs.
+  // Provisional centered redraws of six bottom-layout composer states and three shell states. Each mount
+  // copies the fixture of its source mount; only the layout differs.
   var REDRAW_SOURCES = {
     'centered-loading': 'composer-loading',
     'centered-unqualified': 'composer-unqualified',
     'centered-invalid': 'composer-invalid',
     'centered-starting': 'composer-starting',
     'centered-refused': 'composer-refused',
-    'centered-options-closed': 'advanced-closed'
+    'centered-options-closed': 'advanced-closed',
+    'centered-shell': 'shell',
+    'centered-shell-collapsed': 'shell-collapsed',
+    'centered-shell-narrow': 'shell-narrow'
   };
   function has(map, key) { return Object.prototype.hasOwnProperty.call(map, key); }
   function isRedraw(route) { return has(REDRAW_SOURCES, route); }
@@ -106,7 +109,9 @@
       // centered composer states that replaced them.
       var boards = amendment
         ? (isRedraw(route)
-          ? [['centered-loading','Loading'],['centered-unqualified','Unavailable'],['centered-invalid','Validation'],['centered-starting','Starting'],['centered-refused','Refused'],['centered-options-closed','Options closed']]
+          ? (route.indexOf('centered-shell')===0
+            ? [['centered-shell','Expanded'],['centered-shell-collapsed','Collapsed'],['centered-shell-narrow','Minimum']]
+            : [['centered-loading','Loading'],['centered-unqualified','Unavailable'],['centered-invalid','Validation'],['centered-starting','Starting'],['centered-refused','Refused'],['centered-options-closed','Options closed']])
           : [['amendment-empty','Empty'],['amendment-ready','One line'],['amendment-growing','Growing'],['amendment-capped','Capped'],['amendment-options','Options open'],['amendment-unknown','Unknown']])
         : [['shell','Shell'],['amendment-ready','Composer'],['amendment-options','Advanced'],['history-retained','History'],['runtime-checking','Runtime']];
       var boardLinks = boards.map(function (board) { return '<a href="#' + H.routeFor('m04', board[0]) + '/' + theme + '">' + board[1] + '</a>'; }).join('');

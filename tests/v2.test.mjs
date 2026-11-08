@@ -88,7 +88,7 @@ test('registry routes are unique and every descriptor resolves to a template, gu
     m05: HFV2.m05ProposalStates.map(x => x.id)
   };
   for (const d of descriptors.filter(x => x.renderer)) {
-    if (d.renderer === 'd2b') assert.equal(HFV2.d2bProposal.createState(d.mount).name, d.mount, `${d.route} is a known fixture`);
+    if (d.renderer === 'd2b' || d.renderer === 'transcript') assert.equal(HFV2.d2bProposal.createState(d.mount).name, d.mount, `${d.route} is a known fixture`);
     else assert.ok(mountIds[d.renderer].includes(d.mount), `${d.route} mounts a known fixture`);
   }
 });
@@ -328,6 +328,7 @@ test('no milestone or process names appear in navigation, metadata, guides or ca
   for (const [renderer, strips] of Object.entries(HFV2.catalogStrips)) {
     for (const [name, label] of Object.entries(strips)) check(`strip ${renderer}.${name}`, label);
   }
+  assert.ok(Object.keys(HFV2.catalogStrips.transcript).length >= 3, 'the transcript renderer strip fields are scanned too');
   // Strip text is built from each task state's own fields, except in the decision boards.
   for (const state of HFV2.m05ProposalStates.filter(x => x.kind !== 'record')) {
     for (const field of ['gap', 'summary', 'basis', 'flag']) check(`m05 strip ${state.id} ${field}`, state[field]);
@@ -361,7 +362,8 @@ function rendererReads() {
 
 test('aliases resolve old routes without shadowing or chaining, and land on a live route or a retired one', () => {
   const entries = Object.entries(aliases);
-  assert.equal(entries.length, descriptors.filter(d => d.renderer && !d.state.redrawOf).length + retired.filter(e => e.renderer).length, 'every renderer route has exactly one old route, retired ones included, except provisional redraws');
+  // The transcript renderer is excluded by name: its routes are new canonical routes with no earlier name.
+  assert.equal(entries.length, descriptors.filter(d => d.renderer && d.renderer !== 'transcript' && !d.state.redrawOf).length + retired.filter(e => e.renderer).length, 'every renderer route has exactly one old route, retired ones included, except provisional redraws');
   for (const [old, target] of entries) {
     assert.match(old, /^[a-z0-9-]+\/[a-z0-9-]+$/);
     assert.ok(!routeSet.has(old), `${old} is an alias and must not also be canonical`);
@@ -391,7 +393,8 @@ test('resolveRoute canonicalises old routes and keeps the appearance suffix', ()
     assert.equal(HFV2.resolveRoute(`#m04-proposal/composer-ready${suffix}`), `#new-task/centered-ready${suffix}`, 'an alias followed by a redirect');
     assert.equal(HFV2.resolveRoute(`#m04-proposal/advanced${suffix}`), `#new-task/centered-options${suffix}`);
   }
-  for (const odd of ['', '#', '#nothing', '#a/b/c/d', '#m05-proposal/state-running/sepia', '#m05-proposal/unknown']) assert.equal(HFV2.resolveRoute(odd), odd);
+  for (const odd of ['', '#', '#nothing', '#a/b/c/d', '#m05-proposal/unknown', '#a/b/c/d/e']) assert.equal(HFV2.resolveRoute(odd), odd);
+  assert.equal(HFV2.resolveRoute('#m05-proposal/state-running/sepia'), '#task/running-stop', 'an undeclared view is dropped, never kept');
   assert.equal(HFV2.resolveRoute(undefined), undefined);
   for (const [old, target] of Object.entries(aliases)) {
     const final = target in redirects ? redirects[target] : target;
@@ -583,6 +586,18 @@ test('the route map lists every earlier route and its current route', () => {
   for (const [from, to] of Object.entries(HFV2.routeRedirects)) assert.ok(map.includes(`| \`${from}\` | \`${to}\` |`), `${from} redirects to ${to} in the map`);
 });
 
+test('the route map lists every provisional redraw with its earlier route and the Events deep links', () => {
+  const map = read(path.join(v2, 'docs', 'route-map.md'));
+  assert.ok(map.includes('## Provisional redraw routes') && map.includes('### Route grammar'));
+  for (const { older, newer } of HFV2.pendingRedraw) {
+    const row = map.split('\n').find(line => line.startsWith(`| \`${newer}\` |`));
+    assert.ok(row, `${newer} is listed`);
+    assert.ok(row.includes(`\`${older}\``), `${newer} names ${older}`);
+    if (HFV2.viewsOf(newer).includes('events')) assert.ok(row.includes(`\`#${newer}/events\``), `${newer} lists its Events deep link`);
+    assert.ok(!(newer in HFV2.routeAliases) && !(newer in HFV2.routeRedirects), `${newer} is canonical, not an alias or a redirect`);
+  }
+});
+
 test('the coverage ledger keeps its headings and anchor, cites registered routes and annotates retired ones', () => {
   const ledger = read(path.join(v2, 'docs', 'migration-coverage.md'));
   assert.match(ledger, /^## Capability disposition ledger \(S03\)$/m);
@@ -612,7 +627,8 @@ test('string literals in the strip builders carry no process names', () => {
   const sources = [
     ['m04-proposal.js', 'var controls=', 'var base = template('],
     ['d2b-proposal.js', 'function controlsHtml', 'function requestHtml'],
-    ['m05-proposal.js', 'var strip =', "host.querySelector('.hd-m05-catalog')"]
+    ['m05-proposal.js', 'var strip =', "host.querySelector('.hd-m05-catalog')"],
+    ['transcript-screen.js', 'strip: function', 'beforeRender:']
   ];
   const hits = [];
   for (const [name, from, to] of sources) {
@@ -646,7 +662,7 @@ test('renderer string literals that build hash links resolve to registered state
   // Chosen approach for renderer-generated hrefs: scan the string literals of the renderer sources
   // here, and check every rendered link in the pixel harness (a DOM check over every route).
   let found = 0;
-  for (const name of ['m04-proposal.js', 'm05-proposal.js', 'd2b-proposal.js', 'catalog.js', 'screens-overview.js']) {
+  for (const name of ['m04-proposal.js', 'm05-proposal.js', 'd2b-proposal.js', 'transcript-screen.js', 'screens-transcript.js', 'catalog.js', 'screens-overview.js']) {
     for (const [, route] of stripComments(read_(name)).matchAll(/#([a-z0-9-]+\/[a-z0-9-]+(?:\/(?:light|dark|system))?)(?=['"\s>)\\]|$)/g)) {
       found += 1;
       checkHash('#' + route, name);
@@ -686,17 +702,21 @@ test('strip links of the m04 renderer point at current states, never at retired 
   for (const call of overviewMounts) assert.ok(routeSet.has(HFV2.routeFor('m05', call.match(/'m05', '([a-z-]+)'/)[1])), call);
 });
 
-// ---- Provisional centered redraws ----
+// ---- Provisional redraws ----
 
 const pending = HFV2.pendingRedraw;
-const REDRAW_ROUTES = ['new-task/centered-loading', 'new-task/centered-unqualified', 'new-task/centered-invalid', 'new-task/centered-starting', 'new-task/centered-refused', 'new-task/centered-options-closed'];
+const COMPOSER_REDRAWS = [
+  ['new-task/composer-loading', 'new-task/centered-loading'], ['new-task/composer-unqualified', 'new-task/centered-unqualified'], ['new-task/composer-invalid', 'new-task/centered-invalid'],
+  ['new-task/composer-starting', 'new-task/centered-starting'], ['new-task/composer-refused', 'new-task/centered-refused'], ['new-task/options-closed', 'new-task/centered-options-closed']
+];
+const SHELL_REDRAWS = [['sidebar/expanded', 'sidebar/centered-expanded'], ['sidebar/collapsed', 'sidebar/centered-collapsed'], ['sidebar/minimum', 'sidebar/centered-minimum']];
+const TRANSCRIPT_REDRAWS = ['observed', 'loading', 'partial', 'unavailable', 'integrity-failed', 'reconnecting', 'capacity', 'sources'].map(name => [`task/activity-${name}`, `task/transcript-${name}`]);
 const stateOfRoute = route => { const [f, s] = route.split('/'); return [HFV2.findFamily(f), HFV2.findState(HFV2.findFamily(f), s)]; };
 
-test('six centered redraws are provisional, carry no approval date and link to their earlier layout', () => {
-  assert.deepEqual(Array.from(pending, pair => pair.newer), REDRAW_ROUTES);
-  assert.deepEqual(Array.from(pending, pair => pair.older), [
-    'new-task/composer-loading', 'new-task/composer-unqualified', 'new-task/composer-invalid', 'new-task/composer-starting', 'new-task/composer-refused', 'new-task/options-closed'
-  ]);
+test('seventeen redraws are provisional, carry no approval date and link to their earlier layout', () => {
+  assert.deepEqual(Array.from(pending, pair => [pair.older, pair.newer]), [...COMPOSER_REDRAWS, ...SHELL_REDRAWS, ...TRANSCRIPT_REDRAWS]);
+  assert.equal(pending.length, 17);
+  const composerOrShell = new Set([...COMPOSER_REDRAWS, ...SHELL_REDRAWS].map(pair => pair[1]));
   for (const { older, newer } of pending) {
     assert.ok(routeSet.has(older) && routeSet.has(newer), `${older} and ${newer} exist`);
     const [family, state] = stateOfRoute(newer);
@@ -710,28 +730,62 @@ test('six centered redraws are provisional, carry no approval date and link to t
     assert.ok(!earlier.hidden);
     assert.ok(!(older in redirects) && !(newer in redirects) && !(newer in aliases));
     const d = HFV2.describe(newer);
-    assert.equal(d.renderer, 'm04');
-    assert.equal(d.templateKey, `m04-proposal/${d.mount}`);
-    assert.match(HFV2.templates[d.templateKey], /hd-m04-amendment/, 'drawn in the centered layout');
+    if (composerOrShell.has(newer)) {
+      assert.equal(d.renderer, 'm04');
+      assert.equal(d.templateKey, `m04-proposal/${d.mount}`);
+      assert.match(HFV2.templates[d.templateKey], /hd-m04-amendment/, 'drawn in the centered layout');
+    } else {
+      assert.equal(d.renderer, 'transcript');
+      assert.equal(d.templateKey, `transcript/${d.mount}`);
+      assert.equal(d.guideKey, `transcript/${d.mount}`);
+      assert.match(HFV2.templates[d.templateKey], /class="hd-m05 hd-tr-host"/);
+    }
   }
   assert.equal(new Set(pending.map(pair => pair.newer)).size, pending.length);
+  assert.equal(new Set(pending.map(pair => pair.older)).size, pending.length);
+  assert.equal(HFV2.findState(HFV2.findFamily('sidebar'), 'centered-collapsed').group, 'Layout');
+  for (const [, newer] of TRANSCRIPT_REDRAWS) assert.equal(stateOfRoute(newer)[1].group, 'Transcript');
 });
 
 test('provisional redraw strips say so, with no approval date and no approved-amendment wording', () => {
   const strips = HFV2.catalogStrips.m04;
   assert.equal(strips.provisionalHeading, 'Provisional · needs owner approval');
   assert.match(strips.provisionalNotice, /^Provisional · needs owner approval\./);
-  for (const text of [strips.provisionalHeading, strips.provisionalNotice]) {
+  assert.equal(HFV2.catalogStrips.transcript.provisional, 'Provisional · needs owner approval');
+  for (const text of [strips.provisionalHeading, strips.provisionalNotice, ...Object.values(HFV2.catalogStrips.transcript)]) {
     assert.ok(!/\d{4}-\d{2}-\d{2}/.test(text), 'no date');
     assert.ok(!/Approved|Owner 20/.test(text), 'no approval wording');
   }
 });
 
-test('the catalog labels earlier layouts that await a redraw and links the pair both ways', () => {
+test('the decisions record cites the Events gap at its source line and lists every provisional route with its question', () => {
+  const decisions = read(path.join(v2, 'docs', 'decisions', 'README.md'));
+  const proposal = read(path.join(v2, 'docs', 'decisions', 'm05-task-screen-proposal.md')).split('\n');
+  assert.match(proposal[167], /^Events holds the approved D2B content below collapsed facts groups/, 'line 168 is the sentence the redraws cite');
+  assert.ok(decisions.includes('`v2/docs/decisions/m05-task-screen-proposal.md:168`'));
+  assert.match(decisions, /^## Provisional redraws awaiting owner review$/m);
+  const section = decisions.slice(decisions.indexOf('## Provisional redraws awaiting owner review'), decisions.indexOf('## By screen'));
+  for (const { older, newer } of pending) {
+    const row = section.split('\n').find(line => line.startsWith(`| \`${newer}\` |`));
+    assert.ok(row, `${newer} has a row`);
+    const cells = row.split('|').map(cell => cell.trim());
+    assert.equal(cells[2], `\`${older}\``, `${newer} names its source`);
+    assert.ok(cells[3].length > 1 && cells[4].length > 1, `${newer} gives a basis and an owner question`);
+  }
+  for (const [, newer] of TRANSCRIPT_REDRAWS) assert.ok(section.includes(`\`#${newer}/events\``), `${newer} lists its Events deep link`);
+  assert.ok(section.includes('It is a state of the route, not a separate route'));
+  assert.ok(section.includes('sidebar/centered-expanded') && section.includes('duplicate'), 'the duplication of centered-empty is recorded for the owner');
+});
+
+test('the catalog notes every earlier layout that awaits a redraw, outside the specimen, with one wording', () => {
   const catalog = read(path.join(v2, 'scripts', 'catalog.js'));
-  assert.match(catalog, /Earlier layout; centered redraw awaiting owner approval/);
+  assert.match(catalog, /var PENDING = 'Earlier layout; redraw awaiting owner approval';/);
+  assert.ok(!/centered redraw awaiting/.test(catalog));
   assert.match(catalog, /pendingRedrawOf/);
   assert.match(catalog, /redrawsOf/);
+  const page = read(path.join(v2, 'index.html'));
+  assert.ok(page.indexOf('id="hdc-note"') > page.indexOf('id="hdc-approval"') && page.indexOf('id="hdc-note"') < page.indexOf('id="hdc-specimen"'), 'the note sits beside the approval line, outside the specimen');
+  assert.match(catalog, /els\.note\.appendChild/);
   const overview = HFV2.templates['overview/areas'];
   assert.ok(overview.includes('Redraws awaiting approval'));
   for (const { older, newer } of pending) assert.ok(overview.includes(`<a href="#${older}">`) && overview.includes(`<a href="#${newer}">`));
@@ -745,6 +799,115 @@ test('a redirect target is never retired by a later sign-off without repointing 
   const targets = new Set(Object.values(redirects));
   for (const key of Object.keys(redirects)) assert.ok(!targets.has(key), `${key} is both a redirect key and a target`);
   for (const { older } of pending) assert.ok(!(older in redirects));
+});
+
+test('simulated sign-off of any pending pair keeps every redirect one hop', () => {
+  const targets = new Set(Object.values(redirects));
+  const listed = Array.from(pending).filter(pair => targets.has(pair.older)).map(pair => pair.older);
+  assert.deepEqual(listed, ['sidebar/collapsed'], 'the only pending older state that a redirect points at');
+  for (const { older, newer } of pending) {
+    // The sign-off: the older state retires into a redirect, and every redirect that targeted it is repointed.
+    const after = { ...redirects, [older]: newer };
+    for (const [from, to] of Object.entries(redirects)) if (to === older) after[from] = newer;
+    for (const [from, to] of Object.entries(after)) {
+      assert.ok(!(to in after), `${from} -> ${to} would chain after retiring ${older}`);
+      assert.ok(routeSet.has(to) || to === newer, `${to} stays a registered state`);
+    }
+    // An alias that pointed at the older state reaches the redraw through one redirect.
+    for (const [old, target] of Object.entries(aliases)) if (target === older) assert.ok(after[target] === newer, `${old} still resolves in one redirect`);
+  }
+});
+
+// ---- Route grammar: #family/state[/view][/appearance] ----
+
+test('route hashes parse into family, state, view and appearance', () => {
+  const parse = hash => HFV2.parseRoute(hash);
+  assert.deepEqual({ ...parse('#task/transcript-observed') }, { family: 'task', state: 'transcript-observed', view: null, appearance: null });
+  for (const appearance of ['light', 'dark', 'system']) {
+    assert.deepEqual({ ...parse(`#task/transcript-observed/${appearance}`) }, { family: 'task', state: 'transcript-observed', view: null, appearance });
+    assert.deepEqual({ ...parse(`#task/transcript-observed/events/${appearance}`) }, { family: 'task', state: 'transcript-observed', view: 'events', appearance });
+  }
+  assert.deepEqual({ ...parse('#task/transcript-observed/events') }, { family: 'task', state: 'transcript-observed', view: 'events', appearance: null });
+  assert.deepEqual({ ...parse('#task/transcript-observed/other') }, { family: 'task', state: 'transcript-observed', view: 'other', appearance: null });
+  for (const bad of ['', '#', '#task', '#task/', '#task/x/y/z', '#task/x/events/sepia', '#task/x/a/b/c', '#Task/x', '#task/x/events/']) assert.equal(parse(bad), null, `${bad} is not a route`);
+  assert.deepEqual(Array.from(HFV2.viewsOf('task/transcript-observed')), ['events']);
+  assert.deepEqual(Array.from(HFV2.viewsOf('task/activity-observed')), []);
+  assert.deepEqual(Array.from(HFV2.viewsOf('nothing/here')), []);
+});
+
+test('a declared view is kept through aliases and redirects and an undeclared one is dropped', () => {
+  const route = 'task/transcript-sources';
+  for (const suffix of SUFFIXES) {
+    assert.equal(HFV2.resolveRoute(`#${route}/events${suffix}`), `#${route}/events${suffix}`, 'a canonical route keeps its declared view');
+    assert.equal(HFV2.resolveRoute(`#${route}${suffix}`), `#${route}${suffix}`);
+    assert.equal(HFV2.resolveRoute(`#${route}/bogus${suffix}`), `#${route}${suffix}`, 'an unknown view is dropped');
+    assert.equal(HFV2.resolveRoute(`#task/activity-sources/events${suffix}`), `#task/activity-sources${suffix}`, 'a state that declares no views drops the view');
+    assert.equal(HFV2.resolveRoute(`#d2b-proposal/events/events${suffix}`), `#task/activity-sources${suffix}`, 'an alias drops it when its target declares none');
+    assert.equal(HFV2.resolveRoute(`#task/running/events${suffix}`), `#task/running-stop${suffix}`, 'a redirect drops it when its target declares none');
+  }
+  // A view survives an alias and a redirect whose final route declares it.
+  const runtime = loadRuntime();
+  runtime.routeAliases['probe-old/state'] = 'task/transcript-observed';
+  runtime.routeRedirects['task/probe-retired'] = 'task/transcript-observed';
+  runtime.routeAliases['probe-old/chain'] = 'task/probe-retired';
+  for (const suffix of SUFFIXES) {
+    assert.equal(runtime.resolveRoute(`#probe-old/state/events${suffix}`), `#task/transcript-observed/events${suffix}`, 'alias');
+    assert.equal(runtime.resolveRoute(`#task/probe-retired/events${suffix}`), `#task/transcript-observed/events${suffix}`, 'redirect');
+    assert.equal(runtime.resolveRoute(`#probe-old/chain/events${suffix}`), `#task/transcript-observed/events${suffix}`, 'alias then redirect');
+    assert.equal(runtime.resolveRoute(`#probe-old/chain/events${suffix}`), runtime.resolveRoute(runtime.resolveRoute(`#probe-old/chain/events${suffix}`)), 'settled after one resolution');
+  }
+  // Every route of the registry: only the eight transcript routes declare a view.
+  for (const key of keys) {
+    const declared = HFV2.viewsOf(key);
+    assert.equal(HFV2.resolveRoute(`#${key}/events`), declared.includes('events') ? `#${key}/events` : `#${key}`, key);
+  }
+  assert.deepEqual(Array.from(keys).filter(key => HFV2.viewsOf(key).length), TRANSCRIPT_REDRAWS.map(pair => pair[1]));
+});
+
+test('the catalog opens a declared view at load and canonicalises the address without falling back', () => {
+  const source = read(path.join(v2, 'scripts', 'catalog.js'));
+  assert.match(source, /HFV2\.parseRoute\(HFV2\.resolveRoute\(hash \|\| ''\)\)/);
+  assert.match(source, /function hashFor\(family, state, override, view\)[\s\S]*?\(view \? '\/' \+ view : ''\)[\s\S]*?\(override \? '\/' \+ override : ''\)/, 'the view precedes the appearance');
+  assert.match(source, /renderer\.mount\(els\.specimen, d\.mount, \{ view: current\.view \}\)/);
+  assert.match(source, /go\(current\.family, current\.state, null, current\.view\)/, 'an appearance change keeps the view');
+  const render = source.slice(source.indexOf('function render()'), source.indexOf('function setPreference'));
+  assert.match(render, /hashFor\(parsed\.family, parsed\.state, parsed\.override, parsed\.view\)/);
+  assert.equal(HFV2.describe('task/transcript-observed').views.length, 1);
+  assert.deepEqual(Array.from(HFV2.describe('task/transcript-observed').views), ['events']);
+  assert.deepEqual(Array.from(HFV2.describe('task/approval').views), []);
+});
+
+// ---- The transcript renderer ----
+
+test('the transcript renderer is registered and draws each activity fixture in the task screen frame', () => {
+  const renderer = HFV2.RENDERERS.transcript;
+  assert.ok(renderer && renderer.api === 'transcriptScreen' && renderer.wrapper.includes('hdc-specimen--m05'));
+  assert.equal(typeof HFV2.transcriptScreen.mount, 'function');
+  assert.deepEqual(Array.from(HFV2.transcriptRows, row => row.route), TRANSCRIPT_REDRAWS.map(pair => pair[1]));
+  const composerOf = { observed: 'settled', loading: 'running', partial: 'settled', unavailable: 'settled', 'integrity-failed': 'settled', reconnecting: 'running', capacity: 'running', events: 'settled' };
+  for (const row of HFV2.transcriptRows) {
+    const d = HFV2.describe(row.route);
+    assert.equal(HFV2.routeFor('transcript', row.mount), row.route);
+    assert.equal(d.status, 'provisional');
+    assert.equal(d.family.id, 'task');
+    // The run status of each source decides the composer, as the source's own fixture has it.
+    const status = HFV2.d2bProposal.createState(row.mount).status;
+    assert.equal(status === 'Running' ? 'running' : 'settled', composerOf[row.mount], `${row.mount} status ${status}`);
+    // The source of each redraw is the activity state that draws the same fixture.
+    assert.equal(HFV2.describe(row.redrawOf).mount, row.mount);
+    assert.equal(HFV2.describe(row.redrawOf).renderer, 'd2b');
+    assert.ok(typeof HFV2.componentDocs[d.guideKey] === 'string' && HFV2.componentDocs[d.guideKey].includes('/events'), `${row.route} guide explains how to open Events`);
+  }
+  const source = read_('transcript-screen.js');
+  assert.match(source, /H\.d2bProposal\.createState\(mountId\)/, 'each redraw draws the fixture object of its earlier state');
+  assert.match(source, /disabledTabs: \['changes', 'artifacts'\]/);
+  assert.match(source, /chips: ''/);
+  assert.match(source, /menu: false/);
+  assert.match(source, /tab: 'events'/);
+  const css = read(path.join(v2, 'styles', 'transcript-screen.css'));
+  assert.ok(!/\.hd-d2b\{min-width|min-width:1280px/.test(css), 'the minimum width of the activity frame is not extended');
+  assert.match(css, /prefers-reduced-motion:reduce\)\{\.hd-tr-host \*/);
+  assert.ok(read(path.join(v2, 'index.html')).includes('styles/transcript-screen.css'));
 });
 
 // ---- Task screen hooks ----

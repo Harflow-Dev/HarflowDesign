@@ -60,11 +60,11 @@ test('amendment routes are separate and approved by the owner on 2026-11-06',()=
   }
 });
 const m04States=()=>H.registry.families.flatMap(f=>f.states.filter(s=>s.source&&s.source.renderer==='m04').map(s=>Object.assign({route:f.id+'/'+s.id},s)));
-test('registry lists 27 approved entry states and six provisional centered redraws on separate provenance',()=>{
+test('registry lists 27 approved entry states and nine provisional centered redraws on separate provenance',()=>{
   const registered=m04States();
-  assert.equal(registered.length,33,'21 baseline states, the six approved centered composer states and six provisional redraws');
+  assert.equal(registered.length,36,'21 baseline states, the six approved centered composer states, six provisional composer redraws and three provisional shell redraws');
   const provisional=registered.filter(s=>s.status==='provisional');
-  assert.equal(provisional.length,6);
+  assert.equal(provisional.length,9);
   const all=registered.filter(s=>s.status!=='provisional');
   assert.equal(all.length,27);
   assert.ok(all.every(s=>s.status==='approved'));
@@ -146,8 +146,9 @@ test('amendment popup height is bounded by the clipping compose-area viewport',(
   assert.equal(low.maxHeight,Math.min(400,620-152-16));
 });
 
-// Provisional centered redraws of six bottom-layout composer states: the same fixture, a different layout.
-const REDRAWS={'centered-loading':'composer-loading','centered-unqualified':'composer-unqualified','centered-invalid':'composer-invalid','centered-starting':'composer-starting','centered-refused':'composer-refused','centered-options-closed':'advanced-closed'};
+// Provisional centered redraws of six bottom-layout composer states and three shell states: the same fixture, a different layout.
+const REDRAWS={'centered-loading':'composer-loading','centered-unqualified':'composer-unqualified','centered-invalid':'composer-invalid','centered-starting':'composer-starting','centered-refused':'composer-refused','centered-options-closed':'advanced-closed','centered-shell':'shell','centered-shell-collapsed':'shell-collapsed','centered-shell-narrow':'shell-narrow'};
+const SHELL_REDRAWS=['centered-shell','centered-shell-collapsed','centered-shell-narrow'];
 test('each centered redraw has the model of its source apart from the route',()=>{
   assert.deepEqual(Object.assign({},M.redrawSources),REDRAWS);
   assert.deepEqual(Array.from(H.m04RedrawStates,x=>x.id).sort(),Object.keys(REDRAWS).sort());
@@ -170,11 +171,14 @@ test('redraw routes are not approved amendments and keep no amendment draft',()=
   for(const redraw of Object.keys(REDRAWS)){
     assert.equal(M.amendmentDrafts[redraw],undefined);
     assert.ok(!H.m04AmendmentStates.some(x=>x.id===redraw));
-    assert.equal(M.create(redraw).draft,'Review the delivery queue');
+    assert.equal(M.create(redraw).draft,SHELL_REDRAWS.includes(redraw)?'':'Review the delivery queue');
     assert.match(H.templates['m04-proposal/'+redraw],/hd-m04-amendment/);
     assert.doesNotMatch(H.templates['m04-proposal/'+redraw],/Approved/);
   }
   assert.equal(M.create('centered-loading').draft,M.create('composer-loading').draft);
+  assert.equal(M.create('centered-shell').draft,M.create('amendment-empty').draft,'the expanded shell redraw starts from the centered empty draft');
+  assert.equal(M.create('centered-shell-collapsed').collapsed,true);
+  assert.equal(M.create('centered-shell-narrow').narrow,true);
   assert.equal(M.isAmendment('amendment-ready'),true);
 });
 test('redraw descriptions and strips carry no approval',()=>{

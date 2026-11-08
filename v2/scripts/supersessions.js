@@ -38,15 +38,26 @@
   HFV2.routeRedirects = {};
   HFV2.retired.forEach(function (entry) { HFV2.routeRedirects[entry.route] = entry.redirect; });
 
-  // Centered redraws awaiting owner approval. Both states stay listed. On sign-off the pair moves into
-  // RETIRED above, the earlier state, its templates and guides are removed, and a redirect that already
-  // targets the earlier state is repointed to the redraw.
+  // Redraws awaiting owner approval. Both states stay listed. On sign-off the pair moves into RETIRED
+  // above, the earlier state, its templates and guides are removed, and a redirect that already targets the
+  // earlier state is repointed to the redraw. The catalog notes each pair outside the specimen.
   HFV2.pendingRedraw = [
     { older: 'new-task/composer-loading', newer: 'new-task/centered-loading' },
     { older: 'new-task/composer-unqualified', newer: 'new-task/centered-unqualified' },
     { older: 'new-task/composer-invalid', newer: 'new-task/centered-invalid' },
     { older: 'new-task/composer-starting', newer: 'new-task/centered-starting' },
     { older: 'new-task/composer-refused', newer: 'new-task/centered-refused' },
-    { older: 'new-task/options-closed', newer: 'new-task/centered-options-closed' }
+    { older: 'new-task/options-closed', newer: 'new-task/centered-options-closed' },
+    { older: 'sidebar/expanded', newer: 'sidebar/centered-expanded' },
+    { older: 'sidebar/collapsed', newer: 'sidebar/centered-collapsed' },
+    { older: 'sidebar/minimum', newer: 'sidebar/centered-minimum' },
+    { older: 'task/activity-observed', newer: 'task/transcript-observed' },
+    { older: 'task/activity-loading', newer: 'task/transcript-loading' },
+    { older: 'task/activity-partial', newer: 'task/transcript-partial' },
+    { older: 'task/activity-unavailable', newer: 'task/transcript-unavailable' },
+    { older: 'task/activity-integrity-failed', newer: 'task/transcript-integrity-failed' },
+    { older: 'task/activity-reconnecting', newer: 'task/transcript-reconnecting' },
+    { older: 'task/activity-capacity', newer: 'task/transcript-capacity' },
+    { older: 'task/activity-sources', newer: 'task/transcript-sources' }
   ];
 })();

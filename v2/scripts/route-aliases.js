@@ -110,20 +110,52 @@
     'm05-proposal/platform-options': 'records/platform'
   };
 
-  var ROUTE_PATTERN = /^#([a-z0-9-]+)\/([a-z0-9-]+)(\/(?:light|dark|system))?$/;
+  // Route grammar: #family/state[/view][/appearance]. A state declares the views it has (`views` in the
+  // registry); the segment after the state is a view only when the state declares it, and an appearance
+  // only when it is light, dark or system. Any other segment is dropped when the route is canonicalised.
+  var ROUTE_PATTERN = /^#([a-z0-9-]+)\/([a-z0-9-]+)(?:\/([a-z0-9-]+))?(?:\/([a-z0-9-]+))?$/;
+  var APPEARANCES = ['light', 'dark', 'system'];
 
   var own = function (map, key) { return Object.prototype.hasOwnProperty.call(map, key); };
 
-  // Returns the canonical hash for a route hash, keeping its /light, /dark or /system suffix.
-  // The alias is applied first, then at most one redirect. A hash that is not a route, or whose route
-  // is neither an alias nor a redirect, is returned unchanged.
-  HFV2.resolveRoute = function (hash) {
+  // Splits a route hash into its parts without judging the view: { family, state, view, appearance }, or
+  // null when the hash is not a route. With four segments the last must be an appearance.
+  HFV2.parseRoute = function (hash) {
     var match = ROUTE_PATTERN.exec(hash || '');
-    if (!match) return hash;
-    var key = match[1] + '/' + match[2];
+    if (!match) return null;
+    var view = null, appearance = null;
+    if (match[4]) {
+      if (APPEARANCES.indexOf(match[4]) < 0) return null;
+      view = match[3];
+      appearance = match[4];
+    } else if (match[3]) {
+      if (APPEARANCES.indexOf(match[3]) >= 0) appearance = match[3];
+      else view = match[3];
+    }
+    return { family: match[1], state: match[2], view: view, appearance: appearance };
+  };
+
+  // The views a registered route declares, or an empty list.
+  HFV2.viewsOf = function (route) {
+    var parts = String(route).split('/');
+    var family = HFV2.findFamily && HFV2.findFamily(parts[0]);
+    var state = family && HFV2.findState(family, parts[1]);
+    return (state && state.views) || [];
+  };
+
+  // Returns the canonical hash for a route hash, keeping its /light, /dark or /system suffix.
+  // The alias is applied first, then at most one redirect. A view is kept across both when the final route
+  // declares it and dropped otherwise, so an undeclared view never reaches the catalog. A hash that is not
+  // a route is returned unchanged.
+  HFV2.resolveRoute = function (hash) {
+    var parsed = HFV2.parseRoute(hash);
+    if (!parsed) return hash;
+    var key = parsed.family + '/' + parsed.state;
     var target = own(HFV2.routeAliases, key) ? HFV2.routeAliases[key] : key;
     var redirects = HFV2.routeRedirects || {};
     if (own(redirects, target)) target = redirects[target];
-    return target === key ? hash : '#' + target + (match[3] || '');
+    var view = parsed.view && HFV2.viewsOf(target).indexOf(parsed.view) >= 0 ? parsed.view : null;
+    var canonical = '#' + target + (view ? '/' + view : '') + (parsed.appearance ? '/' + parsed.appearance : '');
+    return canonical === hash ? hash : canonical;
   };
 })();

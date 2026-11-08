@@ -41,8 +41,8 @@
     }
     var pending = HFV2.pendingRedraw || [];
     if (pending.length) {
-      out += '<section class="hdc-overview__area"><h2>Redraws awaiting approval</h2><p>The earlier layout stays listed until the owner approves its centered redraw.</p><ul>' +
-        pending.map(function (e) { return '<li><a href="#' + e.older + '">' + esc(titleOf(e.older)) + '</a> · centered redraw <a href="#' + e.newer + '">' + esc(titleOf(e.newer)) + '</a></li>'; }).join('') + '</ul></section>';
+      out += '<section class="hdc-overview__area"><h2>Redraws awaiting approval</h2><p>The earlier layout stays listed until the owner approves its redraw.</p><ul>' +
+        pending.map(function (e) { return '<li><a href="#' + e.older + '">' + esc(titleOf(e.older)) + '</a> · redraw <a href="#' + e.newer + '">' + esc(titleOf(e.newer)) + '</a></li>'; }).join('') + '</ul></section>';
     }
     return out + '</div>';
   }

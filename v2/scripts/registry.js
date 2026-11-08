@@ -640,7 +640,8 @@
   HFV2.RENDERERS = {
     d2b: { api: 'd2bProposal', wrapper: 'hdc-specimen hdc-specimen--d2b' },
     m04: { api: 'm04Proposal', wrapper: 'hdc-specimen hdc-specimen--m04' },
-    m05: { api: 'm05Proposal', wrapper: 'hdc-specimen hdc-specimen--m05' }
+    m05: { api: 'm05Proposal', wrapper: 'hdc-specimen hdc-specimen--m05' },
+    transcript: { api: 'transcriptScreen', wrapper: 'hdc-specimen hdc-specimen--m05 hdc-specimen--transcript' }
   };
 
   // Adds a state to a family and keeps the family's states in group order.
@@ -701,6 +702,7 @@
       guideKey: source.guide || key,
       approval: HFV2.approvalLine(family, state),
       sizeCaption: !!renderer,
+      views: state.views || [],
       status: state.status,
       hidden: !!(state.hidden || family.hidden)
     };

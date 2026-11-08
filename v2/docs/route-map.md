@@ -2,7 +2,7 @@
 
 Every route that existed before the information architecture changed still opens, and it opens the same design: the old route and the route it points to are rendered from the same template by the same renderer, so the app frame is identical. The address bar then shows the current route. The `/light`, `/dark` or `/system` suffix is kept.
 
-The aliases are defined in `v2/scripts/route-aliases.js`. An alias never changes meaning. An owner-decided redirect (`v2/scripts/supersessions.js`) sends a retired route to its replacement: the alias is applied first, then at most one redirect. A test checks that no alias shadows a current route or chains, that every redirect lands on a current state, and that every route registered at the base commit `17739e4` is either still current, an alias or a redirect.
+The aliases and the route grammar are defined in `v2/scripts/route-aliases.js`. An alias never changes meaning. An owner-decided redirect (`v2/scripts/supersessions.js`) sends a retired route to its replacement: the alias is applied first, then at most one redirect. A test checks that no alias shadows a current route or chains, that every redirect lands on a current state, and that every route registered at the base commit `17739e4` is either still current, an alias or a redirect.
 
 ## Unchanged routes
 
@@ -25,6 +25,34 @@ The owner replaced these designs on 2026-11-08. The route still opens, and it sh
 | `new-task/options-open` | `new-task/centered-options` | New task · Centered composer · Options open |
 
 The earlier routes `m04-proposal/composer-ready`, `m04-proposal/composer-unknown` and `m04-proposal/advanced` (listed below) reach the same replacements through their alias followed by the redirect.
+
+## Provisional redraw routes
+
+These routes are new canonical routes with no earlier name. Each redraws an earlier state that stays listed until the owner decides ([decisions](decisions/README.md#provisional-redraws-awaiting-owner-review)). They are not aliases or redirects.
+
+| Provisional redraw | Earlier route | Events open |
+| --- | --- | --- |
+| `new-task/centered-loading` | `new-task/composer-loading` | |
+| `new-task/centered-unqualified` | `new-task/composer-unqualified` | |
+| `new-task/centered-invalid` | `new-task/composer-invalid` | |
+| `new-task/centered-starting` | `new-task/composer-starting` | |
+| `new-task/centered-refused` | `new-task/composer-refused` | |
+| `new-task/centered-options-closed` | `new-task/options-closed` | |
+| `sidebar/centered-expanded` | `sidebar/expanded` | |
+| `sidebar/centered-collapsed` | `sidebar/collapsed` | |
+| `sidebar/centered-minimum` | `sidebar/minimum` | |
+| `task/transcript-observed` | `task/activity-observed` | `#task/transcript-observed/events` |
+| `task/transcript-loading` | `task/activity-loading` | `#task/transcript-loading/events` |
+| `task/transcript-partial` | `task/activity-partial` | `#task/transcript-partial/events` |
+| `task/transcript-unavailable` | `task/activity-unavailable` | `#task/transcript-unavailable/events` |
+| `task/transcript-integrity-failed` | `task/activity-integrity-failed` | `#task/transcript-integrity-failed/events` |
+| `task/transcript-reconnecting` | `task/activity-reconnecting` | `#task/transcript-reconnecting/events` |
+| `task/transcript-capacity` | `task/activity-capacity` | `#task/transcript-capacity/events` |
+| `task/transcript-sources` | `task/activity-sources` | `#task/transcript-sources/events` |
+
+### Route grammar
+
+A route is `#family/state[/view][/appearance]`. A state may declare views (`views` in the registry); only the eight transcript routes do, and each declares `events`, which opens the right pane on Events at load. The segment after the state is a view only when that state declares it, and an appearance only when it is `light`, `dark` or `system`. Any other segment is dropped when the address is canonicalised, so an undeclared view never opens the overview. An alias or a redirect carries the view to its target and drops it when the target does not declare it. Opening or closing the pane by clicking does not rewrite the address.
 
 ## Moved routes
 
