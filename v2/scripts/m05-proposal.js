@@ -396,10 +396,10 @@
     var state = (H.m05ProposalStates || []).filter(function (s) { return s.id === id; })[0];
     if (!state) return function () {};
     if (options && options.loading) {
-      var strips = H.catalogStrips.loading;
+      var lstrip = H.loadingStrip(options.decision);
       return mountState(root, state, {
         loading: true,
-        strip: function (st, ui, frameLabel) { var ok = options.approved; return '<div class="hd-m05-strip"><strong>' + strips[ok ? 'approvedHeading' : 'heading'] + '</strong>' + frameLabel + '</div><p class="hd-faint">' + strips[ok ? 'approvedNote' : 'note'] + '</p>'; },
+        strip: function (st, ui, frameLabel) { return '<div class="hd-m05-strip"><strong>' + lstrip.heading + '</strong>' + frameLabel + '</div><p class="hd-faint">' + lstrip.note + '</p>'; },
         afterRender: function (stage) { if (options.afterRender) options.afterRender(stage); }
       });
     }

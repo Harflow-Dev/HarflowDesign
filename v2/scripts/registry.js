@@ -575,8 +575,8 @@
             "id": "skeleton-shimmer",
             "title": "Skeleton shimmer",
             "description": "Skeleton shimmer is the placeholder block of a screen's first load, with a sheen that sweeps every 1.4 seconds and a static form under reduced motion. Use it for: The data regions of a loading screen; the screen's real chrome stays as drawn.",
-            "status": "provisional",
-            "approvalNote": "Provisional · needs owner approval"
+            "status": "approved",
+            "approval": { "by": "the owner", "date": "2026-11-08", "decision": "Loading states" }
           },
           {
             "id": "icons",

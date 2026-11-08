@@ -53,7 +53,7 @@ The owner approved these redraws on 2026-11-08; each replaced an earlier state, 
 
 ## Loading states
 
-Each screen with a first load has one Loading state, drawn from the loaded state it mirrors (see [the decisions record](decisions/README.md#loading-states)). `sidebar/loading` is approved; the others are provisional until the owner decides.
+Each screen with a first load has one Loading state, drawn from the loaded state it mirrors (see [the decisions record](decisions/README.md#loading-states)). Every loading state is approved.
 
 | Family | State | Route | Mirrors |
 | --- | --- | --- | --- |

@@ -35,7 +35,7 @@ The default page, `#overview/areas`, lists every area and screen with its curren
 
 The catalog names screens and components only. Milestone, proposal, approval and gap history is recorded in [v2/docs/decisions/](v2/docs/decisions/README.md), which indexes each decision with its status, who approved it and when, the recording commit, its routes and its files.
 
-Each screen with a first load also has a Loading state drawn from its loaded screen: `sidebar/loading` is approved and the others are provisional ([decisions](v2/docs/decisions/README.md#loading-states)).
+Each screen with a first load also has a Loading state drawn from its loaded screen: every Loading state is approved ([decisions](v2/docs/decisions/README.md#loading-states)).
 
 A design that the owner replaces is retired: it leaves navigation and its route opens the replacement (see "Retired routes" in the [route map](v2/docs/route-map.md)); the decisions record keeps the basis and the commits where the old design can be seen. A redraw that awaits approval is a provisional state, and the earlier layout stays listed with a link to it until the owner decides (`HFV2.pendingRedraw`, empty at present).
 

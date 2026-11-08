@@ -244,7 +244,7 @@
     var options = { view: current.view };
     var skeletonSpec = d.skeleton && HFV2.skeletonSpecs[d.skeleton.spec];
     var applySkeleton = function (host) { HFV2.skeletonReport = HFV2.skeletonize(host, skeletonSpec); };
-    if (skeletonSpec) { options.loading = true; options.approved = d.status === 'approved'; options.afterRender = applySkeleton; }
+    if (skeletonSpec) { options.loading = true; options.decision = d.state.approval.decision; options.afterRender = applySkeleton; }
     if (renderer) specimenCleanup = renderer.mount(els.specimen, d.mount, options);
     else if (skeletonSpec) applySkeleton(els.specimen);
     var guide = HFV2.componentDocs && HFV2.componentDocs[d.guideKey];

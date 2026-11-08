@@ -16,11 +16,19 @@
   var B = function () { return H.skelBlock.apply(null, arguments); };
   var TITLE = [190, 140, 168, 120];
 
+  // The strip of a loading state is derived from its own approval decision, so each route shows its own decision.
   (H.catalogStrips = H.catalogStrips || {}).loading = {
-    heading: 'Provisional · needs owner approval',
-    approvedHeading: 'Approved · Sidebar · Owner 2026-11-08',
-    approvedNote: 'Approved by the owner, 2026-11-08. Loading placeholder drawn from the loaded screen: the work rows are shimmering blocks and everything else is the real screen. Reduce Motion: static blocks. Native titlebar and OS controls are browser approximations.',
-    note: 'Provisional · needs owner approval. Loading placeholder drawn from the loaded screen: its data regions are shimmering blocks and everything else is the real screen. Reduce Motion: static blocks. Native titlebar and OS controls are browser approximations.'
+    approvedPrefix: 'Approved',
+    approvedOwner: 'Owner 2026-11-08',
+    sidebarNote: 'Approved by the owner, 2026-11-08. Loading placeholder drawn from the loaded screen: the work rows are shimmering blocks and everything else is the real screen. Reduce Motion: static blocks. Native titlebar and OS controls are browser approximations.',
+    note: 'Approved by the owner, 2026-11-08. Loading placeholder drawn from the loaded screen: its data regions are shimmering blocks and everything else is the real screen. Reduce Motion: static blocks. Native titlebar and OS controls are browser approximations.'
+  };
+  H.loadingStrip = function (decision) {
+    var strips = H.catalogStrips.loading;
+    return {
+      heading: strips.approvedPrefix + ' · ' + decision + ' · ' + strips.approvedOwner,
+      note: decision === 'Sidebar' ? strips.sidebarNote : strips.note
+    };
   };
 
   // ---- Shared drawing helpers ----

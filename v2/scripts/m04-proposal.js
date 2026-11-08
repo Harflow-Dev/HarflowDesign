@@ -108,7 +108,7 @@
   function mount(root, route, options) {
     var host = root.matches && root.matches('.hd-m04-proposal') ? root : root.querySelector('.hd-m04-proposal');
     if (!host) return function () {};
-    var loading = !!(options && options.loading), afterRender = options && options.afterRender, approvedLoading = !!(options && options.approved);
+    var loading = !!(options && options.loading), afterRender = options && options.afterRender, loadingStrip = loading ? H.loadingStrip(options.decision) : null;
     var s = !loading && lastRoute === route && lastState ? lastState : create(route), disposed = false;
     var amendment = isAmendment(route);
     if (loading) { lastRoute = null; lastState = null; } else { lastRoute = route; lastState = s; }
@@ -136,7 +136,7 @@
       var strips = H.catalogStrips.m04;
       var notice = isRedraw(route) ? strips.redrawNotice : amendment ? strips.centeredNotice : strips.baselineNotice;
       var heading = isRedraw(route) ? (route.indexOf('centered-shell')===0 ? strips.redrawShellHeading : strips.redrawHeading) : amendment ? strips.centeredHeading : strips.baselineHeading;
-      if (loading) catalog.innerHTML = '<div class="hd-m04-actions"><strong>' + H.catalogStrips.loading[approvedLoading ? 'approvedHeading' : 'heading'] + '</strong><label>Frame <select data-m04-field="size"><option value="reference"' + (!s.narrow?' selected':'') + '>1280 × 800</option><option value="minimum"' + (s.narrow?' selected':'') + '>1000 × 620</option></select></label></div><p>' + H.catalogStrips.loading[approvedLoading ? 'approvedNote' : 'note'] + '</p>';
+      if (loading) catalog.innerHTML = '<div class="hd-m04-actions"><strong>' + loadingStrip.heading + '</strong><label>Frame <select data-m04-field="size"><option value="reference"' + (!s.narrow?' selected':'') + '>1280 × 800</option><option value="minimum"' + (s.narrow?' selected':'') + '>1000 × 620</option></select></label></div><p>' + loadingStrip.note + '</p>';
       else catalog.innerHTML = '<div class="hd-m04-actions"><strong>' + heading + '</strong>' + boardLinks + '<label>Frame <select data-m04-field="size"><option value="reference"' + (!s.narrow?' selected':'') + '>1280 × 800</option><option value="minimum"' + (s.narrow?' selected':'') + '>1000 × 620</option></select></label>' + button('Reset fixture','reset') + '</div><p>' + notice + '</p><details class="hd-m04-fixtures"'+(s.fixtures?' open':'')+'><summary>Fixture controls</summary><div class="hd-m04-actions">' + controls + '</div></details>';
       var base = template(s.collapsed ? 'new-task/sidebar-collapsed' : 'new-task/default');
       var app = base.querySelector('.hd-app'); app.removeAttribute('style'); app.classList.add('hd-m04-app'); app.setAttribute('data-theme',theme);

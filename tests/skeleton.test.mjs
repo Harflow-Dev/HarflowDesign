@@ -60,18 +60,32 @@ test('every loading state mirrors a pinned, approved and current loaded state', 
   }
 });
 
-test('only sidebar/loading is approved; every other loading state is provisional and says so', () => {
+test('every loading state is approved, carries its own decision and no approval note', () => {
   for (const { route, state } of loadingStates) {
-    if (route === 'sidebar/loading') {
-      assert.equal(state.status, 'approved');
-      assert.deepEqual(json(state.approval), { by: 'the owner', date: '2026-11-08', decision: 'Sidebar' });
-      assert.ok(HFV2.approvalLine(HFV2.findFamily('sidebar'), state).startsWith('Approved by the owner on 2026-11-08'));
-    } else {
-      assert.equal(state.status, 'provisional', route);
-      assert.equal(state.approvalNote, 'Provisional · needs owner approval');
-      assert.ok(!state.approval, `${route} carries no approval`);
-    }
+    const decision = route === 'sidebar/loading' ? 'Sidebar' : 'Loading states';
+    assert.equal(state.status, 'approved', route);
+    assert.deepEqual(json(state.approval), { by: 'the owner', date: '2026-11-08', decision }, route);
+    assert.ok(!('approvalNote' in state), `${route} carries no approval note`);
+    assert.equal(HFV2.approvalLine(HFV2.findFamily(route.split('/')[0]), state), `Approved by the owner on 2026-11-08 · ${decision}`, route);
   }
+  assert.equal(loadingStates.length, 16);
+});
+
+test('the loading strip shows the decision of its own route', () => {
+  const sidebar = HFV2.loadingStrip('Sidebar'), other = HFV2.loadingStrip('Loading states');
+  assert.equal(sidebar.heading, 'Approved · Sidebar · Owner 2026-11-08');
+  assert.equal(other.heading, 'Approved · Loading states · Owner 2026-11-08');
+  assert.match(sidebar.note, /the work rows are shimmering blocks/);
+  assert.match(other.note, /its data regions are shimmering blocks/);
+  for (const text of [sidebar.heading, sidebar.note, other.heading, other.note]) assert.ok(!/Provisional|needs owner approval/.test(text), text);
+  for (const text of Object.values(HFV2.catalogStrips.loading)) assert.ok(!/Provisional|needs owner approval/.test(text), text);
+});
+
+test('tripwire: every renderer loading strip is derived from the route decision', () => {
+  assert.match(read('scripts/catalog.js'), /options\.decision = d\.state\.approval\.decision;/);
+  assert.match(read('scripts/m04-proposal.js'), /loadingStrip = loading \? H\.loadingStrip\(options\.decision\)/);
+  assert.match(read('scripts/m05-proposal.js'), /H\.loadingStrip\(options\.decision\)/);
+  for (const name of ['m04-proposal.js', 'm05-proposal.js', 'catalog.js']) assert.ok(!/approvedHeading|approvedNote|options\.approved/.test(read('scripts/' + name)), name);
 });
 
 test('sidebar/loading replaced sidebar/history-loading; no pending redraw pair names it', () => {
@@ -193,7 +207,9 @@ test('existing templates are byte-identical to the base commit apart from the to
 
 test('the shimmer component is drawn in both appearances and its reduced-motion form', () => {
   const state = HFV2.findState(HFV2.findFamily('components'), 'skeleton-shimmer');
-  assert.equal(state.status, 'provisional');
+  assert.equal(state.status, 'approved');
+  assert.deepEqual(json(state.approval), { by: 'the owner', date: '2026-11-08', decision: 'Loading states' });
+  assert.ok(!('approvalNote' in state));
   const t = HFV2.templates['components/skeleton-shimmer'];
   assert.ok(t.includes('data-theme="light"') && t.includes('data-theme="dark"'));
   assert.ok(t.includes('hd-skel--shimmer hd-skel--still'), 'the static form is drawn');
