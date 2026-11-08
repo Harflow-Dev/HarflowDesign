@@ -55,6 +55,8 @@ test('the five minimum window drafts are registered, provisional and derived fro
   }
 });
 
+// The manifest holds the template digests of ba8c928. The templates are identical at 9d19fd7, the commit this work builds
+// on (the baseline of these drafts), because that commit changed no template.
 test('no existing template changed: the digests equal those of the base commit and none was added', () => {
   const manifest = JSON.parse(fs.readFileSync(path.join(root, 'tests', 'data', 'templates-ba8c928.json'), 'utf8'));
   assert.deepEqual(Object.keys(HFV2.templates).sort(), Object.keys(manifest).sort());
@@ -125,7 +127,8 @@ function sidebarChildren(html) {
 
 test('every static template with a sidebar has the top, nav, sections and foot structure the rule needs', () => {
   const keys = Object.keys(HFV2.templates).filter(k => HFV2.templates[k].includes('<aside class="hd-sidebar"'));
-  assert.ok(keys.length >= 20);
+  // 22 static screens, plus the four templates the New task and Task renderers read and components/sidebar.
+  assert.equal(keys.length, 27);
   const odd = [];
   for (const key of keys) {
     const kids = sidebarChildren(HFV2.templates[key]);
@@ -145,4 +148,61 @@ test('the drafts name the product screen only', () => {
     for (const field of ['id', 'title', 'description', 'group', 'approvalNote']) assert.ok(!NAMING_RULE.test(state[field]), `${route} ${field}`);
     assert.ok(!NAMING_RULE.test(HFV2.approvalLine(family, state)));
   }
+});
+
+// ---- Behaviour of applyMinimum on a small hand-written node tree (no DOM library). ----
+class FakeNode {
+  constructor(tag, attrs = {}, kids = []) { this.nodeType = 1; this.tag = tag; this.attrs = { ...attrs }; this.childNodes = []; this.parent = null; this.classes = new Set((attrs.class || '').split(/\s+/).filter(Boolean)); this.classList = { add: c => this.classes.add(c), contains: c => this.classes.has(c) }; kids.forEach(k => this.appendChild(k)); }
+  set className(v) { this.classes = new Set(v.split(/\s+/).filter(Boolean)); this.classList = { add: c => this.classes.add(c), contains: c => this.classes.has(c) }; }
+  get children() { return this.childNodes.filter(n => n.nodeType === 1); }
+  setAttribute(k, v) { this.attrs[k] = v; }
+  getAttribute(k) { return this.attrs[k]; }
+  detach(n) { if (n.parent) n.parent.childNodes.splice(n.parent.childNodes.indexOf(n), 1); n.parent = this; }
+  appendChild(n) { this.detach(n); this.childNodes.push(n); return n; }
+  insertBefore(n, ref) { this.detach(n); this.childNodes.splice(this.childNodes.indexOf(ref), 0, n); return n; }
+  replaceChild(n, old) { this.detach(n); this.childNodes[this.childNodes.indexOf(old)] = n; old.parent = null; return old; }
+  matches(sel) { const m = /^([a-z]*)((?:\.[\w-]+)*)(?:\[aria-label="([^"]+)"\])?$/.exec(sel); return (!m[1] || m[1] === this.tag) && m[2].split('.').filter(Boolean).every(c => this.classes.has(c)) && (!m[3] || this.attrs['aria-label'] === m[3]); }
+  all() { return this.children.flatMap(c => [c, ...c.all()]); }
+  querySelectorAll(sel) { return this.all().filter(n => n.matches(sel)); }
+  querySelector(sel) { return this.querySelectorAll(sel)[0] || null; }
+}
+class FakeText { constructor(v) { this.nodeType = 3; this.nodeValue = v; this.parent = null; } }
+const el = (tag, cls, kids = [], attrs = {}) => new FakeNode(tag, { class: cls, ...attrs }, kids);
+function texts(node, out = []) { node.childNodes.forEach(n => (n.nodeType === 3 ? out.push(n.nodeValue.trim()) : texts(n, out))); return out.filter(Boolean).sort(); }
+
+function runMinimum(host, fixes) {
+  const context = vm.createContext({ window: {}, document: { createElement: tag => new FakeNode(tag) } });
+  context.window = context;
+  vm.runInContext(read('scripts/minimum-frame.js'), context);
+  context.HFV2.applyMinimum(host, fixes);
+}
+
+test('applyMinimum on a hand-written node tree: sidebar, popover and editor meta', () => {
+  const sidebar = el('aside', 'hd-sidebar', [el('div', 'hd-sidebar__top'), el('nav', 'hd-nav'), el('section', 'hd-section'), el('section', 'hd-section hd-section--fill'), el('div', 'hd-sidebar__foot')]);
+  const pop = el('section', '', [el('div', 'h'), el('section', 'a'), el('section', 'b'), el('section', 'c'), el('div', 'f')], { 'aria-label': 'Harflow menu' });
+  const phrase = 'Unsaved changes · Revision 7';
+  const meta = el('span', 'hd-topbar__meta', [el('span', 'hd-dot', [], { 'aria-hidden': 'true' })]);
+  meta.appendChild(new FakeText(phrase));
+  const host = el('div', 'hdc-specimen', [sidebar, pop, el('div', 'hd-topbar', [meta])]);
+  sidebar.children[2].appendChild(new FakeText('Running'));
+  const before = texts(host);
+  runMinimum(host, ['sidebar', 'popover', 'editor-topbar', 'lanes']);
+
+  const side = sidebar.children.map(c => [...c.classes][0]);
+  assert.deepEqual(side, ['hd-sidebar__top', 'hd-sidebar__scroll', 'hd-sidebar__foot']);
+  assert.deepEqual(sidebar.children[1].children.map(c => c.tag), ['nav', 'section', 'section']);
+
+  assert.deepEqual(pop.children.map(c => [...c.classes][0]), ['h', 'hd-popover__scroll', 'f']);
+  assert.deepEqual(pop.children[1].children.map(c => [...c.classes][0]), ['a', 'b', 'c']);
+
+  const hidden = meta.children.find(c => c.classes.has('hd-sr'));
+  assert.ok(hidden, 'the meta text sits in .hd-sr');
+  assert.equal(hidden.childNodes.length, 1);
+  assert.equal(hidden.childNodes[0].nodeValue, phrase);
+  assert.equal(meta.getAttribute('title'), phrase);
+  assert.deepEqual(meta.childNodes.filter(n => n.nodeType === 3), [], 'no bare text is left in the meta');
+
+  assert.deepEqual(texts(host), before, 'the text multiset is unchanged');
+  for (const fix of ['sidebar', 'popover', 'editor-topbar', 'lanes']) assert.ok(host.classes.has(`hdc-min-${fix}`));
+  assert.throws(() => runMinimum(host, ['unknown']), /Unknown minimum fix/);
 });

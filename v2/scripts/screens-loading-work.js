@@ -7,7 +7,7 @@
   var SIDEBAR_APPROVAL = { by: 'the owner', date: '2026-11-08', decision: 'Sidebar' };
 
   function loading(familyId, state) {
-    var base = { group: 'Loading', status: 'approved', approval: APPROVAL };
+    var base = { group: 'Loading', status: 'approved', approval: Object.assign({}, APPROVAL) };
     Object.keys(state).forEach(function (k) { base[k] = state[k]; });
     return H.registerState(familyId, base);
   }
@@ -18,7 +18,7 @@
   });
   loading('sidebar', {
     id: 'loading', title: 'Loading', description: 'Running and Recent work rows are placeholders while the navigation, section headings and footer are real.',
-    skeleton: { of: 'new-task/centered-empty', spec: 'sidebar' }, approval: SIDEBAR_APPROVAL
+    skeleton: { of: 'new-task/centered-empty', spec: 'sidebar' }, approval: Object.assign({}, SIDEBAR_APPROVAL)
   });
   loading('task', {
     id: 'loading', title: 'Loading', description: 'A task being read for the first time: the title, status, transcript and composer options are placeholders; the top bar frame, Events toggle and composer are the real screen.',

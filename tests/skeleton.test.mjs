@@ -82,7 +82,7 @@ test('the loading strip shows the decision of its own route', () => {
 });
 
 test('tripwire: every renderer loading strip is derived from the route decision', () => {
-  assert.match(read('scripts/catalog.js'), /options\.decision = d\.state\.approval\.decision;/);
+  assert.match(read('scripts/catalog.js'), /options\.decision = \(d\.state\.approval \|\| \{\}\)\.decision;/);
   assert.match(read('scripts/m04-proposal.js'), /loadingStrip = loading \? H\.loadingStrip\(options\.decision\)/);
   assert.match(read('scripts/m05-proposal.js'), /H\.loadingStrip\(options\.decision\)/);
   for (const name of ['m04-proposal.js', 'm05-proposal.js', 'catalog.js']) assert.ok(!/approvedHeading|approvedNote|options\.approved/.test(read('scripts/' + name)), name);

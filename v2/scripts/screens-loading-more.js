@@ -6,7 +6,7 @@
   var APPROVAL = { by: 'the owner', date: '2026-11-08', decision: 'Loading states' };
 
   function loading(familyId, state) {
-    var base = { group: 'Loading', status: 'approved', approval: APPROVAL };
+    var base = { group: 'Loading', status: 'approved', approval: Object.assign({}, APPROVAL) };
     Object.keys(state).forEach(function (k) { base[k] = state[k]; });
     return H.registerState(familyId, base);
   }
