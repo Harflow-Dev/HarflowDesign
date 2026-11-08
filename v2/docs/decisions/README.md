@@ -16,6 +16,7 @@ Routes are written as the current route, with the route used before the informat
 | Centered composer amendment, with the unified sidebar scroll | Start work | Approved, separately from the entry direction | The owner, 2026-11-06 | `9d64bfd` | `new-task/centered-empty`, `centered-ready`, `centered-growing`, `centered-capped`, `centered-options`, `centered-unknown` (`m04-proposal/amendment-*`) | [m04-centered-composer-proposal.md](m04-centered-composer-proposal.md) |
 | Centered and transcript redraws | Start work; Task | Approved | The owner, 2026-11-08 ("Yes, accept all", relayed by the coordinator) | `b19520c` (base `3f12d29`); the hint under the Harness select of `new-task/centered-harness-open` follows in `48a54d3`; the gated option follows in `19365d9` | `new-task/centered-loading`, `centered-unqualified`, `centered-invalid`, `centered-starting`, `centered-refused`, `centered-options-closed`, `centered-harness-open`; `sidebar/centered-collapsed`, `centered-minimum`; `task/transcript-observed`, `transcript-loading`, `transcript-partial`, `transcript-unavailable`, `transcript-integrity-failed`, `transcript-reconnecting`, `transcript-capacity`, `transcript-sources`. Eighteen earlier states are retired (see Retired designs) | This file ([Centered and transcript redraws](#centered-and-transcript-redraws)), [m04-centered-composer-proposal.md](m04-centered-composer-proposal.md) |
 | Loading states | All screens with a first load | Approved | The owner, 2026-11-08 (`sidebar/loading` in the redraw decision; the other 15 states and the shimmer primitive: "I see the design and I think all looks good. I approve", relayed by the coordinator) | `8f52ad3` (the primitive and specs), `28f5066` (the start work and task states, the sidebar approval and the retirement of `sidebar/history-loading`), `a4a2c82` (the other states); review fixes `abb416c` and `ba8c928` (the approved design); approval recorded in the commit titled "Approve the loading states" | `new-task/loading`, `sidebar/loading`, `task/loading`, `task/loading-pane`, `parallel-group/loading`, `needs-you/loading`, `menu-bar/loading`, `workflows/loading`, `workflow-editor/loading`, `workflow-run/loading`, `workflow-run/loading-parallel`, `resources/loading`, `statistics/loading`, `settings/loading-general`, `settings/loading-harnesses`, `settings/loading-mcp-approvals`, `components/skeleton-shimmer` | `v2/scripts/skeleton.js`, `v2/scripts/skeleton-specs.js`, `v2/styles/skeleton.css`, `v2/scripts/screens-loading-work.js`, `v2/scripts/screens-loading-more.js` |
+| Minimum window drafts (1000 × 620) | Needs you, Parallel group, Workflow run, Workflow editor, Menu bar | Provisional, not approved | None yet | The commit titled "Add provisional minimum window drafts" | `needs-you/waiting-minimum`, `parallel-group/lanes-minimum`, `workflow-run/parallel-minimum`, `workflow-editor/node-selected-minimum`, `menu-bar/busy-minimum` | `v2/scripts/screens-minimum.js`, `v2/scripts/minimum-frame.js`, `v2/styles/minimum-frame.css`, `tests/minimum-frame.test.mjs` |
 | Task screen states (statuses, actions, top bar, changes, events, artifacts, layout) | Task | Approved, except the provisional routes below | The owner, 2026-11-07, relayed by the coordinator | `17739e4` (proposal `3e85e26`, `a9c65fe`) | `task/running-stop` (`m05-proposal/state-running`), the other status, action, top bar, changes, events and layout routes, and the decision boards under `records/` (`m05-proposal/overview`, `retry-options`, `stop-options`, `adaptive-options`, `platform-options`). Provisional, not approved: `task/cancelled-partial` and `task/artifacts-*`, until the contract gaps close | [m05-task-screen-approval.md](m05-task-screen-approval.md), [m05-task-screen-proposal.md](m05-task-screen-proposal.md) |
 
 ## Retired designs
@@ -192,15 +193,56 @@ The owner asked on 2026-11-08 for "the shimmer page for each page", each "resemb
 | Task title | The real title and repository when already known, `TaskLoadingSkeleton.swift:55-62` | Shimmered in `task/loading` |
 | Task toolbar | Fixed-size blocks, `TaskLoadingSkeleton.swift:216-290` | Blocks at the approved top bar's own geometry |
 
-**Loaded-screen gaps at 1000 × 620.** The drawings keep the static families at their native frame, but the check renders each loaded static screen and its loading state at 1000 × 620 as well. They agree, and the check shows these gaps in the loaded designs. They are not fixed here:
-- The rect check at 1000 × 620 leaves the static families' sidebar regions out. Their loaded sidebar has no bounded scrolling body, so its sections compress by flexbox rather than by design, and two renders of the same compressing layout cannot be held to 0.5 px. The main area is checked.
-- Every static screen's sidebar lacks the bounded scrolling body of the 2026-11-06 correction (the New task, Sidebar and Task frames have it): its header shrinks to about 32 points and its sections compress.
-- `parallel-group/lanes` and `workflow-run/parallel`: three lanes of at least 360 points need 962 points and the detail area is 736, so the lanes scroll horizontally and the third lane's composer is off screen.
-- `workflow-editor/node-selected`: the top bar content overflows by about 2 points.
-- `menu-bar/busy`: the popover is 739 points tall and the frame is 620.
+**Loaded-screen gaps at 1000 × 620.** The drawings keep the static families at their native frame, but the check renders each loaded static screen and its loading state at 1000 × 620 as well. They agree, and the check showed gaps in the loaded designs. The first measurements were corrected when the drafts were drawn; their status is in [Minimum window drafts](#minimum-window-drafts). The loading states themselves are not redrawn at 1000 × 620.
 
 **Questions for the owner.**
 - Is a known task title shown for real while the rest loads (not drawn)?
+
+<a id="minimum-window-drafts"></a>
+
+## Minimum window drafts
+
+**Provisional, not approved.** Five states draw loaded screens in the 1000 × 620 window with the fixes that window needs. They are derived states: the loaded template runs unchanged and `HFV2.applyMinimum` (`v2/scripts/minimum-frame.js`) wraps, moves or hides existing nodes after rendering; it adds no text. The stylesheet is `v2/styles/minimum-frame.css`, and every selector in it sits under `.hdc-specimen--minimum`. The 1280 × 800 states stay as approved; no approved pixel or copy changed.
+
+| Route | Derived from | Fixes |
+| --- | --- | --- |
+| `needs-you/waiting-minimum` | `needs-you/waiting` | Sidebar. The representative drawing of the shared sidebar rule |
+| `parallel-group/lanes-minimum` | `parallel-group/lanes` | Sidebar, lanes |
+| `workflow-run/parallel-minimum` | `workflow-run/parallel` | Sidebar, lanes |
+| `workflow-editor/node-selected-minimum` | `workflow-editor/node-selected` | Sidebar, editor top bar |
+| `menu-bar/busy-minimum` | `menu-bar/busy` | Popover |
+
+**Evidence.** HarflowMac at `3fdf0e8`, read with `git show 3fdf0e8:<path>`:
+- Sidebar: a fixed header, a scrolling list and a fixed footer (`macos/HfFeatures/MainWindowFeature/Sources/MainWindowFeature/Sidebar/SidebarView.swift:143-147`, `SidebarNativeList.swift:19-20`).
+- Lanes: a 630 point floor, scrolling horizontally (`Parallel/ParallelLayout.swift:8-24`, `Parallel/ParallelView.swift:112-117`, same package).
+- Inspector: initial 288, minimum 220, maximum 500, canvas minimum 400 (`macos/HfFoundation/HfUI/Sources/HfUI/Style/HfRadius.swift:226-229`; `Workflow/WorkflowInspectorSplit.swift:15-18`).
+- Popover: a fixed 380 × 560 frame with a fixed header and footer and a scrolling body (`macos/HfFeatures/MenuBarFeature/Sources/MenuBarFeature/MenuBar/MenuBarView.swift:127-146`, `HfRadius.swift:383,385`).
+
+**What each fix does.**
+- **Sidebar.** The navigation and the work sections scroll as one body between the fixed header (44) and footer. This is the rule of the approved 2026-11-06 correction (the New task, Sidebar and Task frames already have it), applied to the static screens. It is drawn on the four routes above that carry a sidebar.
+- **Lanes.** The effective lane width of the loaded states at 1000 × 620 is 320 points (the templates set a 320 floor inline): three lanes and two gaps need 962 and the detail area is 736. The drafts use a 360 point floor, the component minimum: 3 × 360 + 2 = 1082, so two whole lanes show (722) and 14 points of the third peek in. The lanes scroll horizontally, are not snapped (Mac does not snap), and the third lane and its composer are reached by horizontal scroll and by Tab.
+- **Editor top bar.** At 1000 × 620 the loaded top bar does not overflow (`scrollWidth` 736 of 736), but it fits only because flexbox shrinks the title from 117.28 to 54.92 points (cut to an ellipsis) and the More actions button from 26 to 18. The draft drops the meta text first, as `task/topbar-minimum` does: the dot stays, and "Unsaved changes · Revision 7" stays once in the accessibility tree as visually hidden text and as the title of the meta element. Measured after: title 117.28 (untruncated), button 26, top bar `scrollWidth` 736 of 736, 103.61 of spare space.
+- **Popover.** The popover is 560 tall (the space below the menu bar is 580), the header and footer stay fixed and the Needs you, Running and Recent sections scroll between them. The width stays at the approved 360.
+
+**Coverage of the sidebar rule.** The rule is drawn on `needs-you/waiting-minimum` and on the three window states above. Every static template with a sidebar has the structure the rule needs (header, navigation, sections, footer as direct children); `tests/minimum-frame.test.mjs` checks 27 templates. A check in a browser applied the rule to the 22 static screens that have a sidebar, in both appearances, outside the catalog: the header is 44, the footer is inside the frame and the sidebar does not overflow. Those 22 are not drawn as routes. The collapsed rail, the menu bar and the New task, Sidebar and Task frames are outside the rule: the first two have no sidebar column and the frames already have the fix.
+
+**Status of the gaps found at 1000 × 620.**
+
+| Gap | Status |
+| --- | --- |
+| The static sidebar has no bounded scrolling body, so its header shrinks and its sections compress | Drawn, provisional (`needs-you/waiting-minimum`, and the three window states) |
+| `parallel-group/lanes` and `workflow-run/parallel`: the lanes scroll horizontally and the third lane's composer is off screen | Drawn, provisional, with a 360 floor; an owner question below. The first measurement said "at least 360 needs 962"; the loaded states use 320, which needs 962, and 360 needs 1082 |
+| `workflow-editor/node-selected`: the top bar content overflows by about 2 points | Corrected: the top bar does not overflow, its title and a button are squeezed. Drawn, provisional |
+| `menu-bar/busy`: the popover is 739 points tall and the frame is 620 | Drawn, provisional, at the Mac height of 560 |
+| The top bar title of `parallel-group/lanes` is cut to 31.67 of 150 points and that of `workflow-run/parallel` to 98.63 of 173 at 1000 × 620 | Open, not drawn: the meta text carries the enforcement statement, so dropping it needs an owner decision |
+| `workflow-editor/orchestrator`: the main area is wider than the frame at 1000 × 620 | Open, not drawn |
+| The Loading states at 1000 × 620 for these screens | Follow-up, not drawn |
+
+**Questions for the owner.**
+- Lane floor: 360 here (two lanes visible) or Mac's 630 (one lane visible, scrolling)?
+- Inspector width: the drawing uses 340; Mac starts at 288 with a minimum of 220. Not changed here.
+- Popover width: the drawing uses 360; Mac uses 380. On Mac the popover is bounded by the screen, so the 620 frame is a drawing bound.
+- The lane screens' top bar: drop the enforcement statement first, or truncate the title?
 
 ## By screen
 

@@ -82,6 +82,7 @@ test('registry routes are unique and every descriptor resolves to a template, gu
     } else {
       // A loading state draws the template of the loaded screen it mirrors; every other state renders its own.
       if (d.skeleton) assert.equal(d.templateKey, HFV2.describe(d.skeleton.of).templateKey, `${d.route} renders the template of ${d.skeleton.of}`);
+      else if (d.minimum) assert.equal(d.templateKey, HFV2.describe(d.minimum.of).templateKey, `${d.route} renders the template of ${d.minimum.of}`);
       else assert.equal(d.templateKey, d.route, `${d.route} renders its own template`);
     }
   }

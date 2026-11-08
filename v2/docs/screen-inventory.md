@@ -73,6 +73,18 @@ Each screen with a first load has one Loading state, drawn from the loaded state
 
 `sidebar/history-loading` was retired for `sidebar/loading` and opens it. The partial loads (`task/changes-loading`, `events-loading`, `artifacts-loading`, `sidebar/history-older`, `new-task/centered-loading`) and the first-load screens of App states and Harness runtime are unchanged.
 
+## Minimum window drafts
+
+Five provisional states draw loaded screens at 1000 × 620 (see [the decisions record](decisions/README.md#minimum-window-drafts)). Each is derived from its loaded state; the loaded states are unchanged.
+
+| Family | State | Route | Derived from |
+| --- | --- | --- | --- |
+| Needs you | Waiting · 1000 × 620 | `needs-you/waiting-minimum` | `needs-you/waiting`; the representative drawing of the sidebar rule for every static screen |
+| Parallel group | Lanes · 1000 × 620 | `parallel-group/lanes-minimum` | `parallel-group/lanes` |
+| Workflow run | Parallel view · 1000 × 620 | `workflow-run/parallel-minimum` | `workflow-run/parallel` |
+| Workflow editor | Node selected · 1000 × 620 | `workflow-editor/node-selected-minimum` | `workflow-editor/node-selected` |
+| Menu bar | Busy · 1000 × 620 | `menu-bar/busy-minimum` | `menu-bar/busy` |
+
 ## Decisions recorded from the owner's feedback rounds
 
 - The Workflows list shows no run status. The same workflow can run concurrently; runs appear only in the sidebar under Running and Recent work.

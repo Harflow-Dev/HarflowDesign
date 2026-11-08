@@ -116,7 +116,8 @@
         "area": "task",
         "groups": [
           "Parallel group",
-          "Loading"
+          "Loading",
+          "Minimum window"
         ],
         "description": "One flat sidebar row with the parallel icon; its page shows the lanes.",
         "states": [
@@ -135,7 +136,8 @@
         "area": "attention",
         "groups": [
           "Needs you",
-          "Loading"
+          "Loading",
+          "Minimum window"
         ],
         "description": "Every request that waits for the person, answered inline.",
         "states": [
@@ -161,7 +163,8 @@
         "area": "attention",
         "groups": [
           "Menu bar",
-          "Loading"
+          "Loading",
+          "Minimum window"
         ],
         "description": "The menu bar popover and its monochrome template glyph.",
         "states": [
@@ -220,7 +223,8 @@
         "area": "workflows",
         "groups": [
           "Workflow editor",
-          "Loading"
+          "Loading",
+          "Minimum window"
         ],
         "description": "The canvas editor, flowing left to right, with the inspector for the selected node.",
         "states": [
@@ -253,7 +257,8 @@
         "area": "workflows",
         "groups": [
           "Workflow run",
-          "Loading"
+          "Loading",
+          "Minimum window"
         ],
         "description": "A workflow run as a graph, as parallel lanes, and its recovery and on-demand states.",
         "states": [
@@ -758,6 +763,15 @@
       return Object.assign({}, loaded, {
         route: route, family: family, state: state, guideKey: route, approval: HFV2.approvalLine(family, state),
         views: [], status: state.status, hidden: !!(state.hidden || family.hidden), skeleton: state.skeleton
+      });
+    }
+    if (state.minimum) {
+      // A minimum window draft draws the template of the loaded screen it derives from at 1000 × 620; the catalog
+      // applies the fixes after rendering (minimum-frame.js).
+      var base = HFV2.describe(state.minimum.of);
+      return Object.assign({}, base, {
+        route: route, family: family, state: state, guideKey: route, approval: HFV2.approvalLine(family, state),
+        views: [], status: state.status, hidden: !!(state.hidden || family.hidden), minimum: state.minimum
       });
     }
     var source = state.source || {};

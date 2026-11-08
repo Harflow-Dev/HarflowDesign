@@ -103,6 +103,18 @@ These are canonical routes with no earlier name; they are not aliases or redirec
 
 `sidebar/history-loading` is retired and opens `sidebar/loading`.
 
+## Minimum window routes
+
+These are canonical routes with no earlier name. Each draws the loaded state in the second column at 1000 × 620 with the fixes the window needs; they are provisional ([decisions](decisions/README.md#minimum-window-drafts)). None declares a view.
+
+| Minimum window route | Derived from |
+| --- | --- |
+| `needs-you/waiting-minimum` | `needs-you/waiting` |
+| `parallel-group/lanes-minimum` | `parallel-group/lanes` |
+| `workflow-run/parallel-minimum` | `workflow-run/parallel` |
+| `workflow-editor/node-selected-minimum` | `workflow-editor/node-selected` |
+| `menu-bar/busy-minimum` | `menu-bar/busy` |
+
 ## Moved routes
 
 | Earlier route | Current route | Screen and state | Listed in navigation |

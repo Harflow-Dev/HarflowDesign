@@ -230,7 +230,7 @@
 
     var html = HFV2.fill(HFV2.templates[d.templateKey] || '', mode, resolved);
     var meta = d.componentMeta;
-    els.specimen.className = d.wrapperClass;
+    els.specimen.className = d.wrapperClass + (d.minimum ? ' hdc-specimen--minimum' : '');
     if (meta) {
       els.specimen.style.minHeight = meta.height + 'px';
       els.specimen.innerHTML = '<div data-theme="' + resolved + '" style="background: var(--bg); color: var(--text);">' + html + '</div>';
@@ -247,6 +247,7 @@
     if (skeletonSpec) { options.loading = true; options.decision = d.state.approval.decision; options.afterRender = applySkeleton; }
     if (renderer) specimenCleanup = renderer.mount(els.specimen, d.mount, options);
     else if (skeletonSpec) applySkeleton(els.specimen);
+    if (d.minimum) HFV2.applyMinimum(els.specimen, d.minimum.fixes);
     var guide = HFV2.componentDocs && HFV2.componentDocs[d.guideKey];
     els.doc.innerHTML = guide || '';
     els.doc.hidden = !guide;
@@ -258,7 +259,7 @@
     els.description.textContent = state.description;
     els.approval.textContent = d.approval;
     updateNote(route);
-    var specimenSize = d.sizeCaption
+    var specimenSize = d.minimum ? '1000 × 620' : d.sizeCaption
       ? 'app frame 1280 × 800 or minimum 1000 × 620 via Size; catalogue controls outside the app'
       : (meta ? meta.width + ' wide' : '1280 × 800');
     els.caption.textContent = 'Specimen at native size (' + specimenSize + '). Appearance: ' +

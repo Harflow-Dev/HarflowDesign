@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add five provisional minimum window drafts to the `v2/` reference, drawn at 1000 × 620 from their loaded states: `needs-you/waiting-minimum` (the sidebar's fixed header and footer with one scrolling body, for every static screen), `parallel-group/lanes-minimum` and `workflow-run/parallel-minimum` (360 point lanes that scroll horizontally), `workflow-editor/node-selected-minimum` (the top bar drops its meta text first) and `menu-bar/busy-minimum` (a 560 point popover with scrolling sections). The loaded states are unchanged. Not approved: owner questions are in the decisions record.
+
 - Approve the 15 loading states and the `components/skeleton-shimmer` primitive of the `v2/` reference on the owner's decision of 2026-11-08 (`sidebar/loading` was approved earlier the same day). The catalog strip of each loading route now shows its own decision. The design is unchanged. The Mac differences and the 1000 × 620 gaps recorded in the decisions record stand.
 
 - Fix the loading states after review: `sidebar/loading` shimmers sidebar rows only; blocked actions are `aria-disabled` while the sidebar toggle works in the New task and Sidebar loading frames; the fallback disclosure of the workflow editor is replaced instead of left unnamed; the Resources, Statistics and MCP approvals patterns no longer follow fixture shapes; the loading label is no longer counted as content.

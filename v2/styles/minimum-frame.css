@@ -1,0 +1,20 @@
+/* Minimum window drafts: the specimen is the 1000 × 620 window. Every selector is scoped under
+   .hdc-specimen--minimum. The templates set their height inline, so the frame is overridden here. */
+.hdc-specimen--minimum{width:1000px!important;height:620px!important}
+.hdc-specimen--minimum .hd-app{width:100%!important;height:620px!important}
+
+/* Sidebar: fixed header and footer, one scrolling body (nav and sections). */
+.hdc-specimen--minimum.hdc-min-sidebar .hd-sidebar>.hd-sidebar__top,.hdc-specimen--minimum.hdc-min-sidebar .hd-sidebar>.hd-sidebar__foot{flex-shrink:0}
+.hdc-specimen--minimum .hd-sidebar__scroll{position:relative;flex:1 1 auto;min-height:0;overflow-y:auto;scrollbar-width:thin;scrollbar-color:color-mix(in srgb,var(--text-tertiary) 72%,transparent) transparent}
+.hdc-specimen--minimum .hd-sidebar__scroll .hd-section--fill{flex:none}
+.hdc-specimen--minimum .hd-sidebar__scroll .hd-section--fill>.hd-section__list{overflow:visible}
+
+/* Lanes: a 360 floor, scrolling horizontally. The templates set a 320 floor inline. A scroll body is the containing
+   block of the visually hidden labels inside it, so they scroll with their fields (also the sidebar and popover bodies). */
+.hdc-specimen--minimum.hdc-min-lanes .hd-lanes{position:relative;scrollbar-width:thin}
+.hdc-specimen--minimum.hdc-min-lanes .hd-lane{flex:0 0 360px!important;min-width:360px!important}
+
+/* Popover: 560 tall, fixed header and footer, scrolling sections between them. */
+.hdc-specimen--minimum.hdc-min-popover section[aria-label="Harflow menu"]{height:560px}
+.hdc-specimen--minimum.hdc-min-popover section[aria-label="Harflow menu"]>*{flex-shrink:0}
+.hdc-specimen--minimum.hdc-min-popover section[aria-label="Harflow menu"]>.hd-popover__scroll{position:relative;flex:1 1 auto;min-height:0;overflow-y:auto;scrollbar-width:thin}
