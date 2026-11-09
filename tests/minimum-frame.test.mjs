@@ -94,7 +94,8 @@ test('all eleven minimum window states are approved, each with its own approval,
 // on (the baseline of these drafts), because that commit changed no template.
 test('no existing template changed: the digests equal those of the base commit and none was added', () => {
   const manifest = JSON.parse(fs.readFileSync(path.join(root, 'tests', 'data', 'templates-ba8c928.json'), 'utf8'));
-  // The only templates added since are the provisional queued-message and approval states and the two provisional entry drafts.
+  // The only templates added since are the provisional queued-message and approval states, the starting state without a status row
+  // (approved 2026-11-09) and the provisional runtime card draft. The template of the retired starting state is removed with it.
   const added = [
     ...['stale', 'expired', 'answered-elsewhere', 'refused', 'uncertain', 'exact'].map(x => `task/approval-${x}`),
     'needs-you/approval-stale', 'needs-you/approval-expired', 'needs-you/answered-elsewhere', 'needs-you/checkpoint-stale',
@@ -103,6 +104,8 @@ test('no existing template changed: the digests equal those of the base commit a
     'm04-proposal/centered-starting-plain', 'm04-proposal/runtime-installing-sidebar'
   ];
   assert.equal(added.length, 22);
+  const removed = ['m04-proposal/centered-starting'];
+  for (const key of removed) { assert.ok(key in manifest && !(key in HFV2.templates), `${key} is removed with its retired state`); delete manifest[key]; }
   for (const key of added) assert.ok(key in HFV2.templates, `${key} is a template`);
   assert.deepEqual(Object.keys(HFV2.templates).filter(key => !added.includes(key)).sort(), Object.keys(manifest).sort());
   // The overview page is generated from the registry (state counts and links), so it changes with every state added.

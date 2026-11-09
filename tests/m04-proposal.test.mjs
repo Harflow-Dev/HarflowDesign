@@ -73,7 +73,8 @@ test('registry lists 26 approved entry states: 11 baseline, six amendment and ni
   assert.ok(centered.every(s=>s.approval.date==='2026-11-06'&&/separate from the 2026-11-05 entry direction/.test(s.approval.decision)));
   const redraws=all.filter(s=>H.m04RedrawStates.some(x=>x.id===s.source.mount));
   assert.equal(redraws.length,9);
-  assert.ok(redraws.every(s=>s.approval.date==='2026-11-08'&&s.approval.by==='the owner'));
+  assert.ok(redraws.every(s=>s.approval.by==='the owner'&&s.approval.date===(s.source.mount==='centered-starting-plain'?'2026-11-09':'2026-11-08')));
+  assert.equal(redraws.find(s=>s.source.mount==='centered-starting-plain').approval.decision,'Starting row');
   const baseline=all.filter(s=>!s.source.mount.startsWith('amendment-')&&!redraws.includes(s));
   assert.equal(baseline.length,11);
   assert.ok(baseline.every(s=>s.approval.date==='2026-11-05'),'folding the states keeps each state\'s own approval date');
@@ -148,7 +149,7 @@ test('amendment popup height is bounded by the clipping compose-area viewport',(
 });
 
 // Owner-approved centered redraws of six bottom-layout composer states and two shell states: the same fixture, a different layout.
-const REDRAWS={'centered-loading':'composer-loading','centered-unqualified':'composer-unqualified','centered-invalid':'composer-invalid','centered-starting':'composer-starting','centered-refused':'composer-refused','centered-options-closed':'advanced-closed','centered-harness-open':'amendment-ready','centered-shell-collapsed':'shell-collapsed','centered-shell-narrow':'shell-narrow'};
+const REDRAWS={'centered-loading':'composer-loading','centered-unqualified':'composer-unqualified','centered-invalid':'composer-invalid','centered-starting-plain':'composer-starting','centered-refused':'composer-refused','centered-options-closed':'advanced-closed','centered-harness-open':'amendment-ready','centered-shell-collapsed':'shell-collapsed','centered-shell-narrow':'shell-narrow'};
 const SHELL_REDRAWS=['centered-shell-collapsed','centered-shell-narrow'];
 test('each centered redraw has the model of its source apart from the route',()=>{
   assert.deepEqual(Object.assign({},M.redrawSources),REDRAWS);
@@ -167,7 +168,8 @@ test('each centered redraw has the model of its source apart from the route',()=
   }
   assert.equal(M.create('centered-invalid').advanced,true,'the validation redraw opens the task options');
   assert.equal(M.create('centered-options-closed').effort,'high');
-  assert.equal(M.create('centered-starting').status,'starting');
+  assert.equal(M.create('centered-starting-plain').status,'starting');
+  assert.equal(M.isAmendment('centered-starting'),false,'the retired starting state has no mount');
 });
 test('the open harness picker copies the one-line ready fixture and only changes the harness selection',()=>{
   const open=M.create('centered-harness-open'),ready=M.create('amendment-ready');
@@ -193,8 +195,8 @@ test('redraw routes are not amendments of 2026-11-06 and keep no amendment draft
   assert.equal(M.isAmendment('amendment-ready'),true);
   assert.equal(M.isRedraw('centered-shell'),false,'the retired expanded shell redraw has no mount');
 });
-test('redraw descriptions carry the approval of 2026-11-08 and no provisional wording',()=>{
-  for(const x of H.m04RedrawStates){assert.equal(x.approved,true);assert.equal(x.status,'Approved');assert.match(x.description,/Owner-approved centered redraw \(2026-11-08\)/);}
+test('redraw descriptions carry the approval date and no provisional wording',()=>{
+  for(const x of H.m04RedrawStates){assert.equal(x.approved,true);assert.equal(x.status,'Approved');assert.match(x.description,x.id==='centered-starting-plain'?/Owner-approved centered redraw \(2026-11-09\)/:/Owner-approved centered redraw \(2026-11-08\)/);}
   for(const s of m04States().filter(s=>H.m04RedrawStates.some(x=>x.id===s.source.mount))){
     assert.equal(s.status,'approved');
     assert.equal(s.approvalNote,undefined);
@@ -217,9 +219,9 @@ test('the open harness picker disables the unavailable option and shows the hint
   assert.match(src,/options\(values,s\[key\],gate\?'Unavailable harness':''\)/);
 });
 
-// Provisional drafts: the starting state without a status row, and the runtime card in the sidebar.
-test('provisional drafts copy their source fixture apart from the route and are centered',()=>{
-  assert.deepEqual(Array.from(H.m04PendingStates,x=>x.id),['centered-starting-plain','runtime-installing-sidebar']);
+// The starting state without a status row is approved (2026-11-09). The runtime card in the sidebar stays a provisional draft.
+test('the provisional draft copies its source fixture apart from the route and is centered',()=>{
+  assert.deepEqual(Array.from(H.m04PendingStates,x=>x.id),['runtime-installing-sidebar']);
   assert.ok(H.m04PendingStates.every(x=>x.approved===false&&x.status==='Provisional'));
   for(const [route,source] of Object.entries(M.pendingSources)){
     const draft=M.create(route),from=M.create(source);
@@ -229,8 +231,9 @@ test('provisional drafts copy their source fixture apart from the route and are 
     assert.match(H.templates['m04-proposal/'+route],/hd-m04-amendment/);
   }
   assert.equal(M.isPending('centered-starting'),false);
+  assert.equal(M.isPending('centered-starting-plain'),false,'the starting draft was approved on 2026-11-09');
 });
-test('a start already in flight cannot start again on the draft without the row',()=>{
+test('a start already in flight cannot start again on the state without the row',()=>{
   const s=M.create('centered-starting-plain');
   assert.equal(s.status,'starting');assert.equal(M.start(s),false);assert.equal(s.status,'starting');
 });
@@ -243,7 +246,7 @@ test('the runtime card draft is installing and locks the composer',()=>{
   assert.equal(M.start(s),true);
 });
 
-test('source gates of the provisional drafts',()=>{
+test('source gates of the starting state without the row and the runtime card draft',()=>{
   const src=fs.readFileSync(new URL('../v2/scripts/m04-proposal.js',import.meta.url),'utf8');
   assert.match(src,/plainStarting = route === 'centered-starting-plain' && s\.status === 'starting'/);
   assert.match(src,/hd-m04-status'\+\(plainStarting\?' hd-sr':''\)/);

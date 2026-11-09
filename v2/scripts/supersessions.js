@@ -34,7 +34,7 @@
     { route: 'new-task/composer-loading', title: 'New task · Composer · Checking options', redirect: 'new-task/centered-loading', renderer: 'm04', mount: 'composer-loading', template: 'm04-proposal/composer-loading', basis: R, pins: 'new-task/composer-loading at 3f12d29' },
     { route: 'new-task/composer-unqualified', title: 'New task · Composer · Unavailable options', redirect: 'new-task/centered-unqualified', renderer: 'm04', mount: 'composer-unqualified', template: 'm04-proposal/composer-unqualified', basis: R, pins: 'new-task/composer-unqualified at 3f12d29' },
     { route: 'new-task/composer-invalid', title: 'New task · Composer · Validation', redirect: 'new-task/centered-invalid', renderer: 'm04', mount: 'composer-invalid', template: 'm04-proposal/composer-invalid', basis: R, pins: 'new-task/composer-invalid at 3f12d29' },
-    { route: 'new-task/composer-starting', title: 'New task · Composer · Starting', redirect: 'new-task/centered-starting', renderer: 'm04', mount: 'composer-starting', template: 'm04-proposal/composer-starting', basis: R, pins: 'new-task/composer-starting at 3f12d29' },
+    { route: 'new-task/composer-starting', title: 'New task · Composer · Starting', redirect: 'new-task/centered-starting-plain', renderer: 'm04', mount: 'composer-starting', template: 'm04-proposal/composer-starting', basis: R, pins: 'new-task/composer-starting at 3f12d29' },
     { route: 'new-task/composer-refused', title: 'New task · Composer · Refused', redirect: 'new-task/centered-refused', renderer: 'm04', mount: 'composer-refused', template: 'm04-proposal/composer-refused', basis: R, pins: 'new-task/composer-refused at 3f12d29' },
     { route: 'new-task/options-closed', title: 'New task · Task options · Closed', redirect: 'new-task/centered-options-closed', renderer: 'm04', mount: 'advanced-closed', template: 'm04-proposal/advanced-closed', basis: R, pins: 'new-task/options-closed at 3f12d29 (mount advanced-closed)' },
     { route: 'sidebar/expanded', title: 'Sidebar · Shell · Expanded', redirect: 'new-task/centered-empty', renderer: 'm04', mount: 'shell', template: 'm04-proposal/shell', basis: R, pins: 'sidebar/expanded at 3f12d29 (mount shell)' },
@@ -49,6 +49,7 @@
     { route: 'task/activity-reconnecting', title: 'Task · Reconnect and source change', redirect: 'task/transcript-reconnecting', renderer: 'd2b', mount: 'reconnecting', template: 'd2b-proposal/reconnecting', basis: R, pins: 'task/activity-reconnecting at 3f12d29 (mount reconnecting)' },
     { route: 'task/activity-capacity', title: 'Task · Reading window at capacity', redirect: 'task/transcript-capacity', renderer: 'd2b', mount: 'capacity', template: 'd2b-proposal/capacity', basis: R, pins: 'task/activity-capacity at 3f12d29 (mount capacity)' },
     { route: 'task/activity-sources', title: 'Task · Normalized and recovered sources', redirect: 'task/transcript-sources', renderer: 'd2b', mount: 'events', template: 'd2b-proposal/events', basis: R, pins: 'task/activity-sources at 3f12d29 (mount events)' },
+    { route: 'new-task/centered-starting', title: 'New task · Centered composer · Starting', redirect: 'new-task/centered-starting-plain', renderer: 'm04', mount: 'centered-starting', template: 'm04-proposal/centered-starting', basis: 'Owner decision 2026-11-09: no status row under the composer while starting', pins: 'new-task/centered-starting at d82b59f (mount centered-starting)' },
     { route: 'sidebar/history-loading', title: 'Sidebar · History · Loading', redirect: 'sidebar/loading', renderer: 'm04', mount: 'history-loading', template: 'm04-proposal/history-loading', basis: Q + ': skeleton rows chosen for the first listing', pins: 'sidebar/history-loading at 854caae (mount history-loading)' }
   ];
 
@@ -62,7 +63,6 @@
   // Redraws awaiting owner approval. Both states of a pair stay listed. On sign-off the pair moves into
   // RETIRED above, the earlier state, its templates and guides are removed, and a redirect that already
   // targets the earlier state is repointed to the redraw. The catalog notes each pair outside the specimen.
-  // Two redraws are waiting: the exact-action approval, which removes the task-wide choice from the approval card,
-  // and the starting state without the status row under the composer.
-  HFV2.pendingRedraw = [{ older: 'task/approval', newer: 'task/approval-exact' }, { older: 'new-task/centered-starting', newer: 'new-task/centered-starting-plain' }];
+  // One redraw is waiting: the exact-action approval, which removes the task-wide choice from the approval card.
+  HFV2.pendingRedraw = [{ older: 'task/approval', newer: 'task/approval-exact' }];
 })();

@@ -6,11 +6,11 @@ The aliases and the route grammar are defined in `v2/scripts/route-aliases.js`. 
 
 ## Unchanged routes
 
-The routes of the base screens, the brand book, the foundations and the components keep their ids (for example `needs-you/waiting`, `workflow-editor/node-selected`, `components/button`), except the 28 retired routes listed under "Retired routes".
+The routes of the base screens, the brand book, the foundations and the components keep their ids (for example `needs-you/waiting`, `workflow-editor/node-selected`, `components/button`), except the 29 retired routes listed under "Retired routes".
 
 ## Retired routes
 
-The owner replaced these designs on 2026-11-08, nine of them by answering the replacement questions and eighteen by accepting the centered and transcript redraws. The route still opens, and it shows the replacement. The address bar then shows the replacement route. The decisions record gives the basis and the commits where the old design can be seen.
+The owner replaced these designs on 2026-11-08, nine of them by answering the replacement questions and eighteen by accepting the centered and transcript redraws. A further route, `new-task/centered-starting`, was retired on 2026-11-09, when the owner approved its redraw without the status row. The route still opens, and it shows the replacement. The address bar then shows the replacement route. The decisions record gives the basis and the commits where the old design can be seen.
 
 | Retired route | Opens | Screen and state |
 | --- | --- | --- |
@@ -26,7 +26,8 @@ The owner replaced these designs on 2026-11-08, nine of them by answering the re
 | `new-task/composer-loading` | `new-task/centered-loading` | New task · Centered composer · Checking options |
 | `new-task/composer-unqualified` | `new-task/centered-unqualified` | New task · Centered composer · Unavailable options |
 | `new-task/composer-invalid` | `new-task/centered-invalid` | New task · Centered composer · Validation |
-| `new-task/composer-starting` | `new-task/centered-starting` | New task · Centered composer · Starting |
+| `new-task/composer-starting` | `new-task/centered-starting-plain` | New task · Centered composer · Starting |
+| `new-task/centered-starting` | `new-task/centered-starting-plain` | New task · Centered composer · Starting |
 | `new-task/composer-refused` | `new-task/centered-refused` | New task · Centered composer · Refused |
 | `new-task/options-closed` | `new-task/centered-options-closed` | New task · Centered composer · Task options closed |
 | `sidebar/expanded` | `new-task/centered-empty` | New task · Centered composer · Empty |
@@ -49,14 +50,14 @@ A redirect carries a view only when the replacement declares it. The eight `task
 
 ## Redraw routes
 
-These routes are canonical routes with no earlier name; they are not aliases or redirects. The owner accepted them on 2026-11-08 ([decisions](decisions/README.md#centered-and-transcript-redraws)), and each earlier layout they redraw is now a retired route above.
+These routes are canonical routes with no earlier name; they are not aliases or redirects. The owner accepted them on 2026-11-08 ([decisions](decisions/README.md#centered-and-transcript-redraws)), except `new-task/centered-starting-plain`, which the owner approved on 2026-11-09 ([decisions](decisions/README.md#starting-row-and-runtime-card)). Each earlier layout they redraw is now a retired route above.
 
 | Redraw route | Replaces | Events open |
 | --- | --- | --- |
 | `new-task/centered-loading` | `new-task/composer-loading` | |
 | `new-task/centered-unqualified` | `new-task/composer-unqualified` | |
 | `new-task/centered-invalid` | `new-task/composer-invalid` | |
-| `new-task/centered-starting` | `new-task/composer-starting` | |
+| `new-task/centered-starting-plain` | `new-task/composer-starting`, `new-task/centered-starting` | |
 | `new-task/centered-refused` | `new-task/composer-refused` | |
 | `new-task/centered-options-closed` | `new-task/options-closed` | |
 | `new-task/centered-harness-open` | `new-task/harness-menu` | |
@@ -90,14 +91,11 @@ These are canonical routes with no earlier name; they are not aliases or redirec
 | `needs-you/approval-stale`, `needs-you/approval-expired`, `needs-you/answered-elsewhere` | `needs-you/waiting`, first request |
 | `needs-you/checkpoint-stale` | `needs-you/waiting`, second request |
 | `menu-bar/approval-stale`, `menu-bar/answered-elsewhere` | `menu-bar/busy`, first request |
-| `new-task/centered-starting-plain` | `new-task/centered-starting` ([decisions](decisions/README.md#starting-row-and-runtime-card-provisional)) |
 | `harness-runtime/installing-sidebar` | `harness-runtime/installing`, with the card in the sidebar; standalone, no pending pair (open owner question: card placement; parked for the already-set-up, runtime-updating case; not-ready first run stays as approved) |
 
 ### Redraws awaiting approval
 
 `task/approval-exact` redraws `task/approval` and removes its "Approve for this task" button. Both stay listed until the owner decides; the catalog notes the pair beside the approval line. When the owner approves the redraw, `task/approval` is retired and opens `task/approval-exact`.
-
-`new-task/centered-starting-plain` redraws `new-task/centered-starting` and removes the status row under the composer. The same rules apply: on approval, `new-task/centered-starting` is retired and opens `new-task/centered-starting-plain`.
 
 ## Loading routes
 
@@ -160,7 +158,7 @@ These are canonical routes with no earlier name. Each draws the state in the sec
 | `m04-proposal/composer-ready` | `new-task/composer-ready` | New task · Composer · Ready | No, retired: opens `new-task/centered-ready` |
 | `m04-proposal/composer-unqualified` | `new-task/composer-unqualified` | New task · Composer · Unavailable options | No, retired: opens `new-task/centered-unqualified` |
 | `m04-proposal/composer-invalid` | `new-task/composer-invalid` | New task · Composer · Validation | No, retired: opens `new-task/centered-invalid` |
-| `m04-proposal/composer-starting` | `new-task/composer-starting` | New task · Composer · Starting | No, retired: opens `new-task/centered-starting` |
+| `m04-proposal/composer-starting` | `new-task/composer-starting` | New task · Composer · Starting | No, retired: opens `new-task/centered-starting-plain` |
 | `m04-proposal/composer-refused` | `new-task/composer-refused` | New task · Composer · Refused | No, retired: opens `new-task/centered-refused` |
 | `m04-proposal/composer-unknown` | `new-task/composer-unknown` | New task · Composer · Outcome unknown | No, retired: opens `new-task/centered-unknown` |
 | `m04-proposal/amendment-ready` | `new-task/centered-ready` | New task · Centered composer · One line ready | Yes |

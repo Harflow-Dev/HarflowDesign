@@ -199,7 +199,7 @@ test('existing templates are byte-identical to the base commit apart from the to
   const manifest = JSON.parse(fs.readFileSync(path.join(root, 'tests', 'data', 'templates-854caae.json'), 'utf8'));
   // The overview page is generated from the registry, so its counts change with every new state.
   const CHANGED = new Set(['foundations/colour', 'brand/visual-foundations', 'overview/areas']);
-  const RETIRED = new Set(['m04-proposal/history-loading']);
+  const RETIRED = new Set(['m04-proposal/history-loading', 'm04-proposal/centered-starting']);
   for (const [key, sha] of Object.entries(manifest)) {
     if (RETIRED.has(key)) { assert.equal(HFV2.templates[key], undefined, `${key} is removed with its state`); continue; }
     assert.equal(typeof HFV2.templates[key], 'string', `${key} still exists`);

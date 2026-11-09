@@ -16,12 +16,12 @@
     'amendment-unknown': 'Review the nightly dependency audit results for the HarflowMCP repository and prepare a short written digest. For each failed run, name the owning workflow, the failing node, the harness and model that reported it, and the turn where the failure appeared. Separate genuine regressions from known upstream flakes by checking the two most recent audited revisions side by side. Where a fix is obvious, open a follow-up task that names the repository, quotes the failing node, and lists the affected workflows so the next reviewer can start immediately. Do not start any code changes yourself. Post the finished digest with one line per failure, a short overall conclusion, and the follow-up task link, so the queue can be triaged before the next nightly run.'
   };
   // Owner-approved centered redraws of six bottom-layout composer states and two shell states, and the open
-  // harness picker. Each mount copies the fixture of its source mount; only the layout differs.
+  // harness picker. The starting state was approved on 2026-11-09 without the status row under the composer. Each mount copies the fixture of its source mount; only the layout differs.
   var REDRAW_SOURCES = {
     'centered-loading': 'composer-loading',
     'centered-unqualified': 'composer-unqualified',
     'centered-invalid': 'composer-invalid',
-    'centered-starting': 'composer-starting',
+    'centered-starting-plain': 'composer-starting',
     'centered-refused': 'composer-refused',
     'centered-options-closed': 'advanced-closed',
     'centered-harness-open': 'amendment-ready',
@@ -30,7 +30,6 @@
   };
   // Provisional drafts, not approved. Each copies the fixture of its source mount.
   var PENDING_SOURCES = {
-    'centered-starting-plain': 'centered-starting',
     'runtime-installing-sidebar': 'runtime-installing'
   };
   function has(map, key) { return Object.prototype.hasOwnProperty.call(map, key); }
@@ -137,14 +136,14 @@
         ? (isRedraw(route)
           ? (route.indexOf('centered-shell')===0
             ? [['amendment-empty','Expanded'],['centered-shell-collapsed','Collapsed'],['centered-shell-narrow','Minimum']]
-            : [['centered-loading','Loading'],['centered-unqualified','Unavailable'],['centered-invalid','Validation'],['centered-starting','Starting'],['centered-refused','Refused'],['centered-options-closed','Options closed'],['centered-harness-open','Harness open']])
+            : [['centered-loading','Loading'],['centered-unqualified','Unavailable'],['centered-invalid','Validation'],['centered-starting-plain','Starting'],['centered-refused','Refused'],['centered-options-closed','Options closed'],['centered-harness-open','Harness open']])
           : [['amendment-empty','Empty'],['amendment-ready','One line'],['amendment-growing','Growing'],['amendment-capped','Capped'],['amendment-options','Options open'],['amendment-unknown','Unknown']])
         : [['amendment-empty','Shell'],['amendment-ready','Composer'],['amendment-options','Advanced'],['history-retained','History'],['runtime-checking','Runtime']];
       if (isPending(route)) boards = [[PENDING_SOURCES[route], 'Earlier layout']];
       var boardLinks = boards.map(function (board) { return '<a href="#' + H.routeFor('m04', board[0]) + '/' + theme + '">' + board[1] + '</a>'; }).join('');
       var strips = H.catalogStrips.m04;
-      var notice = isPending(route) ? strips.pendingNotice : isRedraw(route) ? strips.redrawNotice : amendment ? strips.centeredNotice : strips.baselineNotice;
-      var heading = isPending(route) ? strips.pendingHeading : isRedraw(route) ? (route.indexOf('centered-shell')===0 ? strips.redrawShellHeading : strips.redrawHeading) : amendment ? strips.centeredHeading : strips.baselineHeading;
+      var notice = isPending(route) ? strips.pendingNotice : isRedraw(route) ? (route==='centered-starting-plain' ? strips.redrawStartingNotice : strips.redrawNotice) : amendment ? strips.centeredNotice : strips.baselineNotice;
+      var heading = isPending(route) ? strips.pendingHeading : isRedraw(route) ? (route.indexOf('centered-shell')===0 ? strips.redrawShellHeading : route==='centered-starting-plain' ? strips.redrawStartingHeading : strips.redrawHeading) : amendment ? strips.centeredHeading : strips.baselineHeading;
       if (loading) catalog.innerHTML = '<div class="hd-m04-actions"><strong>' + loadingStrip.heading + '</strong><label>Frame <select data-m04-field="size"><option value="reference"' + (!s.narrow?' selected':'') + '>1280 × 800</option><option value="minimum"' + (s.narrow?' selected':'') + '>1000 × 620</option></select></label></div><p>' + loadingStrip.note + '</p>';
       else catalog.innerHTML = '<div class="hd-m04-actions"><strong>' + heading + '</strong>' + boardLinks + '<label>Frame <select data-m04-field="size"><option value="reference"' + (!s.narrow?' selected':'') + '>1280 × 800</option><option value="minimum"' + (s.narrow?' selected':'') + '>1000 × 620</option></select></label>' + button('Reset fixture','reset') + '</div><p>' + notice + '</p><details class="hd-m04-fixtures"'+(s.fixtures?' open':'')+'><summary>Fixture controls</summary><div class="hd-m04-actions">' + controls + '</div></details>';
       var base = template(s.collapsed ? 'new-task/sidebar-collapsed' : 'new-task/default');

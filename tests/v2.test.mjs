@@ -368,9 +368,9 @@ function rendererReads() {
 test('aliases resolve old routes without shadowing or chaining, and land on a live route or a retired one', () => {
   const entries = Object.entries(aliases);
   // The transcript and queued-message renderers and the centered redraws are excluded: their routes are new canonical routes with no earlier name.
-  // The retired duplicate shell state had no earlier name either.
+  // The retired duplicate shell state and the retired starting state (replaced on 2026-11-09) had no earlier name either.
   const redrawMounts = new Set([...HFV2.m04RedrawStates, ...HFV2.m04PendingStates].map(x => x.id));
-  const nameless = new Set(['sidebar/centered-expanded']);
+  const nameless = new Set(['sidebar/centered-expanded', 'new-task/centered-starting']);
   assert.equal(entries.length, descriptors.filter(d => d.renderer && !d.skeleton && d.renderer !== 'transcript' && d.renderer !== 'messages' && !(d.renderer === 'm04' && redrawMounts.has(d.mount))).length + retired.filter(e => e.renderer && !nameless.has(e.route)).length, 'every renderer route has exactly one old route, retired ones included, except the redraws');
   for (const [old, target] of entries) {
     assert.match(old, /^[a-z0-9-]+\/[a-z0-9-]+$/);
@@ -414,7 +414,7 @@ test('resolveRoute canonicalises old routes and keeps the appearance suffix', ()
 
 test('redirects send retired routes to live states and obey their invariants', () => {
   const entries = Object.entries(redirects);
-  assert.equal(entries.length, 28);
+  assert.equal(entries.length, 29);
   assert.deepEqual(Array.from(retired, e => e.route).sort(), entries.map(([from]) => from).sort(), 'every redirect is a recorded retirement');
   for (const [from, to] of entries) {
     assert.match(from, /^[a-z0-9-]+\/[a-z0-9-]+$/);
@@ -482,7 +482,7 @@ test('catalog canonicalises the address only when rendering, after alias lookup'
 test('retired states are gone from the registry; superseded-state handling no longer exists', () => {
   const stateOf = route => { const [f, s] = route.split('/'); return HFV2.findState(HFV2.findFamily(f), s); };
   assert.deepEqual(Array.from(retired, e => e.route).sort(), [
-    'new-task/composer-invalid', 'new-task/composer-loading', 'new-task/composer-ready', 'new-task/composer-refused', 'new-task/composer-starting',
+    'new-task/centered-starting', 'new-task/composer-invalid', 'new-task/composer-loading', 'new-task/composer-ready', 'new-task/composer-refused', 'new-task/composer-starting',
     'new-task/composer-unknown', 'new-task/composer-unqualified', 'new-task/default', 'new-task/harness-menu', 'new-task/options-closed', 'new-task/options-open',
     'new-task/sidebar-collapsed', 'sidebar/centered-expanded', 'sidebar/collapsed', 'sidebar/expanded', 'sidebar/history-loading', 'sidebar/minimum',
     'task/activity-capacity', 'task/activity-integrity-failed', 'task/activity-loading', 'task/activity-observed', 'task/activity-partial', 'task/activity-reconnecting',
@@ -498,6 +498,8 @@ test('retired states are gone from the registry; superseded-state handling no lo
   assert.equal(redirects['new-task/default'], 'new-task/centered-empty');
   assert.equal(redirects['new-task/sidebar-collapsed'], 'sidebar/centered-collapsed');
   assert.equal(redirects['new-task/harness-menu'], 'new-task/centered-harness-open');
+  assert.equal(redirects['new-task/centered-starting'], 'new-task/centered-starting-plain');
+  assert.equal(redirects['new-task/composer-starting'], 'new-task/centered-starting-plain', 'the earlier redirect is repointed in one hop');
   assert.equal(redirects['new-task/composer-ready'], 'new-task/centered-ready');
   assert.equal(redirects['new-task/composer-unknown'], 'new-task/centered-unknown');
   assert.equal(redirects['new-task/options-open'], 'new-task/centered-options');
@@ -608,7 +610,7 @@ test('the route map lists every redraw with the route it replaces and the Events
   assert.ok(map.includes('## Redraw routes') && map.includes('### Route grammar'));
   assert.ok(!map.includes('provisional-redraws-awaiting-owner-review') && !map.includes('Provisional redraw'));
   assert.ok(map.includes('decisions/README.md#centered-and-transcript-redraws'));
-  assert.ok(map.includes('28 retired routes'));
+  assert.ok(map.includes('29 retired routes'));
   const redraws = [...COMPOSER_REDRAWS, ...SHELL_REDRAWS, ...TRANSCRIPT_REDRAWS, ['new-task/harness-menu', 'new-task/centered-harness-open']].map(([older, newer]) => ({ older, newer }));
   for (const { older, newer } of redraws) {
     const row = map.split('\n').find(line => line.startsWith(`| \`${newer}\` |`));
@@ -729,18 +731,18 @@ test('strip links of the m04 renderer point at current states, never at retired 
 const pending = HFV2.pendingRedraw;
 const COMPOSER_REDRAWS = [
   ['new-task/composer-loading', 'new-task/centered-loading'], ['new-task/composer-unqualified', 'new-task/centered-unqualified'], ['new-task/composer-invalid', 'new-task/centered-invalid'],
-  ['new-task/composer-starting', 'new-task/centered-starting'], ['new-task/composer-refused', 'new-task/centered-refused'], ['new-task/options-closed', 'new-task/centered-options-closed']
+  ['new-task/composer-starting', 'new-task/centered-starting-plain'], ['new-task/composer-refused', 'new-task/centered-refused'], ['new-task/options-closed', 'new-task/centered-options-closed']
 ];
 const SHELL_REDRAWS = [['sidebar/collapsed', 'sidebar/centered-collapsed'], ['sidebar/minimum', 'sidebar/centered-minimum']];
 const TRANSCRIPT_REDRAWS = ['observed', 'loading', 'partial', 'unavailable', 'integrity-failed', 'reconnecting', 'capacity', 'sources'].map(name => [`task/activity-${name}`, `task/transcript-${name}`]);
 const stateOfRoute = route => { const [f, s] = route.split('/'); return [HFV2.findFamily(f), HFV2.findState(HFV2.findFamily(f), s)]; };
 const DECISION = { 'new-task': 'Centered composer', sidebar: 'Sidebar', task: 'Task transcript' };
 
-test('two redraws are pending, the exact-action approval and the starting state without a status row, and the catalog notes the pairs outside the specimen', () => {
-  assert.deepEqual(JSON.parse(JSON.stringify(pending)), [{ older: 'task/approval', newer: 'task/approval-exact' }, { older: 'new-task/centered-starting', newer: 'new-task/centered-starting-plain' }]);
-  assert.equal(stateOfRoute('new-task/centered-starting')[1].status, 'approved', 'the earlier starting state keeps its approval');
-  assert.equal(stateOfRoute('new-task/centered-starting-plain')[1].status, 'provisional');
-  assert.equal(HFV2.describe('new-task/centered-starting-plain').approval, 'Provisional · not approved');
+test('one redraw is pending, the exact-action approval, and the catalog notes the pair outside the specimen', () => {
+  assert.deepEqual(JSON.parse(JSON.stringify(pending)), [{ older: 'task/approval', newer: 'task/approval-exact' }]);
+  assert.ok(!routeSet.has('new-task/centered-starting'), 'the earlier starting state is retired');
+  assert.equal(stateOfRoute('new-task/centered-starting-plain')[1].status, 'approved');
+  assert.equal(HFV2.describe('new-task/centered-starting-plain').approval, 'Approved by the owner on 2026-11-09 · Starting row');
   // The runtime card in the sidebar is a standalone draft: no pair, and the approved runtime and setup states stay as they are.
   assert.equal(stateOfRoute('harness-runtime/installing-sidebar')[1].status, 'provisional');
   assert.ok(/open owner question: card placement/.test(HFV2.describe('harness-runtime/installing-sidebar').approval));
@@ -762,15 +764,17 @@ test('two redraws are pending, the exact-action approval and the starting state 
   for (const pair of pending) assert.ok(!(pair.older in HFV2.routeRedirects) && !(pair.newer in HFV2.routeRedirects));
 });
 
-test('the 16 redraws are approved by the owner on 2026-11-08, with the decision of their screen', () => {
+test('the 16 redraws are approved by the owner on 2026-11-08 and the starting state on 2026-11-09, with the decision of their screen', () => {
   const redraws = [...COMPOSER_REDRAWS, ...SHELL_REDRAWS, ...TRANSCRIPT_REDRAWS].map(pair => pair[1]).concat('new-task/centered-harness-open');
   assert.equal(redraws.length, 17);
   for (const route of redraws) {
     assert.ok(routeSet.has(route), `${route} is registered`);
     const [family, state] = stateOfRoute(route);
     assert.equal(state.status, 'approved');
-    assert.deepEqual({ ...state.approval }, { by: 'the owner', date: '2026-11-08', decision: DECISION[family.id] }, `${route} approval`);
-    assert.equal(HFV2.describe(route).approval, `Approved by the owner on 2026-11-08 · ${DECISION[family.id]}`);
+    const decision = route === 'new-task/centered-starting-plain' ? 'Starting row' : DECISION[family.id];
+    const date = route === 'new-task/centered-starting-plain' ? '2026-11-09' : '2026-11-08';
+    assert.deepEqual({ ...state.approval }, { by: 'the owner', date, decision }, `${route} approval`);
+    assert.equal(HFV2.describe(route).approval, `Approved by the owner on ${date} · ${decision}`);
     assert.equal(state.redrawOf, undefined);
     assert.equal(state.approvalNote, undefined);
     assert.ok(!/earlier layout|Provisional|provisional|redraw of/i.test(state.description), `${route} description names no earlier layout`);
@@ -808,6 +812,14 @@ test('18 states are retired by the redraws and 20 redirects point at the redraws
     assert.ok(routeSet.has(to) && !(to in redirects), `${to} is a live state`);
     for (const suffix of SUFFIXES) assert.equal(HFV2.resolveRoute(`#${from}${suffix}`), `#${to}${suffix}`, `${from}${suffix}`);
   }
+  // The starting state drawn with the status row was retired on 2026-11-09 and opens its replacement in one hop.
+  const startingRetired = retired.find(e => e.route === 'new-task/centered-starting');
+  assert.equal(startingRetired.redirect, 'new-task/centered-starting-plain');
+  assert.equal(startingRetired.basis, 'Owner decision 2026-11-09: no status row under the composer while starting');
+  assert.equal(startingRetired.pins, 'new-task/centered-starting at d82b59f (mount centered-starting)');
+  assert.ok(startingRetired.renderer === 'm04' && startingRetired.mount === 'centered-starting', 'it keeps its renderer and mount for the link fallback');
+  assert.equal(HFV2.routeFor('m04', 'centered-starting'), 'new-task/centered-starting');
+  for (const suffix of SUFFIXES) assert.equal(HFV2.resolveRoute(`#new-task/centered-starting${suffix}`), `#new-task/centered-starting-plain${suffix}`);
   const redrawRetired = retired.filter(e => e.pins && e.pins.includes('3f12d29'));
   assert.equal(redrawRetired.length, 18);
   for (const entry of redrawRetired) {
@@ -815,7 +827,7 @@ test('18 states are retired by the redraws and 20 redirects point at the redraws
     assert.match(entry.pins, /^[a-z0-9/-]+ at 3f12d29/);
     assert.ok(entry.renderer && entry.mount, `${entry.route} keeps its renderer and mount for the link fallback`);
   }
-  for (const entry of retired.filter(e => !(e.pins || '').includes('3f12d29') && !(e.pins || '').includes('854caae'))) assert.ok(/at 17739e4/.test(entry.pins), `${entry.route} keeps its generated pins`);
+  for (const entry of retired.filter(e => !(e.pins || '').includes('3f12d29') && !(e.pins || '').includes('854caae') && !(e.pins || '').includes('d82b59f'))) assert.ok(/at 17739e4/.test(entry.pins), `${entry.route} keeps its generated pins`);
   const sidebarLoading = retired.filter(e => (e.pins || '').includes('854caae'));
   assert.deepEqual(JSON.parse(JSON.stringify(sidebarLoading.map(e => [e.route, e.redirect, e.mount]))), [['sidebar/history-loading', 'sidebar/loading', 'history-loading']]);
   assert.equal(sidebarLoading[0].pins, 'sidebar/history-loading at 854caae (mount history-loading)');
@@ -854,6 +866,8 @@ test('redraw strips carry the approval and none of the provisional wording', () 
   assert.equal(strips.redrawHeading, 'Approved · Centered composer · Owner 2026-11-08');
   assert.equal(strips.redrawShellHeading, 'Approved · Sidebar · Owner 2026-11-08');
   assert.match(strips.redrawNotice, /^Approved by the owner, 2026-11-08\./);
+  assert.equal(strips.redrawStartingHeading, 'Approved · Starting row · Owner 2026-11-09');
+  assert.match(strips.redrawStartingNotice, /^Approved by the owner, 2026-11-09\./);
   assert.equal(HFV2.catalogStrips.transcript.approved, 'Approved · owner 2026-11-08');
   for (const key of Object.keys(strips)) assert.ok(!/provisional/i.test(key), `no provisional key ${key}`);
   for (const text of [...Object.values(strips), ...Object.values(HFV2.catalogStrips.transcript)]) assert.ok(!/Provisional|needs owner approval|Centered redraw of the earlier/.test(text), text);
@@ -861,7 +875,8 @@ test('redraw strips carry the approval and none of the provisional wording', () 
   assert.ok(!('provisional' in HFV2.catalogStrips.transcript));
   assert.ok(!('d2b' in HFV2.catalogStrips));
   const m04source = read_('m04-proposal.js');
-  assert.match(m04source, /isRedraw\(route\) \? \(route\.indexOf\('centered-shell'\)===0 \? strips\.redrawShellHeading : strips\.redrawHeading\)/);
+  assert.match(m04source, /isRedraw\(route\) \? \(route\.indexOf\('centered-shell'\)===0 \? strips\.redrawShellHeading : route==='centered-starting-plain' \? strips\.redrawStartingHeading : strips\.redrawHeading\)/);
+  assert.match(m04source, /route==='centered-starting-plain' \? strips\.redrawStartingNotice : strips\.redrawNotice/);
 });
 
 test('the decisions record lists every redraw with its earlier state, the owner items and the Events deep links', () => {
@@ -891,6 +906,17 @@ test('the decisions record lists every redraw with its earlier state, the owner 
     const anchor = link[1];
     assert.ok(decisions.split('\n').some(line => /^#{1,6} /.test(line) && line.replace(/^#+ /, '').toLowerCase().replace(/[^a-z0-9 -]/g, '').replace(/ /g, '-') === anchor), `${anchor} resolves to a heading`);
   }
+});
+
+test('the decisions record approves the starting row and leaves the runtime card provisional', () => {
+  const decisions = read(path.join(v2, 'docs', 'decisions', 'README.md'));
+  const row = decisions.split('\n').find(line => line.startsWith('| Starting row |'));
+  assert.ok(row && row.includes('| Approved |') && row.includes('2026-11-09') && row.includes('`new-task/centered-starting-plain`'));
+  const card = decisions.split('\n').find(line => line.startsWith('| Runtime card in the sidebar'));
+  assert.ok(card && card.includes('Provisional, not approved') && card.includes('`harness-runtime/installing-sidebar`'));
+  assert.ok(!decisions.includes('starting-row-and-runtime-card-provisional') && decisions.includes('## Starting row and runtime card\n'));
+  assert.ok(decisions.includes('| `new-task/centered-starting` | `new-task/centered-starting-plain` |'), 'the retirement is recorded');
+  assert.equal(HFV2.describe('harness-runtime/installing-sidebar').approval, 'Provisional · not approved · open owner question: card placement; parked for the already-set-up, runtime-updating case; not-ready first run stays as approved');
 });
 
 test('a redirect target is never retired by a later sign-off without repointing the redirect', () => {
