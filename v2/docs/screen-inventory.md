@@ -121,3 +121,7 @@ Every loading state, including those at 1000 × 620, is approved. The orchestrat
 ## Fidelity and limits
 
 The reference is a browser rendering of the design system with deterministic mock data. Native materials, window controls, platform menus and text rasterisation are approximations. Interactions are limited to navigation between specimens and the appearance controls; composers do not submit. Browser checks were performed on this reference; no native or Electron implementation exists to compare against yet.
+
+## Pending-launch discovery (provisional)
+
+The 21 `task/pending-*` states are **Provisional / Draft, not approved**: inventory, loading, empty, failed, incomplete, waiting, preparing, preparing-handshake, granted, not-started, unavailable, missing, recorded, handoff-failed, stop-confirm, stop-confirm-minimum, stop-requested, stop-requested-minimum, stop-uncertain, stop-refused and waiting-minimum. See [the decision record](decisions/pending-launch-discovery.md) for exact routes, API mapping, copy and owner questions. They draw separate launch selection before a task record, including resource-free preparation without Stop support. Existing approved `task/pending` is preserved. Light/dark tokens and a 1000 × 620 state are included; browser inspection is outstanding at source freeze.

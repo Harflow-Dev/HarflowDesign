@@ -517,3 +517,7 @@ These files were in `v2/docs/` until the information architecture changed. Recei
 | `v2/docs/m05-task-screen-proposal.md` | `v2/docs/decisions/m05-task-screen-proposal.md` |
 
 `v2/docs/migration-coverage.md`, `screen-inventory.md` and `terminology.md` stay where they were.
+
+## Pending-launch discovery and controls (provisional)
+
+Status: **Provisional / Draft, not approved**; no approver or approval date. Recording commit: pending source review. [Decision, API mapping, exact copy and approval questions](pending-launch-discovery.md). Routes: `task/pending-inventory`, `pending-loading`, `pending-empty`, `pending-failed`, `pending-incomplete`, `pending-waiting`, `pending-preparing`, `pending-preparing-handshake`, `pending-granted`, `pending-not-started`, `pending-unavailable`, `pending-missing`, `pending-recorded`, `pending-handoff-failed`, `pending-stop-confirm`, `pending-stop-confirm-minimum`, `pending-stop-requested`, `pending-stop-requested-minimum`, `pending-stop-uncertain`, `pending-stop-refused`, `pending-waiting-minimum`. Files: `v2/scripts/screens-pending-launches.js`, `v2/styles/pending-launches.css`, `v2/index.html`. Existing approved `task/pending` stays unchanged.

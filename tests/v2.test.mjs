@@ -592,7 +592,7 @@ test('the decisions index lists every decision file and each screen has an ancho
   const dir = path.join(v2, 'docs', 'decisions');
   const index = read(path.join(dir, 'README.md'));
   const docs = fs.readdirSync(dir).filter(name => name.endsWith('.md') && name !== 'README.md');
-  assert.equal(docs.length, 7);
+  assert.equal(docs.length, 8);
   for (const name of docs) assert.ok(index.includes(`(${name})`), `${name} is indexed`);
   for (const family of HFV2.registry.families.filter(f => f.area)) assert.ok(index.includes(`### \`${family.id}\``), `${family.id} has a decision section`);
   for (const column of ['Status', 'Approved by and date', 'Recording commit', 'Routes', 'Files']) assert.ok(index.includes(column), column);
@@ -1079,4 +1079,52 @@ test('the task screen hooks replace the transcript column, the Events body and t
   for (const tab of ['Changes', 'Artifacts']) assert.match(html, new RegExp(`aria-selected="false" aria-disabled="true" class="hd-tab is-disabled">${tab}</button>`));
   assert.ok(!/data-m05="tab-(changes|artifacts)"/.test(html), 'a disabled tab has no action');
   assert.ok(html.includes('data-m05="tab-events"') && html.includes('data-m05="pane"'));
+});
+
+
+test('pending launch discovery stays provisional and separates cancellation support from observation', () => {
+  const states = HFV2.pendingLaunchStates;
+  assert.equal(states.length, 21);
+  for (const [id] of states) {
+    const route = `task/pending-${id}`;
+    assert.equal(HFV2.describe(route).status, 'provisional', route);
+    const html = HFV2.templates[HFV2.describe(route).templateKey];
+    assert.match(html, /textarea disabled/);
+    assert.doesNotMatch(html, /Copy resume|Take over|Send now|Original request|Captured output/);
+  }
+  const html = id => HFV2.templates[HFV2.describe(`task/pending-${id}`).templateKey];
+  for (const id of ['preparing-handshake', 'not-started', 'unavailable', 'missing', 'recorded', 'handoff-failed', 'stop-requested', 'stop-uncertain', 'stop-refused']) {
+    assert.ok(!html(id).includes('href="#task/pending-stop-confirm"'), `${id} grants no Stop`);
+  }
+  assert.match(html('stop-confirm'), /task with this same ID may be stopped/);
+  assert.match(html('stop-confirm'), /role="dialog" aria-modal="true"/);
+  assert.match(html('stop-confirm'), /<aside inert/);
+  assert.match(html('stop-confirm'), /<main inert/);
+  for (const [id] of states) assert.doesNotMatch(html(id), /qualified|ordinary task record|launch mechanism|read bounds/);
+  assert.match(html('stop-requested'), /does not confirm that the launch or task stopped/);
+  assert.match(html('missing'), /Its outcome is unknown/);
+  assert.match(html('granted'), /Harflow has not confirmed a running task yet/);
+  assert.match(html('waiting-minimum'), /width:1000px;height:620px/);
+  assert.match(html('waiting-minimum'), /href="#task\/pending-stop-confirm-minimum"/);
+  assert.match(html('stop-confirm-minimum'), /width:1000px;height:620px/);
+  assert.match(html('stop-confirm-minimum'), /href="#task\/pending-waiting-minimum"/);
+  assert.match(html('stop-confirm-minimum'), /href="#task\/pending-stop-requested-minimum"/);
+  assert.match(html('stop-requested-minimum'), /width:1000px;height:620px/);
+  assert.match(html('stop-requested-minimum'), /href="#task\/pending-stop-requested-minimum"/);
+  const controller = read(path.join(v2, 'scripts', 'screens-pending-launches.js'));
+  assert.match(controller, /pending-stop-confirm-minimum'\) !== -1\) returnRoute = '#task\/pending-waiting-minimum'/);
+  assert.match(controller, /event.key === 'Escape'[\s\S]*?restoreStop = true; links\[0\].click\(\)/);
+  assert.match(controller, /if \(stop\) \{ restoreStop = false; stop.focus\(\)/);
+
+  assert.match(html('granted'), /The engine granted this launch/);
+  assert.doesNotMatch(html('granted'), /ready to start/);
+  const loading = HFV2.describe('task/pending-loading');
+  assert.equal(loading.skeleton.of, 'task/pending-inventory');
+  assert.equal(loading.templateKey, 'task/pending-inventory');
+  const skeleton = HFV2.skeletonSpecs[loading.skeleton.spec];
+  assert.ok(skeleton.ops.some(op => op.sel === '.hd-sidebar .hd-pending-launch' && op.kind === 'custom' && op.pin === 'fixed'));
+  for (const selector of ['strong', 'small', 'code']) assert.ok(skeleton.ops.some(op => op.sel === `.hd-pending-inventory ${selector}` && op.kind === 'text'));
+  assert.equal((html('loading').match(/<strong>/g) || []).length, 2, 'loading derives both inventory cards');
+
+  assert.equal(HFV2.describe('task/pending').status, 'approved', 'earlier waiting-only approval preserved');
 });
