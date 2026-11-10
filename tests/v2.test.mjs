@@ -1122,7 +1122,7 @@ test('pending launch discovery stays provisional and separates cancellation supp
   assert.equal(loading.skeleton.of, 'task/pending-inventory');
   assert.equal(loading.templateKey, 'task/pending-inventory');
   const skeleton = HFV2.skeletonSpecs[loading.skeleton.spec];
-  assert.ok(skeleton.ops.some(op => op.sel === '.hd-sidebar .hd-pending-selection' && op.kind === 'custom' && op.pin === 'fixed'));
+  assert.ok(skeleton.ops.some(op => op.sel === '.hd-task-row__title' && op.kind === 'text'));
   for (const selector of ['strong', 'small', 'code']) assert.ok(skeleton.ops.some(op => op.sel === `.hd-pending-inventory ${selector}` && op.kind === 'text'));
   assert.equal((html('loading').match(/<strong>/g) || []).length, 2, 'loading derives both inventory cards');
 
@@ -1130,23 +1130,41 @@ test('pending launch discovery stays provisional and separates cancellation supp
 });
 
 
-test('pending launches reuse the approved sidebar with only an additive launch selection section', () => {
-  const base = HFV2.templates['new-task/default'].match(/<aside class="hd-sidebar"[\s\S]*?<\/aside>/)[0].replace('hd-nav-item is-active', 'hd-nav-item');
-  const rail = HFV2.templates['new-task/sidebar-collapsed'].match(/<aside class="hd-rail"[\s\S]*?<\/aside>/)[0].replace('hd-rail-item is-active', 'hd-rail-item');
+test('pending launches add one icon-led navigation item to sparse approved sidebar fixtures', () => {
+  const extract = key => HFV2.templates[key].match(/<aside class="hd-(?:sidebar|rail)"[\s\S]*?<\/aside>/)[0];
+  const base = extract('new-task/default').replace('hd-nav-item is-active', 'hd-nav-item');
+  const rail = extract('new-task/sidebar-collapsed').replace('hd-rail-item is-active', 'hd-rail-item').replace('aria-label="2 running">2</span>', 'aria-label="1 running">1</span>');
+  const section = (html, label) => html.match(new RegExp('<section class="hd-section[^\"]*" aria-label="' + label + '">[\\s\\S]*?<\\/section>'))[0];
+  const rows = html => html.match(/<a class="hd-task-row[\s\S]*?<\/a>/g) || [];
   for (const [id] of HFV2.pendingLaunchStates) {
     const sidebar = HFV2.pendingLaunchSidebar(id, false);
-    const original = sidebar.replace(/<section class="hd-section" aria-label="Pending launches" data-pending-section>[\s\S]*?<\/section>/, '')
+    const nav = sidebar.match(/<a class="hd-nav-item is-active"[^>]*data-pending-nav>[\s\S]*?<\/a>/g) || [];
+    assert.equal(nav.length, 1, `${id}: one selected pending nav parent`);
+    assert.match(nav[0], /hd-i-clock/);
+    assert.match(nav[0], /href="#task\/pending-inventory"/);
+    assert.doesNotMatch(sidebar, /data-pending-section|hd-pending-selection|View pending launches/);
+    let original = sidebar.replace(nav[0], '')
       .replace('<div class="hd-m04-sidebar-scroll"><nav class="hd-nav"', '<nav class="hd-nav"')
       .replace('</div><div class="hd-sidebar__foot">', '<div class="hd-sidebar__foot">');
-    assert.equal(original, base, `${id}: nav, Running, Recent work, header and footer are approved source bytes`);
-    assert.equal(HFV2.pendingLaunchSidebar(id, true), rail, `${id}: collapsed rail is approved source bytes`);
-    const pending = sidebar.match(/<section class="hd-section" aria-label="Pending launches" data-pending-section>[\s\S]*?<\/section>/)[0];
-    assert.doesNotMatch(pending, /hd-task-row|hd-glyph--running|04:12/);
+    for (const [label, keep] of [['Running', 1], ['Recent work', 2]]) {
+      const sourceSection = section(base, label), sparse = section(sidebar, label);
+      assert.deepEqual(rows(sparse), rows(sourceSection).slice(0, keep), `${id}: retained ${label} rows are exact approved source`);
+      assert.doesNotMatch(sparse, /hd-sidebar__more/);
+      original = original.replace(sparse, sourceSection);
+    }
+    assert.equal(original, base, `${id}: all remaining shell bytes are approved source`);
+    const collapsed = HFV2.pendingLaunchSidebar(id, true);
+    const icon = collapsed.match(/<a class="hd-rail-item is-active"[^>]*data-pending-nav>[\s\S]*?<\/a>/)[0];
+    assert.match(icon, /aria-label="Pending launches"/);
+    assert.match(icon, /hd-i-clock/);
+    assert.equal(collapsed.replace(icon, ''), rail, `${id}: canonical rail plus pending icon and accurate count`);
+    assert.equal((sidebar.match(/<a class="hd-task-row/g) || []).length, 3, `${id}: sparse history budget`);
   }
-  const waiting = HFV2.pendingLaunchSidebar('waiting', false);
-  assert.match(waiting, /hd-pending-selection is-active[^>]*href="#task\/pending-waiting"[^>]*aria-current="page"/);
-  const preparing = HFV2.pendingLaunchSidebar('preparing-handshake', false);
-  assert.match(preparing, /hd-pending-selection is-active[^>]*href="#task\/pending-preparing-handshake"[^>]*aria-current="page"/);
+  const tokens = read(path.join(v2, 'styles', 'tokens.css'));
+  assert.match(tokens, /--row-height:\s*32px/);
   const css = read(path.join(v2, 'styles', 'pending-launches.css'));
-  assert.doesNotMatch(css, /\.hd-pending \.hd-sidebar\{/);
+  assert.doesNotMatch(css, /overflow[^;}]*hidden|scrollbar-width|::-webkit-scrollbar/);
+  // Conservative fixture geometry: six 32px nav rows + padding, two 40px section heads,
+  // three 32px history rows with gaps, plus 52px header + 56px footer stays below 620px.
+  assert.ok(6 * 32 + 24 + 2 * 40 + 3 * 32 + 4 + 52 + 56 < 620);
 });
