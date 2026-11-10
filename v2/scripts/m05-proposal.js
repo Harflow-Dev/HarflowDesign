@@ -54,7 +54,7 @@
   var NOTICES = {
     stopping: ['info', 'Stop requested', 'This run has not exited yet. The status changes when Harflow records the outcome.'],
     settling: ['info', 'Settling', 'The run finished. Its last events and stored changes may still arrive.'],
-    continued: ['info', 'New session started', 'This is a fresh session from the earlier run\'s stored request, summary and outcome. Started does not mean finished.'],
+    continued: ['info', 'New session accepted', 'The engine accepted the request. It may still be waiting for resources; acceptance does not mean completion.'],
     reconstructed: ['warning', 'Reconstructed outcome', 'Harflow did not see this process exit. Done comes from the run\'s own closing output.'],
     statusUnavailable: ['warning', 'Current status unavailable', 'The engine did not answer. Everything below was read earlier and may be out of date.', btn('Retry read')]
   };
@@ -75,7 +75,7 @@
     ownerLost: function () { return bannerHtml('warning', 'The process watching this run is gone', '<div>Captured output has stopped and no later summary is promised. The run itself may still be working. Check its changes or stop it before starting a replacement.</div>', btn('Stop task', { kind: 'danger', action: 'stop', icon: 'stop' }) + btn('Refresh', { kind: 'ghost' })); },
     unverified: function () { return bannerHtml('warning', 'Harflow can\'t confirm this run', '<div>It can\'t tell whether the process watching this run is alive. Output may or may not still be captured, and a later summary is unknown. Check status again before starting a replacement.</div>', btn('Refresh') + btn('Stop task', { kind: 'danger', action: 'stop', icon: 'stop' })); },
     continueStarting: function () { return bannerHtml('', 'Task failed: the harness exited with code 1', '<div class="hd-m05-err hd-mono">json.decoder.JSONDecodeError: Unterminated string starting at: line 1 column 38</div>', btn('Starting…', { icon: 'refresh', disabled: true })); },
-    continueRefused: function () { return bannerHtml('warning', 'Continue was refused', '<div>Nothing started. The engine said:</div><div class="hd-mono hd-m05-err">Continuation chain was cancelled; start a new task explicitly</div>', '<a class="hd-btn hd-btn--secondary hd-btn--sm" href="#new-task/default">New task</a>' + btn('Copy resume command', { kind: 'ghost', icon: 'copy' })); },
+    continueRefused: function () { return bannerHtml('warning', 'Continue was refused', '<div>The engine refused this request.</div><div class="hd-mono hd-m05-err">Continuation chain was cancelled; start a new task explicitly</div>', '<a class="hd-btn hd-btn--secondary hd-btn--sm" href="#new-task/default">New task</a>' + btn('Copy resume command', { kind: 'ghost', icon: 'copy' })); },
     launchUnknown: function () { return bannerHtml('warning', 'A new session may have started', '<div>The engine did not report back after Continue, so a task may exist. Don\'t resend yet.</div>', btn('Check for a new task')) + caption('Reads recorded successors only. A task still waiting for resources does not appear until it starts.'); }
   };
   function bannerHtml(tone, title, body, actions) {

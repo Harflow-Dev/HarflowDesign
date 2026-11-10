@@ -1027,8 +1027,9 @@ test('the transcript renderer is registered and draws each activity fixture in t
 
 // ---- Task screen hooks ----
 
-// The digest covers the markup of every task screen state that is not a decision board, in eight interface
-// variants and both appearances. It was computed before the hooks existed and must not change.
+// The digest covers task screen markup in eight interface variants and both appearances. The 2026-11-10
+// owner-approved continuation copy amendment intentionally changes two state specimens; the updated
+// digest records that copy change while guarding all resulting markup against unintended drift.
 test('the task screen markup of every existing state is unchanged by the optional hooks', () => {
   const m05 = HFV2.m05Proposal;
   assert.equal(typeof m05.screenHtml, 'function');
@@ -1045,7 +1046,18 @@ test('the task screen markup of every existing state is unchanged by the optiona
     });
   }
   assert.equal(lines.length, 944);
-  assert.equal(crypto.createHash('sha256').update(lines.join('\n')).digest('hex'), 'c6e638e58ca7802bdcb5ca6dc40b8f6b942edbb2f18afec8eb4b5d0630b8dbff');
+  assert.equal(crypto.createHash('sha256').update(lines.join('\n')).digest('hex'), '3f13e3be0d418a68597f752693993cbf32168428ddec527755b6afa3a1998f75');
+});
+
+test('continuation copy separates acceptance from completion and refusal reason', () => {
+  const renderer = read(path.join(v2, 'scripts', 'm05-proposal.js'));
+  const screens = read(path.join(v2, 'scripts', 'screens-m05-proposal.js'));
+  assert.match(renderer, /continued: \['info', 'New session accepted', 'The engine accepted the request\. It may still be waiting for resources; acceptance does not mean completion\.'/);
+  assert.match(renderer, /The engine refused this request\.<\/div><div class="hd-mono hd-m05-err">/);
+  assert.doesNotMatch(renderer, /Nothing started\. The engine said:/);
+  assert.match(screens, /\['state-continue-started', 'Status', 'Continue · request accepted', 'The engine accepted the request\. It may still be waiting for resources; acceptance does not mean completion\.'/);
+  assert.match(screens, /\['state-continue-refused', 'Status', 'Continue · refused', 'A task with continuation history or auto-continue that was cancelled refuses Continue\. The engine refused this request; its reason is shown\.'/);
+  assert.match(renderer, /btn\('Check for a new task'\)/);
 });
 
 test('the task screen hooks replace the transcript column, the Events body and the task identity', () => {

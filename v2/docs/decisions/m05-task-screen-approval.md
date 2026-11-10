@@ -63,3 +63,11 @@ Decision records, not pin targets: `overview`, `retry-options`, `stop-options`, 
 Approval covers state meanings, direction and presentation. It does not establish native pixel fidelity, accessibility or VoiceOver, real scroll anchoring, runtime behaviour, performance or product acceptance. It does not authorize a push, a release or a contract change.
 
 Read-only contract review by Codex: two rounds plus a narrow confirmation at `a9c65fe` that the last four fixes hold and introduced nothing new.
+
+## Copy amendment — 2026-11-10
+
+The owner approved these exact copy changes. This amendment is limited to wording; it does not approve additional states or features.
+
+- `state-continue-started`: notice title **New session accepted**; body **The engine accepted the request. It may still be waiting for resources; acceptance does not mean completion.** The catalog title and description use acceptance language. `state-continue-started` and its route ID remain unchanged.
+- `state-continue-refused`: replace **Nothing started. The engine said:** with **The engine refused this request.** The engine reason remains separate and unchanged.
+- `state-launch-unknown`: retain its warning and **Check for a new task** action unchanged.
