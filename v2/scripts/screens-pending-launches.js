@@ -32,6 +32,27 @@
   function card(title, text) { return '<section class="hd-pending-card"><h2>' + title + '</h2><p>' + text + '</p></section>'; }
   var inventory = ['inventory', 'loading', 'empty', 'failed', 'incomplete'];
   var qualified = ['waiting', 'preparing', 'preparing-handshake', 'granted', 'not-started', 'waiting-minimum', 'stop-confirm', 'stop-requested', 'stop-uncertain', 'stop-refused'];
+  // Reuse the approved M04/redrawn shell; only pending selection is additive.
+  // Base 57f54ab: screens-new-task.js + m04-proposal.js:149–165 (owner scroll correction).
+  function sidebarHtml(id, collapsed) {
+    var key = collapsed ? 'new-task/sidebar-collapsed' : 'new-task/default';
+    var base = T[key].match(/<aside class="hd-(?:sidebar|rail)"[\s\S]*?<\/aside>/)[0];
+    // New task is not selected while a launch is selected; no task row is fabricated.
+    base = base.replace('hd-nav-item is-active', 'hd-nav-item').replace('hd-rail-item is-active', 'hd-rail-item');
+    if (collapsed) return base;
+    var isInventory = inventory.indexOf(id) !== -1;
+    var listed = id !== 'empty' && id !== 'failed';
+    function entry(target, title, state, active) {
+      return '<a class="hd-nav-item hd-pending-selection' + (active ? ' is-active' : '') + '" href="#task/pending-' + target + '" aria-label="' + title + ' · ' + state + '" title="' + title + ' · ' + state + '"' + (active ? ' aria-current="page"' : '') + '><span class="hd-nav-item__label">' + title + '</span></a>';
+    }
+    var pending = '<section class="hd-section" aria-label="Pending launches" data-pending-section><div class="hd-section__head">Pending launches</div><div class="hd-section__list">' +
+      (listed ? entry('waiting', 'Review launch admission checks', 'Waiting for resources', !isInventory && id !== 'preparing-handshake') + entry('preparing-handshake', 'Prepare local environment', 'Preparing', id === 'preparing-handshake') : '<p class="hd-pending-sidebar-note">' + (id === 'empty' ? 'None observed in this check' : 'Check unavailable') + '</p>') +
+      '</div>' + link('inventory', '<span class="hd-nav-item__label">View pending launches</span>', 'hd-nav-item') + '</section>';
+    base = base.replace('<section class="hd-section" aria-label="Running">', pending + '<section class="hd-section" aria-label="Running">');
+    // Same bounded body as the approved M04 mount: header/footer stay fixed.
+    return base.replace('<nav class="hd-nav"', '<div class="hd-m04-sidebar-scroll"><nav class="hd-nav"').replace('<div class="hd-sidebar__foot">', '</div><div class="hd-sidebar__foot">');
+  }
+  H.pendingLaunchSidebar = sidebarHtml;
   function render(row) {
     var id = row[0], minimum = id === 'waiting-minimum' || id === 'stop-confirm-minimum' || id === 'stop-requested-minimum';
     if (id === 'stop-confirm-minimum') id = 'stop-confirm';
@@ -39,9 +60,7 @@
     var isInventory = inventory.indexOf(id) !== -1, known = qualified.indexOf(id) !== -1;
     var title = known ? (id === 'preparing-handshake' ? 'Prepare local environment' : 'Review launch admission checks') : isInventory ? 'Pending launches' : 'Pending launch';
     var listed = id !== 'empty' && id !== 'loading' && id !== 'failed';
-    var sidebar = '<aside class="hd-sidebar" aria-label="Sidebar"><div class="hd-sidebar__top"><span class="hd-brand"><span class="hd-brand__mark" aria-hidden="true"></span>Harflow</span></div><nav class="hd-nav" aria-label="Main"><a class="hd-nav-item" href="#new-task/centered-empty">＋ New task</a><a class="hd-nav-item" href="#needs-you/waiting">Needs you</a><a class="hd-nav-item" href="#workflows/list">Workflows</a><a class="hd-nav-item" href="#resources/slots">Resources</a></nav><section class="hd-section"><div class="hd-section__head">Pending launches</div>' +
-      (listed ? link('waiting', 'Review launch admission checks<small>Waiting for resources</small>', 'hd-pending-launch' + (!isInventory && id !== 'preparing-handshake' ? ' is-active' : '')) + link('preparing-handshake', 'Prepare local environment<small>Preparing</small>', 'hd-pending-launch' + (id === 'preparing-handshake' ? ' is-active' : '')) : '<p class="hd-pending-sidebar-note">' + (id === 'empty' ? 'None observed in this check' : 'Check unavailable') + '</p>') +
-      '<a class="hd-nav-item" href="#task/pending-inventory">View pending launches</a></section><section class="hd-section hd-section--fill"><div class="hd-section__head">Recent work</div><a class="hd-task-row" href="#task/failed-continue"><span class="hd-task-row__title">Review previous delivery</span></a></section><div class="hd-sidebar__foot"><a class="hd-nav-item" href="#settings/general">Settings</a></div></aside>';
+    var sidebar = sidebarHtml(id, false);
     var body = card(row[1], row[2]);
     if (!isInventory && !known) body += '<dl class="hd-pending-facts"><dt>Selected ID</dt><dd><code>' + ID + '</code></dd></dl>';
     if (isInventory && listed) body += '<div class="hd-pending-inventory">' + link('waiting', '<strong>Review launch admission checks</strong><small>Claude · Harflow · Waiting for resources</small><code>' + ID + '</code>', 'hd-pending-launch') + link('preparing-handshake', '<strong>Prepare local environment</strong><small>Codex · Harflow · Preparing</small><code>20261110-093200-b28d03</code>', 'hd-pending-launch') + '</div>';
@@ -55,7 +74,7 @@
     var dialog = id === 'stop-confirm' ? '<div class="hd-m05-scrim"><div class="hd-dialog" role="dialog" aria-modal="true" aria-labelledby="pending-stop-title" aria-describedby="pending-stop-copy"><h2 class="hd-dialog__title" id="pending-stop-title">Stop this launch?</h2><p class="hd-dialog__text" id="pending-stop-copy">This asks the engine to stop the full launch ID below. If it starts before the request arrives, the task with this same ID may be stopped.</p><p class="hd-dialog__text hd-mono">' + ID + '</p><p class="hd-dialog__text">This is best effort. Files already written remain in place. The engine may refuse Stop because of workflow controls or your access.</p><div class="hd-dialog__actions">' + link(minimum ? 'waiting-minimum' : 'waiting', 'Cancel', 'hd-btn hd-btn--secondary hd-pending-close') + link(minimum ? 'stop-requested-minimum' : 'stop-requested', 'Request Stop', 'hd-btn hd-btn--danger') + '</div></div></div>' : '';
     if (dialog) sidebar = sidebar.replace('<aside ', '<aside inert ');
     var width = minimum ? 1000 : 1280, height = minimum ? 620 : 800;
-    return '<div class="hd-pending hd-app" data-theme="{{theme}}" style="width:' + width + 'px;height:' + height + 'px">' + sidebar + '<main' + (dialog ? ' inert' : '') + ' class="hd-main"><header class="hd-topbar"><span class="hd-topbar__title">' + title + '</span><span class="hd-badge">Pending launch</span></header><div class="hd-pending-content">' + body + '</div><footer class="hd-pending-composer"><textarea disabled aria-label="Pending launch message unavailable" placeholder="Messages are unavailable until Harflow confirms the task has started"></textarea><p>Pending launch · messaging unavailable</p></footer></main>' + dialog + '</div>';
+    return '<div class="hd-pending hd-app" data-theme="{{theme}}" data-pending-state="' + row[0] + '" style="width:' + width + 'px;height:' + height + 'px">' + '<div class="hd-m04-proposal hd-pending-sidebar">' + sidebar + '</div><main' + (dialog ? ' inert' : '') + ' class="hd-main"><header class="hd-topbar"><span class="hd-topbar__title">' + title + '</span><span class="hd-badge">Pending launch</span></header><div class="hd-pending-content">' + body + '</div><footer class="hd-pending-composer"><textarea disabled aria-label="Pending launch message unavailable" placeholder="Messages are unavailable until Harflow confirms the task has started"></textarea><p>Pending launch · messaging unavailable</p></footer></main>' + dialog + '</div>';
   }
   var family = H.findFamily('task');
   if (family.groups && family.groups.indexOf('Pending launches') < 0) family.groups.push('Pending launches');
@@ -74,19 +93,25 @@
     ops: [
       { sel: '.hd-pending-content .hd-pending-card h2', kind: 'settext', text: 'Checking pending launches' },
       { sel: '.hd-pending-content .hd-pending-card p', kind: 'settext', text: 'Checking this engine for pending launches…' },
-      { sel: '.hd-sidebar .hd-pending-launch', kind: 'custom', pin: 'fixed', run: function (el, i) {
+      { sel: '.hd-sidebar .hd-pending-selection', kind: 'custom', pin: 'fixed', run: function (el, i) {
         el.removeAttribute('href'); el.setAttribute('aria-disabled', 'true');
-        el.innerHTML = H.skelBlock(i ? 140 : 190, 12, 'line', 'max-width:100%;margin:4px 0 7px') + H.skelBlock(90, 10);
+        el.removeAttribute('title'); el.removeAttribute('aria-label');
+        el.innerHTML = H.skelBlock(i ? 140 : 190, 12, 'line', 'max-width:100%;margin:10px 0');
       } },
       { sel: '.hd-pending-inventory .hd-pending-launch', kind: 'disable' },
       { sel: '.hd-pending-inventory strong', kind: 'text', w: [190, 140], h: 12 },
       { sel: '.hd-pending-inventory small', kind: 'text', w: 190, h: 10 },
       { sel: '.hd-pending-inventory code', kind: 'text', w: 140, h: 10 },
       { sel: '.hd-task-row', kind: 'disable' },
+      { sel: '.hd-glyph', kind: 'fill', shape: 'circle' },
+      { sel: '.hd-task-row__meta', kind: 'text', w: 24, h: 10 },
+      { sel: '.hd-nav-item__count, .hd-section__count', kind: 'text', w: 14, h: 10 },
+      { sel: '.hd-nav .hd-dot', kind: 'hide' },
+      { sel: '.hd-sidebar__more', kind: 'text', w: 90, h: 10 },
       { sel: '.hd-task-row__title', kind: 'text', w: 190, h: 12 }
     ],
-    chrome: { Sidebar: 1, Main: 1, Harflow: 1, '＋ New task': 1, 'Needs you': 1, Workflows: 1, Resources: 1,
-      'Pending launches': 2, 'View pending launches': 1, 'Recent work': 1, Settings: 1, 'Pending launch': 1,
+    chrome: { Sidebar: 1, Main: 1, Harflow: 1, 'New task': 1, '⌘N': 1, 'Collapse sidebar': 1, Statistics: 1, Running: 1, Appearance: 1, System: 1, 'System, follows this computer': 1, Light: 2, Dark: 2, 'Needs you': 1, Workflows: 1, Resources: 1,
+      'Pending launches': 3, 'View pending launches': 1, 'Recent work': 1, Settings: 1, 'Pending launch': 1,
       'Checking pending launches': 1, 'Checking this engine for pending launches…': 1,
       'Pending launch message unavailable': 1, 'Messages are unavailable until Harflow confirms the task has started': 1,
       'Pending launch · messaging unavailable': 1 }
@@ -110,6 +135,26 @@
       }
     }
     document.addEventListener('click', function (event) {
+      var toggle = event.target.closest('.hd-pending-sidebar [aria-label="Collapse sidebar"], .hd-pending-sidebar [aria-label="Expand sidebar"]');
+      if (toggle) {
+        var app = toggle.closest('.hd-pending'), host = toggle.closest('.hd-pending-sidebar');
+        var collapsed = toggle.getAttribute('aria-label') === 'Collapse sidebar';
+        var selected = host.querySelector('.hd-theme__item[aria-pressed="true"]');
+        var preference = selected ? selected.getAttribute('aria-label').toLowerCase() : host.dataset.preference || 'system';
+        host.dataset.preference = preference;
+        host.innerHTML = H.fill(sidebarHtml(app.dataset.pendingState, collapsed), preference, app.dataset.theme);
+        if (app.dataset.pendingState === 'loading') {
+          // Restore loaded sidebar geometry, then skeletonize only that restored sidebar.
+          var ops = collapsed ? [
+            { sel: '.hd-rail-item__badge', kind: 'text', w: 14, h: 10 },
+            { sel: '.hd-rail-item__badge', kind: 'drop', attrs: ['aria-label'] },
+            { sel: '.hd-rail .hd-dot', kind: 'hide' }
+          ] : specs['pending-launches'].ops.filter(function (op) { return op.sel.indexOf('.hd-pending-content') !== 0 && op.sel.indexOf('.hd-pending-inventory') !== 0; });
+          host.removeAttribute('data-skeleton');
+          H.skeletonize(app, { frame: '.hd-pending-sidebar', label: 'Checking pending launches', ops: ops });
+        }
+        host.querySelector('[aria-label="' + (collapsed ? 'Expand sidebar' : 'Collapse sidebar') + '"]').focus();
+      }
       if (event.target.closest('.hd-pending-close')) restoreStop = true;
     }, true);
     document.addEventListener('keydown', function (event) {

@@ -1122,9 +1122,31 @@ test('pending launch discovery stays provisional and separates cancellation supp
   assert.equal(loading.skeleton.of, 'task/pending-inventory');
   assert.equal(loading.templateKey, 'task/pending-inventory');
   const skeleton = HFV2.skeletonSpecs[loading.skeleton.spec];
-  assert.ok(skeleton.ops.some(op => op.sel === '.hd-sidebar .hd-pending-launch' && op.kind === 'custom' && op.pin === 'fixed'));
+  assert.ok(skeleton.ops.some(op => op.sel === '.hd-sidebar .hd-pending-selection' && op.kind === 'custom' && op.pin === 'fixed'));
   for (const selector of ['strong', 'small', 'code']) assert.ok(skeleton.ops.some(op => op.sel === `.hd-pending-inventory ${selector}` && op.kind === 'text'));
   assert.equal((html('loading').match(/<strong>/g) || []).length, 2, 'loading derives both inventory cards');
 
   assert.equal(HFV2.describe('task/pending').status, 'approved', 'earlier waiting-only approval preserved');
+});
+
+
+test('pending launches reuse the approved sidebar with only an additive launch selection section', () => {
+  const base = HFV2.templates['new-task/default'].match(/<aside class="hd-sidebar"[\s\S]*?<\/aside>/)[0].replace('hd-nav-item is-active', 'hd-nav-item');
+  const rail = HFV2.templates['new-task/sidebar-collapsed'].match(/<aside class="hd-rail"[\s\S]*?<\/aside>/)[0].replace('hd-rail-item is-active', 'hd-rail-item');
+  for (const [id] of HFV2.pendingLaunchStates) {
+    const sidebar = HFV2.pendingLaunchSidebar(id, false);
+    const original = sidebar.replace(/<section class="hd-section" aria-label="Pending launches" data-pending-section>[\s\S]*?<\/section>/, '')
+      .replace('<div class="hd-m04-sidebar-scroll"><nav class="hd-nav"', '<nav class="hd-nav"')
+      .replace('</div><div class="hd-sidebar__foot">', '<div class="hd-sidebar__foot">');
+    assert.equal(original, base, `${id}: nav, Running, Recent work, header and footer are approved source bytes`);
+    assert.equal(HFV2.pendingLaunchSidebar(id, true), rail, `${id}: collapsed rail is approved source bytes`);
+    const pending = sidebar.match(/<section class="hd-section" aria-label="Pending launches" data-pending-section>[\s\S]*?<\/section>/)[0];
+    assert.doesNotMatch(pending, /hd-task-row|hd-glyph--running|04:12/);
+  }
+  const waiting = HFV2.pendingLaunchSidebar('waiting', false);
+  assert.match(waiting, /hd-pending-selection is-active[^>]*href="#task\/pending-waiting"[^>]*aria-current="page"/);
+  const preparing = HFV2.pendingLaunchSidebar('preparing-handshake', false);
+  assert.match(preparing, /hd-pending-selection is-active[^>]*href="#task\/pending-preparing-handshake"[^>]*aria-current="page"/);
+  const css = read(path.join(v2, 'styles', 'pending-launches.css'));
+  assert.doesNotMatch(css, /\.hd-pending \.hd-sidebar\{/);
 });
