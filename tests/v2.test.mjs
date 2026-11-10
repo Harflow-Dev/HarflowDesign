@@ -1082,12 +1082,17 @@ test('the task screen hooks replace the transcript column, the Events body and t
 });
 
 
-test('pending launch discovery stays provisional and separates cancellation support from observation', () => {
+test('owner-approved pending launch discovery separates cancellation support from observation', () => {
   const states = HFV2.pendingLaunchStates;
   assert.equal(states.length, 21);
   for (const [id] of states) {
     const route = `task/pending-${id}`;
-    assert.equal(HFV2.describe(route).status, 'provisional', route);
+    assert.equal(HFV2.describe(route).status, 'approved', route);
+    const approval = HFV2.describe(route).state.approval;
+    assert.equal(approval.date, '2026-11-10');
+    assert.equal(approval.reference, '83d820f57e6ec2d82cccd3a1e335128332fdb672');
+    assert.match(HFV2.describe(route).approval, /Approved by the owner on 2026-11-10/);
+    assert.doesNotMatch(HFV2.componentDocs[route], /Provisional|not approved/);
     const html = HFV2.templates[HFV2.describe(route).templateKey];
     assert.match(html, /textarea disabled/);
     assert.doesNotMatch(html, /Copy resume|Take over|Send now|Original request|Captured output/);
@@ -1167,4 +1172,13 @@ test('pending launches add one icon-led navigation item to sparse approved sideb
   // Conservative fixture geometry: six 32px nav rows + padding, two 40px section heads,
   // three 32px history rows with gaps, plus 52px header + 56px footer stays below 620px.
   assert.ok(6 * 32 + 24 + 2 * 40 + 3 * 32 + 4 + 52 + 56 < 620);
+});
+
+
+test('pending discovery approval is pinned and does not broaden unrelated provisional states', () => {
+  const record = read(path.join(v2, 'docs', 'decisions', 'pending-launch-discovery.md'));
+  assert.match(record, /83d820f57e6ec2d82cccd3a1e335128332fdb672/);
+  assert.match(record, /Yes, approve this design/);
+  assert.match(record, /does not authorize truncating production history or disabling actual overflow/);
+  for (const route of ['task/cancelled-partial', 'task/artifacts-empty', 'harness-runtime/installing-sidebar']) assert.equal(HFV2.describe(route).status, 'provisional', route);
 });

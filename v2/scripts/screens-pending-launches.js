@@ -1,4 +1,4 @@
-/* Exploratory pending-launch discovery. Deterministic display-only fixtures; no engine calls. */
+/* Owner-approved pending-launch discovery (2026-11-10, design 83d820f). Deterministic display-only fixtures; no engine calls. */
 (function () {
   'use strict';
   var H = window.HFV2 = window.HFV2 || {};
@@ -85,8 +85,8 @@
   rows.forEach(function (row) {
     var key = 'task/pending-' + row[0];
     if (row[0] !== 'loading') T[key] = render(row);
-    docs[key] = '<p><strong>Provisional · not approved.</strong> Deterministic read-only fixtures. <a href="docs/decisions/pending-launch-discovery.md">Pending-launch discovery decision</a>. Separate launch identity, not a task status. Reset by reopening the route. Tab and Enter select links; browser Back returns to the prior observation. Stop reuses the existing confirmation sheet pattern: initial focus is Cancel, Tab stays inside the sheet, and Escape or Cancel returns focus to Stop. Reopening the route resets the confirmation. Check links retain this fixture rather than invent a successful read. Request Stop draws an accepted request only; it never proves settlement.</p><p>Appearance uses the catalog System / Light / Dark control. Both 1280 × 800 and 1000 × 620 retain native dimensions and scroll instead of scaling. No engine, files or network are accessed.</p>';
-    var state = { id: 'pending-' + row[0], title: row[1], description: row[2], group: 'Pending launches', status: 'provisional', approvalNote: 'Provisional · not approved · owner decision required' };
+    docs[key] = '<p><strong>Approved by the owner · 2026-11-10.</strong> Deterministic read-only fixtures. <a href="docs/decisions/pending-launch-discovery.md">Pending-launch discovery decision</a>. Separate launch identity, not a task status. Reset by reopening the route. Tab and Enter select links; browser Back returns to the prior observation. Stop reuses the existing confirmation sheet pattern: initial focus is Cancel, Tab stays inside the sheet, and Escape or Cancel returns focus to Stop. Reopening the route resets the confirmation. Check links retain this fixture rather than invent a successful read. Request Stop draws an accepted request only; it never proves settlement.</p><p>Appearance uses the catalog System / Light / Dark control. Both 1280 × 800 and 1000 × 620 retain native dimensions and scroll instead of scaling. No engine, files or network are accessed.</p>';
+    var state = { id: 'pending-' + row[0], title: row[1], description: row[2], group: 'Pending launches', status: 'approved', approval: { by: 'the owner', date: '2026-11-10', decision: 'Pending-launch discovery and controls', reference: '83d820f57e6ec2d82cccd3a1e335128332fdb672' } };
     if (row[0] === 'loading') state.skeleton = { of: 'task/pending-inventory', spec: 'pending-launches' };
     H.registerState('task', state);
   });
