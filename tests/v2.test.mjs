@@ -1186,7 +1186,7 @@ test('pending discovery approval is pinned and does not broaden unrelated provis
 
 test('provisional parallel-group lane states register, stay display-only and link only to registered routes', () => {
   const states = HFV2.parallelLaneStates;
-  assert.equal(states.length, 21);
+  assert.equal(states.length, 25);
   const html = id => HFV2.templates['parallel-group/' + id];
   const withTemplate = states.filter(id => id !== 'loading-two');
   for (const id of states) {

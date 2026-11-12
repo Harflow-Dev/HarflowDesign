@@ -33,7 +33,7 @@ In the native app the Parallel group and the workflow run's Parallel view share 
 
 ## What is drawn
 
-All 21 states are in the `parallel-group` family, in both appearances. Titles and ids name the screen only; the status is in the approval line ("Not approved · draft for owner review, 2026-11-12"). Fixtures are deterministic and display-only; reopening a route resets it.
+All 25 states are in the `parallel-group` family, in both appearances. Titles and ids name the screen only; the status is in the approval line ("Not approved · draft for owner review, 2026-11-12"). Fixtures are deterministic and display-only; reopening a route resets it.
 
 | Route | Draws | Native source at `d2f03bc` |
 | --- | --- | --- |
@@ -47,6 +47,10 @@ All 21 states are in the `parallel-group` family, in both appearances. Titles an
 | `parallel-group/lane-taken-over` | A lane taken over in Terminal: caption "Claude · Opus 5.5 · taken over", "Cancelled 04:31", end row "Cancelled · 04:31 · taken over", composer locked with "Messages are off — you took this task over in Terminal" | `TaskDetail/TopBar/TaskBadgeModel.swift:74-77` (suffix "· taken over"); `TaskDetail/Component/MessageBoxView.swift:34`; the v2 task screen's badge "Cancelled 04:31 · taken over" (`task/taken-over`). The lane caption carries "taken over" instead of the status text because the head is 328 points wide at the floor |
 | `parallel-group/lane-activity-unavailable` | Lane 2: "Activity log unavailable.", Send disabled (no lock: native only locks taken-over lanes), "Messaging is unavailable for this activity view."; lane 3: "No activity to display." | `Parallel/ParallelPresentation.swift:123-126`; `Parallel/Component/ParallelColumnView.swift:155-157` |
 | `parallel-group/lane-history-boundary` | Lane 1: "Observation session changed · cached history is not current. Replace this window to load current activity." with a "Load current activity" button; lanes 2 and 3 show the default "Available captured history" line | `Parallel/ParallelWindowAdoption.swift:48`; `Parallel/Component/ParallelColumnView.swift:116-129`; boundary block reused from the task screen (`.hd-d2b-boundary`) |
+| `parallel-group/lane-messages-queued` | Two messages queued in the running lane, below the live activity, as the task screen draws them: captioned "Queued", each with Cancel; no Send now | Native pending bubbles and cancel: `Parallel/Component/ParallelColumnView.swift` (`tailPresentation`, `cancel`); wording and styles reused from `messages/message-queued` |
+| `parallel-group/lane-message-delivering` | A claimed message keeps the "Queued" caption, loses Cancel; "Delivery is in progress." | Reused from `messages/message-delivering` |
+| `parallel-group/lane-message-uncertain` | "Delivery uncertain" with "Delivery could not be confirmed. The message is not requeued."; no Cancel | Reused from `messages/message-uncertain` |
+| `parallel-group/lane-message-cancelled` | Cancel on the first queued message lands here: the other stays queued, "Queued message cancelled." | Reused from `messages/message-cancelled` |
 | `parallel-group/group-empty` | An empty group: "No tasks in this group any more.", no badge, no meta, no Cancel all, View prompt disabled | `Parallel/ParallelView.swift:109`; empty membership renders no badge (`ParallelPresentation.swift:188-190`) |
 | `parallel-group/two-lanes` | A group of two agents: two lanes fill the width | Native divides the width and floors it (`Parallel/ParallelLayout.swift:20`); here the 360 floor |
 | `parallel-group/loading-two` | The lane frames while the member count is unknown: two frames, real top bar frame and composers, the approved skeleton | Native placeholder uses two columns when the count is unknown (`Parallel/ParallelView.swift:199-200`, `placeholderContent`) |
@@ -68,7 +72,26 @@ Fixtures move between states with explicit controls only. The lane 1 actions but
 - The loaded template's inline 320 floor is not used: at 1280 × 800 three lanes at 360 points overflow the main area and scroll horizontally, so the third lane peeks. This follows from the 360-everywhere default.
 - The group top bar is unchanged from the approved drawing; the sidebar sample is the approved one and is not updated per state.
 
-## Open questions for the owner
+## Owner answers of 2026-11-12
+
+In chat, the owner answered the open questions below by approving the recommendations made for them, and asked that queued messages and the rest of the lane UI resemble the regular task screen. Recorded as answers, not as approval of the drawn states: the states stay provisional until the owner approves the drawn set at a pinned commit.
+
+1. Keep "Cancel all" with "Cancel" to dismiss; no "Stop all".
+2. Partial failure of Cancel all is not designed now; each lane's own status shows what stopped.
+3. A settled lane keeps an enabled composer.
+4. Badge tints as drawn: "N done" in the done tone, any failure in the failed tone, cancelled neutral; native counting order.
+5. Taken over as drawn: "taken over" in the caption, status stays "Cancelled 04:31".
+6. The composer's accessible name includes the task title ("Message Codex: <title>"); the visible placeholder stays "Message <Harness>".
+7. Only the replace-window history notice with "Load current activity" is drawn; other history cases wait for native.
+8. The "Available captured history" line stays out of lanes (drawn in `lane-history-boundary` only for comparison; to be removed from that state on approval).
+9. When enforcement differs, native's fallback sentence takes the same top-bar slot; not drawn.
+10. In an empty group View prompt stays, disabled.
+11. No reported-summary line on settled lanes.
+12. Queued and related message states follow the regular task screen (drawn: `lane-messages-queued`, `lane-message-delivering`, `lane-message-uncertain`, `lane-message-cancelled`). Caller approvals in lanes stay out of scope.
+13. The 360 point floor stands at 1280 × 800: the third lane scrolls in.
+14. Workflow-run lanes are covered (D21); the three coordinator defaults above stand.
+
+## Open questions for the owner (as asked)
 
 1. **Cancel all wording.** The confirmation offers "Cancel" and "Cancel all". Native supplies only the destructive action; the dismissal comes from the system. The task screen uses "Stop"; should the group word be "Stop all"?
 2. **Cancel all partial failure.** Native fans out one `cancel` per running member. When a member refuses there is no drawn outcome. Not drawn.
@@ -81,7 +104,6 @@ Fixtures move between states with explicit controls only. The lane 1 actions but
 9. **Enforcement differs.** The fallback sentence "Enforcement differs between these agents; see each task's details." (`Parallel/ParallelVM.swift:31`) and an unavailable status are not drawn.
 10. **Empty group top bar.** Whether View prompt stays (disabled) when no lane exists.
 11. **Settled-lane summary.** Should a settled lane show the reported summary, as the task screen's Summary entry or as native's result callout? None is drawn.
-12. **Queued, refused and delivery-unknown lane messages**, and caller approvals in lanes, remain out of scope.
 
 ## Verification recorded
 

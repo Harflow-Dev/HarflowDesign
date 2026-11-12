@@ -106,7 +106,7 @@ test('no existing template changed: the digests equal those of the base commit a
     ...HFV2.pendingLaunchStates.map(([id]) => `task/pending-${id}`).filter(key => key in HFV2.templates),
     ...HFV2.parallelLaneStates.map(id => `parallel-group/${id}`).filter(key => key in HFV2.templates)
   ];
-  assert.equal(added.length, 22 + 20 + 20);
+  assert.equal(added.length, 22 + 20 + 24);
   const removed = ['m04-proposal/centered-starting'];
   for (const key of removed) { assert.ok(key in manifest && !(key in HFV2.templates), `${key} is removed with its retired state`); delete manifest[key]; }
   for (const key of added) assert.ok(key in HFV2.templates, `${key} is a template`);
@@ -321,7 +321,7 @@ test('every static template with a sidebar has the top, nav, sections and foot s
   const keys = Object.keys(HFV2.templates).filter(k => HFV2.templates[k].includes('<aside class="hd-sidebar"') && !k.startsWith('task/pending-'));
   // 22 static screens, plus the four templates the New task and Task renderers read and components/sidebar,
   // plus the ten provisional approval states that start from a task or Needs you screen.
-  assert.equal(keys.length, 55);
+  assert.equal(keys.length, 59);
   const odd = [];
   for (const key of keys) {
     const kids = sidebarChildren(HFV2.templates[key]);

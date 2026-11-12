@@ -80,7 +80,7 @@
     var status = o.status || (WORD[kind] + ' ' + o.clock);
     var head = '<div class="hd-lane__head">' + GLYPH[kind] + '<div class="hd-pl-stack"><span class="hd-lane__title">' + l.title + '</span><span class="caption hd-faint hd-pl-cap">' + caption(l, o.extra) + '</span></div><span class="caption hd-pl-status">' + status + '</span>' + actions(l, i, ctx) + '</div>';
     var lead = ctx.prompt ? promptBlock(l) : '';
-    var body = '<div class="hd-lane__body">' + lead + (o.lead || '') + (o.body != null ? o.body : l.body) + (o.end || '') + '</div>';
+    var body = '<div class="hd-lane__body">' + lead + (o.lead || '') + (o.body != null ? o.body : l.body) + (o.tail || '') + (o.end || '') + '</div>';
     return '<section class="hd-lane" aria-label="' + l.title + '">' + head + body + '<div class="hd-lane__foot">' + composer(l, o.composer || {}) + '</div></section>';
   }
 
@@ -94,14 +94,31 @@
     var label = 'Message ' + l.harness, locked = !!c.locked, off = locked || !!c.disabled;
     var placeholder = locked ? c.placeholder : label;
     var field = '<textarea id="msg-' + l.slug + '" class="hd-composer__input" rows="1" placeholder="' + placeholder + '"' + (off ? ' disabled' : '') + ' style="min-height:' + (locked ? 40 : 24) + 'px;"></textarea>';
-    var form = '<form class="hd-composer" aria-label="' + label + '" style="padding:var(--space-2) var(--space-2) var(--space-2) var(--space-3);flex-direction:row;align-items:center;">' +
+    var form = '<form class="hd-composer" aria-label="' + label + (l.title ? ': ' + l.title : '') + '" style="padding:var(--space-2) var(--space-2) var(--space-2) var(--space-3);flex-direction:row;align-items:center;">' +
       (locked ? '<span class="hd-i hd-i--sm hd-i-lock" aria-hidden="true"></span>' : '') +
       '<label class="hd-sr" for="msg-' + l.slug + '">' + label + '</label>' + field +
       '<button type="submit" class="hd-composer__send" aria-label="Send to ' + l.harness + '" disabled style="width:28px;height:28px;"><span class="hd-i hd-i-arrow-up" aria-hidden="true"></span></button></form>';
     return form + (c.note ? '<p class="caption hd-pl-note">' + c.note + '</p>' : '');
   }
 
-  // ---- Group top bar ---------------------------------------------------------------------------------------------
+  // Queued messages, as the task screen draws them (messages-screen.js, styles messages-screen.css): a pinned bubble
+// captioned Queued below the live activity, Cancel while queued, an outcome line. Lanes queue only, so there is no
+// Send now refusal to show.
+var CAPTION = { queued: 'Queued', delivering: 'Queued', uncertain: 'Delivery uncertain' };
+var FIRST = 'Once the fix is in, run the whole slots suite one more time.';
+var SECOND = 'Then summarise what changed in two sentences.';
+function bubble(b, ctx) {
+  var pinned = b.kind !== 'uncertain';
+  return '<div class="hd-msg-user hd-msgq' + (pinned ? ' hd-msgq--pending' : '') + '"><span class="hd-msgq__caption">' + CAPTION[b.kind] + '</span><span class="hd-msgq__text">' + b.text + '</span>' +
+    (b.note ? '<span class="hd-msgq__note">' + b.note + '</span>' : '') +
+    (b.kind === 'queued' ? '<button type="button" class="hd-msgq__cancel" aria-label="Cancel queued message" data-pl-id="msg-cancel"' + (b.go ? ' data-pl-go="' + FAMILY + '/' + b.go + '"' : '') + '>Cancel</button>' : '') + '</div>';
+}
+function queue(list, outcome) {
+  return list.map(bubble).join('') + (outcome ? '<p class="hd-m05-caption hd-msgq__outcome" role="status">' + outcome + '</p>' : '');
+}
+function runningWith(tail) { var r0 = running(); r0.tail = tail; return r0; }
+
+// ---- Group top bar ---------------------------------------------------------------------------------------------
   var BADGE = {
     running: ['hd-badge--running', '<span class="hd-badge__spin" aria-hidden="true"></span>'],
     done: ['hd-badge--done', ''],
@@ -140,7 +157,7 @@
       : '<div class="hd-lanes">' + o.lanes.map(function (x, i) { return lane(x, i, ctx); }).join('') + '</div>';
     var side = sidebar();
     if (o.dialog) side = side.replace('<aside ', '<aside inert ');
-    var app = '<div class="hd-app hd-pl" data-theme="{{theme}}" data-pl-state="' + o.id + '" style="width: 100%; height: ' + (o.min ? 620 : 800) + 'px;">' +
+    var app = '<div class="hd-app hd-pl hd-msgq-host" data-theme="{{theme}}" data-pl-state="' + o.id + '" style="width: 100%; height: ' + (o.min ? 620 : 800) + 'px;">' +
       side + '<main class="hd-main"' + (o.dialog ? ' inert' : '') + '>' + bar + main + '</main>' + (o.dialog ? dialog(ctx) : '') + '</div>';
     return o.min ? '<div class="hdc-specimen--minimum" data-pl-min="sidebar,lanes,topbar-meta">' + app + '</div>' : app;
   }
@@ -187,6 +204,10 @@
       c.lead = o.lead = quiet;
       return [r, c, o];
     } },
+    'lane-messages-queued': { bar: BAR_RUN, lanes: function () { return [runningWith(queue([{ kind: 'queued', text: FIRST, go: 'lane-message-cancelled' }, { kind: 'queued', text: SECOND }])), done(LANES.codex, '04:51'), done(LANES.opencode, '04:12')]; } },
+    'lane-message-delivering': { bar: BAR_RUN, lanes: function () { return [runningWith(queue([{ kind: 'delivering', text: FIRST }], 'Delivery is in progress.')), done(LANES.codex, '04:51'), done(LANES.opencode, '04:12')]; } },
+    'lane-message-uncertain': { bar: BAR_RUN, lanes: function () { return [runningWith(queue([{ kind: 'uncertain', text: FIRST, note: 'Delivery could not be confirmed. The message is not requeued.' }])), done(LANES.codex, '04:51'), done(LANES.opencode, '04:12')]; } },
+    'lane-message-cancelled': { bar: BAR_RUN, lanes: function () { return [runningWith(queue([{ kind: 'queued', text: SECOND }], 'Queued message cancelled.')), done(LANES.codex, '04:51'), done(LANES.opencode, '04:12')]; } },
     'group-empty': { bar: { badge: null, cancel: false, prompt: 'disabled', meta: false }, empty: true },
     'two-lanes': { bar: { badge: ['running', '1 running · 1 done'], cancel: true, prompt: 'off' }, lanes: function () { return [running(), done(LANES.codex, '04:51')]; } }
   };
@@ -211,6 +232,10 @@
     ['lane-taken-over', 'Lane taken over in a terminal', G_STATE, 'A lane whose task was taken over in Terminal: the caption says so and its composer is locked.'],
     ['lane-activity-unavailable', 'Lane activity unavailable', G_STATE, 'A lane whose activity log cannot be read, with messaging unavailable (Send disabled), beside a lane with no activity to display.'],
     ['lane-history-boundary', 'Lane history boundary', G_STATE, 'A lane whose cached history is no longer current, with Load current activity.'],
+    ['lane-messages-queued', 'Lane messages queued', G_STATE, 'Two messages queued in a running lane, as the task screen draws them: captioned Queued, each with Cancel. Cancel removes a message and says so.'],
+    ['lane-message-delivering', 'Lane message delivering', G_STATE, 'A message the engine has claimed keeps the Queued caption and loses Cancel while delivery is in progress.'],
+    ['lane-message-uncertain', 'Lane message delivery uncertain', G_STATE, 'A message whose delivery cannot be confirmed is not requeued and has no Cancel.'],
+    ['lane-message-cancelled', 'Lane message cancelled', G_STATE, 'A cancelled message leaves the queue and an outcome line says so; the other stays queued.'],
     ['group-empty', 'Group empty', G_STATE, 'A group that no longer has any task.'],
     ['two-lanes', 'Two lanes', G_STATE, 'A group of two agents: the lanes fill the width.'],
     ['loading-two', 'Loading · Member count unknown', G_STATE, 'The lane frames while the member count is unknown: two frames, with the real top bar frame and composers.'],
