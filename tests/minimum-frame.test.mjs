@@ -102,7 +102,7 @@ test('no existing template changed: the digests equal those of the base commit a
     'menu-bar/approval-stale', 'menu-bar/answered-elsewhere',
     ...['queued', 'delivering', 'delivered', 'cancelled', 'send-now-refused', 'uncertain', 'unsupported', 'queued-settled'].map(x => `messages/message-${x}`),
     'm04-proposal/centered-starting-plain', 'm04-proposal/runtime-installing-sidebar',
-    // The approved pending-launch states (2026-11-10) and the provisional parallel-group lane states (2026-11-12).
+    // The approved pending-launch states (2026-11-10) and the approved parallel-group lane states (2026-11-12).
     ...HFV2.pendingLaunchStates.map(([id]) => `task/pending-${id}`).filter(key => key in HFV2.templates),
     ...HFV2.parallelLaneStates.map(id => `parallel-group/${id}`).filter(key => key in HFV2.templates)
   ];

@@ -1,6 +1,6 @@
 # Parallel group: lane decisions and undrawn states
 
-Status: **Provisional / Draft, not approved**. No approver and no approval date. Owner review is required before native implementation of any state listed here. The existing approved `parallel-group/*` states (`lanes`, `loading`, `lanes-minimum`, `loading-minimum`) are unchanged and stay approved. Source base: HarflowDesign `2934681`. Immutable reference for this draft: the commit titled "Propose parallel group lane decisions and undrawn states", with `v2/scripts/states-parallel-lanes.js` and `v2/styles/parallel-lanes.css`.
+Status: **Approved by the owner on 2026-11-12** at HarflowDesign `2153ab1d963709d8fbe77cd0bfd678292202a863`; see [Owner approval of 2026-11-12](#owner-approval-of-2026-11-12). The existing approved `parallel-group/*` states (`lanes`, `loading`, `lanes-minimum`, `loading-minimum`) are unchanged. Source base: HarflowDesign `2934681`. Immutable reference for the approved design: `2153ab1`, with `v2/scripts/states-parallel-lanes.js` and `v2/styles/parallel-lanes.css`.
 
 This record exists because the native Parallel screen (HarflowMac `d2f03bc`) differs from the approved lanes drawing and has states the drawing never covered. Interface features are refined here first (workspace `AGENTS.md`, "Design reference"). Native wording is quoted from HarflowMac at `d2f03bc`; paths below are relative to `macos/HfFeatures/MainWindowFeature/Sources/MainWindowFeature/`.
 
@@ -74,7 +74,7 @@ Fixtures move between states with explicit controls only. The lane 1 actions but
 
 ## Owner answers of 2026-11-12
 
-In chat, the owner answered the open questions below by approving the recommendations made for them, and asked that queued messages and the rest of the lane UI resemble the regular task screen. Recorded as answers, not as approval of the drawn states: the states stay provisional until the owner approves the drawn set at a pinned commit.
+In chat, the owner answered the open questions below by approving the recommendations made for them, and asked that queued messages and the rest of the lane UI resemble the regular task screen. Recorded as answers, not as approval of the drawn states. The owner then approved the drawn set at a pinned commit (see [Owner approval of 2026-11-12](#owner-approval-of-2026-11-12)).
 
 1. Keep "Cancel all" with "Cancel" to dismiss; no "Stop all".
 2. Partial failure of Cancel all is not designed now; each lane's own status shows what stopped.
@@ -90,6 +90,14 @@ In chat, the owner answered the open questions below by approving the recommenda
 12. Queued and related message states follow the regular task screen (drawn: `lane-messages-queued`, `lane-message-delivering`, `lane-message-uncertain`, `lane-message-cancelled`). Caller approvals in lanes stay out of scope.
 13. The 360 point floor stands at 1280 × 800: the third lane scrolls in.
 14. Workflow-run lanes are covered (D21); the three coordinator defaults above stand.
+
+## Owner approval of 2026-11-12
+
+Approved by the owner on 2026-11-12, directly in the coordinating session, by answering a question the primary asked. The question was: "Do you approve the drawn parallel group states in HarflowDesign at commit 2153ab1 (the lanes with your decisions, the lane menu, Cancel all confirmation, settled/failed/cancelled/taken-over lanes, activity unavailable, history notice, empty group, loading, queued-message states, and their 1000 × 620 versions) as the reference for building slices 3–8?" The owner's answer was "Approve all (Recommended)".
+
+The approved immutable design is HarflowDesign `2153ab1d963709d8fbe77cd0bfd678292202a863`: `v2/scripts/states-parallel-lanes.js`, `v2/styles/parallel-lanes.css` and `v2/index.html`, covering exactly these 25 `parallel-group` states, in both appearances: `lanes-titled`, `lane-menu-open`, `prompt-shown`, `cancel-all-confirm`, `lanes-settled`, `lane-failed`, `lane-cancelled`, `lane-taken-over`, `lane-activity-unavailable`, `lane-history-boundary`, `lane-messages-queued`, `lane-message-delivering`, `lane-message-uncertain`, `lane-message-cancelled`, `group-empty`, `two-lanes`, `loading-two`, `lanes-titled-minimum`, `lane-menu-open-minimum`, `prompt-shown-minimum`, `cancel-all-confirm-minimum`, `lanes-settled-minimum`, `lane-cancelled-minimum`, `lane-failed-minimum` and `group-empty-minimum`.
+
+This recording changes approval metadata, catalog notes and documentation, and applies owner answer 8: the "Available captured history" line is removed from `parallel-group/lane-history-boundary`, which now shows only the replace-window notice in lane 1. No other layout, product copy or interaction changes. The owner answers above and the coordinator defaults stand as recorded, including coverage of workflow-run lanes (D21). The approval covers the design direction of these states; it does not establish native pixel fidelity, VoiceOver behaviour or product acceptance. It does not broaden earlier approvals or approve other provisional designs.
 
 ## Open questions for the owner (as asked)
 

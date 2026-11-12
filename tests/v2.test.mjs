@@ -1184,14 +1184,19 @@ test('pending discovery approval is pinned and does not broaden unrelated provis
 });
 
 
-test('provisional parallel-group lane states register, stay display-only and link only to registered routes', () => {
+test('owner-approved parallel-group lane states register, stay display-only and link only to registered routes', () => {
   const states = HFV2.parallelLaneStates;
   assert.equal(states.length, 25);
   const html = id => HFV2.templates['parallel-group/' + id];
   const withTemplate = states.filter(id => id !== 'loading-two');
   for (const id of states) {
     assert.ok(routeSet.has('parallel-group/' + id), `${id} is registered`);
-    assert.equal(HFV2.describe('parallel-group/' + id).status, 'provisional', `${id} is provisional`);
+    const d = HFV2.describe('parallel-group/' + id);
+    assert.equal(d.status, 'approved', `${id} is approved`);
+    assert.equal(d.state.approval.date, '2026-11-12', id);
+    assert.equal(d.state.approval.reference, '2153ab1d963709d8fbe77cd0bfd678292202a863', id);
+    assert.match(d.approval, /Approved by the owner on 2026-11-12/, id);
+    assert.doesNotMatch(HFV2.componentDocs['parallel-group/' + id], /Not approved|draft for owner review/, id);
   }
   for (const id of ['lanes', 'loading', 'lanes-minimum', 'loading-minimum']) assert.equal(HFV2.describe('parallel-group/' + id).status, 'approved', `${id} stays approved`);
 
@@ -1245,6 +1250,7 @@ test('provisional parallel-group lane states register, stay display-only and lin
   has('lane-taken-over', 'Messages are off — you took this task over in Terminal', 'taken over');
   has('lane-activity-unavailable', 'Activity log unavailable.', 'No activity to display.', 'Messaging is unavailable for this activity view.');
   has('lane-history-boundary', 'Load current activity');
+  assert.doesNotMatch(html('lane-history-boundary'), /Available captured history/, 'owner answer 8: the line stays out of lanes');
   has('group-empty', 'No tasks in this group any more.');
   assert.equal((html('prompt-shown').match(/<details class="hd-m05-request" open>/g) || []).length, 3);
 
@@ -1266,4 +1272,14 @@ test('provisional parallel-group lane states register, stay display-only and lin
   assert.equal(spec.chrome.Message, 4);
   assert.equal(spec.chrome.Send, 2);
   assert.equal((html('two-lanes').match(/class="hd-lane"/g) || []).length, 2);
+});
+
+
+test('parallel group lane approval is pinned, quotes the question and answer, and does not broaden other provisional states', () => {
+  const record = read(path.join(v2, 'docs', 'decisions', 'parallel-group-proposal.md'));
+  assert.match(record, /2153ab1d963709d8fbe77cd0bfd678292202a863/);
+  assert.match(record, /Do you approve the drawn parallel group states in HarflowDesign at commit 2153ab1/);
+  assert.match(record, /"Approve all \(Recommended\)"/);
+  assert.doesNotMatch(record, /Provisional \/ Draft/);
+  for (const route of ['task/cancelled-partial', 'task/artifacts-empty', 'harness-runtime/installing-sidebar']) assert.equal(HFV2.describe(route).status, 'provisional', route);
 });
