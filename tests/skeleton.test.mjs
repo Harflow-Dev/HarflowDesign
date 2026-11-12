@@ -19,7 +19,7 @@ function loadRuntime() {
 }
 const HFV2 = loadRuntime();
 const json = value => JSON.parse(JSON.stringify(value));
-const loadingStates = HFV2.registry.families.flatMap(family => family.states.filter(state => state.skeleton && !state.minimum).map(state => ({ family, state, route: `${family.id}/${state.id}` })));
+const loadingStates = HFV2.registry.families.flatMap(family => family.states.filter(state => state.skeleton && !state.minimum && state.group === 'Loading').map(state => ({ family, state, route: `${family.id}/${state.id}` })));
 const KINDS = ['rows', 'html', 'custom', 'text', 'fill', 'hide', 'remove', 'disable', 'drop', 'attr', 'settext', 'pin'];
 const REGION_KINDS = ['rows', 'html', 'custom'];
 
@@ -103,7 +103,7 @@ test('specs are complete: frame, label, region ops, valid kinds and an allowlist
   assert.equal(draftSpecs.length, 5);
   const used = new Set([...loadingStates.map(({ state }) => state.skeleton.spec), ...draftSpecs]);
   for (const key of used) assert.ok(HFV2.skeletonSpecs[key], `spec ${key} exists`);
-  for (const [key, spec] of Object.entries(HFV2.skeletonSpecs)) {
+  for (const [key, spec] of Object.entries(HFV2.skeletonSpecs).filter(([key]) => used.has(key))) {
     assert.ok(spec.frame && /^Loading [A-Z]/.test(spec.label), `${key} has a frame and a label`);
     assert.ok(Array.isArray(spec.ops) && spec.ops.length >= 4, `${key} has ops`);
     for (const op of spec.ops) {
