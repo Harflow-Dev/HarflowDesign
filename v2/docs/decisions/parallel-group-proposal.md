@@ -27,6 +27,10 @@ Recorded as deviations for the owner to review. None is an owner decision.
 - The loading state draws two lane frames when the member count is unknown.
 - Caller approvals in lanes are out of scope.
 
+## Approval note: workflow-run lanes (D21)
+
+In the native app the Parallel group and the workflow run's Parallel view share one lane view, so the lane changes also reach workflow-run lanes. Removing "Take over in terminal", "Send now" and the result card from those lanes matches the approved `workflow-run/parallel` drawing, but owner decisions 1 to 3 above were worded for the parallel group. Approving this record should therefore explicitly cover workflow-run lanes as well, or the owner should say otherwise. The workflow-run Graph inspector keeps its current chrome and stays out of scope. This note changes no drawing.
+
 ## What is drawn
 
 All 21 states are in the `parallel-group` family, in both appearances. Titles and ids name the screen only; the status is in the approval line ("Not approved · draft for owner review, 2026-11-12"). Fixtures are deterministic and display-only; reopening a route resets it.
