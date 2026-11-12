@@ -592,7 +592,7 @@ test('the decisions index lists every decision file and each screen has an ancho
   const dir = path.join(v2, 'docs', 'decisions');
   const index = read(path.join(dir, 'README.md'));
   const docs = fs.readdirSync(dir).filter(name => name.endsWith('.md') && name !== 'README.md');
-  assert.equal(docs.length, 8);
+  assert.equal(docs.length, 9);
   for (const name of docs) assert.ok(index.includes(`(${name})`), `${name} is indexed`);
   for (const family of HFV2.registry.families.filter(f => f.area)) assert.ok(index.includes(`### \`${family.id}\``), `${family.id} has a decision section`);
   for (const column of ['Status', 'Approved by and date', 'Recording commit', 'Routes', 'Files']) assert.ok(index.includes(column), column);
@@ -1181,4 +1181,89 @@ test('pending discovery approval is pinned and does not broaden unrelated provis
   assert.match(record, /Yes, approve this design/);
   assert.match(record, /does not authorize truncating production history or disabling actual overflow/);
   for (const route of ['task/cancelled-partial', 'task/artifacts-empty', 'harness-runtime/installing-sidebar']) assert.equal(HFV2.describe(route).status, 'provisional', route);
+});
+
+
+test('provisional parallel-group lane states register, stay display-only and link only to registered routes', () => {
+  const states = HFV2.parallelLaneStates;
+  assert.equal(states.length, 21);
+  const html = id => HFV2.templates['parallel-group/' + id];
+  const withTemplate = states.filter(id => id !== 'loading-two');
+  for (const id of states) {
+    assert.ok(routeSet.has('parallel-group/' + id), `${id} is registered`);
+    assert.equal(HFV2.describe('parallel-group/' + id).status, 'provisional', `${id} is provisional`);
+  }
+  for (const id of ['lanes', 'loading', 'lanes-minimum', 'loading-minimum']) assert.equal(HFV2.describe('parallel-group/' + id).status, 'approved', `${id} stays approved`);
+
+  // Copy and styling rules shared by every lane template.
+  for (const id of withTemplate) {
+    const t = html(id);
+    assert.ok(t, `${id} has a template`);
+    assert.doesNotMatch(t, /Send now/, id);
+    assert.doesNotMatch(t, /(Done|Failed|Cancelled)[^<]*findings/i, `${id}: settled rows carry no findings count`);
+    assert.doesNotMatch(t, /flex:\s*1 0 320px|min-width:\s*320px/, `${id}: no inline lane sizing`);
+    assert.doesNotMatch(t, /#[0-9a-fA-F]{3,8}\b|rgba?\(/, `${id}: no colour literals`);
+    assert.doesNotMatch(t, /Take over/, id);
+    assert.equal((t.match(/placeholder="/g) || []).length, (t.match(/class="hd-lane"/g) || []).length, `${id}: one composer per lane`);
+    const wrapped = /-minimum$/.test(id);
+    if (wrapped) {
+      assert.ok(t.startsWith('<div class="hdc-specimen--minimum" data-pl-min="sidebar,lanes,topbar-meta">'), `${id}: minimum wrapper`);
+      assert.match(t, /height: 620px/, id);
+    } else {
+      assert.match(t, /height: 800px/, id);
+      assert.doesNotMatch(t, /data-pl-min/, id);
+    }
+  }
+  const titled = html('lanes-titled');
+  for (const s of ['placeholder="Message Claude"', 'Send to Claude', 'placeholder="Message Codex"', 'placeholder="Message Opencode"',
+    'Audit what the preload bridge exposes', 'Claude · Opus 5.5', 'Done · 04:51', 'Done · 04:12', 'data-pl-id="cancel-all"']) assert.ok(titled.includes(s), `lanes-titled: ${s}`);
+  assert.ok(titled.includes('hd-pl-cap">Opencode<'), 'third lane caption is the harness only');
+  assert.ok(!/Opencode ·/.test(titled), 'no model after Opencode');
+
+  // Lane menu: Open task only.
+  for (const id of ['lane-menu-open', 'lane-menu-open-minimum']) {
+    const t = html(id);
+    assert.equal((t.match(/role="menu"/g) || []).length, 1, id);
+    const items = t.match(/role="menuitem"/g) || [];
+    assert.equal(items.length, 1, `${id}: one menu item`);
+    assert.match(t, /role="menuitem"[^>]*>[\s\S]*?Open task<\/span><\/a>/, id);
+  }
+
+  // Cancel all confirmation.
+  for (const id of ['cancel-all-confirm', 'cancel-all-confirm-minimum']) {
+    const t = html(id);
+    for (const s of ['Cancel every running task in this group?', 'role="dialog" aria-modal="true"', '<aside inert', '<main class="hd-main" inert']) assert.ok(t.includes(s), `${id}: ${s}`);
+  }
+  assert.ok(html('cancel-all-confirm').includes('data-pl-go="parallel-group/lanes-titled"'));
+  assert.ok(html('cancel-all-confirm-minimum').includes('data-pl-go="parallel-group/lanes-titled-minimum"'));
+  for (const id of ['lanes-settled', 'lane-failed', 'lane-cancelled', 'lane-taken-over', 'group-empty']) assert.doesNotMatch(html(id), /data-pl-id="cancel-all"|>Cancel all</, `${id}: no Cancel all`);
+
+  // Settled and degraded copy.
+  const has = (id, ...parts) => parts.forEach(s => assert.ok(html(id).includes(s), `${id}: ${s}`));
+  has('lane-failed', 'Failed · 07:48', '2 done · 1 failed');
+  has('lane-cancelled', 'Cancelled · 04:31', '2 done · 1 cancelled');
+  has('lane-taken-over', 'Messages are off — you took this task over in Terminal', 'taken over');
+  has('lane-activity-unavailable', 'Activity log unavailable.', 'No activity to display.', 'Messaging is unavailable for this activity view.');
+  has('lane-history-boundary', 'Load current activity');
+  has('group-empty', 'No tasks in this group any more.');
+  assert.equal((html('prompt-shown').match(/<details class="hd-m05-request" open>/g) || []).length, 3);
+
+  // Links: every fixture target is a registered route, and minimum states stay minimum.
+  for (const id of withTemplate) {
+    for (const [, target] of html(id).matchAll(/data-pl-go="([^"]+)"/g)) {
+      assert.ok(routeSet.has(target), `${id}: ${target} is registered`);
+      if (/-minimum$/.test(id)) assert.match(target, /-minimum$/, `${id}: ${target} stays at 1000 × 620`);
+    }
+    for (const [, href] of html(id).matchAll(/href="(#[^"]+)"/g)) checkHash(href, id);
+  }
+
+  // Loading derives from the two-lane base.
+  const loading = HFV2.describe('parallel-group/loading-two');
+  assert.equal(loading.skeleton.of, 'parallel-group/two-lanes');
+  assert.equal(loading.templateKey, 'parallel-group/two-lanes');
+  const spec = HFV2.skeletonSpecs['parallel-group-two'];
+  assert.ok(spec);
+  assert.equal(spec.chrome.Message, 4);
+  assert.equal(spec.chrome.Send, 2);
+  assert.equal((html('two-lanes').match(/class="hd-lane"/g) || []).length, 2);
 });

@@ -1,0 +1,19 @@
+/* Parallel group lane decisions (draft). Only what the approved lane, menu, dialog and transcript styles do not already give. */
+.hd-pl{position:relative}
+.hd-pl-stack{flex:1;min-width:0;display:flex;flex-direction:column}
+.hd-pl-cap{overflow-wrap:anywhere}
+.hd-pl .hd-lane__title{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;white-space:normal;overflow-wrap:anywhere;flex:none}
+.hd-pl-status{color:var(--text-secondary);white-space:nowrap}
+.hd-pl-end{display:flex;align-items:center;gap:var(--space-2);font-size:13px;line-height:18px;font-weight:500}
+.hd-pl-end--done{color:var(--success)}
+.hd-pl-end--failed{color:var(--danger)}
+.hd-pl-end--cancelled{color:var(--text-secondary)}
+.hd-pl-note{margin:0;font-size:13px;line-height:20px;color:var(--text-secondary)}
+.hd-pl-empty{flex:1;display:flex;align-items:center;justify-content:center;padding:var(--space-5);font-size:14px;line-height:22px;color:var(--text-secondary);text-align:center}
+.hd-pl-menu-anchor{position:relative;display:inline-flex}
+.hd-pl-menu-anchor>.hd-menu{position:absolute;top:calc(100% + 6px);right:0;z-index:5}
+.hd-pl .hd-lane__foot .hd-i-lock{color:var(--text-tertiary);flex:none}
+.hd-pl .hd-lane__foot .hd-pl-note{margin-top:var(--space-2)}
+.hd-pl .hd-m05-request{flex:none}
+.hd-pl .hd-d2b-boundary{margin-bottom:0}
+.hd-pl .hd-dialog{width:440px;max-width:calc(100% - 48px)}

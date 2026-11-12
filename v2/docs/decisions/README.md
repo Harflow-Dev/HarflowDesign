@@ -448,7 +448,7 @@ Approved 2026-11-09: `new-task/centered-starting-plain`, the starting state with
 
 ### `parallel-group`
 
-[approval.md](approval.md).
+[approval.md](approval.md). Lane decisions of 2026-11-12 and the undrawn lane and group states: [Parallel group lane decisions](#parallel-group-lane-decisions-provisional) (provisional drafts).
 
 ### `needs-you`
 
@@ -523,3 +523,9 @@ These files were in `v2/docs/` until the information architecture changed. Recei
 ## Pending-launch discovery and controls
 
 Status: **Approved** by the owner on 2026-11-10, explicitly “Yes, approve this design”. Approved design commit: `83d820f57e6ec2d82cccd3a1e335128332fdb672`. [Approval record, API mapping, exact copy and limits](pending-launch-discovery.md). Sparse sample history does not truncate production history or disable actual overflow. Approval covers only these 21 states. Routes: `task/pending-inventory`, `pending-loading`, `pending-empty`, `pending-failed`, `pending-incomplete`, `pending-waiting`, `pending-preparing`, `pending-preparing-handshake`, `pending-granted`, `pending-not-started`, `pending-unavailable`, `pending-missing`, `pending-recorded`, `pending-handoff-failed`, `pending-stop-confirm`, `pending-stop-confirm-minimum`, `pending-stop-requested`, `pending-stop-requested-minimum`, `pending-stop-uncertain`, `pending-stop-refused`, `pending-waiting-minimum`. Files: `v2/scripts/screens-pending-launches.js`, `v2/styles/pending-launches.css`, `v2/index.html`. Existing approved `task/pending` stays unchanged.
+
+<a id="parallel-group-lane-decisions-provisional"></a>
+
+## Parallel group lane decisions (provisional)
+
+Status: **Provisional / Draft, not approved**; no approver or approval date. Recording commit: the commit titled "Propose parallel group lane decisions and undrawn states". [Owner decisions of 2026-11-12, coordinator defaults, native citations and open questions](parallel-group-proposal.md). Routes: `parallel-group/lanes-titled`, `lane-menu-open`, `prompt-shown`, `cancel-all-confirm`, `lanes-settled`, `lane-failed`, `lane-cancelled`, `lane-taken-over`, `lane-activity-unavailable`, `lane-history-boundary`, `group-empty`, `two-lanes`, `loading-two`, `lanes-titled-minimum`, `lane-menu-open-minimum`, `prompt-shown-minimum`, `cancel-all-confirm-minimum`, `lanes-settled-minimum`, `lane-cancelled-minimum`, `lane-failed-minimum` and `group-empty-minimum`. Files: `v2/scripts/states-parallel-lanes.js`, `v2/styles/parallel-lanes.css`, `v2/index.html`. The approved `parallel-group/lanes`, `loading`, `lanes-minimum` and `loading-minimum` stay unchanged.
