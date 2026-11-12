@@ -1,4 +1,4 @@
-/* Parallel group lane decisions (draft). Only what the approved lane, menu, dialog and transcript styles do not already give. */
+/* Parallel group lane decisions (approved 2026-11-12). Only what the approved lane, menu, dialog and transcript styles do not already give. */
 .hd-pl{position:relative}
 .hd-pl-stack{flex:1;min-width:0;display:flex;flex-direction:column}
 .hd-pl-cap{overflow-wrap:anywhere}

@@ -1,5 +1,5 @@
 /* Parallel group: lane decisions of 2026-11-12 and the lane and group states the approved family never drew.
-   Draft for owner review: every state here is provisional and none is approved. Deterministic display-only fixtures;
+   Approved by the owner on 2026-11-12 (design 2153ab1d963709d8fbe77cd0bfd678292202a863). Deterministic display-only fixtures;
    no engine calls. Decision record: docs/decisions/parallel-group-proposal.md.
    Loaded after skeleton-specs.js (the loading state clones the approved parallel-group skeleton spec) and after
    screens-parallel-group.js (the sidebar is extracted from the approved lanes template, not rebuilt). */
@@ -9,7 +9,7 @@
   var T = (H.templates = H.templates || {});
   var docs = (H.componentDocs = H.componentDocs || {});
 
-  var NOTE = 'Not approved · draft for owner review, 2026-11-12';
+  var APPROVAL = { by: 'the owner', date: '2026-11-12', decision: 'Parallel group lane decisions', reference: '2153ab1d963709d8fbe77cd0bfd678292202a863' };
   var FAMILY = 'parallel-group';
   var G_MAIN = 'Lane titles and actions', G_STATE = 'Lane states', G_MIN = 'Lanes at 1000 × 620';
 
@@ -199,10 +199,7 @@ function runningWith(tail) { var r0 = running(); r0.tail = tail; return r0; }
     'lane-history-boundary': { bar: BAR_RUN, lanes: function () {
       var r = running();
       r.lead = '<div class="hd-d2b-boundary" role="group" aria-label="History boundary"><strong>Observation session changed · cached history is not current. Replace this window to load current activity.</strong><div class="hd-row hd-d2b-actions"><button type="button" class="hd-btn hd-btn--secondary hd-btn--sm">Load current activity</button></div></div>';
-      var quiet = '<p class="hd-m05-caption">Available captured history</p>';
-      var c = done(LANES.codex, '04:51'), o = done(LANES.opencode, '04:12');
-      c.lead = o.lead = quiet;
-      return [r, c, o];
+      return [r, done(LANES.codex, '04:51'), done(LANES.opencode, '04:12')];
     } },
     'lane-messages-queued': { bar: BAR_RUN, lanes: function () { return [runningWith(queue([{ kind: 'queued', text: FIRST, go: 'lane-message-cancelled' }, { kind: 'queued', text: SECOND }])), done(LANES.codex, '04:51'), done(LANES.opencode, '04:12')]; } },
     'lane-message-delivering': { bar: BAR_RUN, lanes: function () { return [runningWith(queue([{ kind: 'delivering', text: FIRST }], 'Delivery is in progress.')), done(LANES.codex, '04:51'), done(LANES.opencode, '04:12')]; } },
@@ -255,8 +252,8 @@ function runningWith(tail) { var r0 = running(); r0.tail = tail; return r0; }
     var id = row[0], min = /-minimum$/.test(id), key = FAMILY + '/' + id;
     var spec = id === 'loading-two' ? 'two-lanes' : id.replace(/-minimum$/, '');
     if (id !== 'loading-two') T[key] = render(spec, min);
-    docs[key] = '<p><strong>Not approved · draft for owner review, 2026-11-12.</strong> ' + row[3] + ' Deterministic display-only fixture. See <a href="docs/decisions/parallel-group-proposal.md">the parallel group lane decision record</a> for the source citations, defaults and open questions. Reopening the route resets it.</p>';
-    var state = { id: id, title: row[1], description: row[3], group: row[2], status: 'provisional', approvalNote: NOTE };
+    docs[key] = '<p><strong>Approved by the owner · 2026-11-12.</strong> ' + row[3] + ' Deterministic display-only fixture. See <a href="docs/decisions/parallel-group-proposal.md">the parallel group lane decision record</a> for the source citations, defaults, approval and owner answers. Reopening the route resets it.</p>';
+    var state = { id: id, title: row[1], description: row[3], group: row[2], status: 'approved', approval: APPROVAL };
     if (id === 'loading-two') state.skeleton = { of: FAMILY + '/two-lanes', spec: 'parallel-group-two' };
     H.registerState(FAMILY, state);
   });

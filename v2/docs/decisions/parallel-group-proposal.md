@@ -46,7 +46,7 @@ All 25 states are in the `parallel-group` family, in both appearances. Titles an
 | `parallel-group/lane-cancelled` | A cancelled lane: "Cancelled 04:31", the lane ends "Cancelled · 04:31"; badge "2 done · 1 cancelled". It is also where confirming Cancel all lands | `TaskDetail/TopBar/TaskBadgeModel.swift:113`; `ParallelPresentation.swift:199` |
 | `parallel-group/lane-taken-over` | A lane taken over in Terminal: caption "Claude · Opus 5.5 · taken over", "Cancelled 04:31", end row "Cancelled · 04:31 · taken over", composer locked with "Messages are off — you took this task over in Terminal" | `TaskDetail/TopBar/TaskBadgeModel.swift:74-77` (suffix "· taken over"); `TaskDetail/Component/MessageBoxView.swift:34`; the v2 task screen's badge "Cancelled 04:31 · taken over" (`task/taken-over`). The lane caption carries "taken over" instead of the status text because the head is 328 points wide at the floor |
 | `parallel-group/lane-activity-unavailable` | Lane 2: "Activity log unavailable.", Send disabled (no lock: native only locks taken-over lanes), "Messaging is unavailable for this activity view."; lane 3: "No activity to display." | `Parallel/ParallelPresentation.swift:123-126`; `Parallel/Component/ParallelColumnView.swift:155-157` |
-| `parallel-group/lane-history-boundary` | Lane 1: "Observation session changed · cached history is not current. Replace this window to load current activity." with a "Load current activity" button; lanes 2 and 3 show the default "Available captured history" line | `Parallel/ParallelWindowAdoption.swift:48`; `Parallel/Component/ParallelColumnView.swift:116-129`; boundary block reused from the task screen (`.hd-d2b-boundary`) |
+| `parallel-group/lane-history-boundary` | Lane 1: "Observation session changed · cached history is not current. Replace this window to load current activity." with a "Load current activity" button; the other lanes show nothing extra | `Parallel/ParallelWindowAdoption.swift:48`; `Parallel/Component/ParallelColumnView.swift:116-129`; boundary block reused from the task screen (`.hd-d2b-boundary`) |
 | `parallel-group/lane-messages-queued` | Two messages queued in the running lane, below the live activity, as the task screen draws them: captioned "Queued", each with Cancel; no Send now | Native pending bubbles and cancel: `Parallel/Component/ParallelColumnView.swift` (`tailPresentation`, `cancel`); wording and styles reused from `messages/message-queued` |
 | `parallel-group/lane-message-delivering` | A claimed message keeps the "Queued" caption, loses Cancel; "Delivery is in progress." | Reused from `messages/message-delivering` |
 | `parallel-group/lane-message-uncertain` | "Delivery uncertain" with "Delivery could not be confirmed. The message is not requeued."; no Cancel | Reused from `messages/message-uncertain` |
@@ -83,7 +83,7 @@ In chat, the owner answered the open questions below by approving the recommenda
 5. Taken over as drawn: "taken over" in the caption, status stays "Cancelled 04:31".
 6. The composer's accessible name includes the task title ("Message Codex: <title>"); the visible placeholder stays "Message <Harness>".
 7. Only the replace-window history notice with "Load current activity" is drawn; other history cases wait for native.
-8. The "Available captured history" line stays out of lanes (drawn in `lane-history-boundary` only for comparison; to be removed from that state on approval).
+8. The "Available captured history" line stays out of lanes (removed from `lane-history-boundary` on approval, as decided).
 9. When enforcement differs, native's fallback sentence takes the same top-bar slot; not drawn.
 10. In an empty group View prompt stays, disabled.
 11. No reported-summary line on settled lanes.
@@ -100,7 +100,7 @@ In chat, the owner answered the open questions below by approving the recommenda
 5. **Taken-over wording.** The caption takes "taken over" and the status stays "Cancelled 04:31", matching the task screen. A taken-over lane that is still running has no drawing.
 6. **Same-harness lanes.** Two lanes of one harness differ by task title only; composers are both "Message Codex". Native already names each lane's composer group by task title (`Parallel/Component/ParallelColumnView.swift:163`, "Messages for <title>"); the drawn form keeps "Message <Harness>". Should the form's accessible name include the task title too?
 7. **History boundary scope.** Only the replace-window notice with "Load current activity" is drawn. The capacity and recovery-limit notices, older-history paging and "Older activity could not be loaded" are not.
-8. **"Available captured history".** Native prints it in every lane; the approved lanes do not. Drawn in `lane-history-boundary` only, to compare.
+8. **"Available captured history".** Native prints it in every lane; the approved lanes do not. Not drawn; the owner decided it stays out.
 9. **Enforcement differs.** The fallback sentence "Enforcement differs between these agents; see each task's details." (`Parallel/ParallelVM.swift:31`) and an unavailable status are not drawn.
 10. **Empty group top bar.** Whether View prompt stays (disabled) when no lane exists.
 11. **Settled-lane summary.** Should a settled lane show the reported summary, as the task screen's Summary entry or as native's result callout? None is drawn.
