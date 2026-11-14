@@ -104,11 +104,11 @@
   // Queued messages, as the task screen draws them (messages-screen.js, styles messages-screen.css): a pinned bubble
 // captioned Queued below the live activity, Cancel while queued, an outcome line. Lanes queue only, so there is no
 // Send now refusal to show.
-var CAPTION = { queued: 'Queued', delivering: 'Queued', uncertain: 'Delivery uncertain' };
+var CAPTION = { queued: 'Queued', delivering: 'Queued', uncertain: 'Delivery uncertain', undeliverable: 'Undeliverable' };
 var FIRST = 'Once the fix is in, run the whole slots suite one more time.';
 var SECOND = 'Then summarise what changed in two sentences.';
 function bubble(b, ctx) {
-  var pinned = b.kind !== 'uncertain';
+  var pinned = b.kind === 'queued' || b.kind === 'delivering';
   return '<div class="hd-msg-user hd-msgq' + (pinned ? ' hd-msgq--pending' : '') + '"><span class="hd-msgq__caption">' + CAPTION[b.kind] + '</span><span class="hd-msgq__text">' + b.text + '</span>' +
     (b.note ? '<span class="hd-msgq__note">' + b.note + '</span>' : '') +
     (b.kind === 'queued' ? '<button type="button" class="hd-msgq__cancel" aria-label="Cancel queued message" data-pl-id="msg-cancel"' + (b.go ? ' data-pl-go="' + FAMILY + '/' + b.go + '"' : '') + '>Cancel</button>' : '') + '</div>';
@@ -117,6 +117,9 @@ function queue(list, outcome) {
   return list.map(bubble).join('') + (outcome ? '<p class="hd-m05-caption hd-msgq__outcome" role="status">' + outcome + '</p>' : '');
 }
 function runningWith(tail) { var r0 = running(); r0.tail = tail; return r0; }
+// The lane pieces other lane views reuse (states-workflow-run-lanes.js draws a lane of a finished run): the queued message
+// markup with its captions, the locked composer and the row that ends a settled lane.
+H.laneParts = { queue: queue, composer: composer, endRow: endRow };
 
 // ---- Group top bar ---------------------------------------------------------------------------------------------
   var BADGE = {

@@ -9,3 +9,6 @@
 .hd-msgq-host .hd-msgq__cancel:hover{color:var(--text);text-decoration:underline}
 .hd-msgq-host .hd-msgq__outcome:focus{outline:none}
 .hd-msgq-host .hd-msgq__outcome:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* A lane of a finished run keeps the lock icon of its locked composer. */
+.hd-msgq-host .hd-lane__foot .hd-i-lock{color:var(--text-tertiary);flex:none}

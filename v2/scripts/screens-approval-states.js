@@ -52,7 +52,8 @@
   var NEEDS_SECOND = '<section class="hd-approval" aria-label="Wants to publish">';
   var MENU_FIRST = '<div class="hd-approval">\n          <div class="hd-approval__head" style="padding: 8px 12px;"><span class="hd-i hd-i-hand" aria-hidden="true"></span>Run command</div>';
 
-  // Wording. Each line cites its source in v2/docs/decisions/README.md. Mac lines are read at HarflowMac 3fdf0e8.
+  // Wording. Each line cites its source in v2/docs/decisions/README.md. Mac lines are read at HarflowMac e4635dc;
+  // a line with no Mac source is marked there as proposed copy.
   var COPY = {
     notCurrent: 'The request changed or is no longer current. This response did not change it. Refresh to review the current action.',
     alreadyAnswered: 'This request already has an answer. This response did not change it.',
@@ -64,11 +65,12 @@
     raceMonitor: 'Answered in Harflow',
     raceCaller: 'Already answered by the caller',
     expired: 'Expired',
-    rejectionSent: 'Harflow sent a rejection when the request expired.',
-    recovery: 'It can\'t be approved later. Recovery is a new continuation of the task.'
+    rejectionSent: 'Harflow rejected the request when it expired.',
+    recovery: 'It can\'t be approved later. After the task finishes, continue it in a new session.'
   };
-  // Fixture times, read from the checked-in examples and shown in UTC.
-  var AT = { answered: 'Oct 14, 2026, 17:46 UTC', unknown: 'Oct 14, 2026, 17:46 UTC', override: 'Oct 14, 2026, 17:47 UTC' };
+  // Fixture times, read from the checked-in examples (UTC) and written in the style the Mac app uses: an abbreviated
+  // date and a shortened time. The mock shows the fixture's own clock time; it does not convert to the viewer's zone.
+  var AT = { answered: 'Oct 14, 2026, 5:46 PM', unknown: 'Oct 14, 2026, 5:46 PM', override: 'Oct 14, 2026, 5:47 PM' };
 
   var DECIDED = {
     stale: { lines: [COPY.notCurrent], refresh: true },
@@ -128,6 +130,13 @@
   settledMenu('menu-bar/approval-stale', DECIDED.stale);
   settledMenu('menu-bar/answered-elsewhere', DECIDED.answeredCaller);
 
+  // menu-bar/busy-approve-once: the approved popover with the request's button named Approve once, as the Needs you and
+  // task cards name it. Only the button label changes; the question card keeps its Answer button.
+  var MENU_APPROVE = '<button type="button" class="hd-btn hd-btn--primary hd-btn--sm">Approve</button>';
+  lazy('menu-bar/busy-approve-once', 'menu-bar/busy', MENU_APPROVE, function () {
+    return '<button type="button" class="hd-btn hd-btn--primary hd-btn--sm">Approve once</button>';
+  });
+
   var PLAIN = 'Provisional · not approved';
   var GAP = 'Provisional · not approved · contract gap open';
   // [family, id, group, title, description, approval note, guide]
@@ -162,6 +171,9 @@
     ['needs-you', 'checkpoint-stale', 'Needs you', 'Checkpoint no longer current',
       'The workflow checkpoint changed after it was shown. The card offers no decision and offers Refresh.', PLAIN,
       '<p>The refusal <code>attention_checkpoint_stale</code>: the answer and grants were not applied (fixture <code>ctl-workflow-attention-stale.json</code>). It is drawn on the second card of <a href="#needs-you/waiting">Waiting items</a>.</p>'],
+    ['menu-bar', 'busy-approve-once', 'Menu bar', 'Busy, approve once',
+      'The popover with work in progress. The command request offers Approve once and Reject, as the other approval cards do.', PLAIN,
+      '<p>The approved <a href="#menu-bar/busy">Busy</a> popover with one change: the button of the command request reads Approve once instead of Approve. Each approval covers one exact action, so the label says so. It replaces Busy once approved. The question card keeps its Answer button.</p>'],
     ['menu-bar', 'approval-stale', 'Menu bar', 'Approval no longer current',
       'The request in the popover changed after it was shown. It offers no decision and offers Refresh.', PLAIN,
       '<p>The refusal <code>not_current</code>, drawn on the first request of <a href="#menu-bar/busy">Busy</a>.</p>'],
@@ -175,5 +187,13 @@
     docs[route] = '<p><strong>Provisional, not approved.</strong> Derived from an approved state by replacing one block. <a href="docs/decisions/README.md#queued-messages-and-approval-states-provisional">Decision record</a>, with the source of every line and the open gaps.</p>' + r[6] +
       '<p>Deterministic mock text; the fixture times are shown in UTC.</p>';
     H.registerState(r[0], { id: r[1], title: r[3], description: r[4], group: r[2], status: 'provisional', approvalNote: r[5] });
+  });
+  // The minimum window version of the redraw: the same fixes as the approved menu-bar/busy-minimum, applied to the
+  // redrawn popover. The popover is 380 points wide and 560 points tall there.
+  H.registerState('menu-bar', {
+    id: 'busy-approve-once-minimum', title: 'Busy, approve once · 1000 × 620',
+    description: 'The popover with work in progress and an Approve once button, in the minimum window. It is 380 points wide and 560 points tall; the header and footer stay fixed and the sections between them scroll.',
+    group: 'Minimum window', status: 'provisional', approvalNote: PLAIN,
+    minimum: { of: 'menu-bar/busy-approve-once', fixes: ['popover'] }
   });
 })();

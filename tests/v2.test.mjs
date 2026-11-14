@@ -735,11 +735,17 @@ const COMPOSER_REDRAWS = [
 ];
 const SHELL_REDRAWS = [['sidebar/collapsed', 'sidebar/centered-collapsed'], ['sidebar/minimum', 'sidebar/centered-minimum']];
 const TRANSCRIPT_REDRAWS = ['observed', 'loading', 'partial', 'unavailable', 'integrity-failed', 'reconnecting', 'capacity', 'sources'].map(name => [`task/activity-${name}`, `task/transcript-${name}`]);
+const overviewHas = pair => { const o = HFV2.templates['overview/areas']; return o.includes(`<a href="#${pair.older}">`) && o.includes(`<a href="#${pair.newer}">`); };
 const stateOfRoute = route => { const [f, s] = route.split('/'); return [HFV2.findFamily(f), HFV2.findState(HFV2.findFamily(f), s)]; };
 const DECISION = { 'new-task': 'Centered composer', sidebar: 'Sidebar', task: 'Task transcript' };
 
-test('one redraw is pending, the exact-action approval, and the catalog notes the pair outside the specimen', () => {
-  assert.deepEqual(JSON.parse(JSON.stringify(pending)), [{ older: 'task/approval', newer: 'task/approval-exact' }]);
+const PENDING_PAIRS = [
+  { older: 'task/approval', newer: 'task/approval-exact' },
+  { older: 'menu-bar/busy', newer: 'menu-bar/busy-approve-once' },
+  { older: 'menu-bar/busy-minimum', newer: 'menu-bar/busy-approve-once-minimum' }
+];
+test('three redraws are pending, the exact-action approval and the two menu bar relabels, and the catalog notes each pair outside the specimen', () => {
+  assert.deepEqual(JSON.parse(JSON.stringify(pending)), PENDING_PAIRS);
   assert.ok(!routeSet.has('new-task/centered-starting'), 'the earlier starting state is retired');
   assert.equal(stateOfRoute('new-task/centered-starting-plain')[1].status, 'approved');
   assert.equal(HFV2.describe('new-task/centered-starting-plain').approval, 'Approved by the owner on 2026-11-09 · Starting row');
@@ -747,10 +753,17 @@ test('one redraw is pending, the exact-action approval, and the catalog notes th
   assert.equal(stateOfRoute('harness-runtime/installing-sidebar')[1].status, 'provisional');
   assert.ok(/open owner question: card placement/.test(HFV2.describe('harness-runtime/installing-sidebar').approval));
   for (const route of ['harness-runtime/installing', 'app-states/setup']) { assert.equal(stateOfRoute(route)[1].status, 'approved'); assert.ok(!pending.some(pair => pair.older === route || pair.newer === route), `${route} has no pending pair`); }
-  for (const route of ['task/approval', 'task/approval-exact']) assert.ok(routeSet.has(route), `${route} stays listed`);
-  assert.equal(stateOfRoute('task/approval')[1].status, 'approved', 'the earlier state keeps its approval');
-  assert.equal(stateOfRoute('task/approval-exact')[1].status, 'provisional');
-  assert.equal(HFV2.describe('task/approval-exact').approval, 'Provisional · not approved');
+  for (const pair of PENDING_PAIRS) {
+    for (const route of [pair.older, pair.newer]) assert.ok(routeSet.has(route), `${route} stays listed`);
+    assert.equal(stateOfRoute(pair.older)[1].status, 'approved', `${pair.older} keeps its approval`);
+    assert.equal(stateOfRoute(pair.newer)[1].status, 'provisional', `${pair.newer} is provisional`);
+    assert.equal(stateOfRoute(pair.newer)[1].approval, undefined, `${pair.newer} carries no approval object`);
+    assert.equal(HFV2.describe(pair.newer).approval, 'Provisional · not approved');
+    assert.ok(overviewHas(pair), `the overview lists ${pair.newer}`);
+  }
+  // The minimum redraw derives from the full one, so the two menu bar pairs stay consistent.
+  assert.deepEqual(JSON.parse(JSON.stringify(stateOfRoute('menu-bar/busy-approve-once-minimum')[1].minimum)), { of: 'menu-bar/busy-approve-once', fixes: ['popover'] });
+  assert.equal(stateOfRoute('menu-bar/busy-minimum')[1].status, 'approved');
   const catalog = read(path.join(v2, 'scripts', 'catalog.js'));
   assert.match(catalog, /var PENDING = 'Earlier layout; redraw awaiting owner approval';/);
   assert.match(catalog, /pendingRedrawOf/);
@@ -760,6 +773,7 @@ test('one redraw is pending, the exact-action approval, and the catalog notes th
   assert.match(read_('screens-overview.js'), /Redraws awaiting approval/);
   const overview = HFV2.templates['overview/areas'];
   assert.ok(overview.includes('Redraws awaiting approval') && overview.includes('<a href="#task/approval">') && overview.includes('<a href="#task/approval-exact">'), 'the overview lists the pending redraw');
+  assert.equal((overview.match(/Redraws awaiting approval/g) || []).length, 1);
   // Nothing else is waiting: the approved redraws of 2026-11-08 are retired pairs, not pending ones.
   for (const pair of pending) assert.ok(!(pair.older in HFV2.routeRedirects) && !(pair.newer in HFV2.routeRedirects));
 });

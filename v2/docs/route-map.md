@@ -90,12 +90,18 @@ These are canonical routes with no earlier name; they are not aliases or redirec
 | `task/approval-stale`, `task/approval-expired`, `task/approval-answered-elsewhere`, `task/approval-refused`, `task/approval-uncertain` | `task/approval-exact` |
 | `needs-you/approval-stale`, `needs-you/approval-expired`, `needs-you/answered-elsewhere` | `needs-you/waiting`, first request |
 | `needs-you/checkpoint-stale` | `needs-you/waiting`, second request |
+| `menu-bar/busy-approve-once` | `menu-bar/busy`, with the request's button named Approve once |
+| `menu-bar/busy-approve-once-minimum` | `menu-bar/busy-minimum`, with the same button; derived from `menu-bar/busy-approve-once` |
+| `workflow-run/lane-message-undeliverable` | `workflow-run/parallel`, as a cancelled run with an undeliverable message in a lane |
+| `workflow-run/lane-message-undeliverable-minimum` | `workflow-run/lane-message-undeliverable` at 1000 × 620 |
 | `menu-bar/approval-stale`, `menu-bar/answered-elsewhere` | `menu-bar/busy`, first request |
 | `harness-runtime/installing-sidebar` | `harness-runtime/installing`, with the card in the sidebar; standalone, no pending pair (open owner question: card placement; parked for the already-set-up, runtime-updating case; not-ready first run stays as approved) |
 
 ### Redraws awaiting approval
 
 `task/approval-exact` redraws `task/approval` and removes its "Approve for this task" button. Both stay listed until the owner decides; the catalog notes the pair beside the approval line. When the owner approves the redraw, `task/approval` is retired and opens `task/approval-exact`.
+
+`menu-bar/busy-approve-once` redraws `menu-bar/busy`, and `menu-bar/busy-approve-once-minimum` redraws the approved `menu-bar/busy-minimum`; each names the request's button Approve once. Both pairs are required and stay listed until the owner decides. When the owner approves them, `menu-bar/busy` and `menu-bar/busy-minimum` are retired and open the redraws.
 
 ## Loading routes
 

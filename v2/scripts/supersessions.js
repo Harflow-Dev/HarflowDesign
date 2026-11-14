@@ -4,7 +4,7 @@
 // HFV2.retired records what was retired. Templates that renderers clone for other states stay in
 // HFV2.templates. The decisions README records each retirement with the commits where the old design
 // can be seen. HFV2.pendingRedraw lists older states that stay listed until the owner approves their
-// redraw; it is empty while no redraw is waiting.
+// redraw; the catalog notes each pair outside the specimen.
 (function () {
   'use strict';
   var HFV2 = (window.HFV2 = window.HFV2 || {});
@@ -63,6 +63,12 @@
   // Redraws awaiting owner approval. Both states of a pair stay listed. On sign-off the pair moves into
   // RETIRED above, the earlier state, its templates and guides are removed, and a redirect that already
   // targets the earlier state is repointed to the redraw. The catalog notes each pair outside the specimen.
-  // One redraw is waiting: the exact-action approval, which removes the task-wide choice from the approval card.
-  HFV2.pendingRedraw = [{ older: 'task/approval', newer: 'task/approval-exact' }];
+  // Three pairs are waiting. The exact-action approval removes the task-wide choice from the approval card. The two
+  // menu bar pairs relabel the request's button Approve once, in the full popover and in the minimum window; the
+  // minimum pair is required because menu-bar/busy-minimum is approved.
+  HFV2.pendingRedraw = [
+    { older: 'task/approval', newer: 'task/approval-exact' },
+    { older: 'menu-bar/busy', newer: 'menu-bar/busy-approve-once' },
+    { older: 'menu-bar/busy-minimum', newer: 'menu-bar/busy-approve-once-minimum' }
+  ];
 })();

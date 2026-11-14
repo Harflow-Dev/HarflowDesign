@@ -96,6 +96,8 @@ Eleven approved states draw six loaded screens and five loading states at 1000 �
 | Needs you | Approval no longer current, Approval expired, Approval answered elsewhere, Checkpoint no longer current | `needs-you/approval-stale`, `approval-expired`, `answered-elsewhere`, `checkpoint-stale` | Provisional, not approved. `needs-you/waiting` with one card replaced |
 | Harness runtime | Preparing, in the sidebar | `harness-runtime/installing-sidebar` | Provisional, not approved. The runtime card in the sidebar and a locked composer; standalone, no pending pair; open owner question: card placement; parked for the already-set-up, runtime-updating case; not-ready first run stays as approved |
 | Menu bar | Approval no longer current, Approval answered elsewhere | `menu-bar/approval-stale`, `menu-bar/answered-elsewhere` | Provisional, not approved. `menu-bar/busy` with its first request replaced |
+| Menu bar | Busy, approve once; Busy, approve once · 1000 × 620 | `menu-bar/busy-approve-once`, `menu-bar/busy-approve-once-minimum` | Provisional, not approved. `menu-bar/busy` and `menu-bar/busy-minimum` with the request's button named Approve once; the two pending redraws |
+| Workflow run | Parallel view, message undeliverable; the same · 1000 × 620 | `workflow-run/lane-message-undeliverable`, `workflow-run/lane-message-undeliverable-minimum` | Provisional, not approved. `workflow-run/parallel` drawn as a cancelled run: one lane holds an undeliverable message and the lane composers are locked |
 
 Every loading state, including those at 1000 × 620, is approved. The orchestrator has no loading state, so it has none at 1000 × 620.
 

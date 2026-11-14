@@ -28,7 +28,7 @@
     ['message-queued', 'Queued messages',
       'Two messages queued for the next turn sit below the live activity, each captioned Queued with Cancel. The composer shows Send now beside Send. Cancel removes a message and says so.',
       'state-running', [{ id: 'a', kind: 'queued', text: FIRST }, { id: 'b', kind: 'queued', text: SECOND }], 'sendNow', '', NOTE_PLAIN,
-      '<p>Queued messages wait for the next explicitly requested continuation. A queued send never folds into the live turn, and Cancel is offered only while a message is queued. Statuses and cancel: <code>contracts.md</code>, Queued task and workflow messaging.</p><p>The approved composer has a single Send button and a hint that mentions Send now. Whether Send now is a separate control, or only the hint and the existing behaviour, is an owner design question; this state draws a separate control to show one answer.</p>'],
+      '<p>Queued messages wait for the next explicitly requested continuation. A queued send never folds into the live turn, and Cancel is offered only while a message is queued. Statuses and cancel: <code>contracts.md</code>, Queued task and workflow messaging.</p><p>Send now is a separate control beside Send, as in the native composer. The approved composer has a single Send button and a hint that mentions Send now, so this state adds the control.</p>'],
     ['message-delivering', 'Message delivering',
       'A message the engine has claimed keeps the Queued caption and loses Cancel while delivery is in progress.',
       'state-running', [{ id: 'a', kind: 'delivering', text: FIRST }], 'sendNow', 'Delivery is in progress.', NOTE_PLAIN,

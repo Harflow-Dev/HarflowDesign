@@ -43,7 +43,7 @@ const LOADING = {
 };
 
 test('the six minimum window states are registered, approved and derived from their loaded state', () => {
-  const all = HFV2.registry.families.flatMap(f => f.states.filter(s => s.minimum && !s.skeleton).map(s => `${f.id}/${s.id}`));
+  const all = HFV2.registry.families.flatMap(f => f.states.filter(s => s.minimum && !s.skeleton && s.status === 'approved').map(s => `${f.id}/${s.id}`));
   assert.deepEqual([...all].sort(), Object.keys(STATES).sort());
   for (const [route, want] of Object.entries(STATES)) {
     const [familyId, stateId] = route.split('/');
@@ -71,7 +71,7 @@ test('the six minimum window states are registered, approved and derived from th
 });
 
 test('all eleven minimum window states are approved, each with its own approval, no approval note and no provisional strip', () => {
-  const minimumStates = HFV2.registry.families.flatMap(f => f.states.filter(s => s.minimum).map(s => ({ family: f, state: s, route: `${f.id}/${s.id}` })));
+  const minimumStates = HFV2.registry.families.flatMap(f => f.states.filter(s => s.minimum && s.status === 'approved').map(s => ({ family: f, state: s, route: `${f.id}/${s.id}` })));
   assert.equal(minimumStates.length, 11);
   assert.ok(minimumStates.every(({ route }) => route.endsWith('-minimum')), 'every minimum state has a -minimum id');
   const approvals = new Set();
@@ -87,7 +87,30 @@ test('all eleven minimum window states are approved, each with its own approval,
   }
   assert.equal(approvals.size, 11, 'each registration has its own approval object');
   // Other states whose id ends in -minimum (task/topbar-minimum) are not derived states and keep their own records.
-  assert.deepEqual(json(HFV2.registry.families.flatMap(f => f.states.filter(s => s.minimum && 'approvalNote' in s).map(s => `${f.id}/${s.id}`))), []);
+  assert.deepEqual(json(HFV2.registry.families.flatMap(f => f.states.filter(s => s.minimum && s.status === 'approved' && 'approvalNote' in s).map(s => `${f.id}/${s.id}`))), []);
+});
+
+// Provisional minimum states are drawn from provisional loaded states and stay out of the approved set above.
+const PROVISIONAL_MINIMUM = {
+  'menu-bar/busy-approve-once-minimum': { of: 'menu-bar/busy-approve-once', fixes: ['popover'] },
+  'workflow-run/lane-message-undeliverable-minimum': { of: 'workflow-run/lane-message-undeliverable', fixes: ['sidebar', 'lanes', 'topbar-meta'] }
+};
+test('the provisional minimum window states derive from a provisional state, carry no approval and say so', () => {
+  const all = HFV2.registry.families.flatMap(f => f.states.filter(s => s.minimum && !s.skeleton && s.status === 'provisional').map(s => `${f.id}/${s.id}`));
+  assert.deepEqual([...all].sort(), Object.keys(PROVISIONAL_MINIMUM).sort());
+  for (const [route, want] of Object.entries(PROVISIONAL_MINIMUM)) {
+    const [familyId, stateId] = route.split('/');
+    const family = HFV2.findFamily(familyId), state = HFV2.findState(family, stateId);
+    assert.equal(state.group, 'Minimum window', route);
+    assert.equal(state.approval, undefined, `${route} carries no approval object`);
+    assert.equal(state.approvalNote, 'Provisional · not approved', route);
+    assert.equal(HFV2.approvalLine(family, state), 'Provisional · not approved');
+    assert.deepEqual(json(state.minimum), want);
+    assert.equal(HFV2.findState(family, want.of.split('/')[1]).status, 'provisional', `${route} derives from a provisional state`);
+    assert.ok(route.endsWith('-minimum'));
+    for (const field of ['id', 'title', 'description', 'group', 'approvalNote']) assert.ok(!NAMING_RULE.test(state[field]), `${route} ${field}`);
+    assert.equal(HFV2.describe(route).templateKey, want.of);
+  }
 });
 
 // The manifest holds the template digests of ba8c928. The templates are identical at 9d19fd7, the commit this work builds
@@ -99,14 +122,14 @@ test('no existing template changed: the digests equal those of the base commit a
   const added = [
     ...['stale', 'expired', 'answered-elsewhere', 'refused', 'uncertain', 'exact'].map(x => `task/approval-${x}`),
     'needs-you/approval-stale', 'needs-you/approval-expired', 'needs-you/answered-elsewhere', 'needs-you/checkpoint-stale',
-    'menu-bar/approval-stale', 'menu-bar/answered-elsewhere',
+    'menu-bar/approval-stale', 'menu-bar/answered-elsewhere', 'menu-bar/busy-approve-once', 'workflow-run/lane-message-undeliverable',
     ...['queued', 'delivering', 'delivered', 'cancelled', 'send-now-refused', 'uncertain', 'unsupported', 'queued-settled'].map(x => `messages/message-${x}`),
     'm04-proposal/centered-starting-plain', 'm04-proposal/runtime-installing-sidebar',
     // The approved pending-launch states (2026-11-10) and the approved parallel-group lane states (2026-11-12).
     ...HFV2.pendingLaunchStates.map(([id]) => `task/pending-${id}`).filter(key => key in HFV2.templates),
     ...HFV2.parallelLaneStates.map(id => `parallel-group/${id}`).filter(key => key in HFV2.templates)
   ];
-  assert.equal(added.length, 22 + 20 + 24);
+  assert.equal(added.length, 22 + 20 + 24 + 2);
   const removed = ['m04-proposal/centered-starting'];
   for (const key of removed) { assert.ok(key in manifest && !(key in HFV2.templates), `${key} is removed with its retired state`); delete manifest[key]; }
   for (const key of added) assert.ok(key in HFV2.templates, `${key} is a template`);
@@ -237,7 +260,7 @@ test('the catalog applies the template, then the minimum fixes, then the skeleto
 
 test('every minimum draft derives from a static screen: applyMinimum runs only on the static path', () => {
   const drafts = HFV2.registry.families.flatMap(f => f.states.filter(s => s.minimum).map(s => `${f.id}/${s.id}`));
-  assert.equal(drafts.length, 11);
+  assert.equal(drafts.length, 13, 'eleven approved drafts and two provisional ones');
   for (const route of drafts) {
     const state = HFV2.findState(HFV2.findFamily(route.split('/')[0]), route.split('/')[1]);
     assert.equal(HFV2.describe(state.minimum.of).renderer, null, `${route} derives from ${state.minimum.of}, which has no renderer`);
@@ -320,8 +343,9 @@ test('every static template with a sidebar has the top, nav, sections and foot s
   // The pending-launch states carry the sidebar inside the M04 scroll wrapper (approved 2026-11-10), a different shape.
   const keys = Object.keys(HFV2.templates).filter(k => HFV2.templates[k].includes('<aside class="hd-sidebar"') && !k.startsWith('task/pending-'));
   // 22 static screens, plus the four templates the New task and Task renderers read and components/sidebar,
-  // plus the ten provisional approval states that start from a task or Needs you screen.
-  assert.equal(keys.length, 59);
+  // plus the ten provisional approval states that start from a task or Needs you screen and the provisional
+  // cancelled-run lane view.
+  assert.equal(keys.length, 60);
   const odd = [];
   for (const key of keys) {
     const kids = sidebarChildren(HFV2.templates[key]);

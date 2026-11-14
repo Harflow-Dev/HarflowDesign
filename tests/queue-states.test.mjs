@@ -23,7 +23,7 @@ const MESSAGE_IDS = ['queued', 'delivering', 'delivered', 'cancelled', 'send-now
 const APPROVALS = [
   'task/approval-exact', 'task/approval-stale', 'task/approval-expired', 'task/approval-answered-elsewhere', 'task/approval-refused', 'task/approval-uncertain',
   'needs-you/approval-stale', 'needs-you/approval-expired', 'needs-you/answered-elsewhere', 'needs-you/checkpoint-stale',
-  'menu-bar/approval-stale', 'menu-bar/answered-elsewhere'
+  'menu-bar/busy-approve-once', 'menu-bar/approval-stale', 'menu-bar/answered-elsewhere'
 ];
 const GAP_NOTE = 'Provisional · not approved · contract gap open';
 const PLAIN_NOTE = 'Provisional · not approved';
@@ -43,15 +43,16 @@ function added(base, now) {
   return out;
 }
 
-// Every line a specimen adds to its base, with its source (HarflowMac lines are read at 3fdf0e8). The decision record lists the same lines.
+// Every line a specimen adds to its base, with its source (HarflowMac lines are read at e4635dc). The decision record lists the same lines.
+// A line marked "proposed copy" has no HarflowMac line; the record says so in its source column.
 const MESSAGE_COPY = new Set([
   'Queued', 'Delivery uncertain',                                                           // WorkMessageQueue.swift:49, :51
-  'Cancel', 'Cancel queued message',                                                        // PromptBubbleView.swift:93, :98
-  'Send now', 'Ask for immediate delivery; an engine refusal keeps the message queued',     // MessageBoxView.swift:258, :262
+  'Cancel', 'Cancel queued message',                                                        // Component/PromptBubbleView.swift:93, :98
+  'Send now', 'Ask for immediate delivery; an engine refusal keeps the message queued',     // MessageBoxView.swift:366, :370
   'Send now isn\'t available. This operation can\'t be interrupted safely.',                // WorkMessageQueue.swift:67
-  'Delivery is in progress.', 'Message delivered.',                                         // TaskActionRepositoryImpl.swift:129-130
-  'Queued message cancelled.',                                                              // ParallelViewRepository.swift:111
-  'Delivery could not be confirmed. The message is not requeued.',                          // neutral: contracts.md:1709-1712
+  'Delivery is in progress.', 'Message delivered.',                                         // TaskActionRepositoryImpl.swift:237-238
+  'Queued message cancelled.',                                                              // ParallelViewRepository.swift:114
+  'Delivery could not be confirmed. The message is not requeued.',                          // the approved lane state parallel-group/lane-message-uncertain
   'Once the fix is in, run the whole slots suite one more time.', 'Then summarise what changed in two sentences.' // fixture content
 ]);
 const APPROVAL_COPY = new Set([
@@ -63,15 +64,17 @@ const APPROVAL_COPY = new Set([
   'Delivery is unknown. The decision will not be retried.',                                                              // CallerApprovalController.swift:349
   'Answered in Harflow · approve',                                                                                       // CallerApprovalController.swift:328
   'Already answered by the caller',                                                                                      // NeedsYouVM+Actions.swift:87, WorkflowInteractionOutcomeView.swift:16
-  'Answered in Harflow · Oct 14, 2026, 17:46 UTC', 'Answered by the caller · Oct 14, 2026, 17:47 UTC',                   // CallerApprovalPresentation.swift:50
+  'Answered in Harflow · Oct 14, 2026, 5:46 PM', 'Answered by the caller · Oct 14, 2026, 5:47 PM',                      // CallerApprovalPresentation.swift:50-51
   'Recorded decision: approve', 'Effective decision: reject', 'Delivered decision: reject',                              // :54-56
   'Delivery: sent', 'Delivery: delivery_unknown', 'Observed execution: unknown',                                         // CallerApprovalCard.swift:165-166
-  'Expired',                                                                                                             // neutral: disposition expired
-  'Harflow sent a rejection when the request expired.',                                                                  // neutral: harness-permissions.md:710-714
-  'It can\'t be approved later. Recovery is a new continuation of the task.',                                            // neutral: harness-permissions.md:718
-  'Oct 14, 2026, 17:46 UTC'                                                                    // fixture time
+  'Approve once',                                                                                                        // CallerApprovalCard.swift:174, NeedsYouDetailView.swift:153
+  'Expired',                                                                                                             // proposed copy: capitalised `disposition` (CallerApprovalCard.swift:119-120)
+  'Harflow rejected the request when it expired.',                                                                       // proposed copy: harness-permissions.md:710-714
+  'It can\'t be approved later. After the task finishes, continue it in a new session.',                                 // proposed copy; the action is "Continue in a new session" (TaskContinuationBanner.swift:92)
+  'Oct 14, 2026, 5:46 PM'                                                                      // fixture time, Mac date style
 ]);
-const NEUTRAL = ['Delivery could not be confirmed. The message is not requeued.', 'Expired', 'Harflow sent a rejection when the request expired.', 'It can\'t be approved later. Recovery is a new continuation of the task.'];
+// Lines with no HarflowMac line: the decision record marks them "Proposed copy".
+const PROPOSED = ['Expired', 'Harflow rejected the request when it expired.', 'It can\'t be approved later. After the task finishes, continue it in a new session.', 'Messages are off — this run was cancelled'];
 
 // ---- Registration ----
 
@@ -97,7 +100,7 @@ test('the eight queued-message states are provisional, in the Messages group, wi
   assert.ok(groups.lastIndexOf('Transcript') < groups.indexOf('Messages') && groups.lastIndexOf('Messages') < groups.indexOf('Changes'));
 });
 
-test('the twelve approval states are provisional with no approval object, and only real gaps carry the gap suffix', () => {
+test('the thirteen approval states are provisional with no approval object, and only real gaps carry the gap suffix', () => {
   for (const route of APPROVALS) {
     const [family, state] = stateOf(route);
     assert.equal(state.status, 'provisional', route);
@@ -108,7 +111,7 @@ test('the twelve approval states are provisional with no approval object, and on
   }
   const gap = APPROVALS.filter(route => stateOf(route)[1].approvalNote === GAP_NOTE).sort();
   assert.deepEqual(gap, ['menu-bar/answered-elsewhere', 'needs-you/answered-elsewhere', 'task/approval-answered-elsewhere']);
-  assert.equal(H.approvalStates.length, 12);
+  assert.equal(H.approvalStates.length, 13);
 });
 
 test('titles, descriptions, guides and the queued-message strip name the product screen only', () => {
@@ -129,7 +132,7 @@ test('titles, descriptions, guides and the queued-message strip name the product
 // ---- Approval states are derived from approved templates by replacing one block ----
 
 test('each approval template equals its base with exactly one block replaced, and the base is not changed', () => {
-  assert.equal(H.approvalDerivations.length, 12);
+  assert.equal(H.approvalDerivations.length, 13);
   const bases = new Set();
   for (const d of H.approvalDerivations) {
     const base = H.templates[d.base], find = d.find(), replace = d.build(find), now = H.templates[d.route];
@@ -141,6 +144,15 @@ test('each approval template equals its base with exactly one block replaced, an
     assert.notEqual(now, base);
   }
   assert.deepEqual(Array.from(bases).sort(), ['menu-bar/busy', 'needs-you/waiting', 'task/approval', 'task/approval-exact']);
+  // The menu bar relabel replaces only the request's button; the approved popover keeps its text.
+  const relabel = H.approvalDerivations.find(d => d.route === 'menu-bar/busy-approve-once');
+  assert.equal(relabel.base, 'menu-bar/busy');
+  assert.equal(relabel.find(), '<button type="button" class="hd-btn hd-btn--primary hd-btn--sm">Approve</button>');
+  assert.equal(relabel.build(relabel.find()), '<button type="button" class="hd-btn hd-btn--primary hd-btn--sm">Approve once</button>');
+  assert.ok(!H.templates['menu-bar/busy'].includes('Approve once') && H.templates['menu-bar/busy'].includes('>Approve</button>'));
+  assert.ok(H.templates['menu-bar/busy-approve-once'].includes('>Approve once</button>') && !H.templates['menu-bar/busy-approve-once'].includes('>Approve</button>'));
+  // The stale and answered-elsewhere popovers stay derived from the approved popover: they replace the whole action row.
+  for (const route of ['menu-bar/approval-stale', 'menu-bar/answered-elsewhere']) assert.equal(H.approvalDerivations.find(d => d.route === route).base, 'menu-bar/busy');
   // The approved states still hold their text: the exact-action card removes only the task-wide button.
   assert.ok(H.templates['task/approval'].includes('Approve for this task'));
   const exact = H.approvalDerivations.find(d => d.route === 'task/approval-exact');
@@ -153,7 +165,7 @@ test('no new template says "for this task", and no settled card offers a decisio
   assert.match(H.templates['task/approval-exact'], /Approve once<\/button>/);
   assert.match(H.templates['task/approval-exact'], /Reject<\/button>/);
   const refresh = ['task/approval-stale', 'needs-you/approval-stale', 'menu-bar/approval-stale', 'needs-you/checkpoint-stale'];
-  for (const d of H.approvalDerivations.filter(x => x.route !== 'task/approval-exact')) {
+  for (const d of H.approvalDerivations.filter(x => x.route !== 'task/approval-exact' && x.route !== 'menu-bar/busy-approve-once')) {
     const card = d.build(d.find());
     assert.equal((card.match(/hd-approval--settled/g) || []).length, 1, `${d.route} marks one card settled`);
     assert.equal((H.templates[d.base].match(/hd-approval--settled/g) || []).length, 0, `${d.base} has no settled card`);
@@ -170,7 +182,7 @@ test('an approval draft says only what the contract says: the expired text never
     const text = lines(H.templates[route]).join(' ');
     assert.ok(!/not run|did not run|was not executed|never ran/i.test(text), route);
     assert.match(text, /Observed execution: unknown/);
-    assert.match(text, /Harflow sent a rejection when the request expired\./);
+    assert.match(text, /Harflow rejected the request when it expired\./);
   }
   const override = lines(H.templates['task/approval-expired']).join('\n');
   assert.match(override, /Recorded decision: approve/);
@@ -179,7 +191,7 @@ test('an approval draft says only what the contract says: the expired text never
   assert.ok(!/Recorded decision/.test(unanswered), 'the unanswered request has no caller decision');
 });
 
-test('every line a draft adds to its base is in the copy allowlist, and the neutral lines are the ones marked neutral', () => {
+test('every line a draft adds to its base is in the copy allowlist, and the proposed lines are the ones marked proposed copy', () => {
   const unknown = [];
   for (const d of H.approvalDerivations) {
     if (d.route === 'task/approval-exact') continue;
@@ -199,7 +211,7 @@ test('every line a draft adds to its base is in the copy allowlist, and the neut
     for (const line of added(plain, now)) assert.ok(MESSAGE_COPY.has(line), `${def.id}: ${line}`);
     assert.equal(spec(def.base), built.state.spec);
   }
-  for (const line of NEUTRAL) assert.ok(MESSAGE_COPY.has(line) || APPROVAL_COPY.has(line), line);
+  for (const line of PROPOSED.filter(l => !l.startsWith('Messages are off'))) assert.ok(MESSAGE_COPY.has(line) || APPROVAL_COPY.has(line), line);
 });
 
 // ---- The queued-message drawing ----
@@ -253,13 +265,15 @@ test('each queued-message state draws what the contract defines and nothing else
 });
 
 test('the dropped drafts are gone and recorded as design gaps, and the altered fixtures are said so', () => {
+  // Undeliverable is not drawn on the task screen: a standalone task never reaches it. It is drawn on the lanes of a finished run.
   for (const route of ['task/message-undeliverable', 'needs-you/interaction-answered-elsewhere']) {
     assert.ok(!(route in H.templates), `${route} has no template`);
     assert.equal(H.describe(route), null, `${route} is not registered`);
   }
   assert.ok(!/Undeliverable|Use staging/.test(JSON.stringify(H.messageStates)) && !H.templates['needs-you/waiting'].includes('Use staging'));
   const decisions = read('v2/docs/decisions/README.md');
-  assert.ok(decisions.includes('No approved surface shows a node task of a terminal workflow run; undeliverable (`contracts.md:1683-1685`) waits for one.'));
+  assert.ok(!decisions.includes('No approved surface shows a node task of a terminal workflow run; undeliverable (`contracts.md:1683-1685`) waits for one.'));
+  assert.ok(decisions.includes('11. **Undeliverable is drawn on the lanes of a finished workflow run.**'));
   assert.ok(decisions.includes('Needs a v2 workflow question card.') && decisions.includes('WorkflowInteractionOutcomeView.swift:16') && decisions.includes('ctl-workflow-shared-already-answered-synthetic.json'));
   assert.ok(decisions.includes('Send now removed; input locked'));
   assert.ok(H.messageStates.find(s => s.id === 'message-unsupported').description.startsWith('Send now removed; input locked'));
@@ -300,6 +314,62 @@ test('the new hooks change nothing for a route that passes none, and apply with 
   assert.equal(H.m05ProposalStates.filter(s => !s.spec.board).length > 40, true);
 });
 
+// ---- The undeliverable lane state and the menu bar relabel ----
+
+const UNDELIVERABLE = 'workflow-run/lane-message-undeliverable';
+test('the undeliverable state is a provisional lane of a cancelled run, derived from the parallel view with one block each replaced', () => {
+  for (const route of [UNDELIVERABLE, `${UNDELIVERABLE}-minimum`]) {
+    const [family, state] = stateOf(route);
+    assert.equal(state.status, 'provisional', route);
+    assert.equal(state.approval, undefined, `${route} carries no approval object`);
+    assert.equal(state.approvalNote, PLAIN_NOTE);
+    assert.equal(H.approvalLine(family, state), PLAIN_NOTE);
+    for (const field of ['id', 'title', 'description', 'group', 'approvalNote']) assert.ok(!NAMING_RULE.test(state[field]), `${route} ${field}`);
+    assert.ok(family.groups.includes(state.group));
+  }
+  assert.deepEqual(JSON.parse(JSON.stringify(stateOf(`${UNDELIVERABLE}-minimum`)[1].minimum)), { of: UNDELIVERABLE, fixes: ['sidebar', 'lanes', 'topbar-meta'] });
+  const base = H.templates['workflow-run/parallel'], html = H.templates[UNDELIVERABLE];
+  assert.ok(base.includes('Running</span>') && !base.includes('hd-msgq'), 'the approved parallel view is unchanged');
+  assert.equal(H.runLaneDerivation.base, 'workflow-run/parallel');
+  const text = lines(html).join('\n');
+  // The run is cancelled, not running; nothing in the specimen is live.
+  assert.ok(html.includes('<span class="hd-badge">Cancelled</span>'));
+  assert.ok(!/hd-badge--running|hd-working|is-animated|Pause|Cancel run|Running \d|Orchestrator is choosing/.test(html), 'no running badge, activity row, Pause or Cancel run');
+  assert.ok(/Cancelled 02:51/.test(text) && /Cancelled · 02:51/.test(text));
+  assert.ok(!/Draft upgrade PR|Waits for both scans/.test(text), 'the never-started node has no lane');
+  // One undeliverable bubble: the caption, the engine reason, no Cancel and not pinned, and no other outcome line.
+  assert.equal((html.match(/hd-msgq__caption">Undeliverable</g) || []).length, 1);
+  assert.equal((html.match(/class="hd-msg-user hd-msgq"/g) || []).length, 1);
+  assert.ok(!/hd-msgq--pending|hd-msgq__cancel|hd-msgq__outcome/.test(html));
+  assert.ok(html.includes(`<span class="hd-msgq__note">${H.runLaneDerivation.reason}</span>`));
+  assert.ok(html.includes('hd-app hd-msgq-host'), 'the frame hosts the queue styles');
+  // Both lane composers are locked with the reason; the lane head says Cancelled, not Running.
+  assert.equal((html.match(/<textarea[^>]*placeholder="Messages are off — this run was cancelled" disabled/g) || []).length, 2);
+  assert.equal((html.match(/hd-i-lock/g) || []).length, 2);
+  assert.equal((html.match(/<section class="hd-lane" /g) || []).length, 2);
+  // The sidebar: the run left Running and is the first Recent work row, cancelled.
+  assert.ok(/Running <span class="hd-section__count">2<\/span>/.test(html));
+  const recent = html.slice(html.indexOf('aria-label="Recent work"'));
+  assert.ok(/^[^]*?hd-task-row hd-task-row--done is-active"[^>]*>[^]*?hd-glyph--cancelled[^]*?Nightly dependency audit/.test(recent.slice(0, 700)));
+  // Every added line is either from the approved lane or Mac copy, the fixture message, the reason or the proposed placeholder.
+  const allowed = new Set(['Cancelled', 'Cancelled 02:51', 'Cancelled · 02:51', 'Undeliverable', H.runLaneDerivation.message, H.runLaneDerivation.reason, H.runLaneDerivation.locked, '1m', '2', 'Message Codex', 'Message Claude Code', 'Send to Codex', 'Send to Claude Code']);
+  const extra = added(base, html).filter(l => !allowed.has(l));
+  assert.deepEqual(extra, []);
+  assert.ok(!/hd-pl-go|data-pl-/.test(html), 'no fixture navigation hooks of the parallel group');
+});
+
+test('the parallel group lane parts the new state reuses keep the approved lane markup and gain only the undeliverable caption', () => {
+  const parts = H.laneParts;
+  assert.equal(typeof parts.queue, 'function');
+  const uncertain = parts.queue([{ kind: 'uncertain', text: 'x', note: 'y' }]);
+  assert.ok(uncertain.includes('<div class="hd-msg-user hd-msgq"><span class="hd-msgq__caption">Delivery uncertain</span>'));
+  const queued = parts.queue([{ kind: 'queued', text: 'x' }, { kind: 'delivering', text: 'z' }], 'Delivery is in progress.');
+  assert.equal((queued.match(/hd-msgq--pending/g) || []).length, 2);
+  assert.equal((queued.match(/hd-msgq__cancel/g) || []).length, 1);
+  assert.ok(parts.queue([{ kind: 'undeliverable', text: 'x', note: 'r' }]).includes('hd-msgq__caption">Undeliverable<'));
+  assert.ok(!/hd-msgq--pending|hd-msgq__cancel/.test(parts.queue([{ kind: 'undeliverable', text: 'x', note: 'r' }])));
+});
+
 // ---- Records ----
 
 test('the decision record lists every new route, every neutral line, the gaps and the owner questions', () => {
@@ -307,18 +377,20 @@ test('the decision record lists every new route, every neutral line, the gaps an
   const at = decisions.indexOf('## Queued messages and approval states (provisional)');
   assert.ok(at > 0 && decisions.includes('<a id="queued-messages-and-approval-states-provisional"></a>'));
   const section = decisions.slice(at, decisions.indexOf('\n## ', at + 5));
-  for (const route of [...MESSAGE_IDS.map(id => `task/${id}`), ...APPROVALS]) assert.ok(section.includes(`\`${route}\``), `${route} is recorded`);
+  for (const route of [...MESSAGE_IDS.map(id => `task/${id}`), ...APPROVALS, 'workflow-run/lane-message-undeliverable', 'workflow-run/lane-message-undeliverable-minimum', 'menu-bar/busy-approve-once-minimum']) assert.ok(section.includes(`\`${route}\``), `${route} is recorded`);
   for (const line of [...MESSAGE_COPY, ...APPROVAL_COPY].filter(l => !/ UTC|·/.test(l) && !/^Oct|^Nov/.test(l))) assert.ok(section.includes(line.replace(/ approve$/, '')), `the allowlist cites: ${line}`);
-  for (const line of NEUTRAL) { const row = section.split('\n').find(l => l.startsWith(`| ${line} |`)); assert.ok(row && /\| Neutral \|$/.test(row), `${line} is marked neutral`); }
-  for (const text of ['Open gaps', 'Owner questions', 'Provisional wording for owner review', 'The exact-action relabel', '3fdf0e8', '0936746']) assert.ok(section.includes(text), text);
+  for (const line of PROPOSED) { const row = section.split('\n').find(l => l.startsWith(`| ${line}`)); assert.ok(row && /Proposed copy/.test(row), `${line} is marked proposed copy`); }
+  assert.ok(!/\| Neutral \|/.test(section) && !/marked "neutral"/.test(section), 'no line is marked neutral any more');
+  assert.ok(section.includes('`e4635dc`') && section.includes('Owner answers applied 2026-11-14; back to the owner for approval.'));
+  for (const text of ['Open gaps', 'Owner checks', 'Provisional wording for owner review', 'The exact-action relabel', '3fdf0e8', '0936746', '`workflow-run/lane-message-undeliverable`', '`menu-bar/busy-approve-once-minimum`', '`components.js:731`', '`components.js:743`', '`screens-workflow-run.js:64`', '`screens-needs-you.js:76`']) assert.ok(section.includes(text), text);
   assert.ok(!/archive\/v1/.test(section.replace(/Nothing is copied from `archive\/v1`\./, '')), 'v1 is not a source');
   assert.ok(decisions.includes('A pending redraw may also change copy when an owner decision requires it'));
   assert.ok(decisions.includes('| Queued messages and approval states (provisional drafts) |'));
   const map = read('v2/docs/route-map.md');
-  for (const route of [...MESSAGE_IDS.map(id => `task/${id}`), ...APPROVALS]) assert.ok(map.includes(`\`${route}\``), `${route} is in the route map`);
+  for (const route of [...MESSAGE_IDS.map(id => `task/${id}`), ...APPROVALS, 'workflow-run/lane-message-undeliverable', 'workflow-run/lane-message-undeliverable-minimum', 'menu-bar/busy-approve-once-minimum']) assert.ok(map.includes(`\`${route}\``), `${route} is in the route map`);
   assert.ok(map.includes('## Provisional routes') && map.includes('### Redraws awaiting approval'));
   const inventory = read('v2/docs/screen-inventory.md');
-  for (const route of [...MESSAGE_IDS.map(id => `task/${id}`), ...APPROVALS]) assert.ok(inventory.includes(`\`${route.split('/')[1]}\``) || inventory.includes(`\`${route}\``), `${route} is in the inventory`);
+  for (const route of [...MESSAGE_IDS.map(id => `task/${id}`), ...APPROVALS, 'workflow-run/lane-message-undeliverable', 'workflow-run/lane-message-undeliverable-minimum', 'menu-bar/busy-approve-once-minimum']) assert.ok(inventory.includes(`\`${route.split('/')[1]}\``) || inventory.includes(`\`${route}\``), `${route} is in the inventory`);
   assert.ok(read('CHANGELOG.md').includes('Add provisional queued-message and approval state drafts'));
   const ledger = read('v2/docs/migration-coverage.md');
   assert.ok(/G-QUEUE[^\n]*Provisional drafts of eight states/.test(ledger) && /G-APPROVAL-STATES[^\n]*Provisional drafts exist/.test(ledger));
