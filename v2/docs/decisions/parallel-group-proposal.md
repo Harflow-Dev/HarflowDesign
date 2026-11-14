@@ -124,6 +124,6 @@ The owner accepted two native behaviours of the lane view on 2026-11-14 (chat an
 | Accepted deviation | Mac source |
 | --- | --- |
 | **View prompt pinned.** In the drawing the prompt scrolls away with the lane body. Natively it stays pinned above the feed while shown, capped at 40 percent of the lane body and scrolling inside that cap, in the order prompt first, history boundary second | `M05.md:1722` (View prompt; Revision 3 R2) |
-| **Outcome line in the feed tail.** The outcome line sits in the lane's feed tail after the pinned bubbles, where the task screen keeps it at the top of the body. While the lane feed shows its skeleton there is no tail, so the line renders in the lane foot directly above the composer and moves to the tail once the feed loads | `M05.md:1680` (outcome line) |
+| **Outcome line in the feed tail.** The outcome line sits in the lane's feed tail after the pinned bubbles, where the task screen keeps it at the top of the body. Mac detail included in the receipt entry, not part of the owner's answer (an owner check): while the lane feed shows its skeleton there is no tail, so the line renders in the lane foot directly above the composer and moves to the tail once the feed loads | `M05.md:1680` (outcome line) |
 
 Not deviations: the other Mac items of the same owner decision (a third-lane peek of 14 points at 1000 × 620 as drawn, no separator after the last lane, and lane captions from the engine's model labels with the raw id as the fallback) are Mac build items that follow the drawing.

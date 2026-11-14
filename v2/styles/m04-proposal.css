@@ -92,5 +92,3 @@
 .hd-m04-amendment .hd-composer__input::-webkit-scrollbar{width:6px;background:transparent}
 .hd-m04-amendment .hd-composer__input::-webkit-scrollbar-track{background:transparent}
 .hd-m04-amendment .hd-composer__input::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--text-tertiary) 72%,transparent);border-radius:999px}
-/* A collapse button marked aria-disabled is dimmed. */
-.hd-m04-proposal .hd-sidebar__top [aria-label="Collapse sidebar"][aria-disabled="true"]{opacity:.45}

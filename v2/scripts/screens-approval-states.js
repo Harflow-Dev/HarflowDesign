@@ -185,7 +185,7 @@
   ROWS.forEach(function (r) {
     var route = r[0] + '/' + r[1];
     docs[route] = '<p><strong>Provisional, not approved.</strong> Derived from an approved state by replacing one block. <a href="docs/decisions/README.md#queued-messages-and-approval-states-provisional">Decision record</a>, with the source of every line and the open gaps.</p>' + r[6] +
-      '<p>Deterministic mock text; the fixture times are shown in UTC.</p>';
+      '<p>Deterministic mock text; the fixture times are fixed mock times, not converted to the viewer\'s zone.</p>';
     H.registerState(r[0], { id: r[1], title: r[3], description: r[4], group: r[2], status: 'provisional', approvalNote: r[5] });
   });
   // The minimum window version of the redraw: the same fixes as the approved menu-bar/busy-minimum, applied to the
