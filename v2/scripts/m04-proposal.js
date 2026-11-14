@@ -28,9 +28,10 @@
     'centered-shell-collapsed': 'shell-collapsed',
     'centered-shell-narrow': 'shell-narrow'
   };
-  // Provisional drafts, not approved. Each copies the fixture of its source mount.
+  // Provisional drafts, not approved. Each copies the fixture of its source mount. The runtime update draws the centered
+  // shell of an already set-up app (populated sidebar, nav enabled) with the runtime gate in the main pane.
   var PENDING_SOURCES = {
-    'runtime-installing-sidebar': 'runtime-installing'
+    'runtime-updating': 'amendment-empty'
   };
   function has(map, key) { return Object.prototype.hasOwnProperty.call(map, key); }
   function isRedraw(route) { return has(REDRAW_SOURCES, route); }
@@ -76,6 +77,11 @@
     if (route === 'history-empty') s.rows = [];
     if (route.indexOf('runtime-') === 0) { s.runtime = route.slice(8); s.listing = 'pending'; if (s.runtime === 'listing') s.runtime = 'qualified'; }
     return s;
+  }
+  // The runtime gate of the main pane: title, body, one status line and the actions of a runtime state.
+  var INSTALLING_BODY = 'Preparing and verifying the required runtime…';
+  function gateMain(title, body, status, actions) {
+    return '<div class="hd-topbar"><span class="caption hd-faint">Harflow · Runtime setup</span><span class="hd-topbar__spacer"></span></div><div class="hd-m04-gate"><h1 class="display">'+title+'</h1><p>'+body+'</p><div role="status">'+status+'</div><div class="hd-m04-actions">'+actions+'</div></div>';
   }
   function customized(s){return s.effort!=='default'||s.turns!=='12'||s.approvals!=='harness';}
   function optionsOpen(s,open){s.advanced=!!open;}
@@ -127,9 +133,9 @@
     }
     function renderBody() {
       var theme = host.getAttribute('data-theme') || 'light';
-      var runtimeSidebar = route === 'runtime-installing-sidebar', runtimeLocked = runtimeIsLocked();
+      var updating = route === 'runtime-updating' && !s.updated;
       var runtimeBoard=route.indexOf('runtime-')===0 && !isPending(route), historyBoard=route.indexOf('history-')===0;
-      var controls=runtimeSidebar ? button('Installing','install')+button('Runtime ready','runtime-ready') : runtimeBoard ? button('Runtime failure','runtime-failure')+button('Runtime ready','runtime-ready')+button('Listing ready','listing-ready')+button('Listing failed','listing-failed') : historyBoard ? '' : button('Qualification ready','qualified')+button('Qualification unavailable','unqualified')+button('Complete: created','created',s.status!=='starting')+button('Complete: refused','refused',s.status!=='starting')+button('Complete: unknown','unknown',s.status!=='starting')+button('Enforcement supported','enforcement-supported')+button('Enforcement unknown','enforcement-unknown')+button('Enforcement unsupported','enforcement-unsupported');
+      var controls=route==='runtime-updating' ? button('Updating','update-start')+button('Runtime ready','update-done') : runtimeBoard ? button('Runtime failure','runtime-failure')+button('Runtime ready','runtime-ready')+button('Listing ready','listing-ready')+button('Listing failed','listing-failed') : historyBoard ? '' : button('Qualification ready','qualified')+button('Qualification unavailable','unqualified')+button('Complete: created','created',s.status!=='starting')+button('Complete: refused','refused',s.status!=='starting')+button('Complete: unknown','unknown',s.status!=='starting')+button('Enforcement supported','enforcement-supported')+button('Enforcement unknown','enforcement-unknown')+button('Enforcement unsupported','enforcement-unsupported');
       // Strip links point at current states only. The earlier composer and Advanced links now open the
       // centered composer states that replaced them.
       var boards = amendment
@@ -139,7 +145,7 @@
             : [['centered-loading','Loading'],['centered-unqualified','Unavailable'],['centered-invalid','Validation'],['centered-starting-plain','Starting'],['centered-refused','Refused'],['centered-options-closed','Options closed'],['centered-harness-open','Harness open']])
           : [['amendment-empty','Empty'],['amendment-ready','One line'],['amendment-growing','Growing'],['amendment-capped','Capped'],['amendment-options','Options open'],['amendment-unknown','Unknown']])
         : [['amendment-empty','Shell'],['amendment-ready','Composer'],['amendment-options','Advanced'],['history-retained','History'],['runtime-checking','Runtime']];
-      if (isPending(route)) boards = [[PENDING_SOURCES[route], 'Earlier layout']];
+      if (isPending(route)) boards = [['runtime-installing', 'Installing']];
       var boardLinks = boards.map(function (board) { return '<a href="#' + H.routeFor('m04', board[0]) + '/' + theme + '">' + board[1] + '</a>'; }).join('');
       var strips = H.catalogStrips.m04;
       var notice = isPending(route) ? strips.pendingNotice : isRedraw(route) ? (route==='centered-starting-plain' ? strips.redrawStartingNotice : strips.redrawNotice) : amendment ? strips.centeredNotice : strips.baselineNotice;
@@ -164,22 +170,6 @@
           bodyNodes.forEach(function (node) { scrollBody.appendChild(node); });
         }
       }
-      if (runtimeLocked) {
-        // The runtime preparation card sits in the sidebar scroll, between Statistics and Running. The nav is
-        // disabled and Running and Recent work show headings only, as in the first-run setup state.
-        app.querySelectorAll('.hd-nav-item').forEach(function (node) {
-          node.classList.remove('is-active'); node.setAttribute('aria-disabled', 'true'); node.setAttribute('tabindex', '-1');
-          node.style.opacity = '.45'; node.style.pointerEvents = 'none';
-          node.querySelectorAll('.hd-dot,.hd-nav-item__count').forEach(function (x) { x.remove(); });
-        });
-        app.querySelectorAll('.hd-section').forEach(function (node) {
-          node.querySelectorAll('.hd-section__list,.hd-section__count').forEach(function (x) { x.remove(); });
-        });
-        var running = app.querySelector('[aria-label="Running"]');
-        if (running) running.insertAdjacentHTML('beforebegin', '<section class="hd-m04-sidebar-runtime" aria-labelledby="m04-runtime-title"><h2 id="m04-runtime-title">Installing runtime</h2><p>Preparing and verifying the required runtime…</p><div role="status">Installation in progress</div></section>');
-        var rail = app.querySelector('[aria-label="Collapse sidebar"]');
-        if (rail) rail.setAttribute('aria-disabled', 'true');
-      }
       var main = app.querySelector('.hd-main');
       var topbar=main.querySelector('.hd-topbar'); if(topbar)topbar.innerHTML='<span class="caption hd-faint">'+esc(runtimeBoard?'Harflow · Setup':s.repository+' · New task')+'</span><span class="hd-topbar__spacer"></span>';
       if(route==='history-empty'){var running=app.querySelector('[aria-label="Running"]');if(running){running.querySelector('.hd-section__list').textContent='No running work';var count=running.querySelector('.hd-section__count');if(count)count.textContent='0';}}
@@ -199,6 +189,12 @@
         app.querySelectorAll('.hd-nav-item.is-active').forEach(function(node){node.classList.remove('is-active');});
         var done = template('task/done').querySelector('.hd-main');done.dataset.taskIdentity=s.selected;main.replaceWith(done); return;
       }
+      if (updating) {
+        // An already set-up app updates its runtime: the gate of the installing state with the update title and status.
+        // Same box and geometry; no spinner and no buttons. The sidebar stays populated and usable.
+        main.innerHTML=gateMain('Updating runtime',INSTALLING_BODY,'Update in progress','');
+        return;
+      }
       if (runtimeBoard) {
         if(s.runtime!=='qualified') {
           app.querySelectorAll('.hd-nav,.hd-section').forEach(function(node){node.remove();});
@@ -207,24 +203,24 @@
         } else if(s.listing!=='ready') {
           app.querySelectorAll('.hd-section').forEach(function(node){node.remove();});
         }
-        var runtimeCopy={checking:['Checking Harflow runtime','Checking the managed runtime before loading your work.'], 'install-required':['Set up Harflow','The required runtime is not installed.'], 'update-required':['Update required','Installed 0.0.7 · required 0.0.8'],installing:['Installing runtime','Preparing and verifying the required runtime…'],failed:['Setup could not finish','The previous usable runtime is preserved. Review the failure and retry when ready.'],qualified:['Runtime ready',s.listing==='failed'?'Your runtime is ready. Recent work could not be loaded.':s.listing==='ready'?'Your runtime is ready and recent work is available.':'Loading your work for the first time…']};
+        var runtimeCopy={checking:['Checking Harflow runtime','Checking the managed runtime before loading your work.'], 'install-required':['Set up Harflow','The required runtime is not installed.'], 'update-required':['Update required','Installed 0.0.7 · required 0.0.8'],installing:['Installing runtime',INSTALLING_BODY],failed:['Setup could not finish','The previous usable runtime is preserved. Review the failure and retry when ready.'],qualified:['Runtime ready',s.listing==='failed'?'Your runtime is ready. Recent work could not be loaded.':s.listing==='ready'?'Your runtime is ready and recent work is available.':'Loading your work for the first time…']};
         var copy=runtimeCopy[s.runtime] || runtimeCopy.checking;
-        main.innerHTML='<div class="hd-topbar"><span class="caption hd-faint">Harflow · Runtime setup</span><span class="hd-topbar__spacer"></span></div><div class="hd-m04-gate"><h1 class="display">'+copy[0]+'</h1><p>'+copy[1]+'</p><div role="status">'+(s.runtime==='installing'?'Installation in progress':s.runtime==='failed'?'Package verification failed. No replacement was activated.':'')+'</div><div class="hd-m04-actions">'+(s.runtime==='install-required'?button('Install runtime','install'):s.runtime==='update-required'?button('Update runtime','install'):s.runtime==='failed'?button('Retry setup','install'):s.listing==='failed'?button('Retry loading work','listing-retry'):'')+'</div></div>'; return;
+        main.innerHTML=gateMain(copy[0],copy[1],(s.runtime==='installing'?'Installation in progress':s.runtime==='failed'?'Package verification failed. No replacement was activated.':''),(s.runtime==='install-required'?button('Install runtime','install'):s.runtime==='update-required'?button('Update runtime','install'):s.runtime==='failed'?button('Retry setup','install'):s.listing==='failed'?button('Retry loading work','listing-retry'):'')); return;
       }
-      var textarea=app.querySelector('textarea'); textarea.value=s.draft; textarea.dataset.m04Field='draft'; textarea.disabled=runtimeLocked||['starting','unknown','created'].includes(s.status);
+      var textarea=app.querySelector('textarea'); textarea.value=s.draft; textarea.dataset.m04Field='draft'; textarea.disabled=['starting','unknown','created'].includes(s.status);
       var bar=app.querySelector('.hd-composer__bar');
-      var locked=runtimeLocked||['starting','unknown','created'].includes(s.status);
+      var locked=['starting','unknown','created'].includes(s.status);
       var plainStarting = route === 'centered-starting-plain' && s.status === 'starting';
       function options(values,current,gated){var all=values.slice();if(!all.includes(current))all.push(current);return all.map(function(v){return '<option value="'+esc(v)+'"'+(v===current?' selected':'')+(gated&&v===gated?' disabled':'')+'>'+esc(v)+(values.includes(v)?'':' — unavailable for this harness')+'</option>';}).join('');}
       function pill(label,icon,content,key){return '<details class="hd-m04-picker"'+(key&&s.picker===key?' open':'')+(key&&route==='centered-harness-open'?' data-m04-picker="'+key+'"':'')+'><summary class="hd-pill"><span class="hd-i hd-i-'+icon+'" aria-hidden="true"></span><span class="hd-pill__label">'+esc(label)+'</span><span class="hd-i hd-i-chevron-down" aria-hidden="true"></span></summary><div class="hd-menu hd-m04-picker-menu">'+content+'</div></details>';}
       // Only the open harness picker repeats the existing status message under the Harness select.
       function field(label,key,values){var gate=route==='centered-harness-open'&&key==='harness',hint=gate&&(s.harness==='Unavailable harness'||s.qualification!=='ready')?'Choose a qualified harness and model.':'';return '<label class="hd-m04-menu-field">'+label+'<select data-m04-field="'+key+'"'+(locked?' disabled':'')+(hint?' aria-describedby="m04-harness-hint"':'')+'>'+options(values,s[key],gate?'Unavailable harness':'')+'</select>'+(hint?'<span class="hd-field__hint" id="m04-harness-hint">'+esc(hint)+'</span>':'')+'</label>';}
-      bar.innerHTML='<span class="hd-m04-options-anchor"><button type="button" class="hd-btn hd-btn--icon hd-m04-options-trigger" data-m04="options" aria-label="More task options" title="More task options" aria-expanded="'+s.advanced+'" aria-controls="m04-task-options" aria-describedby="m04-options-description"><span class="hd-i hd-i-plus" aria-hidden="true"></span><span class="hd-m04-options-dot"'+(customized(s)?'':' hidden')+' aria-hidden="true"></span><span class="hd-sr" id="m04-options-description">'+(customized(s)?'Customized options':'Default options')+'</span></button></span>'+pill(s.repository,'folder',field('Repository / recent folders','repository',['HarflowMCP','HarflowDesign','Unavailable folder']))+pill(s.harness+' · '+s.model,'harness',field('Harness','harness',['Claude Code','Codex','Mistral Vibe','Unavailable harness'])+field('Model','model',models(s.harness)),'harness')+pill({'read_only':'Read only','write_in_repo':'Can edit this repo','publish':'Can publish','unrestricted':'Broad access'}[s.access],'shield','<label class="hd-m04-menu-field">Access<select data-m04-field="access"'+(locked?' disabled':'')+'>'+['read_only','write_in_repo','publish','unrestricted'].map(function(v){return '<option value="'+v+'"'+(s.access===v?' selected':'')+'>'+({'read_only':'Read only','write_in_repo':'Can edit this repo','publish':'Can publish','unrestricted':'Broad access'})[v]+'</option>';}).join('')+'</select></label>')+'<span class="hd-composer__spacer"></span><button type="submit" class="hd-composer__send" aria-label="'+(plainStarting?'Starting task':'Start task')+'"'+(problem(s)||runtimeLocked||s.status==='created'?' disabled':'')+'><span class="hd-i hd-i-arrow-up" aria-hidden="true"></span></button>';
+      bar.innerHTML='<span class="hd-m04-options-anchor"><button type="button" class="hd-btn hd-btn--icon hd-m04-options-trigger" data-m04="options" aria-label="More task options" title="More task options" aria-expanded="'+s.advanced+'" aria-controls="m04-task-options" aria-describedby="m04-options-description"><span class="hd-i hd-i-plus" aria-hidden="true"></span><span class="hd-m04-options-dot"'+(customized(s)?'':' hidden')+' aria-hidden="true"></span><span class="hd-sr" id="m04-options-description">'+(customized(s)?'Customized options':'Default options')+'</span></button></span>'+pill(s.repository,'folder',field('Repository / recent folders','repository',['HarflowMCP','HarflowDesign','Unavailable folder']))+pill(s.harness+' · '+s.model,'harness',field('Harness','harness',['Claude Code','Codex','Mistral Vibe','Unavailable harness'])+field('Model','model',models(s.harness)),'harness')+pill({'read_only':'Read only','write_in_repo':'Can edit this repo','publish':'Can publish','unrestricted':'Broad access'}[s.access],'shield','<label class="hd-m04-menu-field">Access<select data-m04-field="access"'+(locked?' disabled':'')+'>'+['read_only','write_in_repo','publish','unrestricted'].map(function(v){return '<option value="'+v+'"'+(s.access===v?' selected':'')+'>'+({'read_only':'Read only','write_in_repo':'Can edit this repo','publish':'Can publish','unrestricted':'Broad access'})[v]+'</option>';}).join('')+'</select></label>')+'<span class="hd-composer__spacer"></span><button type="submit" class="hd-composer__send" aria-label="'+(plainStarting?'Starting task':'Start task')+'"'+(problem(s)||s.status==='created'?' disabled':'')+'><span class="hd-i hd-i-arrow-up" aria-hidden="true"></span></button>';
 
       var wrap=app.querySelector('.hd-composer').parentElement;
       var oldCaption=wrap.querySelector('p'); if(oldCaption) oldCaption.remove();
       bar.querySelector('.hd-m04-options-anchor').insertAdjacentHTML('beforeend','<div id="m04-task-options" class="hd-menu hd-m04-options-popover" role="group" aria-label="Task options"'+(s.advanced?'':' hidden')+'><strong>Task options</strong><div class="hd-m04-actions"><label>Effort<select data-m04-field="effort"'+(locked?' disabled':'')+'>'+['default','low','medium','high','xhigh','unsupported'].map(function(x){return '<option'+(s.effort===x?' selected':'')+'>'+x+'</option>';}).join('')+'</select></label><label>Turn limit<input class="hd-input" data-m04-field="turns" type="text" inputmode="numeric" value="'+esc(s.turns)+'"'+(locked?' disabled':'')+'></label><label>Approvals<select data-m04-field="approvals"'+(locked?' disabled':'')+'><option value="harness">Harness managed</option><option value="caller"'+(s.approvals==='caller'?' selected':'')+'>Caller approvals (supported harness only)</option></select></label></div><p class="caption">Permission preview: '+esc({'read_only':'Read only','write_in_repo':'Repository write','publish':'Publish access','unrestricted':'Broad access'}[s.access])+' · enforcement '+esc(s.enforcement)+'. '+(s.enforcement==='supported'?'The selected harness reports support for the requested access; this is not an OS sandbox guarantee.':'Required enforcement is not confirmed; Start is blocked.')+'</p><p class="caption" data-m04-qualification>Harness qualification: '+esc(s.qualification)+'. Unsupported requested choices stay visible for review.</p></div>');
-      wrap.insertAdjacentHTML('beforeend','<div class="hd-m04-status'+(plainStarting?' hd-sr':'')+'" role="status">'+esc(runtimeLocked?'Set up the required runtime first.':s.status==='refused'?'Start was refused. Review the settings and try again.':s.status==='created'?'Task created.':problem(s)||'Ready to start · '+s.model)+'</div><div class="hd-m04-actions">'+(s.status==='unknown'?button('Review Recent work','recent'):s.status==='refused'?button('Review settings','settings'):'')+'</div>');
+      wrap.insertAdjacentHTML('beforeend','<div class="hd-m04-status'+(plainStarting?' hd-sr':'')+'" role="status">'+esc(s.status==='refused'?'Start was refused. Review the settings and try again.':s.status==='created'?'Task created.':problem(s)||'Ready to start · '+s.model)+'</div><div class="hd-m04-actions">'+(s.status==='unknown'?button('Review Recent work','recent'):s.status==='refused'?button('Review settings','settings'):'')+'</div>');
       app.querySelector('.hd-scroll').classList.add('hd-m04-compose-area');
       if (amendment) {
         // Override the baseline rows=3 and min-height:44px with a compact
@@ -251,8 +247,6 @@
       input.style.height = Math.min(wanted, cap) + 'px';
       input.style.overflowY = wanted > cap ? 'auto' : 'hidden';
     }
-    // The runtime preparation draft locks the composer while the runtime is not qualified.
-    function runtimeIsLocked() { return route === 'runtime-installing-sidebar' && s.runtime !== 'qualified'; }
     function syncOptions(){
       var trigger=frame.querySelector('[data-m04="options"]'), popup=frame.querySelector('#m04-task-options');
       if(!trigger||!popup)return;
@@ -273,8 +267,8 @@
       }
       trigger.querySelector('.hd-m04-options-dot').hidden=!customized(s);
       trigger.querySelector('.hd-sr').textContent=customized(s)?'Customized options':'Default options';
-      var send=frame.querySelector('[type="submit"]');if(send)send.disabled=!!problem(s)||runtimeIsLocked();
-      var status=frame.querySelector('.hd-m04-status');if(status)status.textContent=runtimeIsLocked()?'Set up the required runtime first.':s.status==='refused'?'Start was refused. Review the settings and try again.':problem(s)||'Ready to start · '+s.model;
+      var send=frame.querySelector('[type="submit"]');if(send)send.disabled=!!problem(s);
+      var status=frame.querySelector('.hd-m04-status');if(status)status.textContent=s.status==='refused'?'Start was refused. Review the settings and try again.':problem(s)||'Ready to start · '+s.model;
     }
     function closeOptions(focus){if(!s.advanced)return;optionsOpen(s,false);syncOptions();if(focus){var trigger=frame.querySelector('[data-m04="options"]');if(trigger)trigger.focus();}}
     function keydown(e){if(e.key==='Escape'&&s.advanced){e.preventDefault();closeOptions(true);}}
@@ -291,14 +285,14 @@
     function change(e) { var key=e.target.dataset.m04Field; if(!key || key==='draft')return;if(loading && key!=='size')return;if(key==='turns' && s.turns===e.target.value)return;if(['effort','turns','approvals'].includes(key)){select(s,key,e.target.value);syncOptions();return;} if(key==='size')s.narrow=e.target.value==='minimum'; else if(key==='repository'||key==='harness'||key==='model'||key==='access'||key==='effort'||key==='turns'||key==='approvals') select(s,key,e.target.value); else if(!['starting','unknown','created'].includes(s.status)) s[key]=e.target.value; render(); }
     function click(e) { var b=e.target.closest('[data-m04]'); if(loading){ if(e.target.closest('summary'))e.preventDefault(); if(!b||!loadingAllows(b.dataset.m04))return; } if(!b)return; var a=b.dataset.m04;
       if(a==='options'){optionsOpen(s,!s.advanced);syncOptions();if(s.advanced&&e.detail===0){var first=frame.querySelector('#m04-task-options select');if(first)first.focus();}return;}
-      if(a==='reset'){s=create(route);lastState=s;} if(a==='collapse'&&!runtimeIsLocked())s.collapsed=!s.collapsed;
+      if(a==='reset'){s=create(route);lastState=s;} if(a==='collapse')s.collapsed=!s.collapsed;
       if(a==='qualified')qualify(s,s.revision,s.repository==='Unavailable folder'||s.harness==='Unavailable harness'?'unqualified':'ready');
       if(a==='unqualified')qualify(s,s.revision,'unqualified');
       if(['created','refused','unknown'].includes(a))settle(s,a);
       if(a==='settings'){s.status='idle';s.advanced=true;}
       if(a==='recent'){location.hash='#'+H.routeFor('m04','history-retained')+'/'+(host.getAttribute('data-theme')||'light');return;}
       if(a.indexOf('enforcement-')===0){s.enforcement=a.slice(12);s.revision+=1;s.qualification='checking';}
-      if(a==='runtime-failure')s.runtime='failed'; if(a==='install')s.runtime='installing'; if(a==='runtime-ready')s.runtime='qualified';
+      if(a==='runtime-failure')s.runtime='failed'; if(a==='install')s.runtime='installing'; if(a==='runtime-ready')s.runtime='qualified'; if(a==='update-start')s.updated=false; if(a==='update-done')s.updated=true;
       if(a==='listing-ready')listing(s,'ready');if(a==='listing-failed')listing(s,'failed');if(a==='listing-retry')listing(s,'pending');
       if(a==='older'){location.hash='#'+H.routeFor('m04','history-older')+'/'+(host.getAttribute('data-theme')||'light');return;} render();
     }

@@ -219,9 +219,9 @@ test('the open harness picker disables the unavailable option and shows the hint
   assert.match(src,/options\(values,s\[key\],gate\?'Unavailable harness':''\)/);
 });
 
-// The starting state without a status row is approved (2026-11-09). The runtime card in the sidebar stays a provisional draft.
+// The starting state without a status row is approved (2026-11-09). The runtime update in the main pane is a provisional draft.
 test('the provisional draft copies its source fixture apart from the route and is centered',()=>{
-  assert.deepEqual(Array.from(H.m04PendingStates,x=>x.id),['runtime-installing-sidebar']);
+  assert.deepEqual(Array.from(H.m04PendingStates,x=>x.id),['runtime-updating']);
   assert.ok(H.m04PendingStates.every(x=>x.approved===false&&x.status==='Provisional'));
   for(const [route,source] of Object.entries(M.pendingSources)){
     const draft=M.create(route),from=M.create(source);
@@ -237,22 +237,26 @@ test('a start already in flight cannot start again on the state without the row'
   const s=M.create('centered-starting-plain');
   assert.equal(s.status,'starting');assert.equal(M.start(s),false);assert.equal(s.status,'starting');
 });
-test('the runtime card draft is installing and locks the composer',()=>{
-  const s=M.create('runtime-installing-sidebar');
-  assert.equal(s.runtime,'installing');
+test('the runtime update draft is the centered shell of a qualified runtime, so its composer is not locked',()=>{
+  const s=M.create('runtime-updating');
+  assert.equal(s.runtime,'qualified');
+  assert.equal(M.create('runtime-installing').runtime,'installing','the approved installing state still locks');
   s.draft='Review the queue';
-  assert.equal(M.start(s),false);
-  s.runtime='qualified';
   assert.equal(M.start(s),true);
 });
 
-test('source gates of the starting state without the row and the runtime card draft',()=>{
+test('source gates of the starting state without the row and the runtime update draft',()=>{
   const src=fs.readFileSync(new URL('../v2/scripts/m04-proposal.js',import.meta.url),'utf8');
   assert.match(src,/plainStarting = route === 'centered-starting-plain' && s\.status === 'starting'/);
   assert.match(src,/hd-m04-status'\+\(plainStarting\?' hd-sr':''\)/);
   assert.match(src,/aria-label="'\+\(plainStarting\?'Starting task':'Start task'\)\+'"/);
-  assert.match(src,/function runtimeIsLocked\(\) \{ return route === 'runtime-installing-sidebar' && s\.runtime !== 'qualified'; \}/);
-  assert.match(src,/send\.disabled=!!problem\(s\)\|\|runtimeIsLocked\(\)/);
-  assert.match(src,/status\.textContent=runtimeIsLocked\(\)\?'Set up the required runtime first\.'/);
-  assert.match(src,/if\(a==='collapse'&&!runtimeIsLocked\(\)\)s\.collapsed=!s\.collapsed;/);
+  // The retired sidebar card draft left no lock, card or mount behind.
+  assert.ok(!/runtimeIsLocked|runtimeLocked|runtimeSidebar|runtime-installing-sidebar|hd-m04-sidebar-runtime/.test(src));
+  assert.match(src,/var updating = route === 'runtime-updating' && !s\.updated;/);
+  // The updating gate and the approved installing gate come from one function, so they are the same box.
+  assert.equal((src.match(/gateMain\(/g)||[]).length,3,'one definition and two uses');
+  assert.match(src,/main\.innerHTML=gateMain\('Updating runtime',INSTALLING_BODY,'Update in progress',''\);/);
+  assert.match(src,/installing:\['Installing runtime',INSTALLING_BODY\]/);
+  assert.match(src,/if\(a==='collapse'\)s\.collapsed=!s\.collapsed;/);
 });
+

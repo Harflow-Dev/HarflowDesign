@@ -6,11 +6,11 @@ The aliases and the route grammar are defined in `v2/scripts/route-aliases.js`. 
 
 ## Unchanged routes
 
-The routes of the base screens, the brand book, the foundations and the components keep their ids (for example `needs-you/waiting`, `workflow-editor/node-selected`, `components/button`), except the 29 retired routes listed under "Retired routes".
+The routes of the base screens, the brand book, the foundations and the components keep their ids (for example `needs-you/waiting`, `workflow-editor/node-selected`, `components/button`), except the 30 retired routes listed under "Retired routes".
 
 ## Retired routes
 
-The owner replaced these designs on 2026-11-08, nine of them by answering the replacement questions and eighteen by accepting the centered and transcript redraws. A further route, `new-task/centered-starting`, was retired on 2026-11-09, when the owner approved its redraw without the status row. The route still opens, and it shows the replacement. The address bar then shows the replacement route. The decisions record gives the basis and the commits where the old design can be seen.
+The owner replaced these designs on 2026-11-08, nine of them by answering the replacement questions and eighteen by accepting the centered and transcript redraws. A further route, `new-task/centered-starting`, was retired on 2026-11-09, when the owner approved its redraw without the status row. The route still opens, and it shows the replacement. The address bar then shows the replacement route. A last route, `harness-runtime/installing-sidebar`, was retired on 2026-11-14, when the owner dropped the sidebar card draft for the runtime update of an already set-up app; it opens `harness-runtime/updating`, a provisional state, so it is the first redirect to a state that is not approved. The decisions record gives the basis and the commits where the old design can be seen.
 
 | Retired route | Opens | Screen and state |
 | --- | --- | --- |
@@ -43,6 +43,7 @@ The owner replaced these designs on 2026-11-08, nine of them by answering the re
 | `task/activity-capacity` | `task/transcript-capacity` | Task · Task transcript · Reading window at capacity |
 | `task/activity-sources` | `task/transcript-sources` | Task · Task transcript · Normalized and recovered sources |
 | `sidebar/history-loading` | `sidebar/loading` | Sidebar · Loading |
+| `harness-runtime/installing-sidebar` | `harness-runtime/updating` | Harness runtime · Updating |
 
 The earlier routes `m04-proposal/*` and `d2b-proposal/*` of the retired states (listed below) reach the same replacements through their alias followed by the redirect. `sidebar/centered-expanded` was a duplicate of `new-task/centered-empty` and opens it.
 
@@ -95,7 +96,7 @@ These are canonical routes with no earlier name; they are not aliases or redirec
 | `workflow-run/lane-message-undeliverable` | `workflow-run/parallel`, as a cancelled run with an undeliverable message in a lane |
 | `workflow-run/lane-message-undeliverable-minimum` | `workflow-run/lane-message-undeliverable` at 1000 × 620 |
 | `menu-bar/approval-stale`, `menu-bar/answered-elsewhere` | `menu-bar/busy`, first request |
-| `harness-runtime/installing-sidebar` | `harness-runtime/installing`, with the card in the sidebar; standalone, no pending pair (open owner question: card placement; parked for the already-set-up, runtime-updating case; not-ready first run stays as approved) |
+| `harness-runtime/updating` | `new-task/centered-empty` with the runtime gate of `harness-runtime/installing` in the main pane; standalone, no pending pair |
 
 ### Redraws awaiting approval
 

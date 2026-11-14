@@ -118,13 +118,13 @@ test('the provisional minimum window states derive from a provisional state, car
 test('no existing template changed: the digests equal those of the base commit and none was added', () => {
   const manifest = JSON.parse(fs.readFileSync(path.join(root, 'tests', 'data', 'templates-ba8c928.json'), 'utf8'));
   // The only templates added since are the provisional queued-message and approval states, the starting state without a status row
-  // (approved 2026-11-09) and the provisional runtime card draft. The template of the retired starting state is removed with it.
+  // (approved 2026-11-09) and the provisional runtime update draft (it replaced the retired runtime card draft). The template of the retired starting state is removed with it.
   const added = [
     ...['stale', 'expired', 'answered-elsewhere', 'refused', 'uncertain', 'exact'].map(x => `task/approval-${x}`),
     'needs-you/approval-stale', 'needs-you/approval-expired', 'needs-you/answered-elsewhere', 'needs-you/checkpoint-stale',
     'menu-bar/approval-stale', 'menu-bar/answered-elsewhere', 'menu-bar/busy-approve-once', 'workflow-run/lane-message-undeliverable',
     ...['queued', 'delivering', 'delivered', 'cancelled', 'send-now-refused', 'uncertain', 'unsupported', 'queued-settled'].map(x => `messages/message-${x}`),
-    'm04-proposal/centered-starting-plain', 'm04-proposal/runtime-installing-sidebar',
+    'm04-proposal/centered-starting-plain', 'm04-proposal/runtime-updating',
     // The approved pending-launch states (2026-11-10) and the approved parallel-group lane states (2026-11-12).
     ...HFV2.pendingLaunchStates.map(([id]) => `task/pending-${id}`).filter(key => key in HFV2.templates),
     ...HFV2.parallelLaneStates.map(id => `parallel-group/${id}`).filter(key => key in HFV2.templates)

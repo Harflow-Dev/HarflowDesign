@@ -14,7 +14,7 @@
   var redrawIds = ['centered-loading','centered-unqualified','centered-invalid','centered-starting-plain','centered-refused','centered-options-closed','centered-harness-open','centered-shell-collapsed','centered-shell-narrow'];
   H.m04RedrawStates = redrawIds.map(function (id) { return { id: id, title: id.replace(/-/g, ' '), description: 'Owner-approved centered redraw (' + (id === 'centered-starting-plain' ? '2026-11-09' : '2026-11-08') + '): ' + id.replace(/-/g, ' ') + ' review fixture.', status: 'Approved', approved: true }; });
   // Provisional drafts, not approved. The fixture of each comes from its source mount, named in m04-proposal.js.
-  var pendingIds = ['runtime-installing-sidebar'];
+  var pendingIds = ['runtime-updating'];
   H.m04PendingStates = pendingIds.map(function (id) { return { id: id, title: id.replace(/-/g, ' '), description: 'Provisional draft: ' + id.replace(/-/g, ' ') + ' review fixture.', status: 'Provisional', approved: false }; });
   var T = H.templates = H.templates || {};
   // Labels of the catalog-only strip above the app frame. The Node test scans them for process names.
@@ -64,7 +64,7 @@
     ["centered-options-closed", "new-task", "centered-options-closed", "Task options", "Centered composer · Task options closed", "Customized task options retained behind the bottom-left plus button.", "advanced-closed"],
     ["centered-shell-collapsed", "sidebar", "centered-collapsed", "Layout", "Centered shell · Collapsed rail", "Native collapsed rail and accessible navigation.", "shell-collapsed"],
     ["centered-shell-narrow", "sidebar", "centered-minimum", "Layout", "Centered shell · Minimum window", "Minimum-size composition without font scaling.", "shell-narrow"],
-    ["runtime-installing-sidebar", "harness-runtime", "installing-sidebar", null, "Runtime · Preparing, in the sidebar", "The runtime preparation card sits in the sidebar between Statistics and Running. The composer stays locked until the runtime is ready.", "runtime-installing"]
+    ["runtime-updating", "harness-runtime", "updating", null, "Runtime · Updating", "The runtime updates in an app that is already set up. The sidebar stays populated and usable; the main pane shows the runtime gate with one status and no buttons.", "runtime-updating"]
   ];
   var APPROVAL = {
     baseline: { by: 'the owner', date: '2026-11-05', decision: 'Entry visual direction · native and runtime qualification separate' },
@@ -82,7 +82,7 @@
       status: pending ? 'provisional' : 'approved'
     };
     if (pending) {
-      state.approvalNote = 'Provisional · not approved · open owner question: card placement; parked for the already-set-up, runtime-updating case; not-ready first run stays as approved';
+      state.approvalNote = 'Provisional · not approved';
       H.registerState(row[1], state);
       return;
     }

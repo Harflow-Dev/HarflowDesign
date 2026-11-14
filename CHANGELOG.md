@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Draw the runtime update of an already set-up app in the main pane (`harness-runtime/updating`, provisional, not approved) on the owner's decision of 2026-11-14: the populated sidebar stays usable and the main pane shows the runtime gate with the title "Updating runtime" and the status "Update in progress". Retire the sidebar card draft `harness-runtime/installing-sidebar`, which now opens it (the first redirect to a provisional state), and remove its mount, lock and styles. The failed update is owed, not drawn. The approved states are unchanged.
+
 - Apply the owner's answers of 2026-11-14 to the provisional queued-message and approval drafts of the `v2/` reference; they stay provisional and return to the owner for approval. Send now stays a separate composer control and the drafts bind to messaging.v1 only. Add `workflow-run/lane-message-undeliverable` (and its 1000 × 620 version): a lane of a cancelled run with a message captioned Undeliverable and the engine's reason. Draw "Approve once" in the menu bar as two pending redraws, `menu-bar/busy-approve-once` and `menu-bar/busy-approve-once-minimum`. Replace the neutral placeholder wording with HarflowMac lines at `e4635dc` or marked proposed copy. The approved states are unchanged.
 
 - Record the owner's accepted deviations of 2026-11-14 in the `v2/` decisions: the failed-listing engine message of `harness-runtime/listing`, four pending-launch behaviours (Back, the checking placeholder, a dropped missing reason, "Check again") and two parallel group lane behaviours (the pinned View prompt, the outcome line in the feed tail). The approved drawings are unchanged.
