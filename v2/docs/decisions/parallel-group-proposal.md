@@ -116,3 +116,14 @@ This recording changes approval metadata, catalog notes and documentation, and a
 ## Verification recorded
 
 The decisions above are checked in the browser pane at 1700 × 1100 emulated size through a local HTTP server: all 20 routes rendered in both appearances with no console errors; lane widths, frame sizes (1280 × 800 and 1000 × 620), dialog and inert state, the minimum fixes and the loading skeleton were measured by script; light and dark screenshots of the menu, confirmation, prompt, taken-over, unavailable, history boundary, loading and empty states were inspected. Keyboard flows for the menu, the reveal and the confirmation were exercised with dispatched key events, not a physical keyboard; real Tab order and VoiceOver reading are not verified. No native app was compared. HarflowMac is not changed by this record.
+
+## Accepted deviations (owner, 2026-11-14)
+
+The owner accepted two native behaviours of the lane view on 2026-11-14 (chat answer relayed by the coordinator; index: [Accepted deviations](README.md#accepted-deviations-2026-11-14)). An accepted deviation means the native behaviour is accepted; the approved lane drawings are not redrawn and are unchanged. Sources are HarflowMac `e4635dc`, `docs/migration-receipts/M05.md`.
+
+| Accepted deviation | Mac source |
+| --- | --- |
+| **View prompt pinned.** In the drawing the prompt scrolls away with the lane body. Natively it stays pinned above the feed while shown, capped at 40 percent of the lane body and scrolling inside that cap, in the order prompt first, history boundary second | `M05.md:1722` (View prompt; Revision 3 R2) |
+| **Outcome line in the feed tail.** The outcome line sits in the lane's feed tail after the pinned bubbles, where the task screen keeps it at the top of the body. While the lane feed shows its skeleton there is no tail, so the line renders in the lane foot directly above the composer and moves to the tail once the feed loads | `M05.md:1680` (outcome line) |
+
+Not deviations: the other Mac items of the same owner decision (a third-lane peek of 14 points at 1000 × 620 as drawn, no separator after the last lane, and lane captions from the engine's model labels with the raw id as the fallback) are Mac build items that follow the drawing.

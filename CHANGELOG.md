@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Record the owner's accepted deviations of 2026-11-14 in the `v2/` decisions: the failed-listing engine message of `harness-runtime/listing`, four pending-launch behaviours (Back, the checking placeholder, a dropped missing reason, "Check again") and two parallel group lane behaviours (the pinned View prompt, the outcome line in the feed tail). The approved drawings are unchanged.
+
 - Approve `new-task/centered-starting-plain` in the `v2/` reference on the owner's decision of 2026-11-09 (decision "Starting row") and retire `new-task/centered-starting`, which it replaces. The starting state has no visible status row under the composer: Start stays disabled and is named "Starting task", "Starting task…" is announced once, the centered composer group moves up about 18 px on submit with no space reserved, refused, created and unknown outcomes bring the row back, and focus moves to the document body after submit. The retired route and `new-task/composer-starting` both open `new-task/centered-starting-plain`; the template and mount of the retired state are removed. `HFV2.pendingRedraw` now holds only `task/approval` and `task/approval-exact`. The drawing is unchanged.
 
 - Add a standalone provisional draft to the `v2/` reference, not approved: `harness-runtime/installing-sidebar` draws the runtime preparation card in the sidebar between Statistics and Running, with a locked composer. It supersedes neither `harness-runtime/installing` nor `app-states/setup` (open owner question: card placement; parked for the already-set-up, runtime-updating case; not-ready first run stays as approved).

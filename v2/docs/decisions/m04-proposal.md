@@ -55,6 +55,12 @@ Runtime fixtures show checking, explicit install/update, progress, retained fail
 
 Integration: load `screens-m04-proposal.js` and `m04-proposal.js` before catalog startup, plus `m04-proposal.css`. Register `HFV2.m04ProposalStates` under one `m04-proposal` family as Approved. After template rendering call `HFV2.m04Proposal.mount(specimen, state)` and call its returned cleanup before replacing the specimen. Add `.hdc-specimen--m04` only for this family; it permits auto-height/visible overflow so catalog controls stay outside `.hd-m04-window`. Templates resolve canonical markup at mount, never during alphabetical script loading.
 
+## Accepted deviation (2026-11-14)
+
+The owner accepted one native behaviour on 2026-11-14 (chat answer relayed by the coordinator; index: [Accepted deviations](README.md#accepted-deviations-2026-11-14)). The approved drawing of `harness-runtime/listing` is not redrawn and is unchanged.
+
+- **`harness-runtime/listing`, failed listing.** The drawn listing states leave the status line empty. HarflowMac shows the engine message as selectable status text (accessibility identifier `runtimeSetup.error`), as the setup failure screen does, so the diagnostic is not hidden. Source: HarflowMac `e4635dc`, `docs/migration-receipts/M05.md:764-766` and `macos/HfFeatures/MainWindowFeature/Sources/MainWindowFeature/Sidebar/RuntimeGateView.swift:43`. The "Retry loading work" action and the title and body copy are as drawn.
+
 ## Proposal validation receipt
 
 Local validation: 292/292 design tests and syntax checks passed. Independent bounded review found one model-pairing issue, fixed and re-reviewed with no remaining actionable findings. Browser checks verified all 46 route/appearance combinations mount as Not approved, representative Advanced reference/minimum frames, immediate invalid-turn blocking, appearance retention, keyboard sidebar toggle, reset and retained history identity. Native window, VoiceOver, full keyboard traversal and Reduce Motion preference qualification remain pending. No runtime execution or native M04 implementation occurred. The hosted design site has not been updated by this proposal.
