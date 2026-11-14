@@ -92,3 +92,22 @@
 .hd-m04-amendment .hd-composer__input::-webkit-scrollbar{width:6px;background:transparent}
 .hd-m04-amendment .hd-composer__input::-webkit-scrollbar-track{background:transparent}
 .hd-m04-amendment .hd-composer__input::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--text-tertiary) 72%,transparent);border-radius:999px}
+/* Model picker drafts: the Model field is an editable combo with a menu of suggested models. */
+.hd-m04-model-field{position:relative;width:288px;box-sizing:border-box}
+.hd-m04-model-field>label{color:inherit}
+.hd-m04-combo{display:flex;align-items:center;gap:4px;height:32px;box-sizing:border-box;padding:0 4px 0 10px;border:1px solid var(--border-strong);border-radius:var(--radius-md);background:var(--surface)}
+.hd-m04-combo:focus-within{outline:2px solid var(--accent);outline-offset:-1px;border-color:transparent}
+.hd-m04-proposal .hd-m04-combo__input{flex:1;min-width:0;height:100%;border:0;padding:0;background:transparent;color:var(--text);font:inherit;font-size:13px;line-height:18px}
+.hd-m04-proposal .hd-m04-combo__input:focus-visible{outline:none}
+.hd-m04-combo__input::placeholder{color:var(--text-tertiary)}
+.hd-m04-combo__input:disabled{color:var(--text-tertiary)}
+.hd-m04-combo__toggle{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;padding:0;border:0;border-radius:var(--radius-sm);background:transparent;color:var(--text-secondary);cursor:pointer}
+.hd-m04-combo__toggle:hover:not(:disabled){background:var(--surface-hover)}
+.hd-m04-combo__toggle:disabled{opacity:.45;cursor:default}
+/* Browser approximation of the native suggestions menu, which the window does not clip: a floating list beside the picker, bounded by the frame. */
+.hd-m04-combo__list{position:absolute;left:calc(100% + 12px);top:22px;z-index:9;width:300px;box-sizing:border-box;max-height:320px;overflow-y:auto;padding:4px;border-radius:var(--radius-lg);background:var(--surface);box-shadow:var(--shadow-popover);display:flex;flex-direction:column;gap:1px;scrollbar-width:thin;scrollbar-color:color-mix(in srgb,var(--text-tertiary) 72%,transparent) transparent}
+.hd-m04-combo__option{min-height:28px;padding:4px 8px}
+.hd-m04-combo__option .hd-i{visibility:hidden;flex:none}
+.hd-m04-combo__option.is-selected .hd-i{visibility:visible;color:var(--accent)}
+.hd-m04-combo__label{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hd-m04-model-note{display:flex;flex-direction:column;align-items:flex-start;gap:6px;margin:0;padding:0 4px;max-width:288px;box-sizing:border-box}

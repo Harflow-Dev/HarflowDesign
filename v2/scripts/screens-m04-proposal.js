@@ -14,7 +14,7 @@
   var redrawIds = ['centered-loading','centered-unqualified','centered-invalid','centered-starting-plain','centered-refused','centered-options-closed','centered-harness-open','centered-shell-collapsed','centered-shell-narrow'];
   H.m04RedrawStates = redrawIds.map(function (id) { return { id: id, title: id.replace(/-/g, ' '), description: 'Owner-approved centered redraw (' + (id === 'centered-starting-plain' ? '2026-11-09' : '2026-11-08') + '): ' + id.replace(/-/g, ' ') + ' review fixture.', status: 'Approved', approved: true }; });
   // Provisional drafts, not approved. The fixture of each comes from its source mount, named in m04-proposal.js.
-  var pendingIds = ['runtime-updating'];
+  var pendingIds = ['runtime-updating','model-loading','model-unavailable','model-not-installed','model-truncated','model-empty'];
   H.m04PendingStates = pendingIds.map(function (id) { return { id: id, title: id.replace(/-/g, ' '), description: 'Provisional draft: ' + id.replace(/-/g, ' ') + ' review fixture.', status: 'Provisional', approved: false }; });
   var T = H.templates = H.templates || {};
   // Labels of the catalog-only strip above the app frame. The Node test scans them for process names.
@@ -64,7 +64,12 @@
     ["centered-options-closed", "new-task", "centered-options-closed", "Task options", "Centered composer · Task options closed", "Customized task options retained behind the bottom-left plus button.", "advanced-closed"],
     ["centered-shell-collapsed", "sidebar", "centered-collapsed", "Layout", "Centered shell · Collapsed rail", "Native collapsed rail and accessible navigation.", "shell-collapsed"],
     ["centered-shell-narrow", "sidebar", "centered-minimum", "Layout", "Centered shell · Minimum window", "Minimum-size composition without font scaling.", "shell-narrow"],
-    ["runtime-updating", "harness-runtime", "updating", null, "Runtime · Updating", "The runtime updates in an app that is already set up. The sidebar stays populated and usable; the main pane shows the runtime gate with one status and no buttons.", "runtime-updating"]
+    ["runtime-updating", "harness-runtime", "updating", null, "Runtime · Updating", "The runtime updates in an app that is already set up. The sidebar stays populated and usable; the main pane shows the runtime gate with one status and no buttons.", "runtime-updating"],
+    ["model-loading", "new-task", "centered-model-loading", "Model", "Centered composer · Model suggestions loading", "The harness picker open while the harness lists its models. The Model field still accepts any model name; Start is not held back by the listing.", "model-loading"],
+    ["model-unavailable", "new-task", "centered-model-unavailable", "Model", "Centered composer · Model suggestions unavailable", "The harness could not list its models. The note gives the reason and the Model field still accepts any model name.", "model-unavailable"],
+    ["model-not-installed", "new-task", "centered-model-not-installed", "Model", "Centered composer · Harness not installed", "The selected harness is not installed, so it has no suggested models and cannot start.", "model-not-installed"],
+    ["model-truncated", "new-task", "centered-model-truncated", "Model", "Centered composer · Model suggestions shortened", "The harness listed more models than are shown. The suggestions are open and the note says only the first ones are listed.", "model-truncated"],
+    ["model-empty", "new-task", "centered-model-empty", "Model", "Centered composer · No suggested models", "The harness answered with no models. Only Default is offered and the Model field still accepts any model name.", "model-empty"]
   ];
   var APPROVAL = {
     baseline: { by: 'the owner', date: '2026-11-05', decision: 'Entry visual direction · native and runtime qualification separate' },

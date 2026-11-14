@@ -221,13 +221,15 @@ test('the open harness picker disables the unavailable option and shows the hint
 
 // The starting state without a status row is approved (2026-11-09). The runtime update in the main pane is a provisional draft.
 test('the provisional draft copies its source fixture apart from the route and is centered',()=>{
-  assert.deepEqual(Array.from(H.m04PendingStates,x=>x.id),['runtime-updating']);
+  assert.deepEqual(Array.from(H.m04PendingStates,x=>x.id),['runtime-updating','model-loading','model-unavailable','model-not-installed','model-truncated','model-empty']);
   assert.ok(H.m04PendingStates.every(x=>x.approved===false&&x.status==='Provisional'));
   for(const [route,source] of Object.entries(M.pendingSources)){
     const draft=M.create(route),from=M.create(source);
     assert.equal(M.isPending(route),true);assert.equal(M.isAmendment(route),true);assert.equal(M.isRedraw(route),false);
     assert.equal(draft.route,route);
-    assert.deepEqual(Object.assign({},draft,{route:''}),Object.assign({},from,{route:''}));
+    // A model picker draft opens the harness picker and sets only its own harness, listing and Default model.
+    const own=M.isModelDraft(route)?(d=>Object.assign(d,{modelHarness:d.harness,modelOption:d.harness==='Mistral Vibe'?'unsupported':'supported'}))(Object.assign({model:'',picker:'harness',harnessList:'ready'},JSON.parse(JSON.stringify(M.modelDrafts[route])))):{};
+    assert.deepEqual(JSON.parse(JSON.stringify(Object.assign({},draft,{route:''}))),JSON.parse(JSON.stringify(Object.assign({},from,own,{route:''}))));
     assert.match(H.templates['m04-proposal/'+route],/hd-m04-amendment/);
   }
   assert.equal(M.isPending('centered-starting'),false);
@@ -260,3 +262,165 @@ test('source gates of the starting state without the row and the runtime update 
   assert.match(src,/if\(a==='collapse'\)s\.collapsed=!s\.collapsed;/);
 });
 
+
+// Model picker drafts: editable Model combo backed by advisory listings.
+const J=x=>JSON.parse(JSON.stringify(x));
+const MODEL_ROUTES=['model-loading','model-unavailable','model-not-installed','model-truncated','model-empty'];
+const modelDraft=route=>{const s=M.create(route);if(!s.draft.trim())s.draft='Review the queue';return s;};
+test('model drafts register and every one is a model draft, approved routes are not',()=>{
+  assert.deepEqual(J(Object.keys(M.modelDrafts)),MODEL_ROUTES);
+  for(const r of MODEL_ROUTES){assert.equal(M.isModelDraft(r),true);assert.ok(M.create(r).catalog,r+' has a catalog');}
+  assert.equal(M.isModelDraft('amendment-ready'),false);
+  assert.equal(M.create('amendment-ready').catalog,undefined);
+});
+test('model notes match the approved copy for each draft as created',()=>{
+  assert.equal(M.modelNote(M.create('model-loading')),'Loading suggested models… You can still type a model name.');
+  assert.equal(M.modelNote(M.create('model-unavailable')),"Suggested models aren't available. Codex's model cache wasn't found. You can still type a model name.");
+  assert.equal(M.modelNote(M.create('model-not-installed')),"Antigravity wasn't found on your PATH — starting this harness may fail.");
+  assert.equal(M.modelNote(M.create('model-truncated')),"Showing the first 400 models Opencode listed. You can type a model name that isn't shown.");
+  assert.equal(M.modelNote(M.create('model-empty')),'Codex lists no models. You can still type a model name.');
+});
+test('dropped rows extend the truncated note with plural and singular copy',()=>{
+  const s=M.create('model-truncated');
+  assert.equal(M.modelAction(s,'dropped-3'),true);
+  assert.equal(s.catalog.dropped,3);
+  assert.equal(M.modelNote(s),"Showing the first 400 models Opencode listed. You can type a model name that isn't shown. 3 entries were invalid or repeated and were left out.");
+  s.catalog.dropped=1;
+  assert.equal(M.modelNote(s),"Showing the first 400 models Opencode listed. You can type a model name that isn't shown. 1 entry was invalid or repeated and was left out.");
+  M.modelAction(s,'dropped-0');
+  assert.equal(s.catalog.dropped,0);
+  assert.equal(M.modelNote(s),"Showing the first 400 models Opencode listed. You can type a model name that isn't shown.");
+});
+test('an available untruncated listing has no note and unsupported harness has its own note',()=>{
+  const s=modelDraft('model-loading');M.modelAction(s,'model-listed');
+  assert.equal(s.catalog.state,'available');assert.equal(M.modelNote(s),'');
+  M.pickHarness(s,'Mistral Vibe');
+  assert.equal(s.catalog.state,'not_read');assert.equal(s.modelOption,'unsupported');
+  assert.equal(M.modelNote(s),"Model selection isn't available for this harness.");
+  M.modelAction(s,'harness-list-loading');assert.equal(M.modelNote(s),'');
+});
+test('available listing with dropped rows but no truncation shows only the dropped note',()=>{
+  const s=modelDraft('model-loading');M.modelAction(s,'model-listed');
+  s.catalog.dropped=3;assert.equal(M.modelNote(s),'3 entries were invalid or repeated and were left out.');
+  s.catalog.dropped=1;assert.equal(M.modelNote(s),'1 entry was invalid or repeated and was left out.');
+});
+test('create sets modelHarness and modelOption for model drafts',()=>{
+  for(const r of MODEL_ROUTES){const s=M.create(r);assert.equal(s.modelHarness,s.harness);assert.equal(s.modelOption,'supported');}
+  const v=M.create('model-loading');M.pickHarness(v,'Mistral Vibe');assert.equal(v.modelOption,'unsupported');
+  M.pickHarness(v,'Codex');assert.equal(v.modelOption,'supported');
+});
+test('listing state unsupported and unknown states have their own notes and do not block typing',()=>{
+  const s=modelDraft('model-loading');s.catalog={state:'unsupported',models:[]};s.model='my-custom-id';
+  assert.equal(M.modelNote(s),"Suggested models aren't available for this harness. You can still type a model name.");
+  assert.equal(M.problem(s),'');
+  s.catalog={state:'future_state',models:[]};
+  assert.equal(M.modelNote(s),"Suggested models aren't available. You can still type a model name.");
+  assert.equal(M.problem(s),'');
+});
+test('model chosen for another harness must be reviewed once the harness list is ready',()=>{
+  const MSG='Review and select the model for this harness.';
+  let s=modelDraft('model-loading');M.modelAction(s,'model-type');assert.equal(M.problem(s),'');
+  M.pickHarness(s,'Codex');assert.equal(s.modelHarness,'Claude Code');assert.equal(M.problem(s),MSG);assert.equal(M.start(s),false);
+  M.modelAction(s,'model-type');assert.equal(M.problem(s),'');
+  s=modelDraft('model-loading');M.modelAction(s,'model-type');M.pickHarness(s,'Codex');
+  M.modelAction(s,'model-pick',{dataset:{model:'gpt-6-astra'}});assert.equal(M.problem(s),'');
+  s=modelDraft('model-loading');M.modelAction(s,'model-type');M.pickHarness(s,'Codex');
+  M.modelAction(s,'model-default');assert.equal(M.problem(s),'');
+  s=modelDraft('model-loading');M.modelAction(s,'model-type');M.pickHarness(s,'Codex');
+  M.modelAction(s,'harness-list-loading');assert.notEqual(M.problem(s),MSG);
+});
+test('Mistral Vibe typed-model problem applies only while the harness list is ready',()=>{
+  const s=modelDraft('model-loading');M.pickHarness(s,'Mistral Vibe');s.model='x';s.modelHarness='Mistral Vibe';
+  M.modelAction(s,'harness-list-loading');
+  assert.equal(M.problem(s),"Harness options can't be checked until the harness list is available.");
+});
+test('Codex and Opencode listings use the fixture rows',()=>{
+  assert.deepEqual(J(M.listingFor('Codex').models.map(m=>m.id)),['gpt-6.1-sol','gpt-6-astra','gpt-6-luna','gpt-5.6-luna']);
+  assert.equal(M.listingFor('Codex').models[0].label,'GPT-6.1-Sol');
+  assert.deepEqual(J(M.listingFor('Opencode').models[0]),{id:'opencode/beam-free',label:'Beam Free'});
+});
+test('the listing alone never blocks Start, including with a typed model',()=>{
+  for(const r of ['model-loading','model-unavailable','model-truncated','model-empty']){
+    const s=modelDraft(r);assert.equal(s.harnessList,'ready');
+    assert.equal(M.problem(s),'',r+' default model');
+    s.model='my-custom-id';
+    assert.equal(M.problem(s),'',r+' typed model');
+    assert.equal(M.start(s),true,r+' starts');
+  }
+});
+test('modelName shows Default for empty text and the typed text otherwise',()=>{
+  const s=modelDraft('model-loading');
+  assert.equal(M.modelName(s),'Default');
+  s.model='   ';assert.equal(M.modelName(s),'Default');
+  s.model='my-custom-id';assert.equal(M.modelName(s),'my-custom-id');
+  const a=M.create('amendment-ready');assert.equal(M.modelName(a),a.model);
+  a.model='';assert.equal(M.modelName(a),'');
+});
+test('loading harness list blocks only non-default model, effort or turn limit',()=>{
+  const MSG="Harness options can't be checked until the harness list is available.";
+  for(const turns of ['12','']){const s=modelDraft('model-loading');M.modelAction(s,'harness-list-loading');s.turns=turns;assert.equal(s.harnessList,'loading');assert.notEqual(M.problem(s),MSG,'turns '+turns);assert.equal(M.problem(s),'');}
+  let s=modelDraft('model-loading');M.modelAction(s,'harness-list-loading');s.model='my-custom-id';assert.equal(M.problem(s),MSG);assert.equal(M.start(s),false);
+  s=modelDraft('model-loading');M.modelAction(s,'harness-list-loading');s.effort='high';assert.equal(M.problem(s),MSG);assert.equal(M.start(s),false);
+  s=modelDraft('model-loading');M.modelAction(s,'harness-list-loading');s.turns='20';assert.equal(M.problem(s),MSG);assert.equal(M.start(s),false);
+  M.modelAction(s,'harness-list-ready');assert.equal(M.problem(s),'');
+});
+test('not-installed draft is unqualified and cannot start',()=>{
+  const s=modelDraft('model-not-installed');
+  assert.equal(M.problem(s),'Choose a qualified harness and model.');
+  assert.equal(M.start(s),false);assert.equal(s.status,'idle');
+});
+test('Mistral Vibe rejects a typed model until Default is chosen explicitly',()=>{
+  const s=modelDraft('model-loading');M.pickHarness(s,'Mistral Vibe');
+  s.model='my-custom-id';
+  assert.equal(M.problem(s),'This harness does not accept a model option. Choose Default explicitly.');
+  assert.equal(M.start(s),false);
+  M.modelAction(s,'model-default');
+  assert.equal(s.model,'');
+  assert.notEqual(M.problem(s),'This harness does not accept a model option. Choose Default explicitly.');
+});
+test('each unavailable reason switches harness, state, reason and qualification',()=>{
+  const keys=Object.keys(M.reasons);
+  assert.ok(keys.length>=7);
+  for(const key of keys){
+    const s=modelDraft('model-unavailable');
+    assert.equal(M.modelAction(s,'reason-'+key),true);
+    assert.equal(s.harness,M.reasons[key][0]);
+    assert.equal(s.catalog.state,'unavailable');
+    assert.equal(s.catalog.reason,key);
+    assert.equal(s.qualification,'ready');
+    assert.ok(M.modelNote(s).includes(M.reasons[key][1]),key);
+  }
+  assert.equal(M.modelAction(modelDraft('model-unavailable'),'reason-nope'),false);
+});
+test('retry returns to loading and listed restores the harness listing',()=>{
+  const s=modelDraft('model-unavailable');
+  M.modelAction(s,'model-retry');assert.equal(s.catalog.state,'loading');
+  M.modelAction(s,'model-listed');
+  assert.deepEqual(J(s.catalog),J(M.listingFor(s.harness)));
+  assert.equal(s.catalog.state,'available');
+});
+test('Opencode listing has 400 unique rows and is truncated',()=>{
+  const l=M.listingFor('Opencode');
+  assert.equal(l.state,'available');assert.equal(l.truncated,true);assert.equal(l.models.length,400);
+  assert.equal(new Set(l.models.map(m=>m.id)).size,400);
+  assert.equal(M.listingFor('Codex').truncated,false);
+  assert.equal(M.listingFor('Antigravity').state,'not_installed');
+  assert.equal(M.listingFor('Mistral Vibe').state,'not_read');
+  assert.equal(M.listingFor('Cursor').reason,'auth_required');
+});
+test('Codex model drafts have empty turns and no model draft counts as customized',()=>{
+  for(const r of ['model-unavailable','model-empty'])assert.equal(M.create(r).turns,'');
+  for(const r of MODEL_ROUTES)assert.equal(M.customized(M.create(r)),false,r);
+  assert.equal(M.customized(M.create('amendment-ready')),false);
+  const a=M.create('amendment-ready');a.turns='';assert.equal(M.customized(a),true);
+});
+test('locked model drafts ignore pick, type and default actions',()=>{
+  const b={dataset:{model:'picked'}};
+  for(const status of ['starting','unknown','created']){
+    const s=modelDraft('model-truncated');s.model='keep';s.status=status;
+    M.modelAction(s,'model-pick',b);assert.equal(s.model,'keep',status);
+    M.modelAction(s,'model-type');assert.equal(s.model,'keep',status);
+    M.modelAction(s,'model-default');assert.equal(s.model,'keep',status);
+  }
+  const s=modelDraft('model-truncated');M.modelAction(s,'model-pick',b);assert.equal(s.model,'picked');assert.equal(s.catalog.open,false);
+});

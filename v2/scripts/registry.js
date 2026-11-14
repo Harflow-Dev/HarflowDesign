@@ -66,6 +66,7 @@
         "groups": [
           "Entry",
           "Composer",
+          "Model",
           "Task options",
           "Loading"
         ],
