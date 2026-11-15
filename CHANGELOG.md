@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Record the model picker's unavailable-reason sentences as `{Harness}` templates, with the `source_missing` sentence chosen by the listing's `source`, and record that the unknown-state note also covers a listing that can't be read at all.
+
 - Approve the five model picker states of the `v2/` reference (owner, 2026-11-15) and apply the owner's answers: `new-task/centered-harness-open` draws its Model field as the editable combo (an owner-approved amendment); a suggestion the harness reports as its default carries a small "default" tag, drawn on Cursor's listing in the provisional `new-task/centered-model-default`; the not-found note names the harness by its display name; the "Use default model" button is recorded as a deliberate removal; and "Cursor" joins the terminology lists. The decision record lists what the Mac app must change to match.
 
 - Add five provisional model picker states to the `v2/` reference, not approved: `new-task/centered-model-loading`, `centered-model-unavailable`, `centered-model-not-installed`, `centered-model-truncated`, `centered-model-empty`. Each opens the harness picker of the centered composer with the Model field as an editable combo of the engine's suggested models (`backend-models.v1`) and one note for the listing state: loading, unavailable with its reason, harness not installed, a shortened list and an empty list. The field accepts any model name in every state, and the listing never blocks Start by itself. A new "Model" group holds them under New task. The decisions record lists every string and the owner questions. The approved states are unchanged.
