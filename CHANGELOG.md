@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Apply the owner's canonical task glyphs of 2026-11-14 to the `v2/` reference: the menu bar draws a running workflow run as the spinner, and "Timed out" is the failed x in danger colour in the status badge and the task screen. Record the glyphs outside the canonical set and one open question on finished parallel groups.
+
 - Record the model picker's unavailable-reason sentences as `{Harness}` templates, with the `source_missing` sentence chosen by the listing's `source`, and record that the unknown-state note also covers a listing that can't be read at all.
 
 - Approve the five model picker states of the `v2/` reference (owner, 2026-11-15) and apply the owner's answers: `new-task/centered-harness-open` draws its Model field as the editable combo (an owner-approved amendment); a suggestion the harness reports as its default carries a small "default" tag, drawn on Cursor's listing in the provisional `new-task/centered-model-default`; the not-found note names the harness by its display name; the "Use default model" button is recorded as a deliberate removal; and "Cursor" joins the terminology lists. The decision record lists what the Mac app must change to match.

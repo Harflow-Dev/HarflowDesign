@@ -33,7 +33,7 @@
     doneInferred: ['hd-badge--done', icon('check', false), 'Done · exit not observed'],
     failed: ['hd-badge--failed', icon('x', false), 'Failed 07:48'],
     failedInferred: ['hd-badge--failed', icon('x', false), 'Failed · exit not observed'],
-    timedOut: ['hd-badge--failed', icon('clock', false), 'Timed out 12:40'],
+    timedOut: ['hd-badge--failed', icon('x', false), 'Timed out 12:40'],
     cancelled: ['hd-m05-badge--neutral', icon('stop', false), 'Cancelled 04:31'],
     pending: ['hd-m05-badge--neutral', '<span class="hd-glyph hd-glyph--queued" aria-hidden="true"></span>', 'Pending'],
     unavailable: ['hd-m05-badge--neutral', icon('alert', false), 'Status unavailable']
@@ -251,7 +251,7 @@
     var title = identity ? identity.sidebarTitle : TASKS[spec.task].title;
     var html = match[0].replace('href="#new"', 'href="#new-task/default"').replace(/(<a class="hd-task-row[^"]*is-active[^"]*"[\s\S]*?<span class="hd-task-row__title">)[\s\S]*?(<\/span>)/, '$1' + esc(title) + '$2');
     if (identity && identity.href) html = html.replace(/(<a class="hd-task-row[^"]*is-active[^"]*"[^>]*?href=")[^"]*(")/, '$1' + esc(identity.href) + '$2');
-    var glyph = { running: ['running', 'Running', ''], runningUnverified: ['attention', 'Not verified', 'alert'], runningOwnerLost: ['attention', 'Owner lost', 'alert'], takenOver: ['cancelled', 'Cancelled, taken over', 'stop'], failed: ['failed', 'Failed', 'x'], failedInferred: ['failed', 'Failed', 'x'], timedOut: ['failed', 'Timed out', 'clock'], cancelled: ['cancelled', 'Cancelled', 'stop'], pending: ['queued', 'Pending', ''], unavailable: ['cancelled', 'Status unavailable', 'alert'], done: ['done', 'Done', 'check'], doneInferred: ['done', 'Done', 'check'] }[spec.badge];
+    var glyph = { running: ['running', 'Running', ''], runningUnverified: ['attention', 'Not verified', 'alert'], runningOwnerLost: ['attention', 'Owner lost', 'alert'], takenOver: ['cancelled', 'Cancelled, taken over', 'stop'], failed: ['failed', 'Failed', 'x'], failedInferred: ['failed', 'Failed', 'x'], timedOut: ['failed', 'Timed out', 'x'], cancelled: ['cancelled', 'Cancelled', 'stop'], pending: ['queued', 'Pending', ''], unavailable: ['cancelled', 'Status unavailable', 'alert'], done: ['done', 'Done', 'check'], doneInferred: ['done', 'Done', 'check'] }[spec.badge];
     html = html.replace(/(<a class="hd-task-row[^"]*is-active[^"]*"[^>]*>)<span class="hd-glyph[\s\S]*?<span class="hd-task-row__title">/, function (_, open) {
       return open + '<span class="hd-glyph hd-glyph--' + glyph[0] + '" aria-label="' + glyph[1] + '">' + (glyph[2] ? icon(glyph[2]) : '') + '</span><span class="hd-task-row__title">';
     });

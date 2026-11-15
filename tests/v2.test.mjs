@@ -1066,7 +1066,8 @@ test('the transcript renderer is registered and draws each activity fixture in t
 
 // The digest covers task screen markup in eight interface variants and both appearances. The 2026-11-10
 // owner-approved continuation copy amendment intentionally changes two state specimens; the updated
-// digest records that copy change while guarding all resulting markup against unintended drift.
+// digest records that copy change while guarding all resulting markup against unintended drift. The owner's canonical
+// task glyphs (2026-11-14) change the timed-out badge and sidebar glyph from a clock to the failed x.
 test('the task screen markup of every existing state is unchanged by the optional hooks', () => {
   const m05 = HFV2.m05Proposal;
   assert.equal(typeof m05.screenHtml, 'function');
@@ -1083,7 +1084,7 @@ test('the task screen markup of every existing state is unchanged by the optiona
     });
   }
   assert.equal(lines.length, 944);
-  assert.equal(crypto.createHash('sha256').update(lines.join('\n')).digest('hex'), '3f13e3be0d418a68597f752693993cbf32168428ddec527755b6afa3a1998f75');
+  assert.equal(crypto.createHash('sha256').update(lines.join('\n')).digest('hex'), '2ad03ce7b8f524aa250f7490e131dd84d05a7b38e38ed4aabbbcdd69568848fc');
 });
 
 test('continuation copy separates acceptance from completion and refusal reason', () => {

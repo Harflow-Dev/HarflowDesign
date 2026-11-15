@@ -45,7 +45,7 @@
       <div class="hd-section__head">Running <span class="hd-section__count">3</span></div>
       <div class="hd-section__list">
         <a class="hd-task-row" href="#"><span class="hd-glyph hd-glyph--running" aria-label="Running"></span><span class="hd-task-row__title">Fix flaky slot release test</span><span class="hd-task-row__meta">04:12</span></a>
-        <a class="hd-task-row" href="#"><span class="hd-glyph hd-glyph--active" aria-label="Workflow run, running"><span class="hd-i hd-i--sm hd-i-workflow" style="color: var(--accent);" aria-hidden="true"></span></span><span class="hd-task-row__title">Nightly dependency audit</span><span class="hd-task-row__meta">2/4</span></a>
+        <a class="hd-task-row" href="#"><span class="hd-glyph hd-glyph--running" aria-label="Workflow run, running"></span><span class="hd-task-row__title">Nightly dependency audit</span><span class="hd-task-row__meta">2/4</span></a>
         <a class="hd-task-row" href="#"><span class="hd-glyph hd-glyph--active" aria-label="Parallel group, running"><span class="hd-i hd-i--sm hd-i-parallel" aria-hidden="true"></span></span><span class="hd-task-row__title">Review preload bridge</span><span class="hd-task-row__meta">1/3</span></a>
       </div>
     </section>

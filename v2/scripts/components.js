@@ -685,12 +685,12 @@ steps and radii: space-3 12, space-4 16, space-5 24, row-height 32, sidebar-widt
       <span class="hd-badge hd-badge--attention"><span class="hd-i hd-i-hand" aria-hidden="true"></span>Needs you</span>
       <span class="hd-badge hd-badge--done"><span class="hd-i hd-i-check" aria-hidden="true"></span>Done</span>
       <span class="hd-badge hd-badge--failed"><span class="hd-i hd-i-x" aria-hidden="true"></span>Failed</span>
+      <span class="hd-badge hd-badge--failed"><span class="hd-i hd-i-x" aria-hidden="true"></span>Timed out</span>
     </div>
   </div>
   <div class="hd-col">
-    <div class="caption hd-faint">Warning and neutral</div>
+    <div class="caption hd-faint">Neutral</div>
     <div class="hd-row" style="gap:var(--space-3)">
-      <span class="hd-badge hd-badge--warning"><span class="hd-i hd-i-clock" aria-hidden="true"></span>Timed out</span>
       <span class="hd-badge"><span class="hd-i hd-i-stop" aria-hidden="true"></span>Cancelled</span>
       <span class="hd-badge"><span class="hd-i hd-i-clock" aria-hidden="true"></span>Pending</span>
     </div>
