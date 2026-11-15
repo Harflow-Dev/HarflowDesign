@@ -88,7 +88,7 @@ test('registry routes are unique and every descriptor resolves to a template, gu
     }
   }
   const mountIds = {
-    m04: [...HFV2.m04ProposalStates, ...HFV2.m04AmendmentStates, ...HFV2.m04RedrawStates, ...HFV2.m04ModelStates, ...HFV2.m04PendingStates].map(x => x.id),
+    m04: [...HFV2.m04ProposalStates, ...HFV2.m04AmendmentStates, ...HFV2.m04RedrawStates, ...HFV2.m04ModelStates, ...HFV2.m04RuntimeStates].map(x => x.id),
     m05: HFV2.m05ProposalStates.map(x => x.id),
     messages: HFV2.messageStates.map(x => x.id)
   };
@@ -104,6 +104,8 @@ test('every template is reached by a descriptor or is a base key a renderer read
   for (const name of ['m04-proposal.js', 'm05-proposal.js', 'd2b-proposal.js']) {
     for (const [, key] of read_(name).matchAll(/'((?:new-task|task|sidebar|workflows)\/[a-z0-9-]+)'/g)) read.add(key);
   }
+  // The approval states are derived from base templates; two of those bases (task/approval, menu-bar/busy) belong to retired routes.
+  for (const derivation of HFV2.approvalDerivations) read.add(derivation.base);
   assert.ok(read.size >= 3, 'renderers read base templates');
   for (const key of read) assert.equal(typeof HFV2.templates[key], 'string', `a renderer reads ${key}`);
   for (const key of Object.keys(HFV2.templates)) assert.ok(reached.has(key) || read.has(key), `${key} is reached`);
@@ -362,6 +364,8 @@ function rendererReads() {
   for (const name of ['m04-proposal.js', 'm05-proposal.js', 'd2b-proposal.js']) {
     for (const [, key] of read_(name).matchAll(/'((?:new-task|task|sidebar|workflows)\/[a-z0-9-]+)'/g)) found.add(key);
   }
+  // The approval states clone the templates of task/approval and menu-bar/busy, whose routes were retired on 2026-11-15.
+  for (const derivation of HFV2.approvalDerivations) found.add(derivation.base);
   return found;
 }
 
@@ -369,7 +373,7 @@ test('aliases resolve old routes without shadowing or chaining, and land on a li
   const entries = Object.entries(aliases);
   // The transcript and queued-message renderers, the centered redraws and the model picker states are excluded: their routes are new canonical routes with no earlier name.
   // The retired duplicate shell state and the retired starting state (replaced on 2026-11-09) had no earlier name either.
-  const redrawMounts = new Set([...HFV2.m04RedrawStates, ...HFV2.m04ModelStates, ...HFV2.m04PendingStates].map(x => x.id));
+  const redrawMounts = new Set([...HFV2.m04RedrawStates, ...HFV2.m04ModelStates, ...HFV2.m04RuntimeStates].map(x => x.id));
   // The retired runtime card draft (2026-11-14) was a provisional route with no earlier name either.
   const nameless = new Set(['sidebar/centered-expanded', 'new-task/centered-starting', 'harness-runtime/installing-sidebar']);
   assert.equal(entries.length, descriptors.filter(d => d.renderer && !d.skeleton && d.renderer !== 'transcript' && d.renderer !== 'messages' && !(d.renderer === 'm04' && redrawMounts.has(d.mount))).length + retired.filter(e => e.renderer && !nameless.has(e.route)).length, 'every renderer route has exactly one old route, retired ones included, except the redraws');
@@ -399,7 +403,8 @@ test('resolveRoute canonicalises old routes and keeps the appearance suffix', ()
     assert.equal(HFV2.resolveRoute(`#d2b-proposal/events${suffix}`), `#task/transcript-sources${suffix}`, 'an alias followed by a redirect');
     assert.equal(HFV2.resolveRoute(`#task/activity-sources${suffix}`), `#task/transcript-sources${suffix}`);
     assert.equal(HFV2.resolveRoute(`#m04-proposal/shell${suffix}`), `#new-task/centered-empty${suffix}`);
-    assert.equal(HFV2.resolveRoute(`#task/approval${suffix}`), `#task/approval${suffix}`, 'a canonical route is unchanged');
+    assert.equal(HFV2.resolveRoute(`#task/approval-exact${suffix}`), `#task/approval-exact${suffix}`, 'a canonical route is unchanged');
+    assert.equal(HFV2.resolveRoute(`#task/approval${suffix}`), `#task/approval-exact${suffix}`, 'a retired route redirects');
     assert.equal(HFV2.resolveRoute(`#task/running${suffix}`), `#task/running-stop${suffix}`, 'a retired route redirects');
     assert.equal(HFV2.resolveRoute(`#m04-proposal/composer-ready${suffix}`), `#new-task/centered-ready${suffix}`, 'an alias followed by a redirect');
     assert.equal(HFV2.resolveRoute(`#m04-proposal/advanced${suffix}`), `#new-task/centered-options${suffix}`);
@@ -415,7 +420,7 @@ test('resolveRoute canonicalises old routes and keeps the appearance suffix', ()
 
 test('redirects send retired routes to live states and obey their invariants', () => {
   const entries = Object.entries(redirects);
-  assert.equal(entries.length, 30);
+  assert.equal(entries.length, 33);
   assert.deepEqual(Array.from(retired, e => e.route).sort(), entries.map(([from]) => from).sort(), 'every redirect is a recorded retirement');
   for (const [from, to] of entries) {
     assert.match(from, /^[a-z0-9-]+\/[a-z0-9-]+$/);
@@ -483,11 +488,11 @@ test('catalog canonicalises the address only when rendering, after alias lookup'
 test('retired states are gone from the registry; superseded-state handling no longer exists', () => {
   const stateOf = route => { const [f, s] = route.split('/'); return HFV2.findState(HFV2.findFamily(f), s); };
   assert.deepEqual(Array.from(retired, e => e.route).sort(), [
-    'harness-runtime/installing-sidebar', 'new-task/centered-starting', 'new-task/composer-invalid', 'new-task/composer-loading', 'new-task/composer-ready', 'new-task/composer-refused', 'new-task/composer-starting',
+    'harness-runtime/installing-sidebar', 'menu-bar/busy', 'menu-bar/busy-minimum', 'new-task/centered-starting', 'new-task/composer-invalid', 'new-task/composer-loading', 'new-task/composer-ready', 'new-task/composer-refused', 'new-task/composer-starting',
     'new-task/composer-unknown', 'new-task/composer-unqualified', 'new-task/default', 'new-task/harness-menu', 'new-task/options-closed', 'new-task/options-open',
     'new-task/sidebar-collapsed', 'sidebar/centered-expanded', 'sidebar/collapsed', 'sidebar/expanded', 'sidebar/history-loading', 'sidebar/minimum',
     'task/activity-capacity', 'task/activity-integrity-failed', 'task/activity-loading', 'task/activity-observed', 'task/activity-partial', 'task/activity-reconnecting',
-    'task/activity-sources', 'task/activity-unavailable', 'task/done', 'task/failed', 'task/running'
+    'task/activity-sources', 'task/activity-unavailable', 'task/approval', 'task/done', 'task/failed', 'task/running'
   ]);
   for (const entry of retired) {
     assert.equal(stateOf(entry.route), null, `${entry.route} is not registered`);
@@ -545,13 +550,16 @@ test('hidden families and states stay out of navigation, the picker and the over
 test('status and approval are per state and never borrowed from a sibling', () => {
   const stateOf = route => { const [f, s] = route.split('/'); return [HFV2.findFamily(f), HFV2.findState(HFV2.findFamily(f), s)]; };
   const line = route => HFV2.approvalLine(...stateOf(route));
-  assert.match(line('task/approval'), /^Approved by the owner on 2026-11-03 · canvas /);
+  assert.match(line('needs-you/waiting'), /^Approved by the owner on 2026-11-03 · canvas /);
   assert.equal(line('task/transcript-observed'), 'Approved by the owner on 2026-11-08 · Task transcript');
   assert.equal(line('new-task/centered-loading'), 'Approved by the owner on 2026-11-08 · Centered composer');
   assert.equal(line('sidebar/centered-minimum'), 'Approved by the owner on 2026-11-08 · Sidebar');
   assert.equal(line('new-task/centered-harness-open'), 'Approved by the owner on 2026-11-15 · Centered composer · Model field');
   assert.equal(line('new-task/centered-model-truncated'), 'Approved by the owner on 2026-11-15 · Model picker');
-  assert.equal(stateOf('new-task/centered-model-default')[1].status, 'provisional');
+  assert.equal(line('new-task/centered-model-default'), 'Approved by the owner on 2026-11-15 · Model picker');
+  assert.equal(line('harness-runtime/updating'), 'Approved by the owner on 2026-11-15 · Runtime update');
+  assert.equal(line('task/approval-exact'), 'Approved by the owner on 2026-11-15 · Queued messages and approval states');
+  assert.equal(line('task/loading-known-title'), 'Provisional · not approved');
   assert.match(line('sidebar/history-empty'), /^Approved by the owner on 2026-11-05 · /);
   assert.match(line('new-task/centered-ready'), /^Approved by the owner on 2026-11-06 · /);
   assert.match(line('task/running-stop'), /^Approved by the owner on 2026-11-07 · /);
@@ -613,7 +621,7 @@ test('the route map lists every redraw with the route it replaces and the Events
   assert.ok(map.includes('## Redraw routes') && map.includes('### Route grammar'));
   assert.ok(!map.includes('provisional-redraws-awaiting-owner-review') && !map.includes('Provisional redraw'));
   assert.ok(map.includes('decisions/README.md#centered-and-transcript-redraws'));
-  assert.ok(map.includes('30 retired routes'));
+  assert.ok(map.includes('33 retired routes'));
   const redraws = [...COMPOSER_REDRAWS, ...SHELL_REDRAWS, ...TRANSCRIPT_REDRAWS, ['new-task/harness-menu', 'new-task/centered-harness-open']].map(([older, newer]) => ({ older, newer }));
   for (const { older, newer } of redraws) {
     const row = map.split('\n').find(line => line.startsWith(`| \`${newer}\` |`));
@@ -743,35 +751,56 @@ const stateOfRoute = route => { const [f, s] = route.split('/'); return [HFV2.fi
 const DECISION = { 'new-task': 'Centered composer', sidebar: 'Sidebar', task: 'Task transcript' };
 
 const PENDING_PAIRS = [
-  { older: 'task/approval', newer: 'task/approval-exact' },
-  { older: 'menu-bar/busy', newer: 'menu-bar/busy-approve-once' },
-  { older: 'menu-bar/busy-minimum', newer: 'menu-bar/busy-approve-once-minimum' },
   { older: 'parallel-group/loading', newer: 'parallel-group/loading-known-title' },
   { older: 'parallel-group/loading-minimum', newer: 'parallel-group/loading-known-title-minimum' },
   { older: 'parallel-group/loading-two', newer: 'parallel-group/loading-two-known-title' }
 ];
-test('six redraws are pending, the exact-action approval, the two menu bar relabels and the three parallel group loading titles, and the catalog notes each pair outside the specimen', () => {
+// The drafts the owner approved on 2026-11-15, with the decision name of each approval line.
+const APPROVED_1115 = [
+  ...['queued', 'delivering', 'delivered', 'cancelled', 'send-now-refused', 'uncertain', 'unsupported', 'queued-settled'].map(id => [`task/message-${id}`, 'Queued messages and approval states']),
+  ...['exact', 'stale', 'expired', 'answered-elsewhere', 'refused', 'uncertain'].map(id => [`task/approval-${id}`, 'Queued messages and approval states']),
+  ...['approval-stale', 'approval-expired', 'answered-elsewhere', 'checkpoint-stale'].map(id => [`needs-you/${id}`, 'Queued messages and approval states']),
+  ...['busy-approve-once', 'busy-approve-once-minimum', 'approval-stale', 'answered-elsewhere'].map(id => [`menu-bar/${id}`, 'Queued messages and approval states']),
+  ['workflow-run/lane-message-undeliverable', 'Queued messages and approval states'],
+  ['workflow-run/lane-message-undeliverable-minimum', 'Queued messages and approval states'],
+  ['harness-runtime/updating', 'Runtime update'],
+  ['new-task/centered-model-default', 'Model picker']
+];
+const STILL_PROVISIONAL = ['task/loading-known-title', 'task/loading-pane-known-title', ...PENDING_PAIRS.map(pair => pair.newer)];
+test('three redraws are pending, the parallel group loading titles, and the drafts approved on 2026-11-15 are approved with their own approval', () => {
   assert.deepEqual(JSON.parse(JSON.stringify(pending)), PENDING_PAIRS);
   assert.ok(!routeSet.has('new-task/centered-starting'), 'the earlier starting state is retired');
   assert.equal(stateOfRoute('new-task/centered-starting-plain')[1].status, 'approved');
   assert.equal(HFV2.describe('new-task/centered-starting-plain').approval, 'Approved by the owner on 2026-11-09 · Starting row');
-  // The runtime update draft is standalone: no pending pair, and the approved runtime and setup states stay as they are.
-  assert.equal(stateOfRoute('harness-runtime/updating')[1].status, 'provisional');
-  assert.equal(HFV2.describe('harness-runtime/updating').approval, 'Provisional · not approved');
-  assert.ok(!pending.some(pair => pair.older === 'harness-runtime/updating' || pair.newer === 'harness-runtime/updating'));
+  assert.equal(APPROVED_1115.length, 8 + 6 + 4 + 4 + 2 + 2);
+  for (const [route, decision] of APPROVED_1115) {
+    const [, state] = stateOfRoute(route);
+    assert.ok(state, `${route} is registered`);
+    assert.equal(state.status, 'approved', `${route} is approved`);
+    assert.deepEqual({ ...state.approval }, { by: 'the owner', date: '2026-11-15', decision }, `${route} approval`);
+    assert.equal(state.approvalNote, undefined, `${route} carries no approval note`);
+    assert.equal(HFV2.describe(route).approval, `Approved by the owner on 2026-11-15 · ${decision}`);
+    assert.ok(!/Provisional|provisional|not approved|redraw/i.test(state.title + ' ' + state.description), `${route} title and description carry no history`);
+    assert.ok(!pending.some(pair => pair.older === route || pair.newer === route), `${route} has no pending pair`);
+    const guide = HFV2.componentDocs[HFV2.describe(route).guideKey];
+    if (guide) assert.ok(!/Provisional|not approved/.test(guide), `${route} guide is no longer provisional`);
+  }
+  // The states that stay provisional: the known-title loading states and their three pending pairs.
+  for (const route of STILL_PROVISIONAL) {
+    assert.equal(stateOfRoute(route)[1].status, 'provisional', `${route} stays provisional`);
+    assert.equal(stateOfRoute(route)[1].approval, undefined, `${route} carries no approval object`);
+    assert.equal(HFV2.describe(route).approval, 'Provisional · not approved');
+  }
   assert.ok(!routeSet.has('harness-runtime/installing-sidebar'), 'the sidebar card draft is retired');
   for (const route of ['harness-runtime/installing', 'app-states/setup']) { assert.equal(stateOfRoute(route)[1].status, 'approved'); assert.ok(!pending.some(pair => pair.older === route || pair.newer === route), `${route} has no pending pair`); }
   for (const pair of PENDING_PAIRS) {
     for (const route of [pair.older, pair.newer]) assert.ok(routeSet.has(route), `${route} stays listed`);
     assert.equal(stateOfRoute(pair.older)[1].status, 'approved', `${pair.older} keeps its approval`);
-    assert.equal(stateOfRoute(pair.newer)[1].status, 'provisional', `${pair.newer} is provisional`);
-    assert.equal(stateOfRoute(pair.newer)[1].approval, undefined, `${pair.newer} carries no approval object`);
-    assert.equal(HFV2.describe(pair.newer).approval, 'Provisional · not approved');
     assert.ok(overviewHas(pair), `the overview lists ${pair.newer}`);
   }
-  // The minimum redraw derives from the full one, so the two menu bar pairs stay consistent.
+  // The minimum state of the menu bar derives from the full one, and the loading states mirror it.
   assert.deepEqual(JSON.parse(JSON.stringify(stateOfRoute('menu-bar/busy-approve-once-minimum')[1].minimum)), { of: 'menu-bar/busy-approve-once', fixes: ['popover'] });
-  assert.equal(stateOfRoute('menu-bar/busy-minimum')[1].status, 'approved');
+  assert.ok(!routeSet.has('menu-bar/busy-minimum'), 'the earlier minimum state is retired');
   const catalog = read(path.join(v2, 'scripts', 'catalog.js'));
   assert.match(catalog, /var PENDING = 'Earlier layout; redraw awaiting owner approval';/);
   assert.match(catalog, /pendingRedrawOf/);
@@ -780,10 +809,13 @@ test('six redraws are pending, the exact-action approval, the two menu bar relab
   assert.ok(page.indexOf('id="hdc-note"') > page.indexOf('id="hdc-approval"') && page.indexOf('id="hdc-note"') < page.indexOf('id="hdc-specimen"'), 'the note sits beside the approval line, outside the specimen');
   assert.match(read_('screens-overview.js'), /Redraws awaiting approval/);
   const overview = HFV2.templates['overview/areas'];
-  assert.ok(overview.includes('Redraws awaiting approval') && overview.includes('<a href="#task/approval">') && overview.includes('<a href="#task/approval-exact">'), 'the overview lists the pending redraw');
+  assert.ok(overview.includes('Redraws awaiting approval') && !overview.includes('<a href="#task/approval">') && !overview.includes('<a href="#menu-bar/busy">'), 'the overview lists only the pending redraws');
   assert.equal((overview.match(/Redraws awaiting approval/g) || []).length, 1);
-  // Nothing else is waiting: the approved redraws of 2026-11-08 are retired pairs, not pending ones.
+  // Nothing else is waiting: the approved redraws are retired pairs, not pending ones.
   for (const pair of pending) assert.ok(!(pair.older in HFV2.routeRedirects) && !(pair.newer in HFV2.routeRedirects));
+  // The base templates of the three retired routes stay: the approval states are derived from them.
+  assert.equal(typeof HFV2.templates['task/approval'], 'string');
+  assert.equal(typeof HFV2.templates['menu-bar/busy'], 'string');
 });
 
 test('the 16 redraws are approved by the owner on 2026-11-08, the starting state on 2026-11-09 and the Model field of the open harness picker on 2026-11-15, with the decision of their screen', () => {
@@ -849,16 +881,40 @@ test('18 states are retired by the redraws and 20 redirects point at the redraws
     assert.match(entry.pins, /^[a-z0-9/-]+ at 3f12d29/);
     assert.ok(entry.renderer && entry.mount, `${entry.route} keeps its renderer and mount for the link fallback`);
   }
-  // The runtime card draft was retired on 2026-11-14 for the main-pane update state. It is the first redirect to a provisional state.
+  // The runtime card draft was retired on 2026-11-14 for the main-pane update state, which the owner approved on 2026-11-15.
   const cardRetired = retired.find(e => e.route === 'harness-runtime/installing-sidebar');
   assert.equal(cardRetired.redirect, 'harness-runtime/updating');
   assert.equal(cardRetired.pins, 'harness-runtime/installing-sidebar at 4ff7d83 (mount runtime-installing-sidebar)');
   assert.ok(cardRetired.renderer === 'm04' && cardRetired.mount === 'runtime-installing-sidebar' && cardRetired.template === 'm04-proposal/runtime-installing-sidebar');
   assert.equal(HFV2.routeFor('m04', 'runtime-installing-sidebar'), 'harness-runtime/installing-sidebar');
-  assert.equal(stateOfRoute('harness-runtime/updating')[1].status, 'provisional', 'the redirect target is provisional');
+  assert.equal(stateOfRoute('harness-runtime/updating')[1].status, 'approved', 'the redirect target is approved');
   assert.ok(!('m04-proposal/runtime-installing-sidebar' in HFV2.templates), 'the retired draft keeps no template');
   for (const suffix of SUFFIXES) assert.equal(HFV2.resolveRoute(`#harness-runtime/installing-sidebar${suffix}`), `#harness-runtime/updating${suffix}`);
-  for (const entry of retired.filter(e => !(e.pins || '').includes('3f12d29') && !(e.pins || '').includes('854caae') && !(e.pins || '').includes('d82b59f') && !(e.pins || '').includes('4ff7d83'))) assert.ok(/at 17739e4/.test(entry.pins), `${entry.route} keeps its generated pins`);
+  for (const entry of retired.filter(e => !(e.pins || '').includes('3f12d29') && !(e.pins || '').includes('854caae') && !(e.pins || '').includes('d82b59f') && !(e.pins || '').includes('4ff7d83') && !(e.pins || '').includes('9709483'))) assert.ok(/at 17739e4/.test(entry.pins), `${entry.route} keeps its generated pins`);
+  // The exact-action approval and the two menu bar relabels replaced approved drawings on 2026-11-15. The old designs are visible at 9709483.
+  const approvalRetired = [
+    ['task/approval', 'task/approval-exact', 'task/approval'],
+    ['menu-bar/busy', 'menu-bar/busy-approve-once', 'menu-bar/busy'],
+    ['menu-bar/busy-minimum', 'menu-bar/busy-approve-once-minimum', 'menu-bar/busy']
+  ];
+  assert.deepEqual(Array.from(retired.filter(e => (e.pins || '').includes('9709483'), []), e => e.route), approvalRetired.map(r => r[0]));
+  for (const [route, target, template] of approvalRetired) {
+    const entry = retired.find(e => e.route === route);
+    assert.equal(entry.redirect, target);
+    assert.equal(entry.template, template);
+    assert.equal(entry.pins, `${route} at 9709483`);
+    assert.match(entry.basis, /^Owner decision 2026-11-15: /);
+    assert.equal(entry.renderer, null);
+    assert.equal(stateOfRoute(route)[1], null, `${route} is not registered`);
+    assert.equal(stateOfRoute(target)[1].status, 'approved', `${target} is approved`);
+    assert.ok(!(target in redirects), `${target} is not itself retired`);
+    for (const suffix of SUFFIXES) assert.equal(HFV2.resolveRoute(`#${route}${suffix}`), `#${target}${suffix}`);
+  }
+  // The templates stay: the approval states and the loading mirror clone them.
+  assert.ok(HFV2.templates['task/approval'].includes('Approve for this task') && HFV2.templates['menu-bar/busy'].includes('>Approve</button>'));
+  assert.ok(!HFV2.templates['task/approval-exact'].includes('Approve for this task'));
+  assert.ok(HFV2.describe('menu-bar/loading').skeleton.of === 'menu-bar/busy-approve-once');
+  assert.ok(HFV2.describe('menu-bar/loading-minimum').minimum.of === 'menu-bar/busy-approve-once');
   const sidebarLoading = retired.filter(e => (e.pins || '').includes('854caae'));
   assert.deepEqual(JSON.parse(JSON.stringify(sidebarLoading.map(e => [e.route, e.redirect, e.mount]))), [['sidebar/history-loading', 'sidebar/loading', 'history-loading']]);
   assert.equal(sidebarLoading[0].pins, 'sidebar/history-loading at 854caae (mount history-loading)');
@@ -944,19 +1000,27 @@ test('the decisions record lists every redraw with its earlier state, the owner 
   }
 });
 
-test('the decisions record approves the starting row, retires the runtime card draft and leaves the runtime update provisional', () => {
+test('the decisions record approves the starting row, retires the runtime card draft and approves the runtime update', () => {
   const decisions = read(path.join(v2, 'docs', 'decisions', 'README.md'));
   const row = decisions.split('\n').find(line => line.startsWith('| Starting row |'));
   assert.ok(row && row.includes('| Approved |') && row.includes('2026-11-09') && row.includes('`new-task/centered-starting-plain`'));
   const card = decisions.split('\n').find(line => line.startsWith('| Runtime card in the sidebar'));
   assert.ok(card && card.includes('Dropped by the owner, 2026-11-14') && card.includes('`harness-runtime/installing-sidebar`') && card.includes('`harness-runtime/updating`'));
   const update = decisions.split('\n').find(line => line.startsWith('| Runtime update in the main pane'));
-  assert.ok(update && update.includes('Provisional, not approved') && update.includes('`harness-runtime/updating`') && update.includes('2026-11-14'));
+  assert.ok(update && update.includes('| Approved |') && update.includes('`harness-runtime/updating`') && update.includes('2026-11-15') && update.includes('Approve the provisional drafts of 2026-11-15'));
+  assert.ok(!update.includes('Provisional, not approved'));
   assert.ok(!decisions.includes('starting-row-and-runtime-card-provisional') && decisions.includes('## Starting row and runtime card\n'));
   assert.ok(decisions.includes('| `new-task/centered-starting` | `new-task/centered-starting-plain` |'), 'the retirement is recorded');
-  assert.equal(HFV2.describe('harness-runtime/updating').approval, 'Provisional · not approved');
+  assert.equal(HFV2.describe('harness-runtime/updating').approval, 'Approved by the owner on 2026-11-15 · Runtime update');
   assert.ok(decisions.includes('| `harness-runtime/installing-sidebar` | `harness-runtime/updating` |'), 'the retirement is recorded in the retired designs table');
-  assert.ok(decisions.includes('The first redirect to a provisional state'));
+  assert.ok(!decisions.includes('The first redirect to a provisional state'));
+  for (const route of ['task/approval', 'menu-bar/busy', 'menu-bar/busy-minimum']) assert.ok(decisions.includes(`| \`${route}\` | \`${HFV2.routeRedirects[route]}\` |`), `${route} is recorded in the retired designs table`);
+  const queued = decisions.split('\n').find(line => line.startsWith('| Queued messages and approval states |'));
+  assert.ok(queued && queued.includes('| Approved |') && queued.includes('2026-11-15') && queued.includes('Approve the provisional drafts of 2026-11-15'));
+  const model = decisions.split('\n').find(line => line.startsWith('| Model picker states, the default tag'));
+  assert.ok(model && model.includes('| Approved |') && !model.includes('(provisional)') && !model.includes('provisional `new-task/centered-model-default`'));
+  assert.ok(decisions.includes('## Approval of the provisional drafts of 2026-11-15') && decisions.includes('<a id="queued-messages-and-approval-states-provisional"></a>'));
+  assert.ok(decisions.includes('## Queued messages and approval states\n'));
 });
 
 test('a redirect target is never retired by a later sign-off without repointing the redirect', () => {
@@ -1028,7 +1092,7 @@ test('the catalog opens a declared view at load and canonicalises the address wi
   assert.match(render, /hashFor\(parsed\.family, parsed\.state, parsed\.override, parsed\.view\)/);
   assert.equal(HFV2.describe('task/transcript-observed').views.length, 1);
   assert.deepEqual(Array.from(HFV2.describe('task/transcript-observed').views), ['events']);
-  assert.deepEqual(Array.from(HFV2.describe('task/approval').views), []);
+  assert.deepEqual(Array.from(HFV2.describe('task/approval-exact').views), []);
 });
 
 // ---- The transcript renderer ----
@@ -1221,7 +1285,7 @@ test('pending discovery approval is pinned and does not broaden unrelated provis
   assert.match(record, /83d820f57e6ec2d82cccd3a1e335128332fdb672/);
   assert.match(record, /Yes, approve this design/);
   assert.match(record, /does not authorize truncating production history or disabling actual overflow/);
-  for (const route of ['task/cancelled-partial', 'task/artifacts-empty', 'harness-runtime/updating']) assert.equal(HFV2.describe(route).status, 'provisional', route);
+  for (const route of ['task/cancelled-partial', 'task/artifacts-empty', 'task/loading-known-title']) assert.equal(HFV2.describe(route).status, 'provisional', route);
 });
 
 
@@ -1322,5 +1386,5 @@ test('parallel group lane approval is pinned, quotes the question and answer, an
   assert.match(record, /Do you approve the drawn parallel group states in HarflowDesign at commit 2153ab1/);
   assert.match(record, /"Approve all \(Recommended\)"/);
   assert.doesNotMatch(record, /Provisional \/ Draft/);
-  for (const route of ['task/cancelled-partial', 'task/artifacts-empty', 'harness-runtime/updating']) assert.equal(HFV2.describe(route).status, 'provisional', route);
+  for (const route of ['task/cancelled-partial', 'task/artifacts-empty', 'task/loading-known-title']) assert.equal(HFV2.describe(route).status, 'provisional', route);
 });

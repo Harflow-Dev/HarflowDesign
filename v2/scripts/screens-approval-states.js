@@ -1,6 +1,7 @@
-/* Provisional approval states. Each is derived from an approved template by replacing exactly one block of it:
-   the approval card, or in the exact-action state the row of decision buttons. The approved templates are not
-   changed. Not approved; each state's meaning is cited in v2/docs/decisions/README.md. */
+/* Approval states, approved by the owner on 2026-11-15. Each is derived from a template by replacing exactly one block of
+   it: the approval card, or in the exact-action state the row of decision buttons. The base templates are not
+   changed; T['task/approval'] and T['menu-bar/busy'] stay as the bases of these derivations although their routes are
+   retired. Each state's meaning is cited in v2/docs/decisions/README.md. */
 (function () {
   'use strict';
   var H = window.HFV2 = window.HFV2 || {};
@@ -137,13 +138,15 @@
     return '<button type="button" class="hd-btn hd-btn--primary hd-btn--sm">Approve once</button>';
   });
 
-  var PLAIN = 'Provisional · not approved';
-  var GAP = 'Provisional · not approved · contract gap open';
-  // [family, id, group, title, description, approval note, guide]
+  // A state flagged GAP keeps an open contract gap, named in its guide. The approval does not close it.
+  var PLAIN = false;
+  var GAP = true;
+  var APPROVAL = { by: 'the owner', date: '2026-11-15', decision: 'Queued messages and approval states' };
+  // [family, id, group, title, description, contract gap flag, guide]
   var ROWS = [
     ['task', 'approval-exact', 'Status', 'Waiting for approval, exact action',
       'An approval card that offers Approve once and Reject. Each approval covers one exact action, so the task-wide choice is gone.', PLAIN,
-      '<p>Each approval covers one exact action: the response scope is <code>exact_action_once</code> and responding never installs a reusable grant (<code>harness-permissions.md</code>, fixture <code>ctl-approval-get-claude-bash.json</code>). This is the drafted reading of the exact-action decision; the owner confirms it. It replaces <a href="#task/approval">Waiting for approval</a> once approved.</p>'],
+      '<p>Each approval covers one exact action: the response scope is <code>exact_action_once</code> and responding never installs a reusable grant (<code>harness-permissions.md</code>, fixture <code>ctl-approval-get-claude-bash.json</code>). It is the approval card of the task screen without the task-wide choice.</p>'],
     ['task', 'approval-stale', 'Status', 'Approval no longer current',
       'The request changed after it was shown. The card offers no decision, says the response changed nothing and offers Refresh.', PLAIN,
       '<p>The typed refusal <code>not_current</code>: another identity, revision or owner generation is now current. The ledger is unchanged by the refused call, and the engine\'s rule is to refresh read-only without resubmitting (<code>contracts.md</code>, Task approval ledgers; fixture <code>ctl-approval-error-not-current.json</code>).</p>'],
@@ -173,27 +176,27 @@
       '<p>The refusal <code>attention_checkpoint_stale</code>: the answer and grants were not applied (fixture <code>ctl-workflow-attention-stale.json</code>). It is drawn on the second card of <a href="#needs-you/waiting">Waiting items</a>.</p>'],
     ['menu-bar', 'busy-approve-once', 'Menu bar', 'Busy, approve once',
       'The popover with work in progress. The command request offers Approve once and Reject, as the other approval cards do.', PLAIN,
-      '<p>The approved <a href="#menu-bar/busy">Busy</a> popover with one change: the button of the command request reads Approve once instead of Approve. Each approval covers one exact action, so the label says so. It replaces Busy once approved. The question card keeps its Answer button.</p>'],
+      '<p>The Busy popover with the button of the command request reading Approve once. Each approval covers one exact action, so the label says so. The question card keeps its Answer button.</p>'],
     ['menu-bar', 'approval-stale', 'Menu bar', 'Approval no longer current',
       'The request in the popover changed after it was shown. It offers no decision and offers Refresh.', PLAIN,
-      '<p>The refusal <code>not_current</code>, drawn on the first request of <a href="#menu-bar/busy">Busy</a>.</p>'],
+      '<p>The refusal <code>not_current</code>, drawn on the first request of <a href="#menu-bar/busy-approve-once">Busy, approve once</a>.</p>'],
     ['menu-bar', 'answered-elsewhere', 'Menu bar', 'Approval answered elsewhere',
       'The request in the popover was answered by the caller first. It is closed.', GAP,
-      '<p>The refusal <code>already_answered</code>; the contract names only the channel. Altered fixture: responder changed to the caller; the time is the fixture\'s. Drawn on the first request of <a href="#menu-bar/busy">Busy</a>.</p>']
+      '<p>The refusal <code>already_answered</code>; the contract names only the channel. Altered fixture: responder changed to the caller; the time is the fixture\'s. Drawn on the first request of <a href="#menu-bar/busy-approve-once">Busy, approve once</a>.</p>']
   ];
   H.approvalStates = ROWS.map(function (r) { return { route: r[0] + '/' + r[1], title: r[3] }; });
   ROWS.forEach(function (r) {
     var route = r[0] + '/' + r[1];
-    docs[route] = '<p><strong>Provisional, not approved.</strong> Derived from an approved state by replacing one block. <a href="docs/decisions/README.md#queued-messages-and-approval-states-provisional">Decision record</a>, with the source of every line and the open gaps.</p>' + r[6] +
+    docs[route] = '<p><strong>Approved by the owner · 2026-11-15.</strong> Derived from a base state by replacing one block. <a href="docs/decisions/README.md#queued-messages-and-approval-states">Decision record</a>, with the source of every line and the open gaps.</p>' + (r[5] ? '<p>A contract gap is open for this state; the approval does not close it. The decision record names it.</p>' : '') + r[6] +
       '<p>Deterministic mock text; the fixture times are fixed mock times, not converted to the viewer\'s zone.</p>';
-    H.registerState(r[0], { id: r[1], title: r[3], description: r[4], group: r[2], status: 'provisional', approvalNote: r[5] });
+    H.registerState(r[0], { id: r[1], title: r[3], description: r[4], group: r[2], status: 'approved', approval: APPROVAL });
   });
-  // The minimum window version of the redraw: the same fixes as the approved menu-bar/busy-minimum, applied to the
-  // redrawn popover. The popover is 380 points wide and 560 points tall there.
+  // The minimum window version: the popover fixes applied to menu-bar/busy-approve-once. The popover is 380 points wide
+  // and 560 points tall there.
   H.registerState('menu-bar', {
     id: 'busy-approve-once-minimum', title: 'Busy, approve once · 1000 × 620',
     description: 'The popover with work in progress and an Approve once button, in the minimum window. It is 380 points wide and 560 points tall; the header and footer stay fixed and the sections between them scroll.',
-    group: 'Minimum window', status: 'provisional', approvalNote: PLAIN,
+    group: 'Minimum window', status: 'approved', approval: APPROVAL,
     minimum: { of: 'menu-bar/busy-approve-once', fixes: ['popover'] }
   });
 })();

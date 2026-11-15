@@ -63,7 +63,7 @@
       model.outcome = 'Queued message cancelled.';
       return '.hd-msgq__outcome';
     }
-    return { def: def, hooks: hooks, act: act, state: { id: mountId, spec: base.spec, kind: 'provisional', gap: '', summary: '', basis: '', flag: '' } };
+    return { def: def, hooks: hooks, act: act, state: { id: mountId, spec: base.spec, kind: 'approved', gap: '', summary: '', basis: '', flag: '' } };
   }
 
   function mount(root, mountId) {
@@ -73,7 +73,7 @@
     var ext = {
       hooks: built.hooks,
       strip: function (state, ui, frameLabel) {
-        return '<div class="hd-m05-strip"><strong>' + strips.provisional + '</strong>' + frameLabel + '</div><p class="hd-faint">' + strips.note + '</p>';
+        return '<div class="hd-m05-strip"><strong>' + strips.approved + '</strong>' + frameLabel + '</div><p class="hd-faint">' + strips.note + '</p>';
       },
       act: built.act
     };

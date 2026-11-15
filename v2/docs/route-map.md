@@ -6,11 +6,11 @@ The aliases and the route grammar are defined in `v2/scripts/route-aliases.js`. 
 
 ## Unchanged routes
 
-The routes of the base screens, the brand book, the foundations and the components keep their ids (for example `needs-you/waiting`, `workflow-editor/node-selected`, `components/button`), except the 30 retired routes listed under "Retired routes".
+The routes of the base screens, the brand book, the foundations and the components keep their ids (for example `needs-you/waiting`, `workflow-editor/node-selected`, `components/button`), except the 33 retired routes listed under "Retired routes".
 
 ## Retired routes
 
-The owner replaced these designs on 2026-11-08, nine of them by answering the replacement questions and eighteen by accepting the centered and transcript redraws. A further route, `new-task/centered-starting`, was retired on 2026-11-09, when the owner approved its redraw without the status row. The route still opens, and it shows the replacement. The address bar then shows the replacement route. A last route, `harness-runtime/installing-sidebar`, was retired on 2026-11-14, when the owner dropped the sidebar card draft for the runtime update of an already set-up app; it opens `harness-runtime/updating`, a provisional state, so it is the first redirect to a state that is not approved. The decisions record gives the basis and the commits where the old design can be seen.
+The owner replaced these designs on 2026-11-08, nine of them by answering the replacement questions and eighteen by accepting the centered and transcript redraws. A further route, `new-task/centered-starting`, was retired on 2026-11-09, when the owner approved its redraw without the status row. The route still opens, and it shows the replacement. The address bar then shows the replacement route. Another route, `harness-runtime/installing-sidebar`, was retired on 2026-11-14, when the owner dropped the sidebar card draft for the runtime update of an already set-up app; it opens `harness-runtime/updating`, which the owner approved on 2026-11-15. Three further routes were retired on 2026-11-15, when the owner approved their redraws: `task/approval` opens `task/approval-exact`, which removes "Approve for this task", and `menu-bar/busy` and `menu-bar/busy-minimum` open `menu-bar/busy-approve-once` and `menu-bar/busy-approve-once-minimum`, which name the request's button Approve once. The templates of `task/approval` and `menu-bar/busy` stay, because the approval states are drawn from them. The decisions record gives the basis and the commits where the old design can be seen.
 
 | Retired route | Opens | Screen and state |
 | --- | --- | --- |
@@ -44,6 +44,9 @@ The owner replaced these designs on 2026-11-08, nine of them by answering the re
 | `task/activity-sources` | `task/transcript-sources` | Task · Task transcript · Normalized and recovered sources |
 | `sidebar/history-loading` | `sidebar/loading` | Sidebar · Loading |
 | `harness-runtime/installing-sidebar` | `harness-runtime/updating` | Harness runtime · Updating |
+| `task/approval` | `task/approval-exact` | Task · Waiting for approval, exact action |
+| `menu-bar/busy` | `menu-bar/busy-approve-once` | Menu bar · Busy, approve once |
+| `menu-bar/busy-minimum` | `menu-bar/busy-approve-once-minimum` | Menu bar · Busy, approve once · 1000 × 620 |
 
 The earlier routes `m04-proposal/*` and `d2b-proposal/*` of the retired states (listed below) reach the same replacements through their alias followed by the redirect. `sidebar/centered-expanded` was a duplicate of `new-task/centered-empty` and opens it.
 
@@ -79,35 +82,40 @@ These routes are canonical routes with no earlier name; they are not aliases or 
 
 A route is `#family/state[/view][/appearance]`. A state may declare views (`views` in the registry); only the eight transcript routes do, and each declares `events`, which opens the right pane on Events at load. The segment after the state is a view only when that state declares it, and an appearance only when it is `light`, `dark` or `system`. Any other segment is dropped when the address is canonicalised, so an undeclared view never opens the overview. An alias or a redirect carries the view to its target and drops it when the target does not declare it. Opening or closing the pane by clicking does not rewrite the address.
 
-## Provisional routes
+## Approved routes with one block changed
 
-These are canonical routes with no earlier name; they are not aliases or redirects, and none is approved ([decisions](decisions/README.md#queued-messages-and-approval-states-provisional)). Each draws the approved state in the second column with one block changed.
+These are canonical routes with no earlier name; they are not aliases or redirects. The owner approved them on 2026-11-15 ([decisions](decisions/README.md#queued-messages-and-approval-states)). Each draws the state in the second column with one block changed. The approval does not close the contract gaps the decisions record lists.
 
-| Provisional route | Draws |
+| Route | Draws |
 | --- | --- |
 | `task/message-queued`, `task/message-delivering`, `task/message-delivered`, `task/message-cancelled`, `task/message-send-now-refused`, `task/message-uncertain`, `task/message-unsupported` | `task/running-stop` |
 | `task/message-queued-settled` | `task/failed-continue` |
-| `task/approval-exact` | `task/approval` |
+| `task/approval-exact` | the card of the retired `task/approval` without "Approve for this task"; replaces `task/approval` |
 | `task/approval-stale`, `task/approval-expired`, `task/approval-answered-elsewhere`, `task/approval-refused`, `task/approval-uncertain` | `task/approval-exact` |
 | `needs-you/approval-stale`, `needs-you/approval-expired`, `needs-you/answered-elsewhere` | `needs-you/waiting`, first request |
 | `needs-you/checkpoint-stale` | `needs-you/waiting`, second request |
-| `menu-bar/busy-approve-once` | `menu-bar/busy`, with the request's button named Approve once |
-| `menu-bar/busy-approve-once-minimum` | `menu-bar/busy-minimum`, with the same button; derived from `menu-bar/busy-approve-once` |
+| `menu-bar/busy-approve-once` | the popover of the retired `menu-bar/busy`, with the request's button named Approve once; replaces `menu-bar/busy` |
+| `menu-bar/busy-approve-once-minimum` | `menu-bar/busy-approve-once` at 1000 × 620; replaces `menu-bar/busy-minimum` |
 | `workflow-run/lane-message-undeliverable` | `workflow-run/parallel`, as a cancelled run with an undeliverable message in a lane |
 | `workflow-run/lane-message-undeliverable-minimum` | `workflow-run/lane-message-undeliverable` at 1000 × 620 |
-| `menu-bar/approval-stale`, `menu-bar/answered-elsewhere` | `menu-bar/busy`, first request |
-| `harness-runtime/updating` | `new-task/centered-empty` with the runtime gate of `harness-runtime/installing` in the main pane; standalone, no pending pair |
-| `new-task/centered-model-default` | `new-task/centered-ready` with the harness picker of `new-task/centered-harness-open` open, Cursor selected and its suggestions open, the harness default tagged; standalone, no pending pair. ([decisions](decisions/README.md#model-picker-states)) |
-| `task/loading-known-title`, `task/loading-pane-known-title` | `task/loading` and `task/loading-pane`, with the title shown and the loaded sidebar; standalone, no pending pair: the approved states stay for a title that is not known yet ([decisions](decisions/README.md#loading-states-with-a-known-title)) |
-| `parallel-group/loading-known-title`, `parallel-group/loading-known-title-minimum`, `parallel-group/loading-two-known-title` | `parallel-group/loading`, `parallel-group/loading-minimum` and `parallel-group/loading-two`, with the group title shown ([decisions](decisions/README.md#loading-states-with-a-known-title)) |
+| `menu-bar/approval-stale`, `menu-bar/answered-elsewhere` | `menu-bar/busy-approve-once`, first request |
+| `harness-runtime/updating` | `new-task/centered-empty` with the runtime gate of `harness-runtime/installing` in the main pane; standalone ([decisions](decisions/README.md#starting-row-and-runtime-card)) |
+| `new-task/centered-model-default` | `new-task/centered-ready` with the harness picker of `new-task/centered-harness-open` open, Cursor selected and its suggestions open, the harness default tagged; standalone ([decisions](decisions/README.md#model-picker-states)) |
+
+## Provisional routes
+
+These are canonical routes with no earlier name; they are not aliases or redirects, and none is approved. The decisions record has the basis ([decisions](decisions/README.md#loading-states-with-a-known-title)).
+
+| Provisional route | Draws |
+| --- | --- |
+| `task/loading-known-title`, `task/loading-pane-known-title` | `task/loading` and `task/loading-pane`, with the title shown and the loaded sidebar; standalone, no pending pair: the approved states stay for a title that is not known yet |
+| `parallel-group/loading-known-title`, `parallel-group/loading-known-title-minimum`, `parallel-group/loading-two-known-title` | `parallel-group/loading`, `parallel-group/loading-minimum` and `parallel-group/loading-two`, with the group title shown |
 
 ### Redraws awaiting approval
 
-`task/approval-exact` redraws `task/approval` and removes its "Approve for this task" button. Both stay listed until the owner decides; the catalog notes the pair beside the approval line. When the owner approves the redraw, `task/approval` is retired and opens `task/approval-exact`.
-
-`menu-bar/busy-approve-once` redraws `menu-bar/busy`, and `menu-bar/busy-approve-once-minimum` redraws the approved `menu-bar/busy-minimum`; each names the request's button Approve once. Both pairs are required and stay listed until the owner decides. When the owner approves them, `menu-bar/busy` and `menu-bar/busy-minimum` are retired and open the redraws.
-
 `parallel-group/loading-known-title`, `parallel-group/loading-known-title-minimum` and `parallel-group/loading-two-known-title` redraw `parallel-group/loading`, `parallel-group/loading-minimum` and `parallel-group/loading-two` with the group title shown, because a group's title is always known. The three pairs stay listed until the owner decides. When the owner approves them, the three approved states are retired and open the redraws.
+
+The exact-action approval and the two menu bar relabels were pending until 2026-11-15; the owner approved them and the three earlier routes are retired (see "Retired routes").
 
 ## Loading routes
 
@@ -121,7 +129,7 @@ These are canonical routes with no earlier name; they are not aliases or redirec
 | `task/loading-pane` | `task/pane-running-open` |
 | `parallel-group/loading` | `parallel-group/lanes` |
 | `needs-you/loading` | `needs-you/waiting` |
-| `menu-bar/loading` | `menu-bar/busy` |
+| `menu-bar/loading` | `menu-bar/busy-approve-once`; the request cards are placeholders, so the label of the button is not shown |
 | `workflows/loading` | `workflows/list` |
 | `workflow-editor/loading` | `workflow-editor/node-selected` |
 | `workflow-run/loading` | `workflow-run/on-demand` |
@@ -146,12 +154,12 @@ These are canonical routes with no earlier name. Each draws the state in the sec
 | `workflow-run/parallel-minimum` | `workflow-run/parallel` |
 | `workflow-editor/node-selected-minimum` | `workflow-editor/node-selected` |
 | `workflow-editor/orchestrator-minimum` | `workflow-editor/orchestrator` |
-| `menu-bar/busy-minimum` | `menu-bar/busy` |
+| `menu-bar/busy-approve-once-minimum` | `menu-bar/busy-approve-once`; approved on 2026-11-15, it replaces the retired `menu-bar/busy-minimum` |
 | `needs-you/loading-minimum` | `needs-you/waiting-minimum` with its loading skeleton |
 | `parallel-group/loading-minimum` | `parallel-group/lanes-minimum` with its loading skeleton |
 | `workflow-run/loading-parallel-minimum` | `workflow-run/parallel-minimum` with its loading skeleton |
 | `workflow-editor/loading-minimum` | `workflow-editor/node-selected-minimum` with its loading skeleton |
-| `menu-bar/loading-minimum` | `menu-bar/busy-minimum` with its loading skeleton |
+| `menu-bar/loading-minimum` | `menu-bar/busy-approve-once` at 1000 × 620 with its loading skeleton; the request cards are placeholders |
 
 ## Moved routes
 

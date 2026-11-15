@@ -1,4 +1,4 @@
-/* Provisional queued-message states. Bubbles reuse the user message (.hd-msg-user); a pinned bubble is drawn at
+/* Queued-message states. Bubbles reuse the user message (.hd-msg-user); a pinned bubble is drawn at
    reduced strength, as the native pending bubble is. Scoped under .hd-msgq-host. */
 .hd-msgq-host .hd-msgq{display:flex;flex-direction:column;gap:4px;white-space:normal}
 .hd-msgq-host .hd-msgq__caption{display:block;font-size:12px;line-height:17px;color:var(--text-secondary)}

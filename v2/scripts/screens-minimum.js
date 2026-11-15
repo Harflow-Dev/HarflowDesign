@@ -36,11 +36,6 @@
     description: 'The locked orchestrator selected, in the minimum window. The inspector is 288 points wide and its body scrolls; the canvas scrolls; the top bar drops its meta text so the title stays whole, and its dot shows the text on hover and focus; the sidebar body scrolls.',
     minimum: { of: 'workflow-editor/orchestrator', fixes: ['sidebar', 'inspector', 'canvas', 'topbar-meta'] }
   });
-  minimum('menu-bar', {
-    id: 'busy-minimum', title: 'Busy · 1000 × 620',
-    description: 'The popover with work in progress, in the minimum window. It is 380 points wide and 560 points tall; the header and footer stay fixed and the sections between them scroll.',
-    minimum: { of: 'menu-bar/busy', fixes: ['popover'] }
-  });
 
   // The loading drafts at 1000 × 620: the minimum fixes, then the loading skeleton of the loaded screen. `minimum.of`
   // names the loaded route the minimum draft derives from (one hop); `skeleton.spec` names the skeleton spec, a
@@ -68,6 +63,6 @@
   minimum('menu-bar', {
     id: 'loading-minimum', title: 'Loading · 1000 × 620',
     description: 'The popover while its lists are read, in the minimum window: the counts and the Needs you, Running and Recent rows are placeholders, and the popover keeps its fixed header and footer.',
-    minimum: { of: 'menu-bar/busy', fixes: ['popover'] }, skeleton: { spec: 'menu-bar' }
+    minimum: { of: 'menu-bar/busy-approve-once', fixes: ['popover'] }, skeleton: { spec: 'menu-bar' }
   });
 })();

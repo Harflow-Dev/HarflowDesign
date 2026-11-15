@@ -190,10 +190,13 @@ test('the registry keeps the original catalog approval for the base task states'
   assert.equal(registry.approval.date, '2026-11-03');
   assert.equal(registry.approval.canvas, '1793668079-d8d9');
   assert.equal(registry.approval.designSystem, '1793668064-9e04');
-  const base = task.states.filter(item => !item.source);
-  assert.deepEqual(Array.from(base, item => item.id), ['approval']);
-  assert.ok(base.every(item => item.status === 'approved' && item.approval === undefined), 'base task states keep the original catalog approval');
-  assert.match(H.approvalLine(task, base[0]), /^Approved by the owner on 2026-11-03 · canvas /);
+  // The one base task state, task/approval, was retired on 2026-11-15; the family keeps no state without a renderer or a template of its own.
+  assert.deepEqual(Array.from(task.states.filter(item => !item.source && !item.approval && !item.approvalNote), item => item.id), []);
+  const needsYou = H.registry.families.find(item => item.id === 'needs-you');
+  const base = needsYou.states.filter(item => !item.source && !item.approval && !item.approvalNote && item.id === 'waiting');
+  assert.equal(base.length, 1);
+  assert.ok(base.every(item => item.status === 'approved' && item.approval === undefined), 'base states keep the original catalog approval');
+  assert.match(H.approvalLine(needsYou, base[0]), /^Approved by the owner on 2026-11-03 · canvas /);
   assert.equal(task.approval, undefined, 'task family keeps the original catalog approval');
   assert.equal(H.catalogStrips, undefined, 'the activity strip labels left with the activity mount');
 });

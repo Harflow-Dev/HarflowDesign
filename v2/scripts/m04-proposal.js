@@ -28,20 +28,20 @@
     'centered-shell-collapsed': 'shell-collapsed',
     'centered-shell-narrow': 'shell-narrow'
   };
-  // Provisional drafts, not approved. Each copies the fixture of its source mount. The runtime update draws the centered
-  // shell of an already set-up app (populated sidebar, nav enabled) with the runtime gate in the main pane. The default
-  // marker draws Cursor's listing, whose `auto` row is the harness default.
-  var PENDING_SOURCES = {
-    'runtime-updating': 'amendment-empty',
-    'model-default': 'amendment-ready'
+  // Owner-approved runtime update (2026-11-15). It copies the fixture of its source mount and draws the centered shell of
+  // an already set-up app (populated sidebar, nav enabled) with the runtime gate in the main pane.
+  var RUNTIME_SOURCES = {
+    'runtime-updating': 'amendment-empty'
   };
-  // Owner-approved model picker states (2026-11-15). Each copies the fixture of its source mount.
+  // Owner-approved model picker states (2026-11-15). Each copies the fixture of its source mount. The default
+  // marker draws Cursor's listing, whose `auto` row is the harness default.
   var MODEL_SOURCES = {
     'model-loading': 'amendment-ready',
     'model-unavailable': 'amendment-ready',
     'model-not-installed': 'amendment-ready',
     'model-truncated': 'amendment-ready',
-    'model-empty': 'amendment-ready'
+    'model-empty': 'amendment-ready',
+    'model-default': 'amendment-ready'
   };
   // Model picker states: the open harness picker with the Model field as an editable combo (any model id, with a
   // menu of the engine's advisory suggestions, `backend-models.v1`). The field always accepts free text; the listing
@@ -112,10 +112,10 @@
   }
   function has(map, key) { return Object.prototype.hasOwnProperty.call(map, key); }
   function isRedraw(route) { return has(REDRAW_SOURCES, route); }
-  function isPending(route) { return has(PENDING_SOURCES, route); }
+  function isRuntimeUpdate(route) { return has(RUNTIME_SOURCES, route); }
   function isModelApproved(route) { return has(MODEL_SOURCES, route); }
-  // The centered layout: the six amendment mounts, the redraw mounts, the model picker states and the provisional drafts.
-  function isAmendment(route) { return has(AMENDMENT_DRAFTS, route) || isRedraw(route) || isModelApproved(route) || isPending(route); }
+  // The centered layout: the six amendment mounts, the redraw mounts, the model picker states and the runtime update.
+  function isAmendment(route) { return has(AMENDMENT_DRAFTS, route) || isRedraw(route) || isModelApproved(route) || isRuntimeUpdate(route); }
   function promptOneLineHeight(lineHeight, verticalExtra) { return lineHeight + verticalExtra; }
   function promptCapHeight(lineHeight, verticalExtra) { return lineHeight * AMENDMENT_LINE_CAP + verticalExtra; }
   // Amendment only: the scrollable compose area clips the popover, so its height
@@ -130,8 +130,8 @@
   // The actions a loading mount lets through: the sidebar toggle is chrome. Every other in-frame action is data-dependent.
   function loadingAllows(action) { return action === 'collapse'; }
   function create(route) {
-    if (isPending(route) || isModelApproved(route)) {
-      var draft = create(isPending(route) ? PENDING_SOURCES[route] : MODEL_SOURCES[route]); draft.route = route;
+    if (isRuntimeUpdate(route) || isModelApproved(route)) {
+      var draft = create(isRuntimeUpdate(route) ? RUNTIME_SOURCES[route] : MODEL_SOURCES[route]); draft.route = route;
       if (isModelState(route)) { Object.assign(draft, { model: '', picker: 'harness', harnessList: 'ready' }, JSON.parse(JSON.stringify(MODEL_STATES[route]))); draft.modelHarness = draft.harness; draft.modelOption = modelOptionFor(draft.harness); }
       return draft;
     }
@@ -254,7 +254,7 @@
     function renderBody() {
       var theme = host.getAttribute('data-theme') || 'light';
       var updating = route === 'runtime-updating' && !s.updated;
-      var runtimeBoard=route.indexOf('runtime-')===0 && !isPending(route), historyBoard=route.indexOf('history-')===0;
+      var runtimeBoard=route.indexOf('runtime-')===0 && !isRuntimeUpdate(route), historyBoard=route.indexOf('history-')===0;
       var controls=isModelState(route) ? button('Type a model','model-type')+button('Clear the model','model-default')+(s.harnessList==='ready'?button('Harness list loading','harness-list-loading'):button('Harness list ready','harness-list-ready'))+(s.catalog.state==='loading'?button('Listing finished','model-listed'):'')+(route==='model-unavailable'?Object.keys(REASONS).map(function(r){return button('Reason: '+r,'reason-'+r);}).join(''):'')+(route==='model-truncated'?button('Dropped rows: 0','dropped-0')+button('Dropped rows: 3','dropped-3'):'') : route==='runtime-updating' ? button('Updating','update-start')+button('Runtime ready','update-done') : runtimeBoard ? button('Runtime failure','runtime-failure')+button('Runtime ready','runtime-ready')+button('Listing ready','listing-ready')+button('Listing failed','listing-failed') : historyBoard ? '' : button('Qualification ready','qualified')+button('Qualification unavailable','unqualified')+button('Complete: created','created',s.status!=='starting')+button('Complete: refused','refused',s.status!=='starting')+button('Complete: unknown','unknown',s.status!=='starting')+button('Enforcement supported','enforcement-supported')+button('Enforcement unknown','enforcement-unknown')+button('Enforcement unsupported','enforcement-unsupported');
       // Strip links point at current states only. The earlier composer and Advanced links now open the
       // centered composer states that replaced them.
@@ -265,11 +265,11 @@
             : [['centered-loading','Loading'],['centered-unqualified','Unavailable'],['centered-invalid','Validation'],['centered-starting-plain','Starting'],['centered-refused','Refused'],['centered-options-closed','Options closed'],['centered-harness-open','Harness open']])
           : [['amendment-empty','Empty'],['amendment-ready','One line'],['amendment-growing','Growing'],['amendment-capped','Capped'],['amendment-options','Options open'],['amendment-unknown','Unknown']])
         : [['amendment-empty','Shell'],['amendment-ready','Composer'],['amendment-options','Advanced'],['history-retained','History'],['runtime-checking','Runtime']];
-      if (isPending(route) || isModelApproved(route)) boards = isModelState(route) ? [['model-loading','Loading'],['model-unavailable','Unavailable'],['model-not-installed','Not installed'],['model-truncated','Shortened'],['model-empty','Empty'],['model-default','Default marked'],['centered-harness-open','Harness open']] : [['runtime-installing', 'Installing']];
+      if (isRuntimeUpdate(route) || isModelApproved(route)) boards = isModelState(route) ? [['model-loading','Loading'],['model-unavailable','Unavailable'],['model-not-installed','Not installed'],['model-truncated','Shortened'],['model-empty','Empty'],['model-default','Default marked'],['centered-harness-open','Harness open']] : [['runtime-installing', 'Installing']];
       var boardLinks = boards.map(function (board) { return '<a href="#' + H.routeFor('m04', board[0]) + '/' + theme + '">' + board[1] + '</a>'; }).join('');
       var strips = H.catalogStrips.m04;
-      var notice = isPending(route) ? strips.pendingNotice : isModelApproved(route) ? strips.modelNotice : isRedraw(route) ? (route==='centered-starting-plain' ? strips.redrawStartingNotice : route==='centered-harness-open' ? strips.redrawHarnessNotice : strips.redrawNotice) : amendment ? strips.centeredNotice : strips.baselineNotice;
-      var heading = isPending(route) ? strips.pendingHeading : isModelApproved(route) ? strips.modelHeading : isRedraw(route) ? (route.indexOf('centered-shell')===0 ? strips.redrawShellHeading : route==='centered-starting-plain' ? strips.redrawStartingHeading : route==='centered-harness-open' ? strips.redrawHarnessHeading : strips.redrawHeading) : amendment ? strips.centeredHeading : strips.baselineHeading;
+      var notice = isRuntimeUpdate(route) ? strips.runtimeNotice : isModelApproved(route) ? strips.modelNotice : isRedraw(route) ? (route==='centered-starting-plain' ? strips.redrawStartingNotice : route==='centered-harness-open' ? strips.redrawHarnessNotice : strips.redrawNotice) : amendment ? strips.centeredNotice : strips.baselineNotice;
+      var heading = isRuntimeUpdate(route) ? strips.runtimeHeading : isModelApproved(route) ? strips.modelHeading : isRedraw(route) ? (route.indexOf('centered-shell')===0 ? strips.redrawShellHeading : route==='centered-starting-plain' ? strips.redrawStartingHeading : route==='centered-harness-open' ? strips.redrawHarnessHeading : strips.redrawHeading) : amendment ? strips.centeredHeading : strips.baselineHeading;
       if (loading) catalog.innerHTML = '<div class="hd-m04-actions"><strong>' + loadingStrip.heading + '</strong><label>Frame <select data-m04-field="size"><option value="reference"' + (!s.narrow?' selected':'') + '>1280 × 800</option><option value="minimum"' + (s.narrow?' selected':'') + '>1000 × 620</option></select></label></div><p>' + loadingStrip.note + '</p>';
       else catalog.innerHTML = '<div class="hd-m04-actions"><strong>' + heading + '</strong>' + boardLinks + '<label>Frame <select data-m04-field="size"><option value="reference"' + (!s.narrow?' selected':'') + '>1280 × 800</option><option value="minimum"' + (s.narrow?' selected':'') + '>1000 × 620</option></select></label>' + button('Reset fixture','reset') + '</div><p>' + notice + '</p><details class="hd-m04-fixtures"'+(s.fixtures?' open':'')+'><summary>Fixture controls</summary><div class="hd-m04-actions">' + controls + '</div></details>';
       var base = template(s.collapsed ? 'new-task/sidebar-collapsed' : 'new-task/default');
@@ -464,5 +464,5 @@
     render();
     return function(){disposed=true;host.removeEventListener('keydown',keydown);document.removeEventListener('click',outside);host.removeEventListener('input',input);host.removeEventListener('change',change);host.removeEventListener('click',click);host.removeEventListener('submit',submit);host.removeEventListener('toggle',toggle,true);if(widthRaf)window.cancelAnimationFrame(widthRaf);if(widthObserver)widthObserver.disconnect();};
   }
-  H.m04Proposal={mount:mount,model:{loadingAllows:loadingAllows,create:create,customized:customized,optionsOpen:optionsOpen,problem:problem,select:select,qualify:qualify,start:start,settle:settle,history:history,listing:listing,isAmendment:isAmendment,isRedraw:isRedraw,isPending:isPending,isModelApproved:isModelApproved,modelSources:MODEL_SOURCES,redrawSources:REDRAW_SOURCES,pendingSources:PENDING_SOURCES,amendmentPopupMetrics:amendmentPopupMetrics,promptOneLineHeight:promptOneLineHeight,promptCapHeight:promptCapHeight,amendmentDrafts:AMENDMENT_DRAFTS,modelStates:MODEL_STATES,isModelState:isModelState,modelName:modelName,modelNote:modelNote,modelAction:modelAction,pickHarness:pickHarness,pickOpenHarness:pickOpenHarness,catalogRows:catalogRows,listingFor:listingFor,reasons:REASONS}};
+  H.m04Proposal={mount:mount,model:{loadingAllows:loadingAllows,create:create,customized:customized,optionsOpen:optionsOpen,problem:problem,select:select,qualify:qualify,start:start,settle:settle,history:history,listing:listing,isAmendment:isAmendment,isRedraw:isRedraw,isRuntimeUpdate:isRuntimeUpdate,isModelApproved:isModelApproved,modelSources:MODEL_SOURCES,redrawSources:REDRAW_SOURCES,runtimeSources:RUNTIME_SOURCES,amendmentPopupMetrics:amendmentPopupMetrics,promptOneLineHeight:promptOneLineHeight,promptCapHeight:promptCapHeight,amendmentDrafts:AMENDMENT_DRAFTS,modelStates:MODEL_STATES,isModelState:isModelState,modelName:modelName,modelNote:modelNote,modelAction:modelAction,pickHarness:pickHarness,pickOpenHarness:pickOpenHarness,catalogRows:catalogRows,listingFor:listingFor,reasons:REASONS}};
 })();

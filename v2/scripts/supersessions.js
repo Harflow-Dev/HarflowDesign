@@ -51,7 +51,10 @@
     { route: 'task/activity-sources', title: 'Task · Normalized and recovered sources', redirect: 'task/transcript-sources', renderer: 'd2b', mount: 'events', template: 'd2b-proposal/events', basis: R, pins: 'task/activity-sources at 3f12d29 (mount events)' },
     { route: 'new-task/centered-starting', title: 'New task · Centered composer · Starting', redirect: 'new-task/centered-starting-plain', renderer: 'm04', mount: 'centered-starting', template: 'm04-proposal/centered-starting', basis: 'Owner decision 2026-11-09: no status row under the composer while starting', pins: 'new-task/centered-starting at d82b59f (mount centered-starting)' },
     { route: 'sidebar/history-loading', title: 'Sidebar · History · Loading', redirect: 'sidebar/loading', renderer: 'm04', mount: 'history-loading', template: 'm04-proposal/history-loading', basis: Q + ': skeleton rows chosen for the first listing', pins: 'sidebar/history-loading at 854caae (mount history-loading)' },
-    { route: 'harness-runtime/installing-sidebar', title: 'Runtime · Preparing, in the sidebar', redirect: 'harness-runtime/updating', renderer: 'm04', mount: 'runtime-installing-sidebar', template: 'm04-proposal/runtime-installing-sidebar', basis: 'Owner decision 2026-11-14: the runtime update of an already set-up app is a main-pane state; the sidebar card draft is dropped. The first redirect to a provisional state', pins: 'harness-runtime/installing-sidebar at 4ff7d83 (mount runtime-installing-sidebar)' }
+    { route: 'harness-runtime/installing-sidebar', title: 'Runtime · Preparing, in the sidebar', redirect: 'harness-runtime/updating', renderer: 'm04', mount: 'runtime-installing-sidebar', template: 'm04-proposal/runtime-installing-sidebar', basis: 'Owner decision 2026-11-14: the runtime update of an already set-up app is a main-pane state; the sidebar card draft is dropped. It opened a provisional state until the owner approved it on 2026-11-15', pins: 'harness-runtime/installing-sidebar at 4ff7d83 (mount runtime-installing-sidebar)' },
+    { route: 'task/approval', title: 'Task · Waiting for approval', redirect: 'task/approval-exact', template: 'task/approval', basis: 'Owner decision 2026-11-15: each approval covers one exact action, so the card no longer offers Approve for this task', pins: 'task/approval at 9709483' },
+    { route: 'menu-bar/busy', title: 'Menu bar · Busy', redirect: 'menu-bar/busy-approve-once', template: 'menu-bar/busy', basis: 'Owner decision 2026-11-15: the request button reads Approve once', pins: 'menu-bar/busy at 9709483' },
+    { route: 'menu-bar/busy-minimum', title: 'Menu bar · Busy · 1000 × 620', redirect: 'menu-bar/busy-approve-once-minimum', template: 'menu-bar/busy', basis: 'Owner decision 2026-11-15: the request button reads Approve once', pins: 'menu-bar/busy-minimum at 9709483' }
   ];
 
   HFV2.retired = RETIRED.map(function (entry) {
@@ -64,14 +67,11 @@
   // Redraws awaiting owner approval. Both states of a pair stay listed. On sign-off the pair moves into
   // RETIRED above, the earlier state, its templates and guides are removed, and a redirect that already
   // targets the earlier state is repointed to the redraw. The catalog notes each pair outside the specimen.
-  // Six pairs are waiting. The exact-action approval removes the task-wide choice from the approval card. The two
-  // menu bar pairs relabel the request's button Approve once, in the full popover and in the minimum window; the
-  // minimum pair is required because menu-bar/busy-minimum is approved. The three parallel group loading pairs show
-  // the group title, which is always known, instead of a shimmering block.
+  // Three pairs are waiting: the parallel group loading states show the group title, which is always known, instead
+  // of a shimmering block. The exact-action approval and the two menu bar relabels were approved on 2026-11-15 and
+  // retired the earlier states above; the base templates task/approval and menu-bar/busy stay in HFV2.templates
+  // because the approval states derive from them.
   HFV2.pendingRedraw = [
-    { older: 'task/approval', newer: 'task/approval-exact' },
-    { older: 'menu-bar/busy', newer: 'menu-bar/busy-approve-once' },
-    { older: 'menu-bar/busy-minimum', newer: 'menu-bar/busy-approve-once-minimum' },
     { older: 'parallel-group/loading', newer: 'parallel-group/loading-known-title' },
     { older: 'parallel-group/loading-minimum', newer: 'parallel-group/loading-known-title-minimum' },
     { older: 'parallel-group/loading-two', newer: 'parallel-group/loading-two-known-title' }

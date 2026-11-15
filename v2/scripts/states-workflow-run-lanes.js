@@ -1,5 +1,5 @@
-/* Provisional lane state of a workflow run that has ended: a message queued to a lane before the run was cancelled is
-   undeliverable. Not approved. The frame is the approved workflow-run/parallel template with the run shown as cancelled
+/* Lane state of a workflow run that has ended: a message queued to a lane before the run was cancelled is
+   undeliverable. Approved by the owner on 2026-11-15. The frame is the approved workflow-run/parallel template with the run shown as cancelled
    and the lane queue and composer drawn by the parallel group lane parts (states-parallel-lanes.js, H.laneParts).
    Deterministic display-only fixture; no engine calls. Decision record: docs/decisions/README.md (Queued messages and
    approval states). Loaded after screens-workflow-run.js and states-parallel-lanes.js. */
@@ -13,7 +13,7 @@
   var BASE = FAMILY + '/parallel';
   var ID = 'lane-message-undeliverable';
   var KEY = FAMILY + '/' + ID;
-  var NOTE = 'Provisional · not approved';
+  var APPROVAL = { by: 'the owner', date: '2026-11-15', decision: 'Queued messages and approval states' };
 
   // Fixture content, not interface copy: the message a person typed, and the reason the engine supplies. The reason is the
   // example HarflowMac uses for an undeliverable bubble (WorkMessageQueue.swift, preview data, e4635dc).
@@ -95,19 +95,19 @@
   });
   H.runLaneDerivation = { route: KEY, base: BASE, build: build, message: MESSAGE, reason: REASON, locked: LOCKED };
 
-  docs[KEY] = '<p><strong>Provisional, not approved.</strong> A run that was cancelled, drawn as lanes. A message was queued to the lane that was running; the run ended before it could be delivered, so its bubble is captioned Undeliverable, carries the reason the engine supplies, has no Cancel and is not queued again. <a href="docs/decisions/README.md#queued-messages-and-approval-states-provisional">Decision record</a>, with the contract citation and the open owner checks.</p>' +
+  docs[KEY] = '<p><strong>Approved by the owner · 2026-11-15.</strong> A run that was cancelled, drawn as lanes. A message was queued to the lane that was running; the run ended before it could be delivered, so its bubble is captioned Undeliverable, carries the reason the engine supplies, has no Cancel and is not queued again. <a href="docs/decisions/README.md#queued-messages-and-approval-states">Decision record</a>, with the contract citation and what remains open.</p>' +
     '<p>Derived from the approved <a href="#workflow-run/parallel">Parallel view</a>: the run is cancelled, so the badge says so and Pause and Cancel run are gone, the run moves to Recent work, the lane that was running ends cancelled, the node that never started has no lane, and the lane composers are locked with the reason. Reason text and the message are fixture content.</p>' +
     '<p>Deterministic mock text; no engine, provider or network is involved.</p>';
 
   H.registerState(FAMILY, {
     id: ID, title: 'Parallel view, message undeliverable',
     description: 'A cancelled run as lanes. A message queued to a lane before the run ended is captioned Undeliverable with the engine\'s reason, and the lane composers are off.',
-    group: 'Workflow run', status: 'provisional', approvalNote: NOTE
+    group: 'Workflow run', status: 'approved', approval: APPROVAL
   });
   H.registerState(FAMILY, {
     id: ID + '-minimum', title: 'Parallel view, message undeliverable · 1000 × 620',
     description: 'The cancelled run with an undeliverable message, in the minimum window. Each lane keeps a 360 point floor and the lanes scroll horizontally; the top bar drops its meta text so the title stays whole, and its dot shows the text on hover and focus.',
-    group: 'Minimum window', status: 'provisional', approvalNote: NOTE,
+    group: 'Minimum window', status: 'approved', approval: APPROVAL,
     minimum: { of: KEY, fixes: ['sidebar', 'lanes', 'topbar-meta'] }
   });
 })();

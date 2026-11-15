@@ -102,15 +102,7 @@
           "Loading"
         ],
         "description": "Task detail: a slim top bar, the transcript, inline approvals and the composer, with every status, the actions menu, the changes, events and artifacts panes and the adaptive layout.",
-        "states": [
-          {
-            "id": "approval",
-            "title": "Waiting for approval",
-            "description": "An approval card in the transcript, answered inline.",
-            "status": "approved",
-            "group": "Status"
-          }
-        ]
+        "states": []
       },
       {
         "id": "parallel-group",
@@ -170,13 +162,6 @@
         ],
         "description": "The menu bar popover and its monochrome template glyph.",
         "states": [
-          {
-            "id": "busy",
-            "title": "Busy",
-            "description": "Running work and requests answered inline from the popover.",
-            "status": "approved",
-            "group": "Menu bar"
-          },
           {
             "id": "empty",
             "title": "Nothing running",

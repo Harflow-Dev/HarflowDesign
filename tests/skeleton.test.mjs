@@ -31,7 +31,7 @@ const REFERENCES = {
   'task/loading-pane': 'task/pane-running-open',
   'parallel-group/loading': 'parallel-group/lanes',
   'needs-you/loading': 'needs-you/waiting',
-  'menu-bar/loading': 'menu-bar/busy',
+  'menu-bar/loading': 'menu-bar/busy-approve-once',
   'workflows/loading': 'workflows/list',
   'workflow-editor/loading': 'workflow-editor/node-selected',
   'workflow-run/loading': 'workflow-run/on-demand',
@@ -58,6 +58,20 @@ test('every loading state mirrors a pinned, approved and current loaded state', 
     assert.equal(d.renderer, loaded.renderer);
     assert.equal(d.mount, loaded.mount);
   }
+});
+
+test('the menu bar loading states mirror the Approve once popover and look the same as they did: the request cards are placeholders', () => {
+  assert.equal(HFV2.describe('menu-bar/loading').skeleton.of, 'menu-bar/busy-approve-once');
+  assert.equal(HFV2.describe('menu-bar/loading-minimum').minimum.of, 'menu-bar/busy-approve-once');
+  assert.equal(HFV2.routeRedirects['menu-bar/busy'], 'menu-bar/busy-approve-once');
+  // The two popovers differ only in the label of the request's button ...
+  const earlier = HFV2.templates['menu-bar/busy'], now = HFV2.templates['menu-bar/busy-approve-once'];
+  const button = (label) => `<button type="button" class="hd-btn hd-btn--primary hd-btn--sm">${label}</button>`;
+  assert.equal(earlier.replace(button('Approve'), button('Approve once')), now);
+  // ... and the spec replaces the whole request list with authored placeholders, so the label is never drawn while loading.
+  const op = HFV2.skeletonSpecs['menu-bar'].ops.find(o => o.sel.endsWith('[aria-label="Needs you"] > div:last-child'));
+  assert.ok(op && op.kind === 'html');
+  assert.ok(!/Approve|Reject/.test(op.html()), 'the placeholders carry no label');
 });
 
 test('every loading state is approved, carries its own decision and no approval note', () => {

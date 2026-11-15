@@ -14,11 +14,11 @@
   var redrawIds = ['centered-loading','centered-unqualified','centered-invalid','centered-starting-plain','centered-refused','centered-options-closed','centered-harness-open','centered-shell-collapsed','centered-shell-narrow'];
   H.m04RedrawStates = redrawIds.map(function (id) { return { id: id, title: id.replace(/-/g, ' '), description: 'Owner-approved centered redraw (' + (id === 'centered-starting-plain' ? '2026-11-09' : id === 'centered-harness-open' ? '2026-11-08; Model field amended 2026-11-15' : '2026-11-08') + '): ' + id.replace(/-/g, ' ') + ' review fixture.', status: 'Approved', approved: true }; });
   // Owner-approved model picker states (2026-11-15). The fixture of each comes from its source mount, named in m04-proposal.js.
-  var modelIds = ['model-loading','model-unavailable','model-not-installed','model-truncated','model-empty'];
+  var modelIds = ['model-loading','model-unavailable','model-not-installed','model-truncated','model-empty','model-default'];
   H.m04ModelStates = modelIds.map(function (id) { return { id: id, title: id.replace(/-/g, ' '), description: 'Owner-approved model picker state (2026-11-15): ' + id.replace(/-/g, ' ') + ' review fixture.', status: 'Approved', approved: true }; });
-  // Provisional drafts, not approved. The fixture of each comes from its source mount, named in m04-proposal.js.
-  var pendingIds = ['runtime-updating','model-default'];
-  H.m04PendingStates = pendingIds.map(function (id) { return { id: id, title: id.replace(/-/g, ' '), description: 'Provisional draft: ' + id.replace(/-/g, ' ') + ' review fixture.', status: 'Provisional', approved: false }; });
+  // Owner-approved runtime update (2026-11-15). The fixture comes from its source mount, named in m04-proposal.js.
+  var runtimeIds = ['runtime-updating'];
+  H.m04RuntimeStates = runtimeIds.map(function (id) { return { id: id, title: id.replace(/-/g, ' '), description: 'Owner-approved runtime update (2026-11-15): ' + id.replace(/-/g, ' ') + ' review fixture.', status: 'Approved', approved: true }; });
   var T = H.templates = H.templates || {};
   // Labels of the catalog-only strip above the app frame. The Node test scans them for process names.
   var STRIPS = (H.catalogStrips = H.catalogStrips || {}).m04 = {
@@ -36,12 +36,12 @@
     modelNotice: 'Approved by the owner, 2026-11-15. Local preview · appearance preserves draft · route changes reset · Reduce Motion: instant changes. Native titlebar, OS controls and the native suggestions menu are browser approximations; native validation is pending.',
     redrawStartingNotice: 'Approved by the owner, 2026-11-09. Local preview · appearance preserves draft · route changes reset · Reduce Motion: instant changes. Native titlebar and OS controls are browser approximations; native validation is pending.',
     redrawNotice: 'Approved by the owner, 2026-11-08. Local preview · appearance preserves draft · route changes reset · Reduce Motion: instant changes. Native titlebar and OS controls are browser approximations; native validation is pending.',
-    pendingHeading: 'Draft · Not approved',
-    pendingNotice: 'Draft, not approved. Local preview · appearance preserves draft · route changes reset · Reduce Motion: instant changes. Native titlebar and OS controls are browser approximations; native validation is pending.',
+    runtimeHeading: 'Approved · Runtime update · Owner 2026-11-15',
+    runtimeNotice: 'Approved by the owner, 2026-11-15. Local preview · appearance preserves draft · route changes reset · Reduce Motion: instant changes. Native titlebar and OS controls are browser approximations; native validation is pending.',
     centeredNotice: 'Approved amendment (owner, 2026-11-06), separate from the 2026-11-05 approval; the 2026-11-06 sidebar body-scroll correction applies to every entry, composer and sidebar state. Local preview · appearance preserves draft · route changes reset · Reduce Motion: instant changes. Native titlebar and OS controls are browser approximations; native validation is pending.'
   };
   ids.forEach(function (id) { T['m04-proposal/' + id] = '<div class="hd-m04-proposal" data-theme="{{theme}}"><div class="hd-m04-catalog" aria-label="' + STRIPS.baselineLabel + '"></div><div class="hd-m04-window"></div></div>'; });
-  amendmentIds.concat(redrawIds, modelIds, pendingIds).forEach(function (id) { T['m04-proposal/' + id] = '<div class="hd-m04-proposal hd-m04-amendment" data-theme="{{theme}}"><div class="hd-m04-catalog" aria-label="' + STRIPS.centeredLabel + '"></div><div class="hd-m04-window"></div></div>'; });
+  amendmentIds.concat(redrawIds, modelIds, runtimeIds).forEach(function (id) { T['m04-proposal/' + id] = '<div class="hd-m04-proposal hd-m04-amendment" data-theme="{{theme}}"><div class="hd-m04-catalog" aria-label="' + STRIPS.centeredLabel + '"></div><div class="hd-m04-window"></div></div>'; });
 
   // Routes: [renderer id, family, state, group, title, description]. The renderer id stays the template key.
   var ROWS = [
@@ -86,22 +86,18 @@
     redrawSidebar: { by: 'the owner', date: '2026-11-08', decision: 'Sidebar' },
     redrawStarting: { by: 'the owner', date: '2026-11-09', decision: 'Starting row' },
     redrawHarness: { by: 'the owner', date: '2026-11-15', decision: 'Centered composer · Model field' },
-    model: { by: 'the owner', date: '2026-11-15', decision: 'Model picker' }
+    model: { by: 'the owner', date: '2026-11-15', decision: 'Model picker' },
+    runtime: { by: 'the owner', date: '2026-11-15', decision: 'Runtime update' }
   };
   ROWS.forEach(function (row) {
     var id = row[0];
-    var redraw = redrawIds.indexOf(id) >= 0, pending = pendingIds.indexOf(id) >= 0, model = modelIds.indexOf(id) >= 0;
+    var redraw = redrawIds.indexOf(id) >= 0, runtime = runtimeIds.indexOf(id) >= 0, model = modelIds.indexOf(id) >= 0;
     var state = {
       id: row[2], title: row[4], description: row[5], group: row[3] || undefined,
       source: { template: 'm04-proposal/' + id, renderer: 'm04', mount: id, guide: 'm04-proposal/' + id },
-      status: pending ? 'provisional' : 'approved'
+      status: 'approved'
     };
-    if (pending) {
-      state.approvalNote = 'Provisional · not approved';
-      H.registerState(row[1], state);
-      return;
-    }
-    state.approval = model ? APPROVAL.model : redraw ? (row[1] === 'sidebar' ? APPROVAL.redrawSidebar : id === 'centered-starting-plain' ? APPROVAL.redrawStarting : id === 'centered-harness-open' ? APPROVAL.redrawHarness : APPROVAL.redraw) : amendmentIds.indexOf(id) >= 0 ? APPROVAL.centered : APPROVAL.baseline;
+    state.approval = runtime ? APPROVAL.runtime : model ? APPROVAL.model : redraw ? (row[1] === 'sidebar' ? APPROVAL.redrawSidebar : id === 'centered-starting-plain' ? APPROVAL.redrawStarting : id === 'centered-harness-open' ? APPROVAL.redrawHarness : APPROVAL.redraw) : amendmentIds.indexOf(id) >= 0 ? APPROVAL.centered : APPROVAL.baseline;
     H.registerState(row[1], state);
   });
 })();

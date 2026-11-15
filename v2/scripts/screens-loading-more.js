@@ -17,7 +17,7 @@
   });
   loading('menu-bar', {
     id: 'loading', title: 'Loading', description: 'The popover while its lists are read: counts and the Needs you, Running and Recent rows are placeholders; the section headings and footer actions are real.',
-    skeleton: { of: 'menu-bar/busy', spec: 'menu-bar' }
+    skeleton: { of: 'menu-bar/busy-approve-once', spec: 'menu-bar' }
   });
   loading('workflows', {
     id: 'loading', title: 'Loading', description: 'The workflow list being read: the rows are placeholders; the title, search and New workflow are real.',

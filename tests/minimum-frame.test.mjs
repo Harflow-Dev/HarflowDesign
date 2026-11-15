@@ -28,8 +28,7 @@ const STATES = {
   'parallel-group/lanes-minimum': { of: 'parallel-group/lanes', fixes: ['sidebar', 'lanes', 'topbar-meta'], title: 'Lanes · 1000 × 620' },
   'workflow-run/parallel-minimum': { of: 'workflow-run/parallel', fixes: ['sidebar', 'lanes', 'topbar-meta'], title: 'Parallel view · 1000 × 620' },
   'workflow-editor/node-selected-minimum': { of: 'workflow-editor/node-selected', fixes: ['sidebar', 'inspector', 'canvas', 'topbar-meta'], title: 'Node selected · 1000 × 620' },
-  'workflow-editor/orchestrator-minimum': { of: 'workflow-editor/orchestrator', fixes: ['sidebar', 'inspector', 'canvas', 'topbar-meta'], title: 'Orchestrator · 1000 × 620' },
-  'menu-bar/busy-minimum': { of: 'menu-bar/busy', fixes: ['popover'], title: 'Busy · 1000 × 620' }
+  'workflow-editor/orchestrator-minimum': { of: 'workflow-editor/orchestrator', fixes: ['sidebar', 'inspector', 'canvas', 'topbar-meta'], title: 'Orchestrator · 1000 × 620' }
 };
 
 // The loading drafts: the minimum draft of the same screen with its loading skeleton. `of` is the loaded route the draft
@@ -39,11 +38,13 @@ const LOADING = {
   'parallel-group/loading-minimum': { of: 'parallel-group/lanes', base: 'parallel-group/lanes-minimum', fixes: ['sidebar', 'lanes', 'topbar-meta'], spec: 'parallel-group-minimum' },
   'workflow-run/loading-parallel-minimum': { of: 'workflow-run/parallel', base: 'workflow-run/parallel-minimum', fixes: ['sidebar', 'lanes', 'topbar-meta'], spec: 'workflow-run-parallel-minimum' },
   'workflow-editor/loading-minimum': { of: 'workflow-editor/node-selected', base: 'workflow-editor/node-selected-minimum', fixes: ['sidebar', 'inspector', 'canvas', 'topbar-meta'], spec: 'workflow-editor-minimum' },
-  'menu-bar/loading-minimum': { of: 'menu-bar/busy', base: 'menu-bar/busy-minimum', fixes: ['popover'], spec: 'menu-bar' }
+  // menu-bar/busy and menu-bar/busy-minimum were retired on 2026-11-15; the loading draft mirrors their replacements. The request cards
+  // are placeholders, so the label of the button (Approve or Approve once) is not drawn.
+  'menu-bar/loading-minimum': { of: 'menu-bar/busy-approve-once', base: 'menu-bar/busy-approve-once-minimum', fixes: ['popover'], spec: 'menu-bar' }
 };
 
-test('the six minimum window states are registered, approved and derived from their loaded state', () => {
-  const all = HFV2.registry.families.flatMap(f => f.states.filter(s => s.minimum && !s.skeleton && s.status === 'approved').map(s => `${f.id}/${s.id}`));
+test('the five minimum window states of the loaded screens are registered, approved and derived from their loaded state', () => {
+  const all = HFV2.registry.families.flatMap(f => f.states.filter(s => s.minimum && !s.skeleton && s.status === 'approved' && s.approval.decision === 'Minimum window').map(s => `${f.id}/${s.id}`));
   assert.deepEqual([...all].sort(), Object.keys(STATES).sort());
   for (const [route, want] of Object.entries(STATES)) {
     const [familyId, stateId] = route.split('/');
@@ -70,9 +71,9 @@ test('the six minimum window states are registered, approved and derived from th
   }
 });
 
-test('all eleven minimum window states are approved, each with its own approval, no approval note and no provisional strip', () => {
-  const minimumStates = HFV2.registry.families.flatMap(f => f.states.filter(s => s.minimum && s.status === 'approved').map(s => ({ family: f, state: s, route: `${f.id}/${s.id}` })));
-  assert.equal(minimumStates.length, 11);
+test('the ten minimum window states of the minimum window decision are approved, each with its own approval, no approval note and no provisional strip', () => {
+  const minimumStates = HFV2.registry.families.flatMap(f => f.states.filter(s => s.minimum && s.status === 'approved' && s.approval.decision === 'Minimum window').map(s => ({ family: f, state: s, route: `${f.id}/${s.id}` })));
+  assert.equal(minimumStates.length, 10);
   assert.ok(minimumStates.every(({ route }) => route.endsWith('-minimum')), 'every minimum state has a -minimum id');
   const approvals = new Set();
   for (const { family, state, route } of minimumStates) {
@@ -85,30 +86,35 @@ test('all eleven minimum window states are approved, each with its own approval,
     assert.ok(!/Provisional|needs owner approval|not approved/i.test(d.approval + state.title + state.description), `${route} says nothing provisional`);
     assert.equal(HFV2.approvalLine(family, state), APPROVED_LINE);
   }
-  assert.equal(approvals.size, 11, 'each registration has its own approval object');
+  assert.equal(approvals.size, 10, 'each registration has its own approval object');
   // Other states whose id ends in -minimum (task/topbar-minimum) are not derived states and keep their own records.
   assert.deepEqual(json(HFV2.registry.families.flatMap(f => f.states.filter(s => s.minimum && s.status === 'approved' && 'approvalNote' in s).map(s => `${f.id}/${s.id}`))), []);
 });
 
-// Provisional minimum states are drawn from provisional loaded states and stay out of the approved set above.
-const PROVISIONAL_MINIMUM = {
+// Two minimum states were approved on 2026-11-15 with the queued message and approval states they derive from. Their own approval
+// object names that decision, not the minimum window decision.
+const QUEUED_MINIMUM = {
   'menu-bar/busy-approve-once-minimum': { of: 'menu-bar/busy-approve-once', fixes: ['popover'] },
   'workflow-run/lane-message-undeliverable-minimum': { of: 'workflow-run/lane-message-undeliverable', fixes: ['sidebar', 'lanes', 'topbar-meta'] }
 };
-test('the provisional minimum window states derive from a provisional state, carry no approval and say so', () => {
-  const all = HFV2.registry.families.flatMap(f => f.states.filter(s => s.minimum && !s.skeleton && s.status === 'provisional').map(s => `${f.id}/${s.id}`));
-  assert.deepEqual([...all].sort(), Object.keys(PROVISIONAL_MINIMUM).sort());
-  for (const [route, want] of Object.entries(PROVISIONAL_MINIMUM)) {
+const QUEUED_APPROVAL = { by: 'the owner', date: '2026-11-15', decision: 'Queued messages and approval states' };
+test('the approved minimum window states of the queued message and approval states derive from an approved state and carry their own approval', () => {
+  const all = HFV2.registry.families.flatMap(f => f.states.filter(s => s.minimum && !s.skeleton && s.status === 'approved' && s.approval.decision !== 'Minimum window').map(s => `${f.id}/${s.id}`));
+  assert.deepEqual([...all].sort(), Object.keys(QUEUED_MINIMUM).sort());
+  assert.deepEqual(json(HFV2.registry.families.flatMap(f => f.states.filter(s => s.minimum && s.status === 'provisional').map(s => `${f.id}/${s.id}`))), ['parallel-group/loading-known-title-minimum'], 'only the known-title loading draft stays provisional');
+  for (const [route, want] of Object.entries(QUEUED_MINIMUM)) {
     const [familyId, stateId] = route.split('/');
     const family = HFV2.findFamily(familyId), state = HFV2.findState(family, stateId);
     assert.equal(state.group, 'Minimum window', route);
-    assert.equal(state.approval, undefined, `${route} carries no approval object`);
-    assert.equal(state.approvalNote, 'Provisional · not approved', route);
-    assert.equal(HFV2.approvalLine(family, state), 'Provisional · not approved');
+    assert.equal(state.status, 'approved', route);
+    assert.deepEqual(json(state.approval), QUEUED_APPROVAL, route);
+    assert.ok(!('approvalNote' in state), `${route} carries no approval note`);
+    assert.equal(HFV2.approvalLine(family, state), 'Approved by the owner on 2026-11-15 · Queued messages and approval states');
     assert.deepEqual(json(state.minimum), want);
-    assert.equal(HFV2.findState(family, want.of.split('/')[1]).status, 'provisional', `${route} derives from a provisional state`);
+    assert.equal(HFV2.findState(HFV2.findFamily(want.of.split('/')[0]), want.of.split('/')[1]).status, 'approved', `${route} derives from an approved state`);
     assert.ok(route.endsWith('-minimum'));
-    for (const field of ['id', 'title', 'description', 'group', 'approvalNote']) assert.ok(!NAMING_RULE.test(state[field]), `${route} ${field}`);
+    for (const field of ['id', 'title', 'description', 'group']) assert.ok(!NAMING_RULE.test(state[field]), `${route} ${field}`);
+    assert.ok(!/Provisional|not approved|retire|replac/i.test(state.title + state.description), `${route} carries no history`);
     assert.equal(HFV2.describe(route).templateKey, want.of);
   }
 });
@@ -117,15 +123,15 @@ test('the provisional minimum window states derive from a provisional state, car
 // on (the baseline of these drafts), because that commit changed no template.
 test('no existing template changed: the digests equal those of the base commit and none was added', () => {
   const manifest = JSON.parse(fs.readFileSync(path.join(root, 'tests', 'data', 'templates-ba8c928.json'), 'utf8'));
-  // The only templates added since are the provisional queued-message and approval states, the starting state without a status row
-  // (approved 2026-11-09) and the provisional runtime update draft (it replaced the retired runtime card draft). The template of the retired starting state is removed with it.
+  // The only templates added since are the queued-message and approval states (approved 2026-11-15), the starting state without a status row
+  // (approved 2026-11-09) and the runtime update (approved 2026-11-15; it replaced the retired runtime card draft). The template of the retired starting state is removed with it.
   const added = [
     ...['stale', 'expired', 'answered-elsewhere', 'refused', 'uncertain', 'exact'].map(x => `task/approval-${x}`),
     'needs-you/approval-stale', 'needs-you/approval-expired', 'needs-you/answered-elsewhere', 'needs-you/checkpoint-stale',
     'menu-bar/approval-stale', 'menu-bar/answered-elsewhere', 'menu-bar/busy-approve-once', 'workflow-run/lane-message-undeliverable',
     ...['queued', 'delivering', 'delivered', 'cancelled', 'send-now-refused', 'uncertain', 'unsupported', 'queued-settled'].map(x => `messages/message-${x}`),
     'm04-proposal/centered-starting-plain', 'm04-proposal/runtime-updating',
-    // The model picker states (approved 2026-11-15) and the provisional default marker draft.
+    // The model picker states, the default marker included (approved 2026-11-15).
     ...['loading', 'unavailable', 'not-installed', 'truncated', 'empty', 'default'].map(x => `m04-proposal/model-${x}`),
     // The approved pending-launch states (2026-11-10) and the approved parallel-group lane states (2026-11-12).
     ...HFV2.pendingLaunchStates.map(([id]) => `task/pending-${id}`).filter(key => key in HFV2.templates),
@@ -154,7 +160,7 @@ test('the five loading states are registered with the minimum() helper, approved
   const all = HFV2.registry.families.flatMap(f => f.states.filter(s => s.minimum && s.skeleton && s.status === 'approved').map(s => `${f.id}/${s.id}`));
   assert.deepEqual([...all].sort(), Object.keys(LOADING).sort());
   const source = read('scripts/screens-minimum.js');
-  assert.equal((source.match(/^  minimum\('/gm) || []).length, 11, 'all eleven states go through minimum()');
+  assert.equal((source.match(/^  minimum\('/gm) || []).length, 10, 'all ten states go through minimum()');
   for (const [route, want] of Object.entries(LOADING)) {
     const [familyId, stateId] = route.split('/');
     const family = HFV2.findFamily(familyId), state = HFV2.findState(family, stateId);
@@ -261,8 +267,8 @@ test('the catalog applies the template, then the minimum fixes, then the skeleto
     assert.match(String(run.specimen.className), /hdc-specimen--minimum/);
   }
   // A plain minimum draft applies the fixes and no skeleton; the fixes are applied again on a second render.
-  const plain = runCatalog('menu-bar/busy-minimum');
-  plain.rerender('#menu-bar/busy-minimum/dark');
+  const plain = runCatalog('menu-bar/busy-approve-once-minimum');
+  plain.rerender('#menu-bar/busy-approve-once-minimum/dark');
   assert.deepEqual(json(plain.calls.map(c => c.step)), ['minimum', 'minimum']);
   const registry = read('scripts/registry.js');
   assert.ok(registry.indexOf('state.skeleton && state.minimum') < registry.indexOf('if (state.skeleton) {'), 'tripwire: the combined branch is checked first');
@@ -270,7 +276,7 @@ test('the catalog applies the template, then the minimum fixes, then the skeleto
 
 test('every minimum draft derives from a static screen: applyMinimum runs only on the static path', () => {
   const drafts = HFV2.registry.families.flatMap(f => f.states.filter(s => s.minimum).map(s => `${f.id}/${s.id}`));
-  assert.equal(drafts.length, 14, 'eleven approved drafts and three provisional ones');
+  assert.equal(drafts.length, 13, 'ten approved drafts of the minimum window decision, two approved with the queued message states and one provisional known-title draft');
   for (const route of drafts) {
     const state = HFV2.findState(HFV2.findFamily(route.split('/')[0]), route.split('/')[1]);
     assert.equal(HFV2.describe(state.minimum.of).renderer, null, `${route} derives from ${state.minimum.of}, which has no renderer`);
@@ -385,7 +391,7 @@ test('the sizing decisions are in the stylesheet: inspector 288, popover 380 by 
 });
 
 test('the states name the product screen only', () => {
-  for (const route of Object.keys(STATES)) {
+  for (const route of [...Object.keys(STATES), ...Object.keys(QUEUED_MINIMUM)]) {
     const [familyId, stateId] = route.split('/');
     const family = HFV2.findFamily(familyId), state = HFV2.findState(family, stateId);
     for (const field of ['id', 'title', 'description', 'group']) assert.ok(!NAMING_RULE.test(state[field]), `${route} ${field}`);
@@ -586,10 +592,10 @@ test('the stylesheet: the canvas viewport scrolls, the meta layout is unchanged 
 
 test('a render that is not a minimum state clears the Escape listener a minimum render left on the document', () => {
   // The catalog calls clearMinimum for a route without a minimum, and only for those.
-  const run = runCatalog('menu-bar/busy-minimum');
+  const run = runCatalog('menu-bar/busy-approve-once-minimum');
   const cleared = [];
   run.H.clearMinimum = host => cleared.push(host);
-  run.rerender('#menu-bar/busy-minimum/dark');
+  run.rerender('#menu-bar/busy-approve-once-minimum/dark');
   assert.equal(cleared.length, 0, 'a minimum route does not call it');
   run.rerender('#needs-you/waiting/light');
   assert.equal(cleared.length, 1, 'a plain route calls it');

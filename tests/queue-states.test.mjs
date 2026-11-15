@@ -5,7 +5,7 @@ import path from 'node:path';
 import vm from 'node:vm';
 import { fileURLToPath } from 'node:url';
 
-// Provisional queued-message and approval states: how they are derived, what copy they may show, and where they are recorded.
+// Queued-message and approval states (approved by the owner on 2026-11-15): how they are derived, what copy they may show, and where they are recorded.
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const v2 = path.join(root, 'v2');
 const read = file => fs.readFileSync(path.join(root, file), 'utf8');
@@ -25,8 +25,11 @@ const APPROVALS = [
   'needs-you/approval-stale', 'needs-you/approval-expired', 'needs-you/answered-elsewhere', 'needs-you/checkpoint-stale',
   'menu-bar/busy-approve-once', 'menu-bar/approval-stale', 'menu-bar/answered-elsewhere'
 ];
-const GAP_NOTE = 'Provisional · not approved · contract gap open';
-const PLAIN_NOTE = 'Provisional · not approved';
+// The owner approved the states on 2026-11-15. The approval does not close a contract gap: a state with an open gap keeps it in its guide.
+const APPROVAL = { by: 'the owner', date: '2026-11-15', decision: 'Queued messages and approval states' };
+const APPROVED_LINE = 'Approved by the owner on 2026-11-15 · Queued messages and approval states';
+const GAP_TEXT = 'A contract gap is open for this state; the approval does not close it.';
+const hasGap = route => H.componentDocs[H.describe(route).guideKey].includes(GAP_TEXT);
 const stateOf = route => { const [f, s] = route.split('/'); return [H.findFamily(f), H.findState(H.findFamily(f), s)]; };
 
 // Text a person can read or hear in a block of markup: text nodes and the accessible attributes.
@@ -78,40 +81,51 @@ const PROPOSED = ['Expired', 'Harflow rejected the request when it expired.', 'I
 
 // ---- Registration ----
 
-test('the eight queued-message states are provisional, in the Messages group, with their own note and no approval', () => {
+test('the eight queued-message states are approved with the 2026-11-15 approval, in the Messages group, and keep their contract gaps in the guide', () => {
   const task = H.findFamily('task');
   assert.ok(task.groups.includes('Messages'));
   assert.deepEqual(Array.from(H.messageStates, s => s.id), MESSAGE_IDS);
   for (const id of MESSAGE_IDS) {
     const [family, state] = stateOf(`task/${id}`);
-    assert.equal(state.status, 'provisional', id);
+    assert.equal(state.status, 'approved', id);
     assert.equal(state.group, 'Messages');
-    assert.equal(state.approval, undefined, `${id} carries no approval object`);
+    assert.deepEqual(JSON.parse(JSON.stringify(state.approval)), APPROVAL, `${id} approval`);
+    assert.equal(state.approvalNote, undefined, `${id} carries no approval note`);
     assert.deepEqual(JSON.parse(JSON.stringify(state.source)), { template: `messages/${id}`, renderer: 'messages', mount: id, guide: `messages/${id}` });
-    assert.ok([PLAIN_NOTE, GAP_NOTE].includes(state.approvalNote), id);
-    assert.equal(H.approvalLine(family, state), state.approvalNote);
+    assert.equal(H.approvalLine(family, state), APPROVED_LINE);
+    assert.ok(!/Provisional|not approved/.test(H.componentDocs[`messages/${id}`]), `${id} guide is no longer provisional`);
     assert.equal(H.describe(`task/${id}`).renderer, 'messages');
     assert.equal(H.routeFor('messages', id), `task/${id}`);
   }
-  // The suffix is only on states with a real contract gap; the queued, delivering, delivered and cancelled states have only the design question.
-  assert.deepEqual(MESSAGE_IDS.filter(id => stateOf(`task/${id}`)[1].approvalNote === GAP_NOTE), ['message-send-now-refused', 'message-uncertain', 'message-unsupported', 'message-queued-settled']);
+  // The gap text is only on states with a real contract gap; the queued, delivering, delivered and cancelled states have only the design question.
+  assert.deepEqual(MESSAGE_IDS.filter(id => hasGap(`task/${id}`)), ['message-send-now-refused', 'message-uncertain', 'message-unsupported', 'message-queued-settled']);
   // The states sit after the transcript states and before the Changes group.
   const groups = task.states.map(s => s.group);
   assert.ok(groups.lastIndexOf('Transcript') < groups.indexOf('Messages') && groups.lastIndexOf('Messages') < groups.indexOf('Changes'));
 });
 
-test('the thirteen approval states are provisional with no approval object, and only real gaps carry the gap suffix', () => {
+test('the thirteen approval states are approved with the 2026-11-15 approval, and only real gaps carry the gap text in the guide', () => {
   for (const route of APPROVALS) {
     const [family, state] = stateOf(route);
-    assert.equal(state.status, 'provisional', route);
-    assert.equal(state.approval, undefined, route);
+    assert.equal(state.status, 'approved', route);
+    assert.deepEqual(JSON.parse(JSON.stringify(state.approval)), APPROVAL, route);
+    assert.equal(state.approvalNote, undefined, route);
     assert.equal(state.source, undefined, `${route} renders its own template`);
     assert.equal(H.describe(route).templateKey, route);
-    assert.equal(H.approvalLine(family, state), state.approvalNote);
+    assert.equal(H.approvalLine(family, state), APPROVED_LINE);
+    assert.ok(!/Provisional|not approved/.test(H.componentDocs[route]), `${route} guide is no longer provisional`);
   }
-  const gap = APPROVALS.filter(route => stateOf(route)[1].approvalNote === GAP_NOTE).sort();
+  const gap = APPROVALS.filter(route => hasGap(route)).sort();
   assert.deepEqual(gap, ['menu-bar/answered-elsewhere', 'needs-you/answered-elsewhere', 'task/approval-answered-elsewhere']);
   assert.equal(H.approvalStates.length, 13);
+});
+
+test('the queued-message strip states the approval and the renderer reads it', () => {
+  assert.equal(H.catalogStrips.messages.approved, 'Approved · owner 2026-11-15');
+  assert.ok(!('provisional' in H.catalogStrips.messages));
+  const source = read('v2/scripts/messages-screen.js');
+  assert.ok(source.includes('strips.approved') && !source.includes('strips.provisional'));
+  assert.ok(!/kind: 'provisional'/.test(source));
 });
 
 test('titles, descriptions, guides and the queued-message strip name the product screen only', () => {
@@ -119,7 +133,8 @@ test('titles, descriptions, guides and the queued-message strip name the product
   const check = (where, value) => { if (NAMING_RULE.test(value)) hit.push(`${where}: ${value.slice(0, 60)}`); };
   for (const route of [...MESSAGE_IDS.map(id => `task/${id}`), ...APPROVALS]) {
     const [family, state] = stateOf(route);
-    for (const field of ['id', 'title', 'description', 'group', 'approvalNote']) check(`${route} ${field}`, state[field]);
+    for (const field of ['id', 'title', 'description', 'group', 'approvalNote']) check(`${route} ${field}`, state[field] || '');
+    assert.ok(!/Provisional|not approved|approv(?:al|ed) (?:of|on) 20|retire|replac|redraw/i.test(`${state.title} ${state.description}`), `${route} title and description carry no history`);
     const d = H.describe(route);
     check(`${route} guide`, (H.componentDocs[d.guideKey] || '').replace(/<[^>]*>/g, ' '));
     assert.ok(typeof H.componentDocs[d.guideKey] === 'string', `${route} has a guide`);
@@ -143,15 +158,17 @@ test('each approval template equals its base with exactly one block replaced, an
     else assert.equal(base.replace(find, ''), now, `${d.route} removes the block`);
     assert.notEqual(now, base);
   }
+  // task/approval and menu-bar/busy are base templates only: their routes were retired on 2026-11-15 and open the redraws.
   assert.deepEqual(Array.from(bases).sort(), ['menu-bar/busy', 'needs-you/waiting', 'task/approval', 'task/approval-exact']);
-  // The menu bar relabel replaces only the request's button; the approved popover keeps its text.
+  for (const retiredRoute of ['task/approval', 'menu-bar/busy']) assert.ok(retiredRoute in H.routeRedirects && stateOf(retiredRoute)[1] === null, `${retiredRoute} is retired`);
+  // The menu bar relabel replaces only the request's button; the base popover keeps its text.
   const relabel = H.approvalDerivations.find(d => d.route === 'menu-bar/busy-approve-once');
   assert.equal(relabel.base, 'menu-bar/busy');
   assert.equal(relabel.find(), '<button type="button" class="hd-btn hd-btn--primary hd-btn--sm">Approve</button>');
   assert.equal(relabel.build(relabel.find()), '<button type="button" class="hd-btn hd-btn--primary hd-btn--sm">Approve once</button>');
   assert.ok(!H.templates['menu-bar/busy'].includes('Approve once') && H.templates['menu-bar/busy'].includes('>Approve</button>'));
   assert.ok(H.templates['menu-bar/busy-approve-once'].includes('>Approve once</button>') && !H.templates['menu-bar/busy-approve-once'].includes('>Approve</button>'));
-  // The stale and answered-elsewhere popovers stay derived from the approved popover: they replace the whole action row.
+  // The stale and answered-elsewhere popovers stay derived from the base popover: they replace the whole action row.
   for (const route of ['menu-bar/approval-stale', 'menu-bar/answered-elsewhere']) assert.equal(H.approvalDerivations.find(d => d.route === route).base, 'menu-bar/busy');
   // The approved states still hold their text: the exact-action card removes only the task-wide button.
   assert.ok(H.templates['task/approval'].includes('Approve for this task'));
@@ -317,14 +334,15 @@ test('the new hooks change nothing for a route that passes none, and apply with 
 // ---- The undeliverable lane state and the menu bar relabel ----
 
 const UNDELIVERABLE = 'workflow-run/lane-message-undeliverable';
-test('the undeliverable state is a provisional lane of a cancelled run, derived from the parallel view with one block each replaced', () => {
+test('the undeliverable state is an approved lane of a cancelled run, derived from the parallel view with one block each replaced', () => {
   for (const route of [UNDELIVERABLE, `${UNDELIVERABLE}-minimum`]) {
     const [family, state] = stateOf(route);
-    assert.equal(state.status, 'provisional', route);
-    assert.equal(state.approval, undefined, `${route} carries no approval object`);
-    assert.equal(state.approvalNote, PLAIN_NOTE);
-    assert.equal(H.approvalLine(family, state), PLAIN_NOTE);
-    for (const field of ['id', 'title', 'description', 'group', 'approvalNote']) assert.ok(!NAMING_RULE.test(state[field]), `${route} ${field}`);
+    assert.equal(state.status, 'approved', route);
+    assert.deepEqual(JSON.parse(JSON.stringify(state.approval)), APPROVAL, `${route} approval`);
+    assert.equal(state.approvalNote, undefined);
+    assert.equal(H.approvalLine(family, state), APPROVED_LINE);
+    for (const field of ['id', 'title', 'description', 'group']) assert.ok(!NAMING_RULE.test(state[field]), `${route} ${field}`);
+    assert.ok(!/Provisional|not approved/.test(H.componentDocs[UNDELIVERABLE]), 'the guide is no longer provisional');
     assert.ok(family.groups.includes(state.group));
   }
   assert.deepEqual(JSON.parse(JSON.stringify(stateOf(`${UNDELIVERABLE}-minimum`)[1].minimum)), { of: UNDELIVERABLE, fixes: ['sidebar', 'lanes', 'topbar-meta'] });
@@ -374,26 +392,30 @@ test('the parallel group lane parts the new state reuses keep the approved lane 
 
 test('the decision record lists every new route, every neutral line, the gaps and the owner questions', () => {
   const decisions = read('v2/docs/decisions/README.md');
-  const at = decisions.indexOf('## Queued messages and approval states (provisional)');
+  const at = decisions.indexOf('## Queued messages and approval states\n');
   assert.ok(at > 0 && decisions.includes('<a id="queued-messages-and-approval-states-provisional"></a>'));
   const section = decisions.slice(at, decisions.indexOf('\n## ', at + 5));
   for (const route of [...MESSAGE_IDS.map(id => `task/${id}`), ...APPROVALS, 'workflow-run/lane-message-undeliverable', 'workflow-run/lane-message-undeliverable-minimum', 'menu-bar/busy-approve-once-minimum']) assert.ok(section.includes(`\`${route}\``), `${route} is recorded`);
   for (const line of [...MESSAGE_COPY, ...APPROVAL_COPY].filter(l => !/ UTC|·/.test(l) && !/^Oct|^Nov/.test(l))) assert.ok(section.includes(line.replace(/ approve$/, '')), `the allowlist cites: ${line}`);
   for (const line of PROPOSED) { const row = section.split('\n').find(l => l.startsWith(`| ${line}`)); assert.ok(row && /Proposed copy/.test(row), `${line} is marked proposed copy`); }
   assert.ok(!/\| Neutral \|/.test(section) && !/marked "neutral"/.test(section), 'no line is marked neutral any more');
-  assert.ok(section.includes('`e4635dc`') && section.includes('Owner answers applied 2026-11-14; back to the owner for approval.'));
-  for (const text of ['Open gaps', 'Owner checks', 'Provisional wording for owner review', 'The exact-action relabel', '3fdf0e8', '0936746', '`workflow-run/lane-message-undeliverable`', '`menu-bar/busy-approve-once-minimum`', '`components.js:731`', '`components.js:743`', '`screens-workflow-run.js:64`', '`screens-needs-you.js:76`']) assert.ok(section.includes(text), text);
+  assert.ok(section.includes('`e4635dc`') && section.includes('Owner answers applied 2026-11-14.') && section.includes('**Approved 2026-11-15.**') && section.includes('The approval does not close any contract gap'));
+  for (const text of ['Open gaps', 'Owner checks', 'Wording of the states', 'The exact-action relabel', '3fdf0e8', '0936746', '`workflow-run/lane-message-undeliverable`', '`menu-bar/busy-approve-once-minimum`', '`components.js:731`', '`components.js:743`', '`screens-workflow-run.js:64`', '`screens-needs-you.js:76`']) assert.ok(section.includes(text), text);
   assert.ok(!/archive\/v1/.test(section.replace(/Nothing is copied from `archive\/v1`\./, '')), 'v1 is not a source');
   assert.ok(decisions.includes('A pending redraw may also change copy when an owner decision requires it'));
-  assert.ok(decisions.includes('| Queued messages and approval states (provisional drafts) |'));
+  assert.ok(decisions.includes('| Queued messages and approval states | Task; Needs you; Menu bar; Workflow run | Approved |'));
   const map = read('v2/docs/route-map.md');
   for (const route of [...MESSAGE_IDS.map(id => `task/${id}`), ...APPROVALS, 'workflow-run/lane-message-undeliverable', 'workflow-run/lane-message-undeliverable-minimum', 'menu-bar/busy-approve-once-minimum']) assert.ok(map.includes(`\`${route}\``), `${route} is in the route map`);
-  assert.ok(map.includes('## Provisional routes') && map.includes('### Redraws awaiting approval'));
+  assert.ok(map.includes('## Approved routes with one block changed') && map.includes('## Provisional routes') && map.includes('### Redraws awaiting approval'));
+  // The approved routes sit in their own section, apart from the known-title routes that stay provisional.
+  const approvedBlock = map.slice(map.indexOf('## Approved routes with one block changed'), map.indexOf('## Provisional routes'));
+  for (const route of [...MESSAGE_IDS.map(id => `task/${id}`), ...APPROVALS, 'workflow-run/lane-message-undeliverable', 'workflow-run/lane-message-undeliverable-minimum', 'menu-bar/busy-approve-once-minimum']) assert.ok(approvedBlock.includes(`\`${route}\``), `${route} is in the approved routes section`);
   const inventory = read('v2/docs/screen-inventory.md');
   for (const route of [...MESSAGE_IDS.map(id => `task/${id}`), ...APPROVALS, 'workflow-run/lane-message-undeliverable', 'workflow-run/lane-message-undeliverable-minimum', 'menu-bar/busy-approve-once-minimum']) assert.ok(inventory.includes(`\`${route.split('/')[1]}\``) || inventory.includes(`\`${route}\``), `${route} is in the inventory`);
   assert.ok(read('CHANGELOG.md').includes('Add provisional queued-message and approval state drafts'));
   const ledger = read('v2/docs/migration-coverage.md');
-  assert.ok(/G-QUEUE[^\n]*Provisional drafts of eight states/.test(ledger) && /G-APPROVAL-STATES[^\n]*Provisional drafts exist/.test(ledger));
+  assert.ok(/G-QUEUE[^\n]*approved by the owner on 2026-11-15/.test(ledger) && /G-APPROVAL-STATES[^\n]*approved by the owner on 2026-11-15/.test(ledger));
+  assert.ok(!/G-QUEUE[^\n]*[Pp]rovisional drafts/.test(ledger) && !/G-APPROVAL-STATES[^\n]*[Pp]rovisional drafts/.test(ledger));
 });
 
 test('the pages load the new scripts and styles in order, and no sibling repository or archive is touched by them', () => {

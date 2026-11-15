@@ -18,7 +18,6 @@ Migration intent and unresolved coverage are tracked in the [migration coverage 
 | Workflow editor | Node selected | `workflow-editor/node-selected` | Left-to-right canvas, standalone on-demand nodes, node inspector |
 | Workflow editor | Orchestrator settings | `workflow-editor/orchestrator` | Locked orchestrator selected in the Standalone strip; harness, model and access in the inspector |
 | Workflow editor | Edit with agent | `workflow-editor/edit-with-agent` | Agent proposal on the canvas, builder activity in the right pane |
-| Task | Waiting for approval | `task/approval` | Inline approval card in the transcript |
 | Parallel group | Lanes | `parallel-group/lanes` | One lane per agent, each with its own composer |
 | Workflow run | Graph, needs you | `workflow-run/graph-needs-you` | Run graph left to right with a node that needs the person |
 | Workflow run | Parallel view | `workflow-run/parallel` | The run's agents as lanes |
@@ -29,7 +28,6 @@ Migration intent and unresolved coverage are tracked in the [migration coverage 
 | Settings | General | `settings/general` | Appearance, behaviour, runtime, task store |
 | Settings | Harnesses | `settings/harnesses` | Registration, install state and qualification per harness |
 | Settings | MCP approvals | `settings/mcp-approvals` | Global tool approvals managed inline |
-| Menu bar | Busy | `menu-bar/busy` | Popover with requests answered inline, running and recent work |
 | Menu bar | Nothing running | `menu-bar/empty` | Empty popover |
 | App states | First run, setup | `app-states/setup` | Runtime preparation and harness registration |
 | App states | Loading | `app-states/loading` | Connecting to the engine |
@@ -63,7 +61,7 @@ Each screen with a first load has one Loading state, drawn from the loaded state
 | Task | Loading, Loading · Right pane open | `task/loading`, `task/loading-pane` | `task/running-stop`, `task/pane-running-open` |
 | Parallel group | Loading | `parallel-group/loading` | `parallel-group/lanes` |
 | Needs you | Loading | `needs-you/loading` | `needs-you/waiting` |
-| Menu bar | Loading | `menu-bar/loading` | `menu-bar/busy` |
+| Menu bar | Loading | `menu-bar/loading` | `menu-bar/busy-approve-once`; the request cards are placeholders |
 | Workflows | Loading | `workflows/loading` | `workflows/list` |
 | Workflow editor | Loading | `workflow-editor/loading` | `workflow-editor/node-selected` |
 | Workflow run | Loading, Loading · Parallel view | `workflow-run/loading`, `workflow-run/loading-parallel` | `workflow-run/on-demand`, `workflow-run/parallel` |
@@ -76,7 +74,7 @@ Each screen with a first load has one Loading state, drawn from the loaded state
 
 ## Minimum window
 
-Eleven approved states draw six loaded screens and five loading states at 1000 × 620 (see [the decisions record](decisions/README.md#minimum-window)). Each is derived from its loaded state; the loaded states are unchanged. The owner decided the sizes on 2026-11-08 (lanes 360, inspector 288, popover 380, meta drops first) and approved the states the same day, with three fixes: the canvas scrolls, the meta dot is focusable and shows its text on focus, and the wrapped label at 288 is accepted.
+Ten approved states draw five loaded screens and five loading states at 1000 × 620 (see [the decisions record](decisions/README.md#minimum-window)); `menu-bar/busy-approve-once-minimum` is listed below under the 2026-11-15 approval. Each is derived from its loaded state; the loaded states are unchanged. The owner decided the sizes on 2026-11-08 (lanes 360, inspector 288, popover 380, meta drops first) and approved the states the same day, with three fixes: the canvas scrolls, the meta dot is focusable and shows its text on focus, and the wrapped label at 288 is accepted.
 
 | Family | State | Route | Derived from |
 | --- | --- | --- | --- |
@@ -85,24 +83,25 @@ Eleven approved states draw six loaded screens and five loading states at 1000 �
 | Workflow run | Parallel view · 1000 × 620 | `workflow-run/parallel-minimum` | `workflow-run/parallel`; 360 point lanes, the top bar meta drops first |
 | Workflow editor | Node selected · 1000 × 620 | `workflow-editor/node-selected-minimum` | `workflow-editor/node-selected`; inspector 288, the canvas scrolls, the top bar meta drops first |
 | Workflow editor | Orchestrator · 1000 × 620 | `workflow-editor/orchestrator-minimum` | `workflow-editor/orchestrator`; inspector 288, the canvas scrolls, the top bar meta drops first |
-| Menu bar | Busy · 1000 × 620 | `menu-bar/busy-minimum` | `menu-bar/busy`; popover 380 × 560 |
 | Needs you | Loading · 1000 × 620 | `needs-you/loading-minimum` | `needs-you/waiting-minimum` with its loading skeleton |
 | Parallel group | Loading · 1000 × 620 | `parallel-group/loading-minimum` | `parallel-group/lanes-minimum` with its loading skeleton |
 | Workflow run | Loading · 1000 × 620 | `workflow-run/loading-parallel-minimum` | `workflow-run/parallel-minimum` with its loading skeleton |
 | Workflow editor | Loading · 1000 × 620 | `workflow-editor/loading-minimum` | `workflow-editor/node-selected-minimum` with its loading skeleton |
-| Menu bar | Loading · 1000 × 620 | `menu-bar/loading-minimum` | `menu-bar/busy-minimum` with its loading skeleton |
-| Task | Queued messages, Message delivering, Message delivered, Message cancelled, Send now refused, Delivery uncertain, Messages unavailable, Queued on a finished task | `task/message-queued`, `message-delivering`, `message-delivered`, `message-cancelled`, `message-send-now-refused`, `message-uncertain`, `message-unsupported`, `message-queued-settled` | Provisional, not approved. The task screen frame with queued-message bubbles and a composer addition; `task/running-stop` or `task/failed-continue` underneath. Decision record: [Queued messages and approval states](decisions/README.md#queued-messages-and-approval-states-provisional) |
-| Task | Exact action, Approval no longer current, Approval expired, Approval answered elsewhere, Approval response refused, Approval delivery uncertain | `task/approval-exact`, `approval-stale`, `approval-expired`, `approval-answered-elsewhere`, `approval-refused`, `approval-uncertain` | Provisional, not approved. `task/approval` with one block replaced. `task/approval-exact` is the pending redraw of `task/approval` |
-| Needs you | Approval no longer current, Approval expired, Approval answered elsewhere, Checkpoint no longer current | `needs-you/approval-stale`, `approval-expired`, `answered-elsewhere`, `checkpoint-stale` | Provisional, not approved. `needs-you/waiting` with one card replaced |
-| Harness runtime | Updating | `harness-runtime/updating` | Provisional, not approved. The runtime update of an already set-up app: the populated sidebar and, in the main pane, the runtime gate with the title "Updating runtime" and the status "Update in progress"; standalone, no pending pair. `harness-runtime/installing-sidebar` is retired and opens it |
-| New task | Harness default marked | `new-task/centered-model-default` | Provisional, not approved. The open harness picker with Cursor selected and its suggestions open; the harness default (`auto`) carries a small "default" tag |
-| Menu bar | Approval no longer current, Approval answered elsewhere | `menu-bar/approval-stale`, `menu-bar/answered-elsewhere` | Provisional, not approved. `menu-bar/busy` with its first request replaced |
-| Menu bar | Busy, approve once; Busy, approve once · 1000 × 620 | `menu-bar/busy-approve-once`, `menu-bar/busy-approve-once-minimum` | Provisional, not approved. `menu-bar/busy` and `menu-bar/busy-minimum` with the request's button named Approve once; the two pending redraws |
-| Workflow run | Parallel view, message undeliverable; the same · 1000 × 620 | `workflow-run/lane-message-undeliverable`, `workflow-run/lane-message-undeliverable-minimum` | Provisional, not approved. `workflow-run/parallel` drawn as a cancelled run: one lane holds an undeliverable message and the lane composers are locked |
+| Menu bar | Loading · 1000 × 620 | `menu-bar/loading-minimum` | `menu-bar/busy-approve-once` at 1000 × 620 with its loading skeleton |
+| Task | Queued messages, Message delivering, Message delivered, Message cancelled, Send now refused, Delivery uncertain, Messages unavailable, Queued on a finished task | `task/message-queued`, `message-delivering`, `message-delivered`, `message-cancelled`, `message-send-now-refused`, `message-uncertain`, `message-unsupported`, `message-queued-settled` | Approved by the owner, 2026-11-15. The task screen frame with queued-message bubbles and a composer addition; `task/running-stop` or `task/failed-continue` underneath. Decision record: [Queued messages and approval states](decisions/README.md#queued-messages-and-approval-states) |
+| Task | Exact action, Approval no longer current, Approval expired, Approval answered elsewhere, Approval response refused, Approval delivery uncertain | `task/approval-exact`, `approval-stale`, `approval-expired`, `approval-answered-elsewhere`, `approval-refused`, `approval-uncertain` | Approved by the owner, 2026-11-15. The approval card of the task screen with one block replaced. `task/approval-exact` replaces `task/approval`, which is retired and opens it; it removes "Approve for this task" |
+| Needs you | Approval no longer current, Approval expired, Approval answered elsewhere, Checkpoint no longer current | `needs-you/approval-stale`, `approval-expired`, `answered-elsewhere`, `checkpoint-stale` | Approved by the owner, 2026-11-15. `needs-you/waiting` with one card replaced |
+| Harness runtime | Updating | `harness-runtime/updating` | Approved by the owner, 2026-11-15. The runtime update of an already set-up app: the populated sidebar and, in the main pane, the runtime gate with the title "Updating runtime" and the status "Update in progress"; standalone. `harness-runtime/installing-sidebar` is retired and opens it |
+| New task | Harness default marked | `new-task/centered-model-default` | Approved by the owner, 2026-11-15. The open harness picker with Cursor selected and its suggestions open; the harness default (`auto`) carries a small "default" tag |
+| Menu bar | Approval no longer current, Approval answered elsewhere | `menu-bar/approval-stale`, `menu-bar/answered-elsewhere` | Approved by the owner, 2026-11-15. The Busy popover with its first request replaced |
+| Menu bar | Busy, approve once; Busy, approve once · 1000 × 620 | `menu-bar/busy-approve-once`, `menu-bar/busy-approve-once-minimum` | Approved by the owner, 2026-11-15. The popover with work in progress and the request's button named Approve once. `menu-bar/busy-approve-once` and `menu-bar/busy-approve-once-minimum` replace `menu-bar/busy` and `menu-bar/busy-minimum`, which are retired and open them |
+| Workflow run | Parallel view, message undeliverable; the same · 1000 × 620 | `workflow-run/lane-message-undeliverable`, `workflow-run/lane-message-undeliverable-minimum` | Approved by the owner, 2026-11-15. `workflow-run/parallel` drawn as a cancelled run: one lane holds an undeliverable message and the lane composers are locked |
 | Task | Loading · Title known; Loading · Right pane open · Title known | `task/loading-known-title`, `task/loading-pane-known-title` | Provisional, not approved. `task/loading` and `task/loading-pane` with the known title in the top bar and the loaded sidebar; the approved states stay for a title that is not known yet |
 | Parallel group | Loading · Title known; the same · 1000 × 620; Loading · Member count unknown · Title known | `parallel-group/loading-known-title`, `loading-known-title-minimum`, `loading-two-known-title` | Provisional, not approved. Redraws of `parallel-group/loading`, `loading-minimum` and `loading-two` with the group title shown |
 
 Every loading state of the Loading and Minimum window tables, including those at 1000 × 620, is approved; the provisional states that show a known title are not. The orchestrator has no loading state, so it has none at 1000 × 620.
+
+On 2026-11-15 the owner approved the drafts above that were provisional, except the known-title loading states. Three routes are retired and open their replacements: `task/approval` (opens `task/approval-exact`), `menu-bar/busy` (opens `menu-bar/busy-approve-once`) and `menu-bar/busy-minimum` (opens `menu-bar/busy-approve-once-minimum`). The decisions record has the basis.
 
 ## Decisions recorded from the owner's feedback rounds
 
@@ -135,7 +134,7 @@ The 21 `task/pending-*` states are **approved by the owner on 2026-11-10**, pinn
 
 ## Model picker states
 
-The five states `new-task/centered-model-loading`, `centered-model-unavailable`, `centered-model-not-installed`, `centered-model-truncated` and `centered-model-empty` are **approved by the owner on 2026-11-15**. Each opens the harness picker of the centered composer with the Model field as an editable combo of the engine's suggested models (`backend-models.v1`) and one note for the listing state; the field accepts any model name in every state. A suggestion the harness reports as its default carries a small "default" tag. See [the decision record](decisions/README.md#model-picker-states) for the copy and what the app must change.
+The six states `new-task/centered-model-loading`, `centered-model-unavailable`, `centered-model-not-installed`, `centered-model-truncated`, `centered-model-empty` and `centered-model-default` are **approved by the owner on 2026-11-15**. Each opens the harness picker of the centered composer with the Model field as an editable combo of the engine's suggested models (`backend-models.v1`) and one note for the listing state; the field accepts any model name in every state. A suggestion the harness reports as its default carries a small "default" tag. See [the decision record](decisions/README.md#model-picker-states) for the copy and what the app must change.
 
 <a id="parallel-group-lane-decisions-provisional"></a>
 

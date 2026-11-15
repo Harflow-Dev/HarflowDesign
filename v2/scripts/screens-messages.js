@@ -1,5 +1,5 @@
-/* Provisional queued-message states of the task screen: the messaging ledger of a task drawn in the task screen
-   frame. Not approved; each state's meaning is cited in v2/docs/decisions/README.md. The frame comes from
+/* Queued-message states of the task screen: the messaging ledger of a task drawn in the task screen
+   frame. Approved by the owner on 2026-11-15; each state's meaning is cited in v2/docs/decisions/README.md. The frame comes from
    m05-proposal.js, the bubbles and composer additions from messages-screen.js. Deterministic browser-only fixtures. */
 (function () {
   'use strict';
@@ -10,7 +10,7 @@
   // Labels of the catalog-only strip above the app frame. The Node test scans them for process names.
   (H.catalogStrips = H.catalogStrips || {}).messages = {
     label: 'Queued message review controls',
-    provisional: 'Provisional · not approved',
+    approved: 'Approved · owner 2026-11-15',
     note: 'Deterministic mock · design reference. Frame and the review controls are catalog-only.'
   };
 
@@ -20,10 +20,12 @@
   var NOT_REQUEUED = 'Delivery could not be confirmed. The message is not requeued.';
   var CANT_INTERRUPT = 'Send now isn\'t available. This operation can\'t be interrupted safely.';
 
-  // [id, title, description, base task screen state, bubbles, composer, outcome line, approval note, how to read it]
+  // [id, title, description, base task screen state, bubbles, composer, outcome line, contract gap flag, how to read it]
   // A bubble is { id, kind: queued | delivering | uncertain, text, note }. A queued bubble can be cancelled.
-  var NOTE_PLAIN = 'Provisional · not approved';
-  var NOTE_GAP = 'Provisional · not approved · contract gap open';
+  // A state flagged GAP keeps an open contract gap, named in its guide. The approval does not close it.
+  var NOTE_PLAIN = false;
+  var NOTE_GAP = true;
+  var APPROVAL = { by: 'the owner', date: '2026-11-15', decision: 'Queued messages and approval states' };
   var ROWS = [
     ['message-queued', 'Queued messages',
       'Two messages queued for the next turn sit below the live activity, each captioned Queued with Cancel. The composer shows Send now beside Send. Cancel removes a message and says so.',
@@ -60,16 +62,16 @@
   ];
 
   H.messageStates = ROWS.map(function (r) {
-    return { id: r[0], title: r[1], description: r[2], base: r[3], bubbles: r[4], composer: r[5], outcome: r[6], approvalNote: r[7] };
+    return { id: r[0], title: r[1], description: r[2], base: r[3], bubbles: r[4], composer: r[5], outcome: r[6], gap: r[7] };
   });
 
   ROWS.forEach(function (r) {
     var key = 'messages/' + r[0];
     T[key] = '<div class="hd-m05 hd-msgq-host" data-theme="{{theme}}" data-light-on="{{lightOn}}" data-dark-on="{{darkOn}}" data-system-on="{{systemOn}}" data-messages-state="' + r[0] + '"><div class="hd-m05-catalog" aria-label="' + H.catalogStrips.messages.label + '"></div><div class="hd-m05-stage"></div></div>';
-    docs[key] = '<p><strong>Provisional, not approved.</strong> The messaging ledger of a task drawn inside the task screen frame. <a href="docs/decisions/README.md#queued-messages-and-approval-states-provisional">Decision record</a>, with the contract citation and the open gaps of every state.</p>' + r[8] +
+    docs[key] = '<p><strong>Approved by the owner · 2026-11-15.</strong> The messaging ledger of a task drawn inside the task screen frame. <a href="docs/decisions/README.md#queued-messages-and-approval-states">Decision record</a>, with the contract citation and the open gaps of every state.</p>' + (r[7] ? '<p>A contract gap is open for this state; the approval does not close it. The decision record names it.</p>' : '') + r[8] +
       '<p>Deterministic mock text; no engine, provider or network is involved. Reloading the route resets the mock.</p>';
     H.registerState('task', {
-      id: r[0], title: r[1], description: r[2], group: 'Messages', status: 'provisional', approvalNote: r[7],
+      id: r[0], title: r[1], description: r[2], group: 'Messages', status: 'approved', approval: APPROVAL,
       source: { template: key, renderer: 'messages', mount: r[0], guide: key }
     });
   });
