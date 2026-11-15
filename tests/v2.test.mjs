@@ -745,9 +745,12 @@ const DECISION = { 'new-task': 'Centered composer', sidebar: 'Sidebar', task: 'T
 const PENDING_PAIRS = [
   { older: 'task/approval', newer: 'task/approval-exact' },
   { older: 'menu-bar/busy', newer: 'menu-bar/busy-approve-once' },
-  { older: 'menu-bar/busy-minimum', newer: 'menu-bar/busy-approve-once-minimum' }
+  { older: 'menu-bar/busy-minimum', newer: 'menu-bar/busy-approve-once-minimum' },
+  { older: 'parallel-group/loading', newer: 'parallel-group/loading-known-title' },
+  { older: 'parallel-group/loading-minimum', newer: 'parallel-group/loading-known-title-minimum' },
+  { older: 'parallel-group/loading-two', newer: 'parallel-group/loading-two-known-title' }
 ];
-test('three redraws are pending, the exact-action approval and the two menu bar relabels, and the catalog notes each pair outside the specimen', () => {
+test('six redraws are pending, the exact-action approval, the two menu bar relabels and the three parallel group loading titles, and the catalog notes each pair outside the specimen', () => {
   assert.deepEqual(JSON.parse(JSON.stringify(pending)), PENDING_PAIRS);
   assert.ok(!routeSet.has('new-task/centered-starting'), 'the earlier starting state is retired');
   assert.equal(stateOfRoute('new-task/centered-starting-plain')[1].status, 'approved');

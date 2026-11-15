@@ -76,7 +76,7 @@ Recorded by [S03](../../../HarflowMCP/docs/migration-receipts/S03.md) against Ha
 | Truthful enforcement, unknown and failure states | Accepted | Required on whichever surface displays the task; not a panel requirement |
 | Terminal takeover entry (human-only and ctl-only on the engine) | Accepted (owner, 2026-11-07) | `m05-proposal/overflow-running`, `m05-proposal/takeover-dialog` (now `task/overflow-running`, `task/takeover-dialog`); moved back into v1 from D12 |
 | Builder-session "Always allow Harflow tools" shortcut | Accepted (owner, 2026-11-07) | Retained; no longer proposed for removal |
-| First-load skeleton for each screen with a first load | Accepted (owner, 2026-11-08) | the `*/loading` routes (see [decisions, Loading states](decisions/README.md#loading-states)); Mac differences recorded there |
+| First-load skeleton for each screen with a first load | Accepted (owner, 2026-11-08) | the `*/loading` routes (see [decisions, Loading states](decisions/README.md#loading-states)); Mac differences recorded there. A known task title shows while the task loads (owner, 2026-11-08): provisional `task/loading-known-title`, `task/loading-pane-known-title`, and the parallel group redraws `parallel-group/loading-known-title`, `loading-known-title-minimum`, `loading-two-known-title` (not approved; [decisions](decisions/README.md#loading-states-with-a-known-title)) |
 
 ### Simplify
 

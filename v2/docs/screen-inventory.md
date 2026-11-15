@@ -54,7 +54,7 @@ The owner approved these redraws on 2026-11-08, and the starting state on 2026-1
 
 ## Loading states
 
-Each screen with a first load has one Loading state, drawn from the loaded state it mirrors (see [the decisions record](decisions/README.md#loading-states)). Every loading state is approved.
+Each screen with a first load has one Loading state, drawn from the loaded state it mirrors (see [the decisions record](decisions/README.md#loading-states)). Every loading state in this table is approved. The provisional states that show a known title are listed with the other provisional states ([decisions](decisions/README.md#loading-states-with-a-known-title)).
 
 | Family | State | Route | Mirrors |
 | --- | --- | --- | --- |
@@ -99,8 +99,10 @@ Eleven approved states draw six loaded screens and five loading states at 1000 �
 | Menu bar | Approval no longer current, Approval answered elsewhere | `menu-bar/approval-stale`, `menu-bar/answered-elsewhere` | Provisional, not approved. `menu-bar/busy` with its first request replaced |
 | Menu bar | Busy, approve once; Busy, approve once · 1000 × 620 | `menu-bar/busy-approve-once`, `menu-bar/busy-approve-once-minimum` | Provisional, not approved. `menu-bar/busy` and `menu-bar/busy-minimum` with the request's button named Approve once; the two pending redraws |
 | Workflow run | Parallel view, message undeliverable; the same · 1000 × 620 | `workflow-run/lane-message-undeliverable`, `workflow-run/lane-message-undeliverable-minimum` | Provisional, not approved. `workflow-run/parallel` drawn as a cancelled run: one lane holds an undeliverable message and the lane composers are locked |
+| Task | Loading · Title known; Loading · Right pane open · Title known | `task/loading-known-title`, `task/loading-pane-known-title` | Provisional, not approved. `task/loading` and `task/loading-pane` with the known title in the top bar and the loaded sidebar; the approved states stay for a title that is not known yet |
+| Parallel group | Loading · Title known; the same · 1000 × 620; Loading · Member count unknown · Title known | `parallel-group/loading-known-title`, `loading-known-title-minimum`, `loading-two-known-title` | Provisional, not approved. Redraws of `parallel-group/loading`, `loading-minimum` and `loading-two` with the group title shown |
 
-Every loading state, including those at 1000 × 620, is approved. The orchestrator has no loading state, so it has none at 1000 × 620.
+Every loading state of the Loading and Minimum window tables, including those at 1000 × 620, is approved; the provisional states that show a known title are not. The orchestrator has no loading state, so it has none at 1000 × 620.
 
 ## Decisions recorded from the owner's feedback rounds
 

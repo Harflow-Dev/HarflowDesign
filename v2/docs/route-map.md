@@ -98,12 +98,16 @@ These are canonical routes with no earlier name; they are not aliases or redirec
 | `menu-bar/approval-stale`, `menu-bar/answered-elsewhere` | `menu-bar/busy`, first request |
 | `harness-runtime/updating` | `new-task/centered-empty` with the runtime gate of `harness-runtime/installing` in the main pane; standalone, no pending pair |
 | `new-task/centered-model-default` | `new-task/centered-ready` with the harness picker of `new-task/centered-harness-open` open, Cursor selected and its suggestions open, the harness default tagged; standalone, no pending pair. ([decisions](decisions/README.md#model-picker-states)) |
+| `task/loading-known-title`, `task/loading-pane-known-title` | `task/loading` and `task/loading-pane`, with the title shown and the loaded sidebar; standalone, no pending pair: the approved states stay for a title that is not known yet ([decisions](decisions/README.md#loading-states-with-a-known-title)) |
+| `parallel-group/loading-known-title`, `parallel-group/loading-known-title-minimum`, `parallel-group/loading-two-known-title` | `parallel-group/loading`, `parallel-group/loading-minimum` and `parallel-group/loading-two`, with the group title shown ([decisions](decisions/README.md#loading-states-with-a-known-title)) |
 
 ### Redraws awaiting approval
 
 `task/approval-exact` redraws `task/approval` and removes its "Approve for this task" button. Both stay listed until the owner decides; the catalog notes the pair beside the approval line. When the owner approves the redraw, `task/approval` is retired and opens `task/approval-exact`.
 
 `menu-bar/busy-approve-once` redraws `menu-bar/busy`, and `menu-bar/busy-approve-once-minimum` redraws the approved `menu-bar/busy-minimum`; each names the request's button Approve once. Both pairs are required and stay listed until the owner decides. When the owner approves them, `menu-bar/busy` and `menu-bar/busy-minimum` are retired and open the redraws.
+
+`parallel-group/loading-known-title`, `parallel-group/loading-known-title-minimum` and `parallel-group/loading-two-known-title` redraw `parallel-group/loading`, `parallel-group/loading-minimum` and `parallel-group/loading-two` with the group title shown, because a group's title is always known. The three pairs stay listed until the owner decides. When the owner approves them, the three approved states are retired and open the redraws.
 
 ## Loading routes
 
@@ -129,11 +133,11 @@ These are canonical routes with no earlier name; they are not aliases or redirec
 | `settings/loading-mcp-approvals` | `settings/mcp-approvals` |
 | `components/skeleton-shimmer` | The primitive |
 
-`sidebar/history-loading` is retired and opens `sidebar/loading`.
+`sidebar/history-loading` is retired and opens `sidebar/loading`. The provisional loading states with a known title are listed under "Provisional routes".
 
 ## Minimum window routes
 
-These are canonical routes with no earlier name. Each draws the state in the second column at 1000 × 620 with the fixes the window needs (the loading routes add the loading skeleton); they are approved ([decisions](decisions/README.md#minimum-window)). None declares a view. Every loading state, including those at 1000 × 620, is approved.
+These are canonical routes with no earlier name. Each draws the state in the second column at 1000 × 620 with the fixes the window needs (the loading routes add the loading skeleton); they are approved ([decisions](decisions/README.md#minimum-window)). None declares a view. Every loading state in this table and under "Loading routes", including those at 1000 × 620, is approved; the provisional states that show a known title are not.
 
 | Minimum window route | Derived from |
 | --- | --- |

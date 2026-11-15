@@ -19,7 +19,7 @@ function loadRuntime() {
 }
 const HFV2 = loadRuntime();
 const json = value => JSON.parse(JSON.stringify(value));
-const loadingStates = HFV2.registry.families.flatMap(family => family.states.filter(state => state.skeleton && !state.minimum && state.group === 'Loading').map(state => ({ family, state, route: `${family.id}/${state.id}` })));
+const loadingStates = HFV2.registry.families.flatMap(family => family.states.filter(state => state.skeleton && !state.minimum && state.group === 'Loading' && state.status !== 'provisional').map(state => ({ family, state, route: `${family.id}/${state.id}` })));
 const KINDS = ['rows', 'html', 'custom', 'text', 'fill', 'hide', 'remove', 'disable', 'drop', 'attr', 'settext', 'pin'];
 const REGION_KINDS = ['rows', 'html', 'custom'];
 
@@ -99,9 +99,10 @@ test('sidebar/loading replaced sidebar/history-loading; no pending redraw pair n
 
 test('specs are complete: frame, label, region ops, valid kinds and an allowlist', () => {
   // The loading drafts at 1000 × 620 (tests/minimum-frame.test.mjs) use the approved specs and their minimum variants.
-  const draftSpecs = HFV2.registry.families.flatMap(f => f.states.filter(s => s.skeleton && s.minimum).map(s => s.skeleton.spec));
+  const draftSpecs = HFV2.registry.families.flatMap(f => f.states.filter(s => s.skeleton && s.minimum && s.status === 'approved').map(s => s.skeleton.spec));
   assert.equal(draftSpecs.length, 5);
-  const used = new Set([...loadingStates.map(({ state }) => state.skeleton.spec), ...draftSpecs]);
+  const knownTitleSpecs = KNOWN_TITLE.map(k => k.spec);
+  const used = new Set([...loadingStates.map(({ state }) => state.skeleton.spec), ...draftSpecs, ...knownTitleSpecs]);
   for (const key of used) assert.ok(HFV2.skeletonSpecs[key], `spec ${key} exists`);
   for (const [key, spec] of Object.entries(HFV2.skeletonSpecs).filter(([key]) => used.has(key))) {
     assert.ok(spec.frame && /^Loading [A-Z]/.test(spec.label), `${key} has a frame and a label`);
@@ -253,3 +254,71 @@ test('patterns are not shaped by fixtures: equal rows per card, a fixed-count ta
   assert.ok(!/<form|<input/.test(mcp));
   assert.ok(HFV2.skeletonSpecs['workflow-editor'].ops.some(op => op.kind === 'fill' && /button\.hd-form-row/.test(op.sel)), 'the fallback disclosure is replaced, not left without a name');
 });
+
+// ---- Loading with a known title (provisional) ----
+// Each redraws an approved loading state with the title shown. The task states keep task/loading for a title that is
+// not known yet and draw the loaded sidebar; the parallel group states are pending redraws of the approved ones.
+const KNOWN_TITLE = [
+  { route: 'task/loading-known-title', older: 'task/loading', spec: 'task-known-title', base: 'task', known: ['title', 'sidebar'], pending: false },
+  { route: 'task/loading-pane-known-title', older: 'task/loading-pane', spec: 'task-pane-known-title', base: 'task-pane', known: ['title', 'sidebar'], pending: false },
+  { route: 'parallel-group/loading-known-title', older: 'parallel-group/loading', spec: 'parallel-group-known-title', base: 'parallel-group', known: ['title'], pending: true },
+  { route: 'parallel-group/loading-known-title-minimum', older: 'parallel-group/loading-minimum', spec: 'parallel-group-minimum-known-title', base: 'parallel-group-minimum', known: ['title'], pending: true },
+  { route: 'parallel-group/loading-two-known-title', older: 'parallel-group/loading-two', spec: 'parallel-group-two-known-title', base: 'parallel-group-two', known: ['title'], pending: true }
+];
+const stateAt = route => HFV2.findState(HFV2.findFamily(route.split('/')[0]), route.split('/')[1]);
+
+test('loading with a known title: provisional states that draw the approved loading state with the title shown', () => {
+  for (const k of KNOWN_TITLE) {
+    const state = stateAt(k.route), older = stateAt(k.older);
+    assert.ok(state, `${k.route} is registered`);
+    assert.equal(state.status, 'provisional', k.route);
+    assert.equal(state.approval, undefined, `${k.route} carries no approval object`);
+    assert.equal(HFV2.describe(k.route).approval, 'Provisional · not approved', k.route);
+    assert.equal(older.status, 'approved', `${k.older} keeps its approval`);
+    assert.equal(state.group, older.group, `${k.route} sits in the group of ${k.older}`);
+    assert.deepEqual(json(state.minimum || null), json(older.minimum || null), `${k.route} has the frame of ${k.older}`);
+    assert.equal(state.skeleton.of, older.skeleton.of, `${k.route} mirrors the loaded state of ${k.older}`);
+    assert.equal(older.skeleton.spec, k.base, `${k.older} still draws ${k.base}`);
+    assert.equal(state.skeleton.spec, k.spec);
+    assert.ok(HFV2.componentDocs[k.route].includes('decisions/README.md#loading-states-with-a-known-title'), `${k.route} links its decision record`);
+    const d = HFV2.describe(k.route), o = HFV2.describe(k.older);
+    assert.equal(d.templateKey, o.templateKey);
+    assert.equal(d.renderer, o.renderer);
+    assert.equal(d.mount, o.mount);
+    assert.equal(json(HFV2.pendingRedraw).some(pair => pair.older === k.older && pair.newer === k.route), k.pending, `${k.route} pending pair`);
+  }
+});
+
+test('loading with a known title: the spec is the approved spec without the title op (and, for a task, without the sidebar ops)', () => {
+  const TASK_TITLE = '.hd-m05-window .hd-app .hd-m05-bar__center .hd-topbar__title';
+  const GROUP_TITLE = '.hd-app .hd-topbar .hd-topbar__title';
+  const sidebar = new Set(HFV2.skeletonSpecs['task'].ops.filter(op => /hd-nav|hd-rail|aria-label="(Running|Recent work)"/.test(op.sel)).map(op => op.sel));
+  assert.equal(sidebar.size, 7, 'the task spec has seven sidebar ops');
+  for (const k of KNOWN_TITLE) {
+    const base = HFV2.skeletonSpecs[k.base], spec = HFV2.skeletonSpecs[k.spec];
+    const title = k.base.startsWith('task') ? TASK_TITLE : GROUP_TITLE;
+    const dropped = base.ops.filter(op => !spec.ops.includes(op));
+    assert.deepEqual(spec.ops, base.ops.filter(op => !dropped.includes(op)), `${k.spec} keeps the other ops in order`);
+    assert.deepEqual(json(dropped.filter(op => op.sel === title).map(op => op.kind)), ['text'], `${k.spec} drops the title block`);
+    const rest = dropped.filter(op => op.sel !== title);
+    if (k.known.includes('sidebar')) assert.deepEqual(new Set(rest.map(op => op.sel)), sidebar, `${k.spec} draws the loaded sidebar`);
+    else assert.equal(rest.length, 0, `${k.spec} drops nothing else`);
+    assert.deepEqual(json(spec.known), k.known);
+    assert.deepEqual(json(spec.chrome), json(base.chrome), `${k.spec} keeps the allowlist of ${k.base}`);
+    assert.equal(spec.label, base.label);
+    assert.equal(spec.frame, base.frame);
+  }
+  for (const key of ['task', 'task-pane', 'parallel-group', 'parallel-group-minimum', 'parallel-group-two']) {
+    assert.ok(!('known' in HFV2.skeletonSpecs[key]), `the approved spec ${key} shows no known data`);
+    assert.ok(HFV2.skeletonSpecs[key].ops.some(op => /hd-topbar__title$/.test(op.sel) && op.kind === 'text'), `the approved spec ${key} still shimmers the title`);
+  }
+});
+
+test('loading with a known title: a provisional loading strip, and the approved strips are unchanged', () => {
+  const strip = HFV2.loadingStrip(undefined);
+  assert.equal(strip.heading, 'Provisional · not approved');
+  assert.match(strip.note, /^Provisional\. /);
+  assert.match(strip.note, /the title already known and the loaded sidebar are shown/);
+  assert.equal(HFV2.loadingStrip('Loading states').heading, 'Approved · Loading states · Owner 2026-11-08');
+});
+

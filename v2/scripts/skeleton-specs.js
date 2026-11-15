@@ -23,7 +23,13 @@
     sidebarNote: 'Approved by the owner, 2026-11-08. Loading placeholder drawn from the loaded screen: the work rows are shimmering blocks and everything else is the real screen. Reduce Motion: static blocks. Native titlebar and OS controls are browser approximations.',
     note: 'Approved by the owner, 2026-11-08. Loading placeholder drawn from the loaded screen: its data regions are shimmering blocks and everything else is the real screen. Reduce Motion: static blocks. Native titlebar and OS controls are browser approximations.'
   };
+  // A provisional loading state has no decision yet; its strip says so.
+  H.catalogStrips.loadingProvisional = {
+    heading: 'Provisional · not approved',
+    note: 'Provisional. Loading placeholder drawn from the loaded screen: the title already known and the loaded sidebar are shown, the other data regions are shimmering blocks and everything else is the real screen. Reduce Motion: static blocks. Native titlebar and OS controls are browser approximations.'
+  };
   H.loadingStrip = function (decision) {
+    if (!decision) return Object.assign({}, H.catalogStrips.loadingProvisional);
     var strips = H.catalogStrips.loading;
     return {
       heading: strips.approvedPrefix + ' · ' + decision + ' · ' + strips.approvedOwner,

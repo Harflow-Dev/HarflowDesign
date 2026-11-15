@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Draw the known title in the loading states of the `v2/` reference, from the owner's answer of 2026-11-08, as provisional states, not approved: `task/loading-known-title` and `task/loading-pane-known-title` show the task title in the top bar with the loaded sidebar, while `task/loading` and `task/loading-pane` stay for a title that is not known yet; `parallel-group/loading-known-title`, `loading-known-title-minimum` and `loading-two-known-title` are pending redraws of the approved parallel group loading states, because a group's title is always known. A provisional loading strip replaces the approved one on the task states. The decisions record lists what the Mac app must change to match. The approved states are unchanged.
+
 - Apply the owner's canonical task glyphs of 2026-11-14 to the `v2/` reference: the menu bar draws a running workflow run as the spinner, and "Timed out" is the failed x in danger colour in the status badge and the task screen. Record the glyphs outside the canonical set and one open question on finished parallel groups.
 
 - Record the model picker's unavailable-reason sentences as `{Harness}` templates, with the `source_missing` sentence chosen by the listing's `source`, and record that the unknown-state note also covers a listing that can't be read at all.

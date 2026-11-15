@@ -64,12 +64,16 @@
   // Redraws awaiting owner approval. Both states of a pair stay listed. On sign-off the pair moves into
   // RETIRED above, the earlier state, its templates and guides are removed, and a redirect that already
   // targets the earlier state is repointed to the redraw. The catalog notes each pair outside the specimen.
-  // Three pairs are waiting. The exact-action approval removes the task-wide choice from the approval card. The two
+  // Six pairs are waiting. The exact-action approval removes the task-wide choice from the approval card. The two
   // menu bar pairs relabel the request's button Approve once, in the full popover and in the minimum window; the
-  // minimum pair is required because menu-bar/busy-minimum is approved.
+  // minimum pair is required because menu-bar/busy-minimum is approved. The three parallel group loading pairs show
+  // the group title, which is always known, instead of a shimmering block.
   HFV2.pendingRedraw = [
     { older: 'task/approval', newer: 'task/approval-exact' },
     { older: 'menu-bar/busy', newer: 'menu-bar/busy-approve-once' },
-    { older: 'menu-bar/busy-minimum', newer: 'menu-bar/busy-approve-once-minimum' }
+    { older: 'menu-bar/busy-minimum', newer: 'menu-bar/busy-approve-once-minimum' },
+    { older: 'parallel-group/loading', newer: 'parallel-group/loading-known-title' },
+    { older: 'parallel-group/loading-minimum', newer: 'parallel-group/loading-known-title-minimum' },
+    { older: 'parallel-group/loading-two', newer: 'parallel-group/loading-two-known-title' }
   ];
 })();

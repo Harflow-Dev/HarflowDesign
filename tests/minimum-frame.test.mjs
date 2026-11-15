@@ -151,7 +151,7 @@ test('no existing template changed: the digests equal those of the base commit a
 });
 
 test('the five loading states are registered with the minimum() helper, approved, in the Minimum window group', () => {
-  const all = HFV2.registry.families.flatMap(f => f.states.filter(s => s.minimum && s.skeleton).map(s => `${f.id}/${s.id}`));
+  const all = HFV2.registry.families.flatMap(f => f.states.filter(s => s.minimum && s.skeleton && s.status === 'approved').map(s => `${f.id}/${s.id}`));
   assert.deepEqual([...all].sort(), Object.keys(LOADING).sort());
   const source = read('scripts/screens-minimum.js');
   assert.equal((source.match(/^  minimum\('/gm) || []).length, 11, 'all eleven states go through minimum()');
@@ -270,7 +270,7 @@ test('the catalog applies the template, then the minimum fixes, then the skeleto
 
 test('every minimum draft derives from a static screen: applyMinimum runs only on the static path', () => {
   const drafts = HFV2.registry.families.flatMap(f => f.states.filter(s => s.minimum).map(s => `${f.id}/${s.id}`));
-  assert.equal(drafts.length, 13, 'eleven approved drafts and two provisional ones');
+  assert.equal(drafts.length, 14, 'eleven approved drafts and three provisional ones');
   for (const route of drafts) {
     const state = HFV2.findState(HFV2.findFamily(route.split('/')[0]), route.split('/')[1]);
     assert.equal(HFV2.describe(state.minimum.of).renderer, null, `${route} derives from ${state.minimum.of}, which has no renderer`);
