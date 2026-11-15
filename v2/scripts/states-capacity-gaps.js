@@ -1,10 +1,10 @@
 /* Resources and Statistics states for the engine conditions the approved pages do not draw: capacity not enabled,
    unsupported or unavailable, empty, stale and over capacity; no finished work, incomplete history, partial usage
-   accounting, all time and an unsupported runtime. Provisional, not approved.
+   accounting, all time and an unsupported runtime. Approved by the owner on 2026-11-15.
    Each state is the approved resources/slots or statistics/overview template with one block replaced. Templates are
    computed on first use. Engine messages and figures are fixture text; the wording that has no Mac source is design
    wording and is named in each guide. The pages gain no search or filter controls.
-   Decision record: docs/decisions/README.md (Workflow and capacity gap states). Display only: no engine calls. */
+   Decision record: docs/decisions/README.md (Workflow and capacity states). Display only: no engine calls. */
 (function () {
   'use strict';
   var H = (window.HFV2 = window.HFV2 || {});
@@ -12,8 +12,8 @@
   var docs = (H.componentDocs = H.componentDocs || {});
   H.gapStates = H.gapStates || [];
 
-  var NOTE = 'Provisional · not approved';
-  var RECORD = '<a href="docs/decisions/README.md#workflow-and-capacity-gap-states">Decision record</a>';
+  var APPROVAL = { by: 'the owner', date: '2026-11-15', decision: 'Workflow and capacity states' };
+  var RECORD = '<a href="docs/decisions/README.md#workflow-and-capacity-states">Decision record</a>';
 
   // The base with its only occurrence of `find` replaced. It throws when `find` is missing or not unique, so a changed
   // base cannot silently draw a different screen.
@@ -48,10 +48,10 @@
         return value;
       }
     });
-    docs[route] = '<p><strong>Provisional, not approved.</strong> ' + guide + ' ' + RECORD + '.</p>';
+    docs[route] = '<p><strong>Approved by the owner · 2026-11-15.</strong> ' + guide + ' ' + RECORD + '.</p>';
     H.gapStates.push(route);
     ensureGroup(familyId, group);
-    H.registerState(familyId, Object.assign({ id: id, group: group, status: 'provisional', approvalNote: NOTE }, state));
+    H.registerState(familyId, Object.assign({ id: id, group: group, status: 'approved', approval: APPROVAL }, state));
   }
 
   var RETRY = '<button type="button" class="hd-btn hd-btn--secondary">Retry</button>';
@@ -180,7 +180,7 @@
   }, {
     title: 'All time selected',
     description: 'All time is the active range, the first tile reads All retained history, and a line under the tiles states the retention.'
-  }, 'Statistics with All time selected. The retention line is Mac copy (HarflowMac StatisticsProjection+Metrics.swift); the delta is design wording and the retention figure is fixture text. The chart below is the overview specimen and still draws the 30 day bars.');
+  }, 'Statistics with All time selected. The retention line is Mac copy (HarflowMac StatisticsProjection+Metrics.swift); the delta is design wording and the retention figure is fixture text. The chart below is the overview specimen and still draws the 30 day bars. The range is All time, as in the approved overview; the 90 day option of the Mac is not adopted.');
 
   define(STAT, STAT_GROUP, 'unsupported', OVERVIEW, function (html, base) {
     return replaceStatistics(html, base, empty('chart', 'Statistics are unavailable in this runtime', 'The installed runtime does not provide the statistics history. Update the Harflow runtime.'));

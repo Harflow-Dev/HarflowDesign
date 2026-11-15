@@ -117,15 +117,15 @@ These are canonical routes with no earlier name; they are not aliases or redirec
 
 The exact-action approval and the two menu bar relabels were pending until 2026-11-15; the owner approved them and the three earlier routes are retired (see "Retired routes").
 
-## Workflow and capacity gap routes
+## Workflow and capacity routes
 
-These are canonical routes with no earlier name; they are not aliases or redirects, and none is approved. The decisions record has the basis ([decisions](decisions/README.md#workflow-and-capacity-gap-states)).
+These are canonical routes with no earlier name; they are not aliases or redirects. They are approved (owner, 2026-11-15) except the six marked provisional, which await the owner. The decisions record has the basis ([decisions](decisions/README.md#workflow-and-capacity-states)).
 
-| Family | Provisional routes |
+| Family | Routes |
 | --- | --- |
-| `workflow-editor` | `checking`, `invalid`, `validate-unavailable`, `name-required`, `missing-child`, `missing-child-paths`, `missing-child-replace`, `conflict`, `conflict-unreadable`, `save-failed`, `load-failed`, `agent-request`, `agent-starting`, `agent-working`, `agent-failed`, `agent-cancelled`, `agent-canvas-changed`, `more-actions`, `more-actions-unsaved`, `delete-confirm`, `delete-failed`, `generate-starting`, `generate-working`, `generate-ready`, `generate-failed` |
-| `workflows` | `new-menu`, `generate`, `generate-refused`, `generate-uncertain` |
-| `workflow-run` | `orchestrator-selected`, `orchestrator-steering-open`, `orchestrator-steering-unavailable`, `node-message-queued`, `node-message-refused`, `node-message-unavailable`, `messages-unsupported`, `revise-goal`, `goal-revised`, `revise-goal-unavailable`, `revise-goal-answered-elsewhere`, `revise-goal-failed` |
+| `workflow-editor` | `checking`, `invalid`, `validate-unavailable`, `name-required`, `missing-child`, `missing-child-paths`, `missing-child-replace`, `conflict`, `conflict-unreadable`, `save-failed`, `load-failed`, `agent-request`, `agent-starting`, `agent-working`, `agent-failed`, `agent-cancelled`, `agent-canvas-changed`, `more-actions`, `more-actions-unsaved`, `delete-confirm`, `delete-failed`, provisional `delete-confirm-saved`, provisional `discard-confirm`, `generate-starting`, `generate-working`, `generate-ready`, `generate-failed` |
+| `workflows` | `new-menu`, `generate`, provisional `generate-builder-options`, `generate-refused`, `generate-uncertain` |
+| `workflow-run` | `orchestrator-selected`, `orchestrator-steering-open`, `orchestrator-steering-unavailable`, provisional `orchestrator-steering-waiting`, `orchestrator-steering-cancelling` and `orchestrator-steering-unknown`, `node-message-queued`, `node-message-refused`, `node-message-unavailable`, `messages-unsupported`, `revise-goal`, `goal-revised`, `revise-goal-unavailable`, `revise-goal-answered-elsewhere`, `revise-goal-failed` |
 | `resources` | `not-enabled`, `unsupported`, `unavailable`, `unavailable-permission`, `empty`, `stale`, `over-capacity` |
 | `statistics` | `empty`, `error`, `stale`, `partial-accounting`, `all-time`, `unsupported` |
 

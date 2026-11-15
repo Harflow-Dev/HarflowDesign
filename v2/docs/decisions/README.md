@@ -23,7 +23,7 @@ Routes are written as the current route, with the route used before the informat
 | Model picker states, the default tag and the Model field of the open harness picker | Start work | Approved | The owner, 2026-11-15: accepted all nine recommendations (chat answer relayed by the coordinator). `new-task/centered-model-default` approved the same day, directly to the coordinating session and confirmed in this session | Design `f8d7147`; approval recorded in the commit titled "Apply owner answers to the model picker states"; `new-task/centered-model-default` in the commit titled "Approve the provisional drafts of 2026-11-15" | `new-task/centered-model-loading`, `centered-model-unavailable`, `centered-model-not-installed`, `centered-model-truncated`, `centered-model-empty`; amended `new-task/centered-harness-open`; `new-task/centered-model-default` | [Model picker states](#model-picker-states), `v2/scripts/m04-proposal.js`, `v2/scripts/screens-m04-proposal.js`, `v2/styles/m04-proposal.css` |
 | Loading states | All screens with a first load | Approved | The owner, 2026-11-08 (`sidebar/loading` in the redraw decision; the other 15 states and the shimmer primitive: "I see the design and I think all looks good. I approve", relayed by the coordinator) | `8f52ad3` (the primitive and specs), `28f5066` (the start work and task states, the sidebar approval and the retirement of `sidebar/history-loading`), `a4a2c82` (the other states); review fixes `abb416c` and `ba8c928` (the approved design); approval recorded in the commit titled "Approve the loading states" | `new-task/loading`, `sidebar/loading`, `task/loading`, `task/loading-pane`, `parallel-group/loading`, `needs-you/loading`, `menu-bar/loading`, `workflows/loading`, `workflow-editor/loading`, `workflow-run/loading`, `workflow-run/loading-parallel`, `resources/loading`, `statistics/loading`, `settings/loading-general`, `settings/loading-harnesses`, `settings/loading-mcp-approvals`, `components/skeleton-shimmer` | `v2/scripts/skeleton.js`, `v2/scripts/skeleton-specs.js`, `v2/styles/skeleton.css`, `v2/scripts/screens-loading-work.js`, `v2/scripts/screens-loading-more.js` |
 | Loading states with a known title (provisional drafts) | Task; Parallel group | Provisional, not approved | None. Drawn on 2026-11-15 from the owner's answer of 2026-11-08 (row 1 of [Open design questions](#open-design-questions)) | The commit titled "Draw the known title in the task and parallel group loading states" | `task/loading-known-title`, `task/loading-pane-known-title`; pending redraws `parallel-group/loading-known-title`, `parallel-group/loading-known-title-minimum`, `parallel-group/loading-two-known-title` | [Loading states with a known title](#loading-states-with-a-known-title), `v2/scripts/states-titled-loading.js` |
-| Workflow and capacity gap states (provisional drafts) | Workflows; Capacity and usage | Provisional, not approved | None. Drawn on 2026-11-15 ahead of implementation, on the owner's decision of 2026-11-15 that the stage-3 gap families are drawn before they are implemented (relayed by the coordinator) | The commit titled "Draw provisional workflow and capacity gap states" | `workflow-editor/` `checking`, `invalid`, `validate-unavailable`, `name-required`, `missing-child`, `missing-child-paths`, `missing-child-replace`, `conflict`, `conflict-unreadable`, `save-failed`, `load-failed`, `agent-request`, `agent-starting`, `agent-working`, `agent-failed`, `agent-cancelled`, `agent-canvas-changed`, `more-actions`, `more-actions-unsaved`, `delete-confirm`, `delete-failed`, `generate-starting`, `generate-working`, `generate-ready`, `generate-failed`; `workflows/` `new-menu`, `generate`, `generate-refused`, `generate-uncertain`; `workflow-run/` `orchestrator-selected`, `orchestrator-steering-open`, `orchestrator-steering-unavailable`, `node-message-queued`, `node-message-refused`, `node-message-unavailable`, `messages-unsupported`, `revise-goal`, `goal-revised`, `revise-goal-unavailable`, `revise-goal-answered-elsewhere`, `revise-goal-failed`; `resources/` `not-enabled`, `unsupported`, `unavailable`, `unavailable-permission`, `empty`, `stale`, `over-capacity`; `statistics/` `empty`, `error`, `stale`, `partial-accounting`, `all-time`, `unsupported` | [states-workflow-gaps.js](../scripts/states-workflow-gaps.js), [states-run-actions.js](../scripts/states-run-actions.js), [states-capacity-gaps.js](../scripts/states-capacity-gaps.js), [gap-workflow.css](../styles/gap-workflow.css), [gap-run-capacity.css](../styles/gap-run-capacity.css) |
+| Workflow and capacity states | Workflows; Capacity and usage | Approved, except six states drawn on this decision | The owner, 2026-11-15 (decision "Workflow and capacity states", relayed by the coordinator): the 54 states drawn earlier the same day, with the answers to the fourteen questions recorded under [Owner decisions](#owner-decisions-2026-11-15). The six states drawn on those answers are provisional and wait for the owner | Drawn in the commit titled "Draw provisional workflow and capacity gap states"; approved and amended in the commit titled "Apply the owner's answers on the workflow and capacity states" | `workflow-editor/` `checking`, `invalid`, `validate-unavailable`, `name-required`, `missing-child`, `missing-child-paths`, `missing-child-replace`, `conflict`, `conflict-unreadable`, `save-failed`, `load-failed`, `agent-request`, `agent-starting`, `agent-working`, `agent-failed`, `agent-cancelled`, `agent-canvas-changed`, `more-actions`, `more-actions-unsaved`, `delete-confirm`, `delete-failed`, `generate-starting`, `generate-working`, `generate-ready`, `generate-failed`; `workflows/` `new-menu`, `generate`, `generate-refused`, `generate-uncertain`; `workflow-run/` `orchestrator-selected`, `orchestrator-steering-open`, `orchestrator-steering-unavailable`, `node-message-queued`, `node-message-refused`, `node-message-unavailable`, `messages-unsupported`, `revise-goal`, `goal-revised`, `revise-goal-unavailable`, `revise-goal-answered-elsewhere`, `revise-goal-failed`; `resources/` `not-enabled`, `unsupported`, `unavailable`, `unavailable-permission`, `empty`, `stale`, `over-capacity`; `statistics/` `empty`, `error`, `stale`, `partial-accounting`, `all-time`, `unsupported`. Provisional: `workflow-editor/delete-confirm-saved`, `discard-confirm`; `workflows/generate-builder-options`; `workflow-run/orchestrator-steering-waiting`, `orchestrator-steering-cancelling`, `orchestrator-steering-unknown` | [states-workflow-gaps.js](../scripts/states-workflow-gaps.js), [states-run-actions.js](../scripts/states-run-actions.js), [states-capacity-gaps.js](../scripts/states-capacity-gaps.js), [gap-workflow.css](../styles/gap-workflow.css), [gap-run-capacity.css](../styles/gap-run-capacity.css) |
 | Minimum window (1000 × 620) | Needs you, Parallel group, Workflow run, Workflow editor, Menu bar | Approved; one of its states is retired (see [Retired designs](#retired-designs)) | The owner, 2026-11-08: "Yes, approve", the answer to "Approve the 11 minimum-window screens with my three fixes?", relayed by the coordinator. The three fixes: the canvas scrolls, as on Mac; the meta dot is keyboard-focusable and shows its text on focus; the wrapped label at 288 is accepted. Sizes decided earlier the same day ("Yes, take them") | `9fca1fb`, `70ba6ab`, `c15dae3`, `6428285`, `1279752` and `c147372` (the states, the sizing decisions, the orchestrator and loading states, review fixes, and the canvas and meta fixes, in the commit titled "Scroll the workflow canvas and make the top bar meta focusable at the minimum window"); approval recorded in the commit titled "Approve the minimum window states" | `workflow-editor/orchestrator-minimum`, `needs-you/loading-minimum`, `parallel-group/loading-minimum`, `workflow-run/loading-parallel-minimum`, `workflow-editor/loading-minimum`, `menu-bar/loading-minimum`, `needs-you/waiting-minimum`, `parallel-group/lanes-minimum`, `workflow-run/parallel-minimum`, `workflow-editor/node-selected-minimum`, `menu-bar/busy-minimum` (retired; opens `menu-bar/busy-approve-once-minimum`) | `v2/scripts/screens-minimum.js`, `v2/scripts/minimum-frame.js`, `v2/styles/minimum-frame.css`, `tests/minimum-frame.test.mjs` |
 | Open design questions (five answers) | Task, Workflow run, Settings, Task store, Task contract blockers | Recorded | The owner, 2026-11-08: "Yes, all five", the answer to the coordinator's five recommendations, relayed by the coordinator | The commit titled "Record the owner's decisions on the open design questions" | `task/loading` (title note only); no state is added or changed | This file ([Open design questions](#open-design-questions)), [migration-coverage.md](../migration-coverage.md) |
 | Task screen states (statuses, actions, top bar, changes, events, artifacts, layout) | Task | Approved, except the provisional routes below | The owner, 2026-11-07, relayed by the coordinator | `17739e4` (proposal `3e85e26`, `a9c65fe`) | `task/running-stop` (`m05-proposal/state-running`), the other status, action, top bar, changes, events and layout routes, and the decision boards under `records/` (`m05-proposal/overview`, `retry-options`, `stop-options`, `adaptive-options`, `platform-options`). Provisional, not approved: `task/cancelled-partial` and `task/artifacts-*`, until the contract gaps close | [m05-task-screen-approval.md](m05-task-screen-approval.md), [m05-task-screen-proposal.md](m05-task-screen-proposal.md) |
@@ -550,10 +550,11 @@ Provisional, not approved. Drawn on 2026-11-15 from the owner's answer of 2026-1
 - Parallel group: no change. The Mac already publishes the group name as the title while membership loads, with a 150 pt badge block and a 300 pt meta block (`Parallel/ParallelVM+TopBar.swift:10`; `TaskTopBarPrincipal.swift:92-96`), which is what the parallel group redraws draw.
 
 <a id="workflow-and-capacity-gap-states"></a>
+<a id="workflow-and-capacity-states"></a>
 
-## Workflow and capacity gap states
+## Workflow and capacity states
 
-Provisional, not approved. Drawn on 2026-11-15 ahead of implementation, on the owner's decision of 2026-11-15 that the stage-3 gap families are drawn before they are implemented. Each state is derived from an approved template by exact block swaps (a swap fails when its block is missing or not unique), so no approved template or state changes. The states are display only and use fixture text. Behavioural evidence is HarflowMac `f474c0bfb80ce89702dc545ffd47de33df4ad215`; paths below are relative to `macos/HfFeatures/MainWindowFeature/Sources/MainWindowFeature/`, written `MWF/`; `W/` is its `Workflow/` folder. The steering contract is HarflowMCP `src/harflow_mcp/workflow_steering.py` and `src/harflow_mcp/ctl.py:556-581`. The catalog names no gap id; they appear in this record only.
+**Approved by the owner on 2026-11-15** (decision "Workflow and capacity states"): the 54 states below, with the amendments recorded under [Owner decisions](#owner-decisions-2026-11-15). They were drawn the same day, ahead of implementation, on the owner's decision that the stage-3 families are drawn before they are implemented. Six states drawn on the owner's answers are provisional until the owner has seen them (see the same section). Each state is derived from an approved template by exact block swaps (a swap fails when its block is missing or not unique); apart from the amendments under Owner decisions, no approved template changes. The states are display only and use fixture text. Behavioural evidence is HarflowMac `f474c0bfb80ce89702dc545ffd47de33df4ad215`; paths below are relative to `macos/HfFeatures/MainWindowFeature/Sources/MainWindowFeature/`, written `MWF/`; `W/` is its `Workflow/` folder. The steering contract is HarflowMCP `src/harflow_mcp/workflow_steering.py` and `src/harflow_mcp/ctl.py:556-581`. The catalog names no gap id; they appear in this record only. The approval line reads "Approved by the owner on 2026-11-15 · Workflow and capacity states".
 
 Copy source column: a Mac path and line is verbatim Mac copy; "fixture" is an invented example of text the engine supplies; "design wording" is copy the Mac does not have.
 
@@ -574,6 +575,7 @@ Group "Validation and saving" (base `workflow-editor/node-selected`):
 | `workflow-editor/conflict-unreadable` | `conflict` | "The current saved workflow could not be read. It may have been deleted. Your unsaved draft is preserved." and the engine detail | Mac copy; detail: fixture |
 | `workflow-editor/save-failed` | `node-selected` | Danger banner "Couldn't save the workflow." under the top bar; edits kept, Save available | `W/WorkflowVM.swift:581-591` (generic error text); reason: fixture |
 | `workflow-editor/load-failed` | `node-selected` | Top bar actions disabled; empty state "Workflow could not be loaded" with Retry | `W/WorkflowView.swift:93`, `W/WorkflowVM+Editor.swift:44-45`; reason: fixture |
+| `workflow-editor/discard-confirm` (provisional) | `node-selected` | Dialog "Discard unsaved changes?" and "The workflow returns to revision 7, its last saved revision."; Cancel, Discard (danger) (owner decision 10) | Design wording; the Mac discards without asking |
 
 Group "Edit with agent" (base `workflow-editor/edit-with-agent`; the canvas of `node-selected` without a selection where no suggested changes exist yet):
 
@@ -592,19 +594,20 @@ Group "More actions" (base `node-selected`):
 
 | Route | Derived from | Shows | Copy source |
 | --- | --- | --- | --- |
-| `workflow-editor/more-actions` | `node-selected` | Menu: Generate with agent…, separator, Delete (danger). No Duplicate or Rename | `W/WorkflowView.swift:239-249` |
-| `workflow-editor/more-actions-unsaved` | `name-required` | The same menu on a never-saved workflow; Delete disabled | `W/WorkflowView.swift:248` |
-| `workflow-editor/delete-confirm` | `node-selected` | Dialog "Delete workflow ‘Release checklist’?" and "Existing run snapshots remain available." | `W/WorkflowVM.swift:406-422` |
+| `workflow-editor/more-actions` | `node-selected` | Menu: Generate with agent…, separator, Delete… (danger). No Duplicate or Rename. The label ends with an ellipsis (owner decision 13) | `W/WorkflowView.swift:239-249`; the ellipsis is design wording |
+| `workflow-editor/more-actions-unsaved` | `name-required` | The same menu on a never-saved workflow; Delete… disabled | `W/WorkflowView.swift:248` |
+| `workflow-editor/delete-confirm` | `node-selected` (unsaved changes) | Dialog "Delete workflow ‘Release checklist’?", "Existing run snapshots remain available." and "Unsaved changes will be lost." (owner decision 4) | `W/WorkflowVM.swift:406-422`; the last line is design wording |
+| `workflow-editor/delete-confirm-saved` (provisional) | `orchestrator` (the saved editor: Revision 7, Save and Discard off) | The same dialog without the line about unsaved changes; Cancel returns to the saved editor | `W/WorkflowVM.swift:406-422` |
 | `workflow-editor/delete-failed` | `node-selected` | Danger banner "Couldn't delete the workflow."; the workflow stays open | Generic error text; reason: fixture |
 
-Not drawn: a Discard confirmation (the Mac has none, drafts persist).
 
 ### G-GENERATE: New workflow menu and Generate
 
 | Route | Derived from | Shows | Copy source |
 | --- | --- | --- | --- |
-| `workflows/new-menu` | `workflows/list` | The New workflow button open with Blank workflow and Generate with agent… | Items: `W/WorkflowView.swift:268-270` (two buttons on the Mac); one menu: design |
+| `workflows/new-menu` | `workflows/list` | The New workflow button open with Blank workflow and Generate with agent…; the list has no search field (owner decision 2) | Items: `W/WorkflowView.swift:268-270` (two buttons on the Mac); one menu: design |
 | `workflows/generate` | `workflows/run` | Page "Generate a workflow" with name, description, "No repository" and builder pills, Generate | `W/WorkflowLaunchSheet.swift:12-144`; hint: `W/WorkflowLaunchSheet.swift:19`; pill labels: design wording; name, description: fixture |
+| `workflows/generate-builder-options` (provisional) | `workflows/generate` | The builder pill opened as a popover: Harness, Model, Effort (Default), Turn limit (empty) and "Fallback harnesses (1)" expanded with Fallback 1 (harness, model, Move up and Move down off, Remove), Add fallback and "Tried in order for confirmed quota, model or availability failures." (owner decision 6) | `W/WorkflowAgentEditor.swift:170-346` (fields, accessibility labels, caption); the popover container is design. The caller approvals switch of that editor is not drawn |
 | `workflows/generate-refused` | `workflows/generate` | Danger note "The workflow agent is already starting or running." | `W/WorkflowVM+Generate.swift:12` |
 | `workflows/generate-uncertain` | `workflows/generate` | Warning "The previous workflow agent request was interrupted before its run ID was received. …"; Generate stays enabled | `W/WorkflowVM+BuilderSession.swift:85-86`; the Mac does not block |
 | `workflow-editor/generate-starting` | `edit-with-agent` | Title, "Generating" badge, empty canvas with a note, request and "Starting workflow builder…"; no Apply | Note: design wording; title, request: fixture |
@@ -612,7 +615,7 @@ Not drawn: a Discard confirmation (the Mac has none, drafts persist).
 | `workflow-editor/generate-ready` | `edit-with-agent` | Draft on the canvas, "Draft saved" badge, "Open generated draft", closing line "Draft saved · 6 nodes" | `W/WorkflowView.swift:196-203`; closing line: design wording; draft is the Node selected canvas as a stand-in |
 | `workflow-editor/generate-failed` | `generate-starting` | Failed badge, reason, composer open | Reason: fixture |
 
-Not drawn: a cancelled Generate (it shares `agent-cancelled`); the builder's fallbacks, effort and turn cap behind the harness pill.
+Not drawn: a cancelled Generate (it shares `agent-cancelled`, owner decision 14); the caller approvals switch of the builder options. A fallback shows its harness and model; its effort, turn limit and caller approvals are not drawn. The request sheet of Edit with agent has no builder pill, so it needs no options state.
 
 ### G-RUN-ACTIONS: messages and goal
 
@@ -621,8 +624,11 @@ Group "Messages and goal". Bases: `workflow-run/on-demand` for messages and `wor
 | Route | Derived from | Shows | Copy source |
 | --- | --- | --- | --- |
 | `workflow-run/orchestrator-selected` | `on-demand` | The root orchestrator selected; decision line, one earlier exchange, composer "Message the orchestrator" | Decision line `W/WorkflowRunStatus.swift:89`; composer label and placeholder: design wording (the Mac has no root orchestrator composer); exchange: fixture |
-| `workflow-run/orchestrator-steering-open` | `orchestrator-selected` | A new message sent; "Waiting for the orchestrator to respond"; composer locked | Design wording over the engine's unsettled steering states |
+| `workflow-run/orchestrator-steering-open` | `orchestrator-selected` | A new message sent; "Waiting for the orchestrator to respond"; composer locked. Covers the in-flight engine states: classifying, queued boundary, turn reserved, discussing | Design wording over the engine's unsettled steering states |
 | `workflow-run/orchestrator-steering-unavailable` | `orchestrator-selected` | Composer locked with "Answer the run's open question first." and a link to Needs you | Design wording for the engine refusal `steering_question_pending` |
+| `workflow-run/orchestrator-steering-waiting` (provisional) | `on-demand` | Engine state `awaiting_caller`: the orchestrator's reply is a question; caption "The orchestrator asked a question. Reply to continue."; composer open, placeholder "Reply to the orchestrator"; no Needs you glyph and no new status word | Design wording; question: fixture |
+| `workflow-run/orchestrator-steering-cancelling` (provisional) | `on-demand` | Run status `cancelling`: top bar badge "Cancelling" (the running-style spinner badge, since no cancelling badge exists), no Pause or Cancel run; composer locked "Messages are off — this run is cancelling" | Lock text follows the approved lane lock text ("Messages are off — this run was cancelled"); the badge is a design choice; the canvas is the on-demand base fixture and is not redrawn for cancelling |
+| `workflow-run/orchestrator-steering-unknown` (provisional) | `on-demand` | Engine state `delivery_unknown`: the sent message captioned "Delivery unknown" with "Harflow couldn't confirm the orchestrator received this message. It will not be sent again."; composer locked until the engine settles it | Design wording aligned with the approved caller-approval phrasing |
 | `workflow-run/node-message-queued` | `on-demand` | Queued bubble with Cancel; separate Send now control | Approved task message states (`H.laneParts.queue`) |
 | `workflow-run/node-message-refused` | `node-message-queued` | "Send now isn't available. This operation can't be interrupted safely."; the message stays queued | Approved `screens-messages.js` copy |
 | `workflow-run/node-message-unavailable` | `on-demand` | Node not started; composer locked "This node has no issued task or child workflow to message yet." | `W/WorkflowActivityMessageComposer.swift:17` |
@@ -635,9 +641,9 @@ Group "Messages and goal". Bases: `workflow-run/on-demand` for messages and `wor
 
 Known base issue: the approved `workflow-run/graph-needs-you` pane clips its Publish changes approval card (flex shrink); the derived goal states give it `flex:none`; the approved template is unchanged.
 
-Steering is drawn for the root orchestrator only. The contract holds one open conversation at a time and refuses another with `steering_busy`.
+Steering is drawn for the root orchestrator only (owner decision 7: confirmed). The contract holds one open conversation at a time and refuses another with `steering_busy`. Engine evidence: HarflowMCP `src/harflow_mcp/workflow_steering.py` (the steering states and the unsettled set), the `cancelling` refusal and the `awaiting_caller` window.
 
-Not drawn: the child-workflow node's message target ("Message the child workflow orchestrator"); "The selected Activity target is refreshing."; the steering states awaiting the caller, delivery unknown, stale and expired, and Dismiss.
+Not drawn: the child-workflow node's message target ("Message the child workflow orchestrator"); "The selected Activity target is refreshing."; the steering states stale and expired, and Dismiss (with `dismiss_pending_settlement`).
 
 ### G-RESOURCES: resource slots
 
@@ -648,7 +654,7 @@ Group "Resource states" (base `resources/slots`).
 | `resources/not-enabled` | `slots` | "Resource slots are not enabled" | `MWF/ResourceSlots/ResourceSlotsAssembly.swift:57-64,89` |
 | `resources/unsupported` | `slots` | "Resource slots are unsupported", "phase-slots.v1" | `MWF/ResourceSlots/ResourceSlotsAssembly.swift:57-64,89` |
 | `resources/unavailable` | `slots` | "Resource slots are unavailable" with Retry | `MWF/ResourceSlots/ResourceSlotsAssembly.swift:57-64,89` |
-| `resources/unavailable-permission` | `unavailable` | The engine's message replaces the default, so a permission refusal is shown through it | Message: fixture |
+| `resources/unavailable-permission` | `unavailable` | The engine's message replaces the default, so a permission refusal stays folded into unavailable (owner decision 12) | Message: fixture |
 | `resources/empty` | `slots` | "No resource slots" | `MWF/ResourceSlots/ResourceSlotsAssembly.swift:57-64,89` |
 | `resources/stale` | `slots` | Populated page with "Showing the last successful observations. Refresh failed." and Retry | `MWF/ResourceSlots/ResourceSlotsAssembly.swift:47` |
 | `resources/over-capacity` | `slots` | "3 of 2 in use · above capacity", a third used cell with a warning outline, "Phase capacity is overcommitted" | `MWF/ResourceSlots/ResourceSlotsAssembly.swift:161` (value), `:153` (detail); the outline is a design addition |
@@ -665,32 +671,40 @@ Group "Statistics states" (base `statistics/overview`).
 | `statistics/error` | `overview` | "History is incomplete or unavailable. No totals are shown." with Retry | `MWF/Statistics/StatisticsHistoryWorker.swift:121` |
 | `statistics/stale` | `overview` | "Showing the last complete snapshot. Refresh failed: …" and Retry refresh | `MWF/Statistics/StatisticsVM.swift:128`; reason: fixture |
 | `statistics/partial-accounting` | `overview` | Reported cost "Unavailable" (never $0) and the usage accounting line "Partial · 212 of 284 independent executions · 340 execution records." | Caption: design wording derived from the Mac usage-chart sentence; counts: fixture |
-| `statistics/all-time` | `overview` | All time selected; "Retained history only. Retention: 90 days; selected ranges may exceed retained history." | `MWF/Statistics/StatisticsProjection+Metrics.swift:57-60` |
+| `statistics/all-time` | `overview` | All time selected (owner decision 11: the Mac's 90 day option is not adopted); "Retained history only. Retention: 90 days; selected ranges may exceed retained history." | `MWF/Statistics/StatisticsProjection+Metrics.swift:57-60` |
 | `statistics/unsupported` | `overview` | "Statistics are unavailable in this runtime" | Design wording (the Mac shows a technical command message) |
 
 Not drawn (`MWF/Statistics/StatisticsProjection+Metrics.swift:57-60`): "History retention is disabled." and "History retention window is unknown."
 
 ### Not drawn
 
-- No 1000 × 620 variants of any of these states.
-- The Discard confirmation (the Mac has none).
+- No 1000 × 620 variants of any of these states (owner decision 9).
 - The items listed under each family above.
 
-### Owner questions
+### Owner decisions (2026-11-15)
 
-- O-1: The approved `workflows/list` keeps a "Search workflows" field although product search was removed. Keep or drop it? Nothing changed here.
-- O-2: Invalid workflow: Save disabled with the reason in the status row (drawn), or the Mac's Save followed by an alert?
-- O-3: Should the Delete dialog say that unsaved changes are lost?
-- O-4: New workflow menu (drawn) or two buttons as on the Mac?
-- O-5: Draw the builder's fallbacks, effort and turn cap behind the harness pill?
-- O-6: Steering: the root orchestrator composer is drawn as steering. Confirm, and say whether its other states (awaiting you, cancelling, unknown) are needed now.
-- O-7: Statistics unsupported copy: plain (drawn) or the Mac's command wording?
-- O-8: Are 1000 × 620 variants needed before implementation?
-- O-9: Discard without a confirmation (nothing drawn): keep?
-- O-10: Statistics range: All time (v2) or 90 days (Mac)?
-- O-11: Resources permission refusal: its own state, or folded into unavailable (drawn folded)?
-- O-12: More actions label: "Delete" (Mac, drawn) or "Delete workflow…"?
-- O-13: Builder cancelled: one shared state for Edit with agent and Generate (drawn once). Enough?
+The owner answered the open questions on 2026-11-15 (decision "Workflow and capacity states", relayed by the coordinator).
+
+| # | Decision | Applied in |
+| --- | --- | --- |
+| 1 | Approve all 54 states | The 54 states drawn earlier are `approved` and their guides read "Approved by the owner · 2026-11-15."; the six states drawn on these answers are provisional |
+| 2 | Drop "Search workflows" from the Workflows list | `workflows/list` and the states derived from it; see the control amendment below |
+| 3 | Keep Save disabled while the workflow is invalid (as drawn) | `workflow-editor/invalid` unchanged |
+| 4 | The delete dialog says unsaved changes are lost, only when there are some | `workflow-editor/delete-confirm` (unsaved) and `delete-confirm-saved` |
+| 5 | Keep the Blank workflow and Generate with agent menu | `workflows/new-menu` unchanged |
+| 6 | Draw the builder options (fallbacks, effort, turn limit) behind the builder harness pill | `workflows/generate-builder-options` |
+| 7 | Steering confirmed; draw waiting for you, cancelling and unknown now | `orchestrator-steering-waiting`, `orchestrator-steering-cancelling`, `orchestrator-steering-unknown` |
+| 8 | Plain unsupported wording for Statistics | `statistics/unsupported` unchanged |
+| 9 | No 1000 × 620 versions | None drawn |
+| 10 | Discard gets a confirmation | `workflow-editor/discard-confirm` |
+| 11 | Statistics range "All time" | No drawing change: `statistics/overview` offers 7 days, 30 days and All time and `statistics/all-time` draws it; the Mac's 90 day option is not adopted |
+| 12 | A permission refusal stays folded into unavailable | `resources/unavailable-permission` unchanged |
+| 13 | The label is "Delete…" | `more-actions`, `more-actions-unsaved` |
+| 14 | One shared cancelled state for Edit with agent and Generate | `workflow-editor/agent-cancelled` unchanged |
+
+**Control amendment to an approved screen (2026-11-15).** The approved `workflows/list` drew a "Search workflows" field in its page head. The owner dropped it, consistent with the earlier removal of product search ([ledger](../migration-coverage.md)). The page head now holds the title and New workflow. The change reaches `workflows/list`, `workflows/new-menu` and `workflows/loading` (which mirrors the list, so its real chrome no longer includes the field); `workflows/empty` never had it. The generic field specimen in `components/` is a design system example, not the Workflows screen, and is unchanged. The digest of `workflows/list` is pinned in `tests/minimum-frame.test.mjs` after checking that the diff is only the removed field.
+
+**Awaiting approval.** The six states drawn on these answers have not been seen by the owner and are provisional: `workflow-editor/delete-confirm-saved`, `workflow-editor/discard-confirm`, `workflows/generate-builder-options`, `workflow-run/orchestrator-steering-waiting`, `workflow-run/orchestrator-steering-cancelling` and `workflow-run/orchestrator-steering-unknown`. The amended states (`delete-confirm`, `more-actions`, `more-actions-unsaved`, `workflows/list`, `workflows/new-menu`, `workflows/loading`) stay approved under this decision.
 
 ### Deviations from the Mac
 
@@ -701,6 +715,10 @@ Not drawn (`MWF/Statistics/StatisticsProjection+Metrics.swift:57-60`): "History 
 - The generate form is a page like Run workflow, not a sheet.
 - A New workflow menu replaces the two buttons.
 - The failed badge is `hd-badge--failed`.
+- Discard asks for a confirmation (the Mac discards without asking), and the delete confirmation names unsaved changes when there are some.
+- The More actions label is "Delete…" (the Mac reads "Delete").
+- The Cancelling badge is the running-style spinner badge with the word Cancelling, because the status vocabulary has no cancelling badge. This is a design choice.
+- The caller approvals switch of the builder options is not drawn. A fallback shows its harness and model; its effort, turn limit and caller approvals are not drawn. The Mac nests a full agent editor per fallback (`W/WorkflowAgentEditor.swift:309-323`).
 
 <a id="minimum-window-drafts"></a>
 
@@ -813,31 +831,31 @@ Approved 2026-11-15: `new-task/centered-model-default`, the default tag drawn on
 
 [approval.md](approval.md).
 
-New workflow menu and Generate states: [Workflow and capacity gap states](#workflow-and-capacity-gap-states) (provisional, not approved).
+New workflow menu and Generate states: [Workflow and capacity states](#workflow-and-capacity-states) (approved by the owner on 2026-11-15, except the states the section lists as provisional). The search field was dropped from `workflows/list` ([Owner decisions](#owner-decisions-2026-11-15)).
 
 ### `workflow-editor`
 
 [approval.md](approval.md), including the 2026-11-03 connector style and builder pane amendments.
 
-Validation, Edit with agent, More actions and Generate states: [Workflow and capacity gap states](#workflow-and-capacity-gap-states) (provisional, not approved).
+Validation, Edit with agent, More actions and Generate states: [Workflow and capacity states](#workflow-and-capacity-states) (approved by the owner on 2026-11-15, except the states the section lists as provisional).
 
 ### `workflow-run`
 
 [approval.md](approval.md). Approved 2026-11-15: `workflow-run/lane-message-undeliverable` and its 1000 × 620 version ([Queued messages and approval states](#queued-messages-and-approval-states)).
 
-Messages and goal states: [Workflow and capacity gap states](#workflow-and-capacity-gap-states) (provisional, not approved).
+Messages and goal states: [Workflow and capacity states](#workflow-and-capacity-states) (approved by the owner on 2026-11-15, except the states the section lists as provisional).
 
 ### `resources`
 
 [approval.md](approval.md).
 
-Resource states: [Workflow and capacity gap states](#workflow-and-capacity-gap-states) (provisional, not approved).
+Resource states: [Workflow and capacity states](#workflow-and-capacity-states) (approved by the owner on 2026-11-15, except the states the section lists as provisional).
 
 ### `statistics`
 
 [approval.md](approval.md).
 
-Statistics states: [Workflow and capacity gap states](#workflow-and-capacity-gap-states) (provisional, not approved).
+Statistics states: [Workflow and capacity states](#workflow-and-capacity-states) (approved by the owner on 2026-11-15, except the states the section lists as provisional).
 
 ### `settings`
 

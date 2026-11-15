@@ -20,7 +20,7 @@
     skeleton: { of: 'menu-bar/busy-approve-once', spec: 'menu-bar' }
   });
   loading('workflows', {
-    id: 'loading', title: 'Loading', description: 'The workflow list being read: the rows are placeholders; the title, search and New workflow are real.',
+    id: 'loading', title: 'Loading', description: 'The workflow list being read: the rows are placeholders; the title and New workflow are real.',
     skeleton: { of: 'workflows/list', spec: 'workflows' }
   });
   loading('workflow-editor', {

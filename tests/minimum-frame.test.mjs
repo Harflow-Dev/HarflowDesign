@@ -148,12 +148,15 @@ test('no existing template changed: the digests equal those of the base commit a
   // Changed on purpose by the owner's canonical task glyphs (2026-11-14): timed out is the failed x (the status badge and the
   // colour roles), a running workflow run is the spinner (the menu bar). Each differs from the base and is pinned at its new digest.
   const glyphChanged = { 'components/status-badge': 'b0a9eb5fbae6e49148805ab3b380d565f1619f24', 'menu-bar/busy': '958939dca2af0a6016590356b85acfe2473fd480', 'foundations/colour': '8bc4cfa8627dba1e6948d3db5a38f05fec9fd3e5' };
-  for (const [key, sha] of Object.entries(glyphChanged)) {
+  // Changed on purpose by the owner's decision of 2026-11-15: the Workflows list drops its search field (nothing else of it changes).
+  const searchRemoved = { 'workflows/list': '8262f5c9bd3785d5291b2671f80b89e67ce5fb6c' };
+  for (const [key, sha] of Object.entries({ ...glyphChanged, ...searchRemoved })) {
     const now = crypto.createHash('sha1').update(HFV2.templates[key]).digest('hex');
     assert.notEqual(now, manifest[key], `${key} changed`);
     assert.equal(now, sha, `${key} is pinned at its new digest`);
   }
-  for (const [key, sha] of Object.entries(manifest).filter(([key]) => key !== 'overview/areas' && !(key in glyphChanged))) {
+  assert.ok(!HFV2.templates['workflows/list'].includes('Search workflows'), 'the Workflows list has no search field');
+  for (const [key, sha] of Object.entries(manifest).filter(([key]) => key !== 'overview/areas' && !(key in glyphChanged) && !(key in searchRemoved))) {
     assert.equal(crypto.createHash('sha1').update(HFV2.templates[key]).digest('hex'), sha, `${key} is unchanged`);
   }
 });

@@ -214,7 +214,8 @@ test('existing templates are byte-identical to the base commit apart from the to
   const manifest = JSON.parse(fs.readFileSync(path.join(root, 'tests', 'data', 'templates-854caae.json'), 'utf8'));
   // The overview page is generated from the registry, so its counts change with every new state.
   // The status badge and the menu bar's running workflow row follow the owner's canonical task glyphs (2026-11-14).
-  const CHANGED = new Set(['foundations/colour', 'brand/visual-foundations', 'overview/areas', 'components/status-badge', 'menu-bar/busy']);
+  // workflows/list: the owner's decision of 2026-11-15 removed its search field; its new digest is pinned in minimum-frame.test.mjs.
+  const CHANGED = new Set(['foundations/colour', 'brand/visual-foundations', 'overview/areas', 'components/status-badge', 'menu-bar/busy', 'workflows/list']);
   const RETIRED = new Set(['m04-proposal/history-loading', 'm04-proposal/centered-starting']);
   for (const [key, sha] of Object.entries(manifest)) {
     if (RETIRED.has(key)) { assert.equal(HFV2.templates[key], undefined, `${key} is removed with its state`); continue; }

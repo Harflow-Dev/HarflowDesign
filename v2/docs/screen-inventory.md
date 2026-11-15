@@ -105,7 +105,7 @@ On 2026-11-15 the owner approved the drafts above that were provisional, except 
 
 ## Decisions recorded from the owner's feedback rounds
 
-- The Workflows list shows no run status. The same workflow can run concurrently; runs appear only in the sidebar under Running and Recent work.
+- The Workflows list has no search field (owner decision of 2026-11-15) and shows no run status. The same workflow can run concurrently; runs appear only in the sidebar under Running and Recent work.
 - Run workflow collects Task (required) and Goal (optional), plus the repository and an orchestrator override.
 - Every canvas shows the zoom control at its bottom-right corner: minus, the current scale, and plus. The editor is drawn at 65%. A run graph drawn at 70% shows 70%. A canvas drawn at full size shows 100%.
 - Workflow graphs flow left to right. Connections use the HarflowMac connector style: orthogonal routes with 10px rounded corners and an open chevron arrowhead; loop-back edges are dashed.
@@ -142,15 +142,15 @@ The six states `new-task/centered-model-loading`, `centered-model-unavailable`, 
 
 The 25 states `parallel-group/lanes-titled`, `lane-menu-open`, `prompt-shown`, `cancel-all-confirm`, `lanes-settled`, `lane-failed`, `lane-cancelled`, `lane-taken-over`, `lane-activity-unavailable`, `lane-history-boundary`, `lane-messages-queued`, `lane-message-delivering`, `lane-message-uncertain`, `lane-message-cancelled`, `group-empty`, `two-lanes`, `loading-two`, `lanes-titled-minimum`, `lane-menu-open-minimum`, `prompt-shown-minimum`, `cancel-all-confirm-minimum`, `lanes-settled-minimum`, `lane-cancelled-minimum`, `lane-failed-minimum` and `group-empty-minimum` are **approved by the owner on 2026-11-12**, pinned at `2153ab1d963709d8fbe77cd0bfd678292202a863`. They apply the owner's decisions of 2026-11-12 (task titles, an "Open task" lane menu, a Send-only lane composer, the approved top bar) and draw the lane and group states the approved family never covered. See [the decision record](decisions/parallel-group-proposal.md) for approval, native citations, defaults and owner answers. The four earlier approved `parallel-group` states are unchanged. The "Available captured history" line is not drawn in `lane-history-boundary`. Browser inspection was done in light and dark; native and VoiceOver checks are outstanding.
 
-## Workflow and capacity gap states
+## Workflow and capacity states
 
-Provisional, not approved. Drawn on 2026-11-15 ahead of implementation; each state derives from an approved template and nothing approved changes. The basis, copy sources, undrawn states and owner questions are in the [decision record](decisions/README.md#workflow-and-capacity-gap-states).
+Approved by the owner on 2026-11-15, except the six states marked provisional below, which were drawn on the owner's answers and have not been seen by the owner. Each state derives from an approved template. The basis, copy sources, undrawn states and the owner's decisions are in the [decision record](decisions/README.md#workflow-and-capacity-states). The owner dropped the search field from the Workflows list the same day.
 
-- Workflow editor, Validation and saving: `workflow-editor/checking`, `invalid`, `validate-unavailable`, `name-required`, `missing-child`, `missing-child-paths`, `missing-child-replace`, `conflict`, `conflict-unreadable`, `save-failed`, `load-failed`.
+- Workflow editor, Validation and saving: `workflow-editor/checking`, `invalid`, `validate-unavailable`, `name-required`, `missing-child`, `missing-child-paths`, `missing-child-replace`, `conflict`, `conflict-unreadable`, `save-failed`, `load-failed`, and provisional `discard-confirm`.
 - Workflow editor, Edit with agent: `workflow-editor/agent-request`, `agent-starting`, `agent-working`, `agent-failed`, `agent-cancelled`, `agent-canvas-changed`.
-- Workflow editor, More actions: `workflow-editor/more-actions`, `more-actions-unsaved`, `delete-confirm`, `delete-failed`.
+- Workflow editor, More actions: `workflow-editor/more-actions`, `more-actions-unsaved`, `delete-confirm`, `delete-failed`, and provisional `delete-confirm-saved`.
 - Workflow editor, Generate: `workflow-editor/generate-starting`, `generate-working`, `generate-ready`, `generate-failed`.
-- Workflows, New workflow: `workflows/new-menu`, `generate`, `generate-refused`, `generate-uncertain`.
-- Workflow run, Messages and goal: `workflow-run/orchestrator-selected`, `orchestrator-steering-open`, `orchestrator-steering-unavailable`, `node-message-queued`, `node-message-refused`, `node-message-unavailable`, `messages-unsupported`, `revise-goal`, `goal-revised`, `revise-goal-unavailable`, `revise-goal-answered-elsewhere`, `revise-goal-failed`.
+- Workflows, New workflow: `workflows/new-menu`, `generate`, `generate-refused`, `generate-uncertain`, and provisional `generate-builder-options`.
+- Workflow run, Messages and goal: `workflow-run/orchestrator-selected`, `orchestrator-steering-open`, `orchestrator-steering-unavailable`, provisional `orchestrator-steering-waiting`, `orchestrator-steering-cancelling` and `orchestrator-steering-unknown`, `node-message-queued`, `node-message-refused`, `node-message-unavailable`, `messages-unsupported`, `revise-goal`, `goal-revised`, `revise-goal-unavailable`, `revise-goal-answered-elsewhere`, `revise-goal-failed`.
 - Resources, Resource states: `resources/not-enabled`, `unsupported`, `unavailable`, `unavailable-permission`, `empty`, `stale`, `over-capacity`.
 - Statistics, Statistics states: `statistics/empty`, `error`, `stale`, `partial-accounting`, `all-time`, `unsupported`.

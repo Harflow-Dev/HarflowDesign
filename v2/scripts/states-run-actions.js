@@ -1,9 +1,10 @@
-/* Workflow run states for messages and goal changes. Provisional, not approved.
+/* Workflow run states for messages and goal changes. Approved by the owner on 2026-11-15, except the steering states drawn on
+   that decision (provisional).
    Each state is an approved workflow run template (on-demand or graph-needs-you) with the pane block it changes
    replaced; the frame, top bar, canvas and sidebar are the base's. Templates are computed on first use, so the base
    screens and the lane parts load in any order. The messages and engine refusals are fixture text; the orchestrator
    conversation and goal wording that has no Mac source is design wording and is named as such in each guide.
-   Decision record: docs/decisions/README.md (Workflow and capacity gap states). Display only: no engine calls. */
+   Decision record: docs/decisions/README.md (Workflow and capacity states). Display only: no engine calls. */
 (function () {
   'use strict';
   var H = (window.HFV2 = window.HFV2 || {});
@@ -16,7 +17,8 @@
   var ON_DEMAND = FAMILY + '/on-demand';
   var NEEDS_YOU = FAMILY + '/graph-needs-you';
   var NOTE = 'Provisional · not approved';
-  var RECORD = '<a href="docs/decisions/README.md#workflow-and-capacity-gap-states">Decision record</a>';
+  var APPROVAL = { by: 'the owner', date: '2026-11-15', decision: 'Workflow and capacity states' };
+  var RECORD = '<a href="docs/decisions/README.md#workflow-and-capacity-states">Decision record</a>';
 
   // Canonical task glyphs; no new glyphs.
   var G = {
@@ -28,6 +30,7 @@
   var EARLIER_ASK = 'Skip the docs checker for this run; the docs did not change.';
   var EARLIER_ANSWER = 'Understood. I will not call Docs checker in this run.';
   var OPEN_ASK = 'Run the security reviewer again after the pull request opens.';
+  var QUESTION = 'Should the security reviewer run before or after the pull request opens?';
   var QUEUED_TEXT = 'Also check whether the lockfile pins a vulnerable transitive dependency.';
   // The refusal copy of the approved Send now refused state (screens-messages.js, CANT_INTERRUPT).
   var CANT_INTERRUPT = 'Send now isn\'t available. This operation can\'t be interrupted safely.';
@@ -35,6 +38,8 @@
   var GOAL_3 = 'Upgrade the three vulnerable dependencies with all tests passing, open one pull request with the lockfile changes, and list any package that stays pinned.';
   var GOAL_1 = 'Upgrade the vulnerable dependencies and open a pull request.';
   var CALLER_GOAL = 'Upgrade the three vulnerable dependencies and open one pull request. Skip the integration tests.';
+  // Design wording, aligned with the approved caller-approval phrasing of an uncertain delivery.
+  var UNKNOWN_NOTE = 'Harflow couldn\'t confirm the orchestrator received this message. It will not be sent again.';
   var NOT_ACCEPTED = 'The run did not accept the new goal.';
 
   // The base with its only occurrence of `find` replaced. It throws when `find` is missing or not unique, so a changed
@@ -76,10 +81,14 @@
         return value;
       }
     });
-    docs[route] = '<p><strong>Provisional, not approved.</strong> ' + guide + ' ' + RECORD + '.</p>';
+    var meta = Object.assign({ id: id, group: GROUP }, state);
+    var provisional = !!meta.provisional;
+    delete meta.provisional;
+    if (provisional) { meta.status = 'provisional'; meta.approvalNote = NOTE; } else { meta.status = 'approved'; meta.approval = APPROVAL; }
+    docs[route] = '<p><strong>' + (provisional ? 'Provisional, not approved.' : 'Approved by the owner · 2026-11-15.') + '</strong> ' + guide + ' ' + RECORD + '.</p>';
     H.gapStates.push(route);
     ensureGroup(GROUP);
-    H.registerState(FAMILY, Object.assign({ id: id, group: GROUP, status: 'provisional', approvalNote: NOTE }, state));
+    H.registerState(FAMILY, meta);
   }
 
   // ---- Shared pieces -------------------------------------------------------------------------------------------
@@ -141,8 +150,8 @@
     '<div class="hd-msg-agent"><p>' + esc(EARLIER_ANSWER) + '</p></div>',
     status(G.done, 'Answered', 'var(--success)')
   ];
-  function orchestratorPane(parts, comp) {
-    return { label: 'Selected orchestrator', title: 'Orchestrator', caption: 'Always present', body: DECISION + conversation(parts), composer: comp };
+  function orchestratorPane(parts, comp, decision) {
+    return { label: 'Selected orchestrator', title: 'Orchestrator', caption: 'Always present', body: (decision || DECISION) + conversation(parts), composer: comp };
   }
   var ORCH_COMPOSER = { id: 'msg-orchestrator', label: 'Message the orchestrator', placeholder: 'Ask or tell the orchestrator', send: 'Send to the orchestrator' };
 
@@ -162,7 +171,7 @@
   }, {
     title: 'Orchestrator conversation open',
     description: 'A message to the orchestrator is waiting for its reply. The composer is locked until the reply arrives, so there is one conversation at a time.'
-  }, 'The orchestrator pane while a message of the person is unanswered. The waiting status and the locked-composer wording are design wording for the engine states in which a steering message is not yet settled. The message is fixture text.');
+  }, 'The orchestrator pane while a message of the person is unanswered and the engine has not settled it: classifying, queued at a boundary, turn reserved or discussing. The waiting status and the locked-composer wording are design wording for those in-flight states. Delivery unknown has its own state. Settling a pending delivery (<code>dismiss_pending_settlement</code>) belongs with Dismiss, which is not drawn. The message is fixture text.');
 
   define('orchestrator-steering-unavailable', ON_DEMAND, function (html, base) {
     html = selectOrchestrator(html, base);
@@ -175,6 +184,42 @@
     title: 'Orchestrator conversation unavailable',
     description: 'The orchestrator composer is locked while the run waits for an answer to its open question, and a link opens Needs you.'
   }, 'The orchestrator pane while the run has an open question for a person. The lock reason is design wording for the engine refusal <code>steering_question_pending</code>; the Open Needs you link goes to the approved <a href="#needs-you/waiting">Needs you</a> state.');
+
+  define('orchestrator-steering-waiting', ON_DEMAND, function (html, base) {
+    html = selectOrchestrator(html, base);
+    var parts = EARLIER.concat(['<div class="hd-msg-user">' + esc(OPEN_ASK) + '</div>', '<div class="hd-msg-agent"><p>' + esc(QUESTION) + '</p></div>',
+      status('', 'The orchestrator asked a question. Reply to continue.')]);
+    var open = Object.assign({}, ORCH_COMPOSER, { placeholder: 'Reply to the orchestrator' });
+    return replacePane(html, base, orchestratorPane(parts, composer(open)));
+  }, {
+    title: 'Orchestrator waiting for you',
+    description: 'The orchestrator answered with a question to the person. The composer is open, with a caption that a reply is needed.',
+    provisional: true
+  }, 'The orchestrator pane in the engine state <code>awaiting_caller</code>: the reply of the orchestrator is a question and the conversation waits for the person. The caption and the composer placeholder are design wording; the question is fixture text. The state is drawn on the owner\'s decision and has not been seen by the owner.');
+
+  define('orchestrator-steering-cancelling', ON_DEMAND, function (html, base) {
+    html = selectOrchestrator(html, base);
+    html = swap(html, '<span class="hd-badge hd-badge--attention"><span class="hd-i hd-i-hand" aria-hidden="true"></span>Needs you</span>',
+      '<span class="hd-badge hd-badge--running"><span class="hd-badge__spin" aria-hidden="true"></span>Cancelling</span>', base);
+    html = swap(html, '<button type="button" class="hd-btn hd-btn--ghost"><span class="hd-i hd-i--sm hd-i-pause" aria-hidden="true"></span> Pause</button><button type="button" class="hd-btn hd-btn--ghost">Cancel run</button>', '', base);
+    var locked = Object.assign({}, ORCH_COMPOSER, { locked: true, placeholder: 'Messages are off — this run is cancelling' });
+    return replacePane(html, base, orchestratorPane(EARLIER, composer(locked), status(G.running, 'Cancelling the run…')));
+  }, {
+    title: 'Orchestrator while the run is cancelling',
+    description: 'The run is cancelling: the top bar shows Cancelling without Pause or Cancel run, and the orchestrator composer is locked.',
+    provisional: true
+  }, 'The orchestrator pane while the run status is <code>cancelling</code>, when the engine refuses steering. No cancelling badge exists in the status vocabulary, so the badge is the running-style spinner badge with the word Cancelling, a design choice. The lock text follows the approved lane lock text; the decision line is design wording. The canvas is the on-demand base fixture and is not redrawn for cancelling. The state is drawn on the owner\'s decision and has not been seen by the owner.');
+
+  define('orchestrator-steering-unknown', ON_DEMAND, function (html, base) {
+    html = host(selectOrchestrator(html, base), base);
+    var bubble = '<div class="hd-msg-user hd-msgq" data-message="steering-unknown"><span class="hd-msgq__caption">Delivery unknown</span><span class="hd-msgq__text">' + esc(OPEN_ASK) + '</span><span class="hd-msgq__note">' + esc(UNKNOWN_NOTE) + '</span></div>';
+    var locked = Object.assign({}, ORCH_COMPOSER, { locked: true, placeholder: 'Messages are off until delivery is settled' });
+    return replacePane(html, base, orchestratorPane(EARLIER.concat([bubble]), composer(locked)));
+  }, {
+    title: 'Orchestrator delivery unknown',
+    description: 'A message to the orchestrator whose delivery could not be confirmed. It is captioned Delivery unknown and is not sent again; the composer is locked.',
+    provisional: true
+  }, 'The orchestrator pane in the engine state <code>delivery_unknown</code>. The bubble uses the classes of the approved queued message bubble; the wording is design wording aligned with the approved caller-approval phrasing, and the composer stays locked until the engine settles the message. The message is fixture text. The state is drawn on the owner\'s decision and has not been seen by the owner.');
 
   // ---- Node messages ---------------------------------------------------------------------------------------------
   var SEND_NOW = '<button type="button" class="hd-btn hd-btn--ghost hd-btn--sm" data-m05="noop" disabled title="Ask for immediate delivery; an engine refusal keeps the message queued">Send now</button>';

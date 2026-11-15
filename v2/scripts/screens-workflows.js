@@ -51,8 +51,7 @@
     <div class="hd-topbar"><span class="hd-topbar__spacer"></span></div>
     <div class="hd-scroll">
       <div class="hd-page">
-        <div class="hd-page__head"><h1 class="hd-page__title">Workflows</h1><div class="hd-search" style="width: 220px;"><span class="hd-i  hd-i-search" aria-hidden="true"></span><label class="hd-sr" for="wf-search">Search workflows</label><input id="wf-search" class="hd-input" type="search" placeholder="Search workflows"></div>
-          <button type="button" class="hd-btn hd-btn--secondary"><span class="hd-i hd-i--sm hd-i-plus" aria-hidden="true"></span>New workflow</button></div>
+        <div class="hd-page__head"><h1 class="hd-page__title">Workflows</h1><button type="button" class="hd-btn hd-btn--secondary"><span class="hd-i hd-i--sm hd-i-plus" aria-hidden="true"></span>New workflow</button></div>
         <div class="hd-list">
           <div class="hd-list-row">
             <span class="hd-list-row__icon"><span class="hd-i  hd-i-workflow" aria-hidden="true"></span></span>

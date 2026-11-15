@@ -5,7 +5,7 @@ import path from 'node:path';
 import vm from 'node:vm';
 import { fileURLToPath } from 'node:url';
 
-// Provisional workflow run, resources and statistics states (2026-11-15): registration, derivation from their approved
+// Workflow run, resources and statistics states (approved 2026-11-15, except the three steering states drawn on that decision): registration, derivation from their approved
 // bases, the copy they carry and the links they use.
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const scriptsDir = path.join(root, 'v2', 'scripts');
@@ -25,6 +25,8 @@ const without = loadRuntime(OURS);
 
 const NAMING_RULE = /\bm0\d\b|d2b|propos(al|ed)|native entry|\bG-[A-Z]+\b/i;
 const NOTE = 'Provisional · not approved';
+const APPROVAL = { by: 'the owner', date: '2026-11-15', decision: 'Workflow and capacity states' };
+const PROVISIONAL = new Set(['workflow-run/orchestrator-steering-waiting', 'workflow-run/orchestrator-steering-cancelling', 'workflow-run/orchestrator-steering-unknown']);
 const INERT_LINKS = new Set(['#', '#new', '#revise-goal', '#install-antigravity', '#settings', '#needs-you', '#workflows', '#resources', '#statistics']);
 
 // route -> [group, base, strings the template must carry]
@@ -33,6 +35,9 @@ const STATES = {
   'workflow-run/orchestrator-selected': [RUN, 'workflow-run/on-demand', ['aria-label="Orchestrator, locked, selected"', 'Orchestrator is choosing the next node…', 'CONVERSATION', 'Message the orchestrator', 'Ask or tell the orchestrator', 'Answered']],
   'workflow-run/orchestrator-steering-open': [RUN, 'workflow-run/on-demand', ['Waiting for the orchestrator to respond', 'One conversation at a time — wait for the reply', 'textarea id="msg-orchestrator"']],
   'workflow-run/orchestrator-steering-unavailable': [RUN, 'workflow-run/on-demand', ['Answer the run\'s open question first.', 'href="#needs-you/waiting">Open Needs you']],
+  'workflow-run/orchestrator-steering-waiting': [RUN, 'workflow-run/on-demand', ['Should the security reviewer run before or after the pull request opens?', 'The orchestrator asked a question. Reply to continue.', 'placeholder="Reply to the orchestrator"']],
+  'workflow-run/orchestrator-steering-cancelling': [RUN, 'workflow-run/on-demand', ['hd-badge--running"><span class="hd-badge__spin" aria-hidden="true"></span>Cancelling</span>', 'Messages are off — this run is cancelling', 'Cancelling the run…']],
+  'workflow-run/orchestrator-steering-unknown': [RUN, 'workflow-run/on-demand', ['hd-msgq__caption">Delivery unknown', 'Harflow couldn&#39;t confirm the orchestrator received this message. It will not be sent again.', 'hd-msgq-host', 'Messages are off until delivery is settled']],
   'workflow-run/node-message-queued': [RUN, 'workflow-run/on-demand', ['hd-msgq__caption">Queued', 'hd-msgq__cancel', '>Send now</button>']],
   'workflow-run/node-message-refused': [RUN, 'workflow-run/on-demand', ['Send now isn\'t available. This operation can\'t be interrupted safely.', 'hd-msgq__cancel', '>Send now</button>']],
   'workflow-run/node-message-unavailable': [RUN, 'workflow-run/on-demand', ['Not called yet.', 'This node has no issued task or child workflow to message yet.', 'Docs checker, on demand node, not called, selected']],
@@ -59,20 +64,28 @@ const STATES = {
 const ROUTES = Object.keys(STATES);
 const stateOf = route => { const [family, id] = route.split('/'); return H.findState(H.findFamily(family), id); };
 
-test('every state is registered provisional, in its group, and listed in gapStates', () => {
-  assert.equal(ROUTES.length, 25);
+test('every state is registered (approved, or provisional for the three steering states drawn on the owner\'s decision), in its group, and listed in gapStates', () => {
+  assert.equal(ROUTES.length, 28);
   for (const route of ROUTES) {
     const [group] = STATES[route];
     const [family] = route.split('/');
     const state = stateOf(route);
     assert.ok(state, `${route} is registered`);
-    assert.equal(state.status, 'provisional', route);
-    assert.equal(state.approvalNote, NOTE, route);
+    if (PROVISIONAL.has(route)) {
+      assert.equal(state.status, 'provisional', route);
+      assert.equal(state.approvalNote, NOTE, route);
+      assert.ok(H.componentDocs[route].includes('Provisional, not approved.'), `${route} guide`);
+    } else {
+      assert.equal(state.status, 'approved', route);
+      assert.deepEqual(JSON.parse(JSON.stringify(state.approval)), APPROVAL, route);
+      assert.equal(state.approvalNote, undefined, route);
+      assert.equal(H.approvalLine(H.findFamily(family), state), 'Approved by the owner on 2026-11-15 · Workflow and capacity states', route);
+      assert.ok(H.componentDocs[route].startsWith('<p><strong>Approved by the owner · 2026-11-15.</strong>'), `${route} guide`);
+    }
     assert.equal(state.group, group, route);
     assert.ok(H.findFamily(family).groups.includes(group), `${route} group is in its family`);
     assert.ok(H.gapStates.includes(route), `${route} is in gapStates`);
-    assert.ok(H.componentDocs[route].includes('Provisional, not approved.'), `${route} guide`);
-    assert.ok(H.componentDocs[route].includes('docs/decisions/README.md#workflow-and-capacity-gap-states'), `${route} decision link`);
+    assert.ok(H.componentDocs[route].includes('docs/decisions/README.md#workflow-and-capacity-states"'), `${route} decision link`);
   }
   for (const family of ['workflow-run', 'resources', 'statistics']) {
     const groups = H.findFamily(family).groups;
@@ -83,9 +96,10 @@ test('every state is registered provisional, in its group, and listed in gapStat
 test('catalog text carries no milestone, proposal or gap vocabulary', () => {
   for (const route of ROUTES) {
     const state = stateOf(route);
-    for (const text of [state.id, state.title, state.description, state.group, state.approvalNote, H.componentDocs[route].replace(/<[^>]*>/g, ' ')]) {
+    for (const text of [state.id, state.title, state.description, state.group, state.approvalNote || '', H.componentDocs[route].replace(/<[^>]*>/g, ' ')]) {
       assert.ok(!NAMING_RULE.test(text), `${route}: ${text.slice(0, 80)}`);
     }
+    assert.ok(!/gap/i.test(`${state.title} ${state.description} ${state.group} ${H.approvalLine(H.findFamily(route.split('/')[0]), state)}`), `${route} carries no gap vocabulary`);
   }
 });
 
@@ -118,10 +132,12 @@ test('queued node messages reuse the approved queued bubble and Send now control
   assert.ok(refused.includes('hd-msgq__cancel'), 'Cancel stays available');
 });
 
-test('the orchestrator composer is locked in the two unavailable states and open otherwise', () => {
-  const open = H.templates['workflow-run/orchestrator-selected'];
-  assert.ok(!/<textarea id="msg-orchestrator"[^>]*disabled/.test(open));
-  for (const id of ['orchestrator-steering-open', 'orchestrator-steering-unavailable']) {
+test('the orchestrator composer is locked while a message is in flight, refused or cancelling, and open otherwise', () => {
+  for (const id of ['orchestrator-selected', 'orchestrator-steering-waiting']) {
+    const html = H.templates[`workflow-run/${id}`];
+    assert.ok(!/<textarea id="msg-orchestrator"[^>]*disabled/.test(html), `${id} is open`);
+  }
+  for (const id of ['orchestrator-steering-open', 'orchestrator-steering-unavailable', 'orchestrator-steering-cancelling', 'orchestrator-steering-unknown']) {
     const html = H.templates[`workflow-run/${id}`];
     assert.ok(/<textarea id="msg-orchestrator"[^>]*disabled/.test(html), id);
     assert.ok(/composer__send" aria-label="Send to the orchestrator" disabled/.test(html), id);
@@ -179,4 +195,16 @@ test('goal cards do not shrink inside the pane', () => {
     assert.ok(html.includes('aria-label="Approval needed" style="flex:none;"'), id);
   }
   assert.ok(H.templates['workflow-run/revise-goal-answered-elsewhere'].includes('aria-label="Goal answered elsewhere" style="flex:none;"'));
+});
+
+test('cancelling drops Pause and Cancel run, and delivery unknown is not offered Cancel or Send now', () => {
+  const base = H.templates['workflow-run/on-demand'];
+  assert.ok(base.includes('Cancel run') && base.includes(' Pause</button>'));
+  const cancelling = H.templates['workflow-run/orchestrator-steering-cancelling'];
+  const bar = cancelling.slice(cancelling.indexOf('<div class="hd-topbar">'), cancelling.indexOf('<div class="hd-standalone"'));
+  assert.ok(!bar.includes('Cancel run') && !bar.includes('Pause') && bar.includes('Cancelling'));
+  const unknown = H.templates['workflow-run/orchestrator-steering-unknown'];
+  assert.ok(!unknown.includes('hd-msgq__cancel') && !unknown.includes('Send now'));
+  const waiting = H.templates['workflow-run/orchestrator-steering-waiting'];
+  assert.ok(!waiting.slice(waiting.indexOf('<aside class="hd-pane"')).includes('hd-glyph--attention'), 'no Needs you glyph in the pane');
 });
