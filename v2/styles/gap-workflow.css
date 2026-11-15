@@ -1,4 +1,4 @@
-/* Provisional workflow editor and Workflows states (states-workflow-gaps.js). Only what the shared styles do not give. */
+/* Workflow editor and Workflows states (states-workflow-gaps.js). Only what the shared styles do not give. */
 .hd-node.hd-gap-node--warning{border-color:var(--warning)}
 .hd-gap-node--warning .hd-node__meta{color:var(--warning)}
 .hd-gap-node--warning .hd-node__meta .hd-i{color:var(--warning)}
@@ -21,7 +21,9 @@
 .hd-gap-note{margin:0;font-size:13px;line-height:20px;color:var(--text-secondary)}
 .hd-gap-note--danger{color:var(--danger)}
 .hd-gap-lines{margin:0;padding-left:var(--space-4);display:flex;flex-direction:column;gap:2px}
-.hd-gap-popover{width:400px;max-width:none;padding:var(--space-3);gap:var(--space-2)}
+.hd-gap-popover{width:400px;max-width:none;max-height:344px;padding:var(--space-3);gap:var(--space-2);overflow:hidden}
+.hd-gap-popover__body{display:flex;flex-direction:column;gap:var(--space-2);min-height:0;overflow-y:auto;overscroll-behavior:contain;margin-right:calc(var(--space-2) * -1);padding-right:var(--space-2)}
+.hd-gap-switch-row{align-items:center}
 .hd-gap-popover .hd-menu__label{padding:0}
 .hd-gap-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3)}
 .hd-gap-disclosure{display:flex;align-items:center;justify-content:space-between;width:100%;border:0;background:transparent;padding:0;color:var(--text);cursor:pointer;font:inherit;font-size:13px;line-height:18px;font-weight:500}

@@ -9,10 +9,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const scriptsDir = path.join(root, 'v2', 'scripts');
 const OWN = 'states-workflow-gaps.js';
 const NAMING_RULE = /\bm0\d\b|d2b|propos(al|ed)|native entry|\bG-[A-Z]+\b/i;
-const NOTE = 'Provisional · not approved';
 const APPROVAL = { by: 'the owner', date: '2026-11-15', decision: 'Workflow and capacity states' };
-// Drawn on the owner's decisions of 2026-11-15 and not yet seen by the owner; every other state here is approved.
-const PROVISIONAL = new Set(['workflow-editor/delete-confirm-saved', 'workflow-editor/discard-confirm', 'workflows/generate-builder-options']);
 
 function load(skip) {
   const context = vm.createContext({ window: {} });
@@ -75,21 +72,15 @@ function checkHash(href, where) {
 const state = route => { const [f, s] = route.split('/'); return { family: HFV2.findFamily(f), state: HFV2.findState(HFV2.findFamily(f), s) }; };
 const mine = Object.keys(STATES);
 
-test('the workflow states are registered, approved except the three drawn on the owner\'s decisions, in their groups, and listed in HFV2.gapStates', () => {
+test('the workflow states are registered, approved, in their groups, and listed in HFV2.gapStates', () => {
   assert.equal(mine.length, 32);
   for (const route of mine) {
     const { family, state: s } = state(route);
     assert.ok(s, `${route} is registered`);
-    if (PROVISIONAL.has(route)) {
-      assert.equal(s.status, 'provisional', route);
-      assert.equal(s.approvalNote, NOTE, route);
-      assert.equal(s.approval, undefined, route);
-    } else {
-      assert.equal(s.status, 'approved', route);
-      assert.deepEqual(JSON.parse(JSON.stringify(s.approval)), APPROVAL, route);
-      assert.equal(s.approvalNote, undefined, route);
-      assert.equal(HFV2.approvalLine(family, s), 'Approved by the owner on 2026-11-15 · Workflow and capacity states', route);
-    }
+    assert.equal(s.status, 'approved', route);
+    assert.deepEqual(JSON.parse(JSON.stringify(s.approval)), APPROVAL, route);
+    assert.equal(s.approvalNote, undefined, route);
+    assert.equal(HFV2.approvalLine(family, s), 'Approved by the owner on 2026-11-15 · Workflow and capacity states', route);
     assert.equal(s.group, STATES[route][0], route);
     assert.ok(family.groups.includes(s.group), `${route} group is declared by its family`);
     assert.ok(family.groups.indexOf(s.group) < family.groups.indexOf('Loading'), `${route} group precedes Loading`);
@@ -150,7 +141,7 @@ test('catalog text follows the naming rule', () => {
     const { state: s } = state(route);
     for (const field of ['id', 'title', 'description', 'group', 'approvalNote']) assert.ok(!NAMING_RULE.test(s[field] || ''), `${route} ${field}`);
     const guide = HFV2.componentDocs[route];
-    const lead = PROVISIONAL.has(route) ? '<p><strong>Provisional, not approved.</strong>' : '<p><strong>Approved by the owner · 2026-11-15.</strong>';
+    const lead = '<p><strong>Approved by the owner · 2026-11-15.</strong>';
     assert.ok(guide && guide.startsWith(lead), `${route} guide`);
     assert.ok(guide.includes('docs/decisions/README.md#workflow-and-capacity-states"'), `${route} guide links the record`);
     assert.ok(!NAMING_RULE.test(guide.replace(/<[^>]*>/g, ' ')), `${route} guide`);
@@ -212,16 +203,38 @@ test('the discard confirmation offers Cancel and a danger Discard', () => {
   assert.ok(/hd-dialog__actions"><a class="hd-btn hd-btn--secondary" href="#workflow-editor\/node-selected">Cancel<\/a><button type="button" class="hd-btn hd-btn--danger">Discard<\/button>/.test(html));
 });
 
-test('the builder options popover holds the agent fields and one fallback', () => {
+test('the builder options popover holds the full agent editor for the builder and the fallback', () => {
   const html = HFV2.templates['workflows/generate-builder-options'];
   const popover = html.slice(html.indexOf('aria-label="Builder options"'));
-  for (const label of ['Harness', 'Model', 'Effort', 'Turn limit']) assert.ok(popover.includes(`>${label}</label>`), label);
-  assert.ok(popover.includes('<span>Default</span>'), 'Effort starts at Default');
-  assert.ok(/id="gbo-t" class="hd-input" type="text" placeholder="Default" value=""/.test(popover), 'the turn limit is empty');
-  assert.ok(popover.includes('aria-expanded="true" aria-controls="gbo-fb"'));
+  const body = popover.slice(popover.indexOf('class="hd-gap-popover__body"'));
+  assert.ok(popover.indexOf('Workflow builder') < popover.indexOf('class="hd-gap-popover__body"'), 'the title sits outside the scrolling body');
+  assert.ok(/class="hd-gap-popover__body" tabindex="0" role="group" aria-label="Builder agent options"/.test(popover), 'the scroll region is keyboard focusable and named');
+  for (const prefix of ['gbo', 'gbo-f']) {
+    for (const label of ['Harness', 'Model', 'Effort']) assert.ok(body.includes(`for="${prefix}-${label[0].toLowerCase()}">${label}</label>`), `${prefix} ${label}`);
+    assert.ok(body.includes(`for="${prefix}-t">Turn limit</label>`), `${prefix} Turn limit`);
+    assert.ok(new RegExp(`id="${prefix}-t" class="hd-input" type="text" placeholder="Default" value=""`).test(body), `${prefix} turn limit is empty`);
+    assert.ok(new RegExp(`id="${prefix}-e" class="hd-input hd-select"><span>Default</span>`).test(body), `${prefix} Effort starts at Default`);
+    assert.ok(new RegExp(`id="${prefix}-c-l" class="hd-form-row__label">Caller approvals: ask before each eligible action</span><button type="button" class="hd-switch" role="switch" aria-checked="false" aria-labelledby="${prefix}-c-l">`).test(body), `${prefix} caller approvals switch`);
+  }
+  assert.equal((body.match(/role="switch"/g) || []).length, 2, 'one switch for the builder and one for the fallback');
+  assert.equal((body.match(/Caller approvals: ask before each eligible action/g) || []).length, 2);
+  assert.ok(body.indexOf('gbo-c-l') < body.indexOf('Fallback harnesses (1)') && body.indexOf('Fallback harnesses (1)') < body.indexOf('gbo-f-h'), 'primary fields, then the fallbacks');
+  assert.ok(body.includes('aria-expanded="true" aria-controls="gbo-fb"'));
   assert.equal((popover.match(/Fallback 1</g) || []).length, 1);
   assert.ok(/aria-label="Move fallback 1 up" disabled/.test(popover) && /aria-label="Move fallback 1 down" disabled/.test(popover), 'one fallback cannot move');
   assert.ok(/aria-label="Remove fallback 1">/.test(popover));
-  assert.ok(!popover.includes('Caller approvals'), 'the caller approvals switch is not drawn');
   assert.ok(html.includes('class="hd-pill is-open" aria-haspopup="dialog" aria-expanded="true"'));
+  const css = fs.readFileSync(new URL('../v2/styles/gap-workflow.css', import.meta.url), 'utf8');
+  assert.ok(/\.hd-gap-popover\{[^}]*max-height:[^}]*overflow:hidden/.test(css) && /\.hd-gap-popover__body\{[^}]*overflow-y:auto/.test(css), 'the body scrolls inside a bounded popover');
+});
+
+test('the Owner decisions table numbers 1-14 once each and the By screen lines call nothing provisional', () => {
+  const text = fs.readFileSync(path.join(root, 'v2', 'docs', 'decisions', 'README.md'), 'utf8');
+  const section = text.slice(text.indexOf('### Owner decisions (2026-11-15)') >= 0 ? text.indexOf('### Owner decisions (2026-11-15)') : text.indexOf('Owner decisions (2026-11-15)'));
+  const table = section.slice(section.indexOf('| 1 |'), section.indexOf('**Control amendment'));
+  const numbers = table.split('\n').filter(l => /^\| \d+ \|/.test(l)).map(l => Number(l.match(/^\| (\d+) \|/)[1]));
+  assert.deepEqual(numbers, Array.from({ length: 14 }, (_, i) => i + 1));
+  const byScreen = text.slice(text.indexOf('## By screen')).split('\n').filter(l => l.includes('#workflow-and-capacity-states'));
+  assert.ok(byScreen.length >= 5);
+  for (const l of byScreen) assert.ok(!/provisional/i.test(l), l.slice(0, 60));
 });

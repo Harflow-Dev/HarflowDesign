@@ -24,9 +24,7 @@ const H = loadRuntime();
 const without = loadRuntime(OURS);
 
 const NAMING_RULE = /\bm0\d\b|d2b|propos(al|ed)|native entry|\bG-[A-Z]+\b/i;
-const NOTE = 'Provisional · not approved';
 const APPROVAL = { by: 'the owner', date: '2026-11-15', decision: 'Workflow and capacity states' };
-const PROVISIONAL = new Set(['workflow-run/orchestrator-steering-waiting', 'workflow-run/orchestrator-steering-cancelling', 'workflow-run/orchestrator-steering-unknown']);
 const INERT_LINKS = new Set(['#', '#new', '#revise-goal', '#install-antigravity', '#settings', '#needs-you', '#workflows', '#resources', '#statistics']);
 
 // route -> [group, base, strings the template must carry]
@@ -64,24 +62,18 @@ const STATES = {
 const ROUTES = Object.keys(STATES);
 const stateOf = route => { const [family, id] = route.split('/'); return H.findState(H.findFamily(family), id); };
 
-test('every state is registered (approved, or provisional for the three steering states drawn on the owner\'s decision), in its group, and listed in gapStates', () => {
+test('every state is registered (approved), in its group, and listed in gapStates', () => {
   assert.equal(ROUTES.length, 28);
   for (const route of ROUTES) {
     const [group] = STATES[route];
     const [family] = route.split('/');
     const state = stateOf(route);
     assert.ok(state, `${route} is registered`);
-    if (PROVISIONAL.has(route)) {
-      assert.equal(state.status, 'provisional', route);
-      assert.equal(state.approvalNote, NOTE, route);
-      assert.ok(H.componentDocs[route].includes('Provisional, not approved.'), `${route} guide`);
-    } else {
-      assert.equal(state.status, 'approved', route);
-      assert.deepEqual(JSON.parse(JSON.stringify(state.approval)), APPROVAL, route);
-      assert.equal(state.approvalNote, undefined, route);
-      assert.equal(H.approvalLine(H.findFamily(family), state), 'Approved by the owner on 2026-11-15 · Workflow and capacity states', route);
-      assert.ok(H.componentDocs[route].startsWith('<p><strong>Approved by the owner · 2026-11-15.</strong>'), `${route} guide`);
-    }
+    assert.equal(state.status, 'approved', route);
+    assert.deepEqual(JSON.parse(JSON.stringify(state.approval)), APPROVAL, route);
+    assert.equal(state.approvalNote, undefined, route);
+    assert.equal(H.approvalLine(H.findFamily(family), state), 'Approved by the owner on 2026-11-15 · Workflow and capacity states', route);
+    assert.ok(H.componentDocs[route].startsWith('<p><strong>Approved by the owner · 2026-11-15.</strong>'), `${route} guide`);
     assert.equal(state.group, group, route);
     assert.ok(H.findFamily(family).groups.includes(group), `${route} group is in its family`);
     assert.ok(H.gapStates.includes(route), `${route} is in gapStates`);

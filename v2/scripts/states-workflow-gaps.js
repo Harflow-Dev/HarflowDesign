@@ -1,5 +1,5 @@
 /* Workflow editor and Workflows states: validation and saving, edit with agent, more actions, new workflow and
-   generate. Approved by the owner on 2026-11-15 except the states drawn on that decision (provisional). Each state derives from an approved template by exact swaps (an exception is thrown when a block is missing or
+   generate. Approved by the owner on 2026-11-15. Each state derives from an approved template by exact swaps (an exception is thrown when a block is missing or
    not unique, so a changed base cannot silently draw a different screen). Deterministic display-only fixtures; no engine
    calls. Decision record: docs/decisions/README.md (Workflow and capacity states). Loaded after the screen scripts. */
 (function () {
@@ -9,7 +9,6 @@
   var docs = (H.componentDocs = H.componentDocs || {});
   H.gapStates = H.gapStates || [];
 
-  var NOTE = 'Provisional · not approved';
   var APPROVAL = { by: 'the owner', date: '2026-11-15', decision: 'Workflow and capacity states' };
   var RECORD = '<a href="docs/decisions/README.md#workflow-and-capacity-states">Decision record</a>';
   var WE = 'workflow-editor';
@@ -242,20 +241,30 @@
   function iconButton(name, label, o) {
     return '<button type="button" class="hd-btn hd-btn--icon hd-btn--sm' + (o && o.flip ? ' hd-gap-flip' : '') + '" aria-label="' + label + '"' + (o && o.disabled ? ' disabled' : '') + '>' + icon(name) + '</button>';
   }
+  function approvalsSwitch(id) {
+    return '<div class="hd-form-row hd-gap-switch-row"><span id="' + id + '-l" class="hd-form-row__label">Caller approvals: ask before each eligible action</span>' +
+      '<button type="button" class="hd-switch" role="switch" aria-checked="false" aria-labelledby="' + id + '-l"></button></div>';
+  }
+  function agentFields(p, v) {
+    return '<div class="hd-gap-grid">' + selectField(p + '-h', 'Harness', v.harness) + selectField(p + '-m', 'Model', v.model) + '</div>' +
+      '<div class="hd-gap-grid">' + selectField(p + '-e', 'Effort', 'Default') +
+      '<div class="hd-field"><label class="hd-field__label" for="' + p + '-t">Turn limit</label><input id="' + p + '-t" class="hd-input" type="text" placeholder="Default" value=""></div></div>' +
+      approvalsSwitch(p + '-c');
+  }
   function builderOptions() {
     var fallback = '<div class="hd-gap-fallback"><div class="hd-gap-fallback__head"><span class="hd-gap-fallback__title">Fallback 1</span><span class="hd-topbar__spacer"></span>' +
       iconButton('arrow-up', 'Move fallback 1 up', { disabled: true }) + iconButton('arrow-up', 'Move fallback 1 down', { disabled: true, flip: true }) + iconButton('minus', 'Remove fallback 1') + '</div>' +
-      '<div class="hd-gap-grid">' + selectField('gbo-fh', 'Harness', 'Codex') + selectField('gbo-fm', 'Model', 'gpt-6-astra') + '</div></div>';
+      agentFields('gbo-f', { harness: 'Codex', model: 'gpt-6-astra' }) + '</div>';
     return '<div class="hd-menu hd-gap-popover" role="dialog" aria-label="Builder options">' +
       '<div class="hd-menu__label" role="presentation">Workflow builder</div>' +
-      '<div class="hd-gap-grid">' + selectField('gbo-h', 'Harness', 'Claude Code') + selectField('gbo-m', 'Model', 'Opus 5.5') + '</div>' +
-      '<div class="hd-gap-grid">' + selectField('gbo-e', 'Effort', 'Default') +
-      '<div class="hd-field"><label class="hd-field__label" for="gbo-t">Turn limit</label><input id="gbo-t" class="hd-input" type="text" placeholder="Default" value=""></div></div>' +
+      '<div class="hd-gap-popover__body" tabindex="0" role="group" aria-label="Builder agent options">' +
+      agentFields('gbo', { harness: 'Claude Code', model: 'Opus 5.5' }) +
       '<button type="button" class="hd-gap-disclosure" aria-expanded="true" aria-controls="gbo-fb"><span>Fallback harnesses (1)</span>' + icon('chevron-down') + '</button>' +
       '<div id="gbo-fb" class="hd-gap-fallbacks">' + fallback +
       '<div class="hd-gap-add-row"><button type="button" class="hd-btn hd-btn--ghost hd-btn--sm">' + icon('plus') + 'Add fallback</button></div>' +
-      '<span class="hd-form-row__hint hd-gap-hint">Tried in order for confirmed quota, model or availability failures.</span></div></div>';
+      '<span class="hd-form-row__hint hd-gap-hint">Tried in order for confirmed quota, model or availability failures.</span></div></div></div>';
   }
+
   function builderOpen(html) {
     return swap(html, BUILDER_PILL, '<span class="hd-popover-anchor"><button type="button" class="hd-pill is-open" aria-haspopup="dialog" aria-expanded="true"><span class="hd-i hd-i-harness" aria-hidden="true"></span><span class="hd-pill__label">Builder: Claude Code · Opus 5.5</span><span class="hd-i hd-i-chevron-down" aria-hidden="true"></span></button>' + builderOptions() + '</span>');
   }
@@ -293,7 +302,7 @@
   }
   function def(familyId, o) {
     var key = familyId + '/' + o.id;
-    docs[key] = '<p><strong>' + (o.provisional ? 'Provisional, not approved.' : 'Approved by the owner · 2026-11-15.') + '</strong> ' + o.guide + ' ' + RECORD + '.</p>';
+    docs[key] = '<p><strong>Approved by the owner · 2026-11-15.</strong> ' + o.guide + ' ' + RECORD + '.</p>';
     Object.defineProperty(T, key, {
       enumerable: true, configurable: true,
       get: function () {
@@ -305,8 +314,7 @@
       }
     });
     H.gapStates.push(key);
-    var state = { id: o.id, title: o.title, description: o.description, group: o.group };
-    if (o.provisional) { state.status = 'provisional'; state.approvalNote = NOTE; } else { state.status = 'approved'; state.approval = APPROVAL; }
+    var state = { id: o.id, title: o.title, description: o.description, group: o.group, status: 'approved', approval: APPROVAL };
     H.registerState(familyId, state);
   }
 
@@ -390,9 +398,9 @@
   });
 
   def(WE, {
-    id: 'discard-confirm', title: 'Discard unsaved changes', group: G1, base: NS, provisional: true,
+    id: 'discard-confirm', title: 'Discard unsaved changes', group: G1, base: NS,
     description: 'A confirmation before unsaved changes are discarded: the workflow returns to its last saved revision.',
-    guide: 'The confirmation of Discard. The wording is design wording; the Mac discards without asking. The state is drawn on the owner\'s decision and has not been seen by the owner.',
+    guide: 'The confirmation of Discard. The wording is design wording; the Mac discards without asking.',
     build: function (h) {
       return dialog(h, 'gap-discard-title', 'Discard unsaved changes?', '<p class="hd-dialog__text">The workflow returns to revision 7, its last saved revision.</p>',
         '<a class="hd-btn hd-btn--secondary" href="#workflow-editor/node-selected">Cancel</a><button type="button" class="hd-btn hd-btn--danger">Discard</button>');
@@ -487,9 +495,9 @@
     }
   });
   def(WE, {
-    id: 'delete-confirm-saved', title: 'Delete workflow confirmation, no unsaved changes', group: G3, base: WE + '/orchestrator', provisional: true,
+    id: 'delete-confirm-saved', title: 'Delete workflow confirmation, no unsaved changes', group: G3, base: WE + '/orchestrator',
     description: 'The same confirmation over a saved workflow: there are no unsaved changes, so the line about them is absent.',
-    guide: 'Drawn on the saved editor (Revision 7, Save and Discard off). Only the sentence about unsaved changes differs from the other confirmation. The state is drawn on the owner\'s decision and has not been seen by the owner.',
+    guide: 'Drawn on the saved editor (Revision 7, Save and Discard off). Only the sentence about unsaved changes differs from the other confirmation.',
     build: function (h) {
       return dialog(h, 'gap-delete-title', 'Delete workflow ‘Release checklist’?', '<p class="hd-dialog__text">Existing run snapshots remain available.</p>',
         '<a class="hd-btn hd-btn--secondary" href="#workflow-editor/orchestrator">Cancel</a><button type="button" class="hd-btn hd-btn--danger">Delete</button>');
@@ -535,9 +543,9 @@
   });
 
   def('workflows', {
-    id: 'generate-builder-options', title: 'Builder options', group: 'New workflow', base: 'workflows/generate', provisional: true,
-    description: 'The builder pill opened as a popover with the agent options: harness, model, effort, turn limit and fallback harnesses.',
-    guide: 'The builder pill of the generate page opened. The fields and the fallback captions are the agent editor of the Mac (W/WorkflowAgentEditor.swift); Effort starts at Default. The caller approvals switch of that editor is not drawn. A fallback shows its harness and model; its effort, turn limit and caller approvals are not drawn. The state is drawn on the owner\'s decision and has not been seen by the owner.',
+    id: 'generate-builder-options', title: 'Builder options', group: 'New workflow', base: 'workflows/generate',
+    description: 'The builder pill opened as a popover with the agent options: harness, model, effort, turn limit, caller approvals and fallback harnesses, each fallback with the same fields.',
+    guide: 'The builder pill of the generate page opened. The fields and the fallback captions are the agent editor of the Mac (W/WorkflowAgentEditor.swift); Effort starts at Default and the turn limit is empty. The builder and each fallback have the full editor: Harness, Model, Effort, Turn limit and the Caller approvals switch (off). A fallback also has Move up, Move down and Remove. The popover body scrolls inside the 800px frame while its title stays in view; the switch rows are drawn enabled, although the Mac disables the switch for a harness that does not support caller approvals.',
     build: builderOpen
   });
 

@@ -1,5 +1,4 @@
-/* Workflow run states for messages and goal changes. Approved by the owner on 2026-11-15, except the steering states drawn on
-   that decision (provisional).
+/* Workflow run states for messages and goal changes. Approved by the owner on 2026-11-15.
    Each state is an approved workflow run template (on-demand or graph-needs-you) with the pane block it changes
    replaced; the frame, top bar, canvas and sidebar are the base's. Templates are computed on first use, so the base
    screens and the lane parts load in any order. The messages and engine refusals are fixture text; the orchestrator
@@ -16,7 +15,6 @@
   var GROUP = 'Messages and goal';
   var ON_DEMAND = FAMILY + '/on-demand';
   var NEEDS_YOU = FAMILY + '/graph-needs-you';
-  var NOTE = 'Provisional · not approved';
   var APPROVAL = { by: 'the owner', date: '2026-11-15', decision: 'Workflow and capacity states' };
   var RECORD = '<a href="docs/decisions/README.md#workflow-and-capacity-states">Decision record</a>';
 
@@ -82,10 +80,9 @@
       }
     });
     var meta = Object.assign({ id: id, group: GROUP }, state);
-    var provisional = !!meta.provisional;
-    delete meta.provisional;
-    if (provisional) { meta.status = 'provisional'; meta.approvalNote = NOTE; } else { meta.status = 'approved'; meta.approval = APPROVAL; }
-    docs[route] = '<p><strong>' + (provisional ? 'Provisional, not approved.' : 'Approved by the owner · 2026-11-15.') + '</strong> ' + guide + ' ' + RECORD + '.</p>';
+    meta.status = 'approved';
+    meta.approval = APPROVAL;
+    docs[route] = '<p><strong>Approved by the owner · 2026-11-15.</strong> ' + guide + ' ' + RECORD + '.</p>';
     H.gapStates.push(route);
     ensureGroup(GROUP);
     H.registerState(FAMILY, meta);
@@ -193,9 +190,8 @@
     return replacePane(html, base, orchestratorPane(parts, composer(open)));
   }, {
     title: 'Orchestrator waiting for you',
-    description: 'The orchestrator answered with a question to the person. The composer is open, with a caption that a reply is needed.',
-    provisional: true
-  }, 'The orchestrator pane in the engine state <code>awaiting_caller</code>: the reply of the orchestrator is a question and the conversation waits for the person. The caption and the composer placeholder are design wording; the question is fixture text. The state is drawn on the owner\'s decision and has not been seen by the owner.');
+    description: 'The orchestrator answered with a question to the person. The composer is open, with a caption that a reply is needed.'
+  }, 'The orchestrator pane in the engine state <code>awaiting_caller</code>: the reply of the orchestrator is a question and the conversation waits for the person. The caption and the composer placeholder are design wording; the question is fixture text.');
 
   define('orchestrator-steering-cancelling', ON_DEMAND, function (html, base) {
     html = selectOrchestrator(html, base);
@@ -206,9 +202,8 @@
     return replacePane(html, base, orchestratorPane(EARLIER, composer(locked), status(G.running, 'Cancelling the run…')));
   }, {
     title: 'Orchestrator while the run is cancelling',
-    description: 'The run is cancelling: the top bar shows Cancelling without Pause or Cancel run, and the orchestrator composer is locked.',
-    provisional: true
-  }, 'The orchestrator pane while the run status is <code>cancelling</code>, when the engine refuses steering. No cancelling badge exists in the status vocabulary, so the badge is the running-style spinner badge with the word Cancelling, a design choice. The lock text follows the approved lane lock text; the decision line is design wording. The canvas is the on-demand base fixture and is not redrawn for cancelling. The state is drawn on the owner\'s decision and has not been seen by the owner.');
+    description: 'The run is cancelling: the top bar shows Cancelling without Pause or Cancel run, and the orchestrator composer is locked.'
+  }, 'The orchestrator pane while the run status is <code>cancelling</code>, when the engine refuses steering. No cancelling badge exists in the status vocabulary, so the badge is the running-style spinner badge with the word Cancelling, a design choice. The lock text follows the approved lane lock text; the decision line is design wording. The canvas is the on-demand base fixture and is not redrawn for cancelling.');
 
   define('orchestrator-steering-unknown', ON_DEMAND, function (html, base) {
     html = host(selectOrchestrator(html, base), base);
@@ -217,9 +212,8 @@
     return replacePane(html, base, orchestratorPane(EARLIER.concat([bubble]), composer(locked)));
   }, {
     title: 'Orchestrator delivery unknown',
-    description: 'A message to the orchestrator whose delivery could not be confirmed. It is captioned Delivery unknown and is not sent again; the composer is locked.',
-    provisional: true
-  }, 'The orchestrator pane in the engine state <code>delivery_unknown</code>. The bubble uses the classes of the approved queued message bubble; the wording is design wording aligned with the approved caller-approval phrasing, and the composer stays locked until the engine settles the message. The message is fixture text. The state is drawn on the owner\'s decision and has not been seen by the owner.');
+    description: 'A message to the orchestrator whose delivery could not be confirmed. It is captioned Delivery unknown and is not sent again; the composer is locked.'
+  }, 'The orchestrator pane in the engine state <code>delivery_unknown</code>. The bubble uses the classes of the approved queued message bubble; the wording is design wording aligned with the approved caller-approval phrasing, and the composer stays locked until the engine settles the message. The message is fixture text.');
 
   // ---- Node messages ---------------------------------------------------------------------------------------------
   var SEND_NOW = '<button type="button" class="hd-btn hd-btn--ghost hd-btn--sm" data-m05="noop" disabled title="Ask for immediate delivery; an engine refusal keeps the message queued">Send now</button>';

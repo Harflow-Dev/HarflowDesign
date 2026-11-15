@@ -144,13 +144,13 @@ The 25 states `parallel-group/lanes-titled`, `lane-menu-open`, `prompt-shown`, `
 
 ## Workflow and capacity states
 
-Approved by the owner on 2026-11-15, except the six states marked provisional below, which were drawn on the owner's answers and have not been seen by the owner. Each state derives from an approved template. The basis, copy sources, undrawn states and the owner's decisions are in the [decision record](decisions/README.md#workflow-and-capacity-states). The owner dropped the search field from the Workflows list the same day.
+Approved by the owner on 2026-11-15. Each state derives from an approved template. The basis, copy sources, undrawn states and the owner's decisions are in the [decision record](decisions/README.md#workflow-and-capacity-states). The owner dropped the search field from the Workflows list the same day.
 
-- Workflow editor, Validation and saving: `workflow-editor/checking`, `invalid`, `validate-unavailable`, `name-required`, `missing-child`, `missing-child-paths`, `missing-child-replace`, `conflict`, `conflict-unreadable`, `save-failed`, `load-failed`, and provisional `discard-confirm`.
+- Workflow editor, Validation and saving: `workflow-editor/checking`, `invalid`, `validate-unavailable`, `name-required`, `missing-child`, `missing-child-paths`, `missing-child-replace`, `conflict`, `conflict-unreadable`, `save-failed`, `load-failed`, and `discard-confirm`.
 - Workflow editor, Edit with agent: `workflow-editor/agent-request`, `agent-starting`, `agent-working`, `agent-failed`, `agent-cancelled`, `agent-canvas-changed`.
-- Workflow editor, More actions: `workflow-editor/more-actions`, `more-actions-unsaved`, `delete-confirm`, `delete-failed`, and provisional `delete-confirm-saved`.
+- Workflow editor, More actions: `workflow-editor/more-actions`, `more-actions-unsaved`, `delete-confirm`, `delete-failed`, and `delete-confirm-saved`.
 - Workflow editor, Generate: `workflow-editor/generate-starting`, `generate-working`, `generate-ready`, `generate-failed`.
-- Workflows, New workflow: `workflows/new-menu`, `generate`, `generate-refused`, `generate-uncertain`, and provisional `generate-builder-options`.
-- Workflow run, Messages and goal: `workflow-run/orchestrator-selected`, `orchestrator-steering-open`, `orchestrator-steering-unavailable`, provisional `orchestrator-steering-waiting`, `orchestrator-steering-cancelling` and `orchestrator-steering-unknown`, `node-message-queued`, `node-message-refused`, `node-message-unavailable`, `messages-unsupported`, `revise-goal`, `goal-revised`, `revise-goal-unavailable`, `revise-goal-answered-elsewhere`, `revise-goal-failed`.
+- Workflows, New workflow: `workflows/new-menu`, `generate`, `generate-refused`, `generate-uncertain`, and `generate-builder-options`.
+- Workflow run, Messages and goal: `workflow-run/orchestrator-selected`, `orchestrator-steering-open`, `orchestrator-steering-unavailable`, `orchestrator-steering-waiting`, `orchestrator-steering-cancelling` and `orchestrator-steering-unknown`, `node-message-queued`, `node-message-refused`, `node-message-unavailable`, `messages-unsupported`, `revise-goal`, `goal-revised`, `revise-goal-unavailable`, `revise-goal-answered-elsewhere`, `revise-goal-failed`.
 - Resources, Resource states: `resources/not-enabled`, `unsupported`, `unavailable`, `unavailable-permission`, `empty`, `stale`, `over-capacity`.
 - Statistics, Statistics states: `statistics/empty`, `error`, `stale`, `partial-accounting`, `all-time`, `unsupported`.
