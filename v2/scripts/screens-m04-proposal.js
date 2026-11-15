@@ -12,9 +12,12 @@
   // Owner-approved centered redraws (2026-11-08; the starting state 2026-11-09) of six bottom-layout composer states and two shell states,
   // and the open harness picker. The fixture of each comes from its source mount, named in m04-proposal.js.
   var redrawIds = ['centered-loading','centered-unqualified','centered-invalid','centered-starting-plain','centered-refused','centered-options-closed','centered-harness-open','centered-shell-collapsed','centered-shell-narrow'];
-  H.m04RedrawStates = redrawIds.map(function (id) { return { id: id, title: id.replace(/-/g, ' '), description: 'Owner-approved centered redraw (' + (id === 'centered-starting-plain' ? '2026-11-09' : '2026-11-08') + '): ' + id.replace(/-/g, ' ') + ' review fixture.', status: 'Approved', approved: true }; });
+  H.m04RedrawStates = redrawIds.map(function (id) { return { id: id, title: id.replace(/-/g, ' '), description: 'Owner-approved centered redraw (' + (id === 'centered-starting-plain' ? '2026-11-09' : id === 'centered-harness-open' ? '2026-11-08; Model field amended 2026-11-15' : '2026-11-08') + '): ' + id.replace(/-/g, ' ') + ' review fixture.', status: 'Approved', approved: true }; });
+  // Owner-approved model picker states (2026-11-15). The fixture of each comes from its source mount, named in m04-proposal.js.
+  var modelIds = ['model-loading','model-unavailable','model-not-installed','model-truncated','model-empty'];
+  H.m04ModelStates = modelIds.map(function (id) { return { id: id, title: id.replace(/-/g, ' '), description: 'Owner-approved model picker state (2026-11-15): ' + id.replace(/-/g, ' ') + ' review fixture.', status: 'Approved', approved: true }; });
   // Provisional drafts, not approved. The fixture of each comes from its source mount, named in m04-proposal.js.
-  var pendingIds = ['runtime-updating','model-loading','model-unavailable','model-not-installed','model-truncated','model-empty'];
+  var pendingIds = ['runtime-updating','model-default'];
   H.m04PendingStates = pendingIds.map(function (id) { return { id: id, title: id.replace(/-/g, ' '), description: 'Provisional draft: ' + id.replace(/-/g, ' ') + ' review fixture.', status: 'Provisional', approved: false }; });
   var T = H.templates = H.templates || {};
   // Labels of the catalog-only strip above the app frame. The Node test scans them for process names.
@@ -27,6 +30,10 @@
     redrawHeading: 'Approved · Centered composer · Owner 2026-11-08',
     redrawShellHeading: 'Approved · Sidebar · Owner 2026-11-08',
     redrawStartingHeading: 'Approved · Starting row · Owner 2026-11-09',
+    redrawHarnessHeading: 'Approved · Centered composer · Owner 2026-11-08 · Model field 2026-11-15',
+    redrawHarnessNotice: 'Approved by the owner, 2026-11-08; the Model field is the editable combo of the model picker, approved by the owner on 2026-11-15. Local preview · appearance preserves draft · route changes reset · Reduce Motion: instant changes. Native titlebar and OS controls are browser approximations; native validation is pending.',
+    modelHeading: 'Approved · Model picker · Owner 2026-11-15',
+    modelNotice: 'Approved by the owner, 2026-11-15. Local preview · appearance preserves draft · route changes reset · Reduce Motion: instant changes. Native titlebar, OS controls and the native suggestions menu are browser approximations; native validation is pending.',
     redrawStartingNotice: 'Approved by the owner, 2026-11-09. Local preview · appearance preserves draft · route changes reset · Reduce Motion: instant changes. Native titlebar and OS controls are browser approximations; native validation is pending.',
     redrawNotice: 'Approved by the owner, 2026-11-08. Local preview · appearance preserves draft · route changes reset · Reduce Motion: instant changes. Native titlebar and OS controls are browser approximations; native validation is pending.',
     pendingHeading: 'Draft · Not approved',
@@ -34,7 +41,7 @@
     centeredNotice: 'Approved amendment (owner, 2026-11-06), separate from the 2026-11-05 approval; the 2026-11-06 sidebar body-scroll correction applies to every entry, composer and sidebar state. Local preview · appearance preserves draft · route changes reset · Reduce Motion: instant changes. Native titlebar and OS controls are browser approximations; native validation is pending.'
   };
   ids.forEach(function (id) { T['m04-proposal/' + id] = '<div class="hd-m04-proposal" data-theme="{{theme}}"><div class="hd-m04-catalog" aria-label="' + STRIPS.baselineLabel + '"></div><div class="hd-m04-window"></div></div>'; });
-  amendmentIds.concat(redrawIds, pendingIds).forEach(function (id) { T['m04-proposal/' + id] = '<div class="hd-m04-proposal hd-m04-amendment" data-theme="{{theme}}"><div class="hd-m04-catalog" aria-label="' + STRIPS.centeredLabel + '"></div><div class="hd-m04-window"></div></div>'; });
+  amendmentIds.concat(redrawIds, modelIds, pendingIds).forEach(function (id) { T['m04-proposal/' + id] = '<div class="hd-m04-proposal hd-m04-amendment" data-theme="{{theme}}"><div class="hd-m04-catalog" aria-label="' + STRIPS.centeredLabel + '"></div><div class="hd-m04-window"></div></div>'; });
 
   // Routes: [renderer id, family, state, group, title, description]. The renderer id stays the template key.
   var ROWS = [
@@ -69,18 +76,21 @@
     ["model-unavailable", "new-task", "centered-model-unavailable", "Model", "Centered composer · Model suggestions unavailable", "The harness could not list its models. The note gives the reason and the Model field still accepts any model name.", "model-unavailable"],
     ["model-not-installed", "new-task", "centered-model-not-installed", "Model", "Centered composer · Harness not installed", "The selected harness is not installed, so it has no suggested models and cannot start.", "model-not-installed"],
     ["model-truncated", "new-task", "centered-model-truncated", "Model", "Centered composer · Model suggestions shortened", "The harness listed more models than are shown. The suggestions are open and the note says only the first ones are listed.", "model-truncated"],
-    ["model-empty", "new-task", "centered-model-empty", "Model", "Centered composer · No suggested models", "The harness answered with no models. Only Default is offered and the Model field still accepts any model name.", "model-empty"]
+    ["model-empty", "new-task", "centered-model-empty", "Model", "Centered composer · No suggested models", "The harness answered with no models. Only Default is offered and the Model field still accepts any model name.", "model-empty"],
+    ["model-default", "new-task", "centered-model-default", "Model", "Centered composer · Harness default marked", "The suggestions open for a harness that reports its own default model. That row carries a small default tag; Default at the top of the list still leaves the choice to the harness.", "model-default"]
   ];
   var APPROVAL = {
     baseline: { by: 'the owner', date: '2026-11-05', decision: 'Entry visual direction · native and runtime qualification separate' },
     centered: { by: 'the owner', date: '2026-11-06', decision: 'Centered composer amendment · separate from the 2026-11-05 entry direction' },
     redraw: { by: 'the owner', date: '2026-11-08', decision: 'Centered composer' },
     redrawSidebar: { by: 'the owner', date: '2026-11-08', decision: 'Sidebar' },
-    redrawStarting: { by: 'the owner', date: '2026-11-09', decision: 'Starting row' }
+    redrawStarting: { by: 'the owner', date: '2026-11-09', decision: 'Starting row' },
+    redrawHarness: { by: 'the owner', date: '2026-11-15', decision: 'Centered composer · Model field' },
+    model: { by: 'the owner', date: '2026-11-15', decision: 'Model picker' }
   };
   ROWS.forEach(function (row) {
     var id = row[0];
-    var redraw = redrawIds.indexOf(id) >= 0, pending = pendingIds.indexOf(id) >= 0;
+    var redraw = redrawIds.indexOf(id) >= 0, pending = pendingIds.indexOf(id) >= 0, model = modelIds.indexOf(id) >= 0;
     var state = {
       id: row[2], title: row[4], description: row[5], group: row[3] || undefined,
       source: { template: 'm04-proposal/' + id, renderer: 'm04', mount: id, guide: 'm04-proposal/' + id },
@@ -91,7 +101,7 @@
       H.registerState(row[1], state);
       return;
     }
-    state.approval = redraw ? (row[1] === 'sidebar' ? APPROVAL.redrawSidebar : id === 'centered-starting-plain' ? APPROVAL.redrawStarting : APPROVAL.redraw) : amendmentIds.indexOf(id) >= 0 ? APPROVAL.centered : APPROVAL.baseline;
+    state.approval = model ? APPROVAL.model : redraw ? (row[1] === 'sidebar' ? APPROVAL.redrawSidebar : id === 'centered-starting-plain' ? APPROVAL.redrawStarting : id === 'centered-harness-open' ? APPROVAL.redrawHarness : APPROVAL.redraw) : amendmentIds.indexOf(id) >= 0 ? APPROVAL.centered : APPROVAL.baseline;
     H.registerState(row[1], state);
   });
 })();

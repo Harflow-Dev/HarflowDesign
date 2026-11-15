@@ -14,7 +14,7 @@ Read-only, Can edit this repo, Can publish, Full access.
 
 ## Harness, Agent, Model
 
-- Harness: the installed tool that runs a task (Claude Code, Codex, Opencode, Mistral Vibe, Antigravity).
+- Harness: the installed tool that runs a task (Claude Code, Codex, Opencode, Mistral Vibe, Antigravity, Cursor).
 - Agent: an AI participant in a task or workflow, such as an orchestrator or a worker.
 - Model: the model an agent runs on.
 

@@ -29,24 +29,31 @@
     'centered-shell-narrow': 'shell-narrow'
   };
   // Provisional drafts, not approved. Each copies the fixture of its source mount. The runtime update draws the centered
-  // shell of an already set-up app (populated sidebar, nav enabled) with the runtime gate in the main pane.
+  // shell of an already set-up app (populated sidebar, nav enabled) with the runtime gate in the main pane. The default
+  // marker draws Cursor's listing, whose `auto` row is the harness default.
   var PENDING_SOURCES = {
     'runtime-updating': 'amendment-empty',
+    'model-default': 'amendment-ready'
+  };
+  // Owner-approved model picker states (2026-11-15). Each copies the fixture of its source mount.
+  var MODEL_SOURCES = {
     'model-loading': 'amendment-ready',
     'model-unavailable': 'amendment-ready',
     'model-not-installed': 'amendment-ready',
     'model-truncated': 'amendment-ready',
     'model-empty': 'amendment-ready'
   };
-  // Model picker drafts: the open harness picker with the Model field as an editable combo (any model id, with a
+  // Model picker states: the open harness picker with the Model field as an editable combo (any model id, with a
   // menu of the engine's advisory suggestions, `backend-models.v1`). The field always accepts free text; the listing
   // never blocks Start by itself. `s.model` is the typed text and empty means Default. Fixture rows follow the contract
   // fixtures (`ctl-backend-models-available-*.json`, HarflowMCP 5f2ce12): the menu shows the label and writes the id into
-  // the field. Opencode's first six rows are the fixture's; the rest up to 400 are illustrative.
+  // the field, and a row the harness reports as its default (`default: true`) carries a small "default" tag. Opencode's
+  // first six rows are the fixture's; the rest up to 400 are illustrative. Only Cursor's and Vibe's fixtures mark a default.
   var OPENCODE_NAMED = [['opencode/beam-free','Beam Free'],['opencode/big-pickle','Big Pickle'],['anthropic/claude-opus-4-5','Claude Opus 4.5 (latest)'],['openai/gpt-5','GPT-5'],['opencode-go/deepseek-v4-pro','DeepSeek V4 Pro'],['opencode-go/gpt-5.6-luna','GPT-5.6 Luna']];
   function catalogRows(harness) {
     if (harness === 'Claude Code') return [{id:'fable',label:'Fable'},{id:'opus',label:'Opus'},{id:'sonnet',label:'Sonnet'}];
     if (harness === 'Codex') return [['gpt-6.1-sol','GPT-6.1-Sol'],['gpt-6-astra','GPT-6-Astra'],['gpt-6-luna','GPT-6-Luna'],['gpt-5.6-luna','GPT-5.6-Luna']].map(function (r) { return { id: r[0], label: r[1] }; });
+    if (harness === 'Cursor') return [['auto','Auto',true],['gpt-5.3-codex-low','Codex 5.3 Low'],['gpt-5.3-codex-low-fast','Codex 5.3 Low Fast'],['gpt-5.3-codex','Codex 5.3'],['gpt-5.3-codex-fast','Codex 5.3 Fast'],['gpt-5.3-codex-high','Codex 5.3 High'],['gpt-5.3-codex-high-fast','Codex 5.3 High Fast']].map(function (r) { return { id: r[0], label: r[1], default: !!r[2] }; });
     if (harness === 'Opencode') { var rows = OPENCODE_NAMED.map(function (r) { return { id: r[0], label: r[1] }; }); for (var i = rows.length + 1; rows.length < 400; i++) rows.push({ id: 'openrouter/community/model-' + ('00' + i).slice(-3), label: 'Community model ' + i }); return rows; }
     return [];
   }
@@ -58,16 +65,16 @@
   function listingFor(harness) {
     if (harness === NOT_INSTALLED) return { state: 'not_installed', models: [] };
     if (harness === 'Mistral Vibe') return { state: 'not_read', models: [] };
-    if (harness === 'Cursor') return { state: 'unavailable', reason: 'auth_required', models: [] };
     var rows = catalogRows(harness);
     return { state: 'available', models: rows, truncated: harness === 'Opencode', dropped: 0 };
   }
-  var MODEL_DRAFTS = {
+  var MODEL_STATES = {
     'model-loading': { harness: 'Claude Code', catalog: { state: 'loading', models: [] } },
     'model-unavailable': { harness: 'Codex', turns: '', catalog: { state: 'unavailable', reason: 'source_missing', models: [] } },
     'model-not-installed': { harness: NOT_INSTALLED, qualification: 'unqualified', catalog: { state: 'not_installed', models: [] } },
     'model-truncated': { harness: 'Opencode', catalog: { state: 'available', models: catalogRows('Opencode'), truncated: true, dropped: 0, open: true } },
-    'model-empty': { harness: 'Codex', turns: '', catalog: { state: 'available', models: [], truncated: false, dropped: 0 } }
+    'model-empty': { harness: 'Codex', turns: '', catalog: { state: 'available', models: [], truncated: false, dropped: 0 } },
+    'model-default': { harness: 'Cursor', catalog: { state: 'available', models: catalogRows('Cursor'), truncated: false, dropped: 0, open: true } }
   };
   // Each unavailable reason with the harness whose source can fail that way, and the sentence the note gives.
   var REASONS = {
@@ -81,7 +88,7 @@
   };
   function modelOptionFor(harness) { return harness === 'Mistral Vibe' ? 'unsupported' : 'supported'; }
   var TYPED = { 'Claude Code': 'opus', 'Codex': 'gpt-6-astra', 'Opencode': 'openai/gpt-5', 'Mistral Vibe': 'devstral-small', 'Antigravity': 'gemini-3-pro', 'Cursor': 'gpt-6-astra' };
-  function isModelDraft(route) { return has(MODEL_DRAFTS, route); }
+  function isModelState(route) { return has(MODEL_STATES, route); }
   function modelName(s) { return s.catalog ? (s.model.trim() || 'Default') : s.model; }
   // The note under the Model field for each listing state; empty when the listing needs no note.
   // dropped_count counts invalid and repeated rows.
@@ -91,12 +98,14 @@
     // The approved note shows only while the harness list is ready, as the app ties it to an available harness list.
     if (s.modelOption === 'unsupported') return s.harnessList === 'ready' ? "Model selection isn't available for this harness." : '';
     if (c.state === 'loading') return 'Loading suggested models… You can still type a model name.';
-    // The app's existing note for a harness that is not installed (it names the backend id; the drafts use the display name).
+    // The app's existing note for a harness that is not installed, naming the harness by its display name (owner, 2026-11-15).
     if (c.state === 'not_installed') return h + " wasn't found on your PATH — starting this harness may fail.";
     if (c.state === 'unavailable') return "Suggested models aren't available. " + (has(REASONS, c.reason) ? REASONS[c.reason][1] + ' ' : '') + 'You can still type a model name.';
     if (c.state === 'available' && !c.models.length) return h + ' lists no models. You can still type a model name.';
     if (c.state === 'available' && c.truncated) return 'Showing the first ' + c.models.length + ' models ' + h + " listed. You can type a model name that isn't shown." + (c.dropped ? ' ' + droppedNote(c.dropped) : '');
     if (c.state === 'available') return c.dropped ? droppedNote(c.dropped) : '';
+    // No listing is read for a harness that is not available (the open harness picker's gated harness).
+    if (c.state === 'not_read') return '';
     if (c.state === 'unsupported') return "Suggested models aren't available for this harness. You can still type a model name.";
     // Any other state, including one this design does not know, says the suggestions are unavailable.
     return "Suggested models aren't available. You can still type a model name.";
@@ -104,8 +113,9 @@
   function has(map, key) { return Object.prototype.hasOwnProperty.call(map, key); }
   function isRedraw(route) { return has(REDRAW_SOURCES, route); }
   function isPending(route) { return has(PENDING_SOURCES, route); }
-  // The centered layout: the six amendment mounts, the redraw mounts and the provisional drafts.
-  function isAmendment(route) { return has(AMENDMENT_DRAFTS, route) || isRedraw(route) || isPending(route); }
+  function isModelApproved(route) { return has(MODEL_SOURCES, route); }
+  // The centered layout: the six amendment mounts, the redraw mounts, the model picker states and the provisional drafts.
+  function isAmendment(route) { return has(AMENDMENT_DRAFTS, route) || isRedraw(route) || isModelApproved(route) || isPending(route); }
   function promptOneLineHeight(lineHeight, verticalExtra) { return lineHeight + verticalExtra; }
   function promptCapHeight(lineHeight, verticalExtra) { return lineHeight * AMENDMENT_LINE_CAP + verticalExtra; }
   // Amendment only: the scrollable compose area clips the popover, so its height
@@ -120,9 +130,9 @@
   // The actions a loading mount lets through: the sidebar toggle is chrome. Every other in-frame action is data-dependent.
   function loadingAllows(action) { return action === 'collapse'; }
   function create(route) {
-    if (isPending(route)) {
-      var draft = create(PENDING_SOURCES[route]); draft.route = route;
-      if (isModelDraft(route)) { Object.assign(draft, { model: '', picker: 'harness', harnessList: 'ready' }, JSON.parse(JSON.stringify(MODEL_DRAFTS[route]))); draft.modelHarness = draft.harness; draft.modelOption = modelOptionFor(draft.harness); }
+    if (isPending(route) || isModelApproved(route)) {
+      var draft = create(isPending(route) ? PENDING_SOURCES[route] : MODEL_SOURCES[route]); draft.route = route;
+      if (isModelState(route)) { Object.assign(draft, { model: '', picker: 'harness', harnessList: 'ready' }, JSON.parse(JSON.stringify(MODEL_STATES[route]))); draft.modelHarness = draft.harness; draft.modelOption = modelOptionFor(draft.harness); }
       return draft;
     }
     if (isRedraw(route)) {
@@ -131,6 +141,9 @@
         // The harness picker is open and an unavailable harness is selected, so the gated state shows with
         // the qualification message the composer already gives.
         copy.harness = 'Unavailable harness'; copy.model = 'Default'; copy.qualification = 'unqualified'; copy.picker = 'harness';
+        // Owner amendment (2026-11-15): Model is the editable combo of the model picker states. No listing is read for
+        // a harness that is not available, so only Default is offered and the field takes any typed model id.
+        Object.assign(copy, { model: '', harnessList: 'ready', modelHarness: copy.harness, modelOption: 'supported', catalog: { state: 'not_read', models: [] } });
       }
       return copy;
     }
@@ -155,7 +168,7 @@
   function gateMain(title, body, status, actions) {
     return '<div class="hd-topbar"><span class="caption hd-faint">Harflow · Runtime setup</span><span class="hd-topbar__spacer"></span></div><div class="hd-m04-gate"><h1 class="display">'+title+'</h1><p>'+body+'</p><div role="status">'+status+'</div><div class="hd-m04-actions">'+actions+'</div></div>';
   }
-  // Model drafts also count an empty turn limit as default: Codex takes none, so its drafts clear the fixture's 12.
+  // Model states also count an empty turn limit as default: Codex takes none, so its states clear the fixture's 12.
   function customized(s){return s.effort!=='default'||(s.turns!=='12'&&!(s.catalog&&s.turns===''))||s.approvals!=='harness';}
   function optionsOpen(s,open){s.advanced=!!open;}
   function models(harness){return {'Claude Code':['Default','Opus 5.5','Sonnet 5.5'],'Codex':['Default','gpt-6-astra'],'Mistral Vibe':['Default']}[harness] || ['Default'];}
@@ -164,7 +177,7 @@
     if (!['default','low','medium','high','xhigh'].includes(s.effort) || (s.harness === 'Mistral Vibe' && s.effort !== 'default')) return 'This harness does not support the requested effort. Review task options.';
     if (s.turns && (!/^\d+$/.test(s.turns) || +s.turns < 1 || !Number.isSafeInteger(+s.turns))) return 'Enter a whole number above 0, or leave it empty for the default.';
     if (s.turns && s.harness === 'Codex') return 'This harness does not support a turn limit. Clear it in task options.';
-    // Model drafts, as the app: the harness's model control (only known while the harness list is ready) and the harness the model was chosen for.
+    // Model states, as the app: the harness's model control (only known while the harness list is ready) and the harness the model was chosen for.
     if (s.catalog && s.model.trim() && s.harnessList === 'ready') {
       if (s.modelOption === 'unsupported') return 'This harness does not accept a model option. Choose Default explicitly.';
       if (s.modelHarness !== s.harness) return 'Review and select the model for this harness.';
@@ -173,7 +186,7 @@
     if(s.enforcement!=='supported') return 'Required permission enforcement is '+s.enforcement+'. Review the selection before starting.';
     if (s.approvals === 'caller' && (s.harness !== 'Claude Code' || s.turns || !['write_in_repo','publish'].includes(s.access))) return 'Caller approvals require a supported harness, repository write access and an empty turn limit. Review task options.';
     if (s.status === 'created') return 'Task already created.';
-    // Model drafts: a loading or degraded harness list blocks Start only for a non-default model, effort or turn limit.
+    // Model states: a loading or degraded harness list blocks Start only for a non-default model, effort or turn limit.
     if (s.catalog && s.harnessList !== 'ready' && (s.model.trim() || s.effort !== 'default' || (s.turns !== '12' && s.turns.trim() !== ''))) return "Harness options can't be checked until the harness list is available.";
     if (s.qualification !== 'ready') return 'Choose a qualified harness and model.';
     if (s.runtime !== 'qualified') return 'Set up the required runtime first.';
@@ -187,13 +200,20 @@
     var saved = s.remembered[s.repository];
     if (key === 'repository' && saved) Object.assign(s, saved);
   }
-  // Model drafts: switching harness reads that harness's listing; a harness that is not installed stays unqualified.
+  // Model states: switching harness reads that harness's listing; a harness that is not installed stays unqualified.
   function pickHarness(s, harness) {
     s.harness = harness; s.revision += 1; s.catalog = listingFor(harness); s.modelOption = modelOptionFor(harness);
     if (harness === 'Codex' && s.turns === '12') s.turns = '';
     s.qualification = harness === NOT_INSTALLED ? 'unqualified' : 'ready';
   }
-  // Model drafts: the in-app combo actions and the catalog fixture controls. Returns false for any other action.
+  // The open harness picker (`centered-harness-open`): switching harness keeps the approved qualification check and reads
+  // that harness's fixture listing; no listing is read for the gated unavailable harness.
+  function pickOpenHarness(s, harness) {
+    select(s, 'harness', harness);
+    s.catalog = harness === 'Unavailable harness' ? { state: 'not_read', models: [] } : listingFor(harness);
+    s.modelOption = modelOptionFor(harness);
+  }
+  // Model states: the in-app combo actions and the catalog fixture controls. Returns false for any other action.
   function modelAction(s, a, b) {
     var c = s.catalog, locked = ['starting','unknown','created'].includes(s.status);
     if (a === 'model-suggestions') { if (!locked) c.open = !c.open; return true; }
@@ -235,7 +255,7 @@
       var theme = host.getAttribute('data-theme') || 'light';
       var updating = route === 'runtime-updating' && !s.updated;
       var runtimeBoard=route.indexOf('runtime-')===0 && !isPending(route), historyBoard=route.indexOf('history-')===0;
-      var controls=s.catalog ? button('Type a model','model-type')+button('Use default model','model-default')+(s.harnessList==='ready'?button('Harness list loading','harness-list-loading'):button('Harness list ready','harness-list-ready'))+(s.catalog.state==='loading'?button('Listing finished','model-listed'):'')+(route==='model-unavailable'?Object.keys(REASONS).map(function(r){return button('Reason: '+r,'reason-'+r);}).join(''):'')+(route==='model-truncated'?button('Dropped rows: 0','dropped-0')+button('Dropped rows: 3','dropped-3'):'') : route==='runtime-updating' ? button('Updating','update-start')+button('Runtime ready','update-done') : runtimeBoard ? button('Runtime failure','runtime-failure')+button('Runtime ready','runtime-ready')+button('Listing ready','listing-ready')+button('Listing failed','listing-failed') : historyBoard ? '' : button('Qualification ready','qualified')+button('Qualification unavailable','unqualified')+button('Complete: created','created',s.status!=='starting')+button('Complete: refused','refused',s.status!=='starting')+button('Complete: unknown','unknown',s.status!=='starting')+button('Enforcement supported','enforcement-supported')+button('Enforcement unknown','enforcement-unknown')+button('Enforcement unsupported','enforcement-unsupported');
+      var controls=isModelState(route) ? button('Type a model','model-type')+button('Clear the model','model-default')+(s.harnessList==='ready'?button('Harness list loading','harness-list-loading'):button('Harness list ready','harness-list-ready'))+(s.catalog.state==='loading'?button('Listing finished','model-listed'):'')+(route==='model-unavailable'?Object.keys(REASONS).map(function(r){return button('Reason: '+r,'reason-'+r);}).join(''):'')+(route==='model-truncated'?button('Dropped rows: 0','dropped-0')+button('Dropped rows: 3','dropped-3'):'') : route==='runtime-updating' ? button('Updating','update-start')+button('Runtime ready','update-done') : runtimeBoard ? button('Runtime failure','runtime-failure')+button('Runtime ready','runtime-ready')+button('Listing ready','listing-ready')+button('Listing failed','listing-failed') : historyBoard ? '' : button('Qualification ready','qualified')+button('Qualification unavailable','unqualified')+button('Complete: created','created',s.status!=='starting')+button('Complete: refused','refused',s.status!=='starting')+button('Complete: unknown','unknown',s.status!=='starting')+button('Enforcement supported','enforcement-supported')+button('Enforcement unknown','enforcement-unknown')+button('Enforcement unsupported','enforcement-unsupported');
       // Strip links point at current states only. The earlier composer and Advanced links now open the
       // centered composer states that replaced them.
       var boards = amendment
@@ -245,11 +265,11 @@
             : [['centered-loading','Loading'],['centered-unqualified','Unavailable'],['centered-invalid','Validation'],['centered-starting-plain','Starting'],['centered-refused','Refused'],['centered-options-closed','Options closed'],['centered-harness-open','Harness open']])
           : [['amendment-empty','Empty'],['amendment-ready','One line'],['amendment-growing','Growing'],['amendment-capped','Capped'],['amendment-options','Options open'],['amendment-unknown','Unknown']])
         : [['amendment-empty','Shell'],['amendment-ready','Composer'],['amendment-options','Advanced'],['history-retained','History'],['runtime-checking','Runtime']];
-      if (isPending(route)) boards = isModelDraft(route) ? [['model-loading','Loading'],['model-unavailable','Unavailable'],['model-not-installed','Not installed'],['model-truncated','Shortened'],['model-empty','Empty'],['centered-harness-open','Harness open']] : [['runtime-installing', 'Installing']];
+      if (isPending(route) || isModelApproved(route)) boards = isModelState(route) ? [['model-loading','Loading'],['model-unavailable','Unavailable'],['model-not-installed','Not installed'],['model-truncated','Shortened'],['model-empty','Empty'],['model-default','Default marked'],['centered-harness-open','Harness open']] : [['runtime-installing', 'Installing']];
       var boardLinks = boards.map(function (board) { return '<a href="#' + H.routeFor('m04', board[0]) + '/' + theme + '">' + board[1] + '</a>'; }).join('');
       var strips = H.catalogStrips.m04;
-      var notice = isPending(route) ? strips.pendingNotice : isRedraw(route) ? (route==='centered-starting-plain' ? strips.redrawStartingNotice : strips.redrawNotice) : amendment ? strips.centeredNotice : strips.baselineNotice;
-      var heading = isPending(route) ? strips.pendingHeading : isRedraw(route) ? (route.indexOf('centered-shell')===0 ? strips.redrawShellHeading : route==='centered-starting-plain' ? strips.redrawStartingHeading : strips.redrawHeading) : amendment ? strips.centeredHeading : strips.baselineHeading;
+      var notice = isPending(route) ? strips.pendingNotice : isModelApproved(route) ? strips.modelNotice : isRedraw(route) ? (route==='centered-starting-plain' ? strips.redrawStartingNotice : route==='centered-harness-open' ? strips.redrawHarnessNotice : strips.redrawNotice) : amendment ? strips.centeredNotice : strips.baselineNotice;
+      var heading = isPending(route) ? strips.pendingHeading : isModelApproved(route) ? strips.modelHeading : isRedraw(route) ? (route.indexOf('centered-shell')===0 ? strips.redrawShellHeading : route==='centered-starting-plain' ? strips.redrawStartingHeading : route==='centered-harness-open' ? strips.redrawHarnessHeading : strips.redrawHeading) : amendment ? strips.centeredHeading : strips.baselineHeading;
       if (loading) catalog.innerHTML = '<div class="hd-m04-actions"><strong>' + loadingStrip.heading + '</strong><label>Frame <select data-m04-field="size"><option value="reference"' + (!s.narrow?' selected':'') + '>1280 × 800</option><option value="minimum"' + (s.narrow?' selected':'') + '>1000 × 620</option></select></label></div><p>' + loadingStrip.note + '</p>';
       else catalog.innerHTML = '<div class="hd-m04-actions"><strong>' + heading + '</strong>' + boardLinks + '<label>Frame <select data-m04-field="size"><option value="reference"' + (!s.narrow?' selected':'') + '>1280 × 800</option><option value="minimum"' + (s.narrow?' selected':'') + '>1000 × 620</option></select></label>' + button('Reset fixture','reset') + '</div><p>' + notice + '</p><details class="hd-m04-fixtures"'+(s.fixtures?' open':'')+'><summary>Fixture controls</summary><div class="hd-m04-actions">' + controls + '</div></details>';
       var base = template(s.collapsed ? 'new-task/sidebar-collapsed' : 'new-task/default');
@@ -315,17 +335,17 @@
       function pill(label,icon,content,key){return '<details class="hd-m04-picker"'+(key&&s.picker===key?' open':'')+(key&&(route==='centered-harness-open'||s.catalog)?' data-m04-picker="'+key+'"':'')+'><summary class="hd-pill"><span class="hd-i hd-i-'+icon+'" aria-hidden="true"></span><span class="hd-pill__label">'+esc(label)+'</span><span class="hd-i hd-i-chevron-down" aria-hidden="true"></span></summary><div class="hd-menu hd-m04-picker-menu">'+content+'</div></details>';}
       // Only the open harness picker repeats the existing status message under the Harness select.
       function field(label,key,values){var gate=route==='centered-harness-open'&&key==='harness',hint=gate&&(s.harness==='Unavailable harness'||s.qualification!=='ready')?'Choose a qualified harness and model.':'';return '<label class="hd-m04-menu-field">'+label+'<select data-m04-field="'+key+'"'+(locked?' disabled':'')+(hint?' aria-describedby="m04-harness-hint"':'')+'>'+options(values,s[key],gate?'Unavailable harness':'')+'</select>'+(hint?'<span class="hd-field__hint" id="m04-harness-hint">'+esc(hint)+'</span>':'')+'</label>';}
-      // Model drafts: the harness select marks a harness that is not installed, as the app does.
-      function draftHarness(){return '<label class="hd-m04-menu-field">Harness<select data-m04-field="harness"'+(locked?' disabled':'')+'>'+MODEL_HARNESSES.map(function(v){return '<option value="'+esc(v)+'"'+(v===s.harness?' selected':'')+'>'+esc(v)+(v===NOT_INSTALLED?' — not installed':'')+'</option>';}).join('')+'</select></label>';}
-      // Model drafts: an editable combo, a text field for any model id with a menu of suggestions ("Default" first).
+      // Model states: the harness select marks a harness that is not installed, as the app does.
+      function catalogHarness(){return '<label class="hd-m04-menu-field">Harness<select data-m04-field="harness"'+(locked?' disabled':'')+'>'+MODEL_HARNESSES.map(function(v){return '<option value="'+esc(v)+'"'+(v===s.harness?' selected':'')+'>'+esc(v)+(v===NOT_INSTALLED?' — not installed':'')+'</option>';}).join('')+'</select></label>';}
+      // Model states: an editable combo, a text field for any model id with a menu of suggestions ("Default" first).
       // The menu button is disabled while only "Default" is offered. A harness that takes no model keeps the field, as the app does, with the approved note.
-      function draftModel(){
+      function catalogModel(){
         var c=s.catalog;
         var choices=[{id:'',label:'Default'}].concat(c.models), note=modelNote(s), open=!!c.open&&choices.length>1&&!locked;
-        var list=open?'<div class="hd-m04-combo__list" id="m04-model-list" role="group" aria-label="Suggested models">'+choices.map(function(m){var on=m.id===s.model.trim();return '<button type="button" class="hd-menu__item hd-m04-combo__option'+(on?' is-selected':'')+'" data-m04="model-pick" data-model="'+esc(m.id)+'"'+' aria-pressed="'+on+'"'+'><span class="hd-i hd-i--sm hd-i-check" aria-hidden="true"></span><span class="hd-m04-combo__label">'+esc(m.label)+'</span></button>';}).join('')+'</div>':'';
+        var list=open?'<div class="hd-m04-combo__list" id="m04-model-list" role="group" aria-label="Suggested models">'+choices.map(function(m){var on=m.id===s.model.trim();return '<button type="button" class="hd-menu__item hd-m04-combo__option'+(on?' is-selected':'')+'" data-m04="model-pick" data-model="'+esc(m.id)+'"'+' aria-pressed="'+on+'"'+'><span class="hd-i hd-i--sm hd-i-check" aria-hidden="true"></span><span class="hd-m04-combo__label">'+esc(m.label)+'</span>'+(m.default?'<span class="hd-m04-combo__tag">default</span>':'')+'</button>';}).join('')+'</div>':'';
         return '<div class="hd-m04-menu-field hd-m04-model-field"><label for="m04-model">Model</label><div class="hd-m04-combo"><input id="m04-model" class="hd-m04-combo__input" type="text" data-m04-field="model-text" placeholder="Default" autocomplete="off" spellcheck="false" value="'+esc(s.model)+'"'+(note?' aria-describedby="m04-model-note"':'')+(locked?' disabled':'')+'><button type="button" class="hd-m04-combo__toggle" data-m04="model-suggestions" aria-label="Suggested models" aria-expanded="'+open+'"'+(open?' aria-controls="m04-model-list"':'')+(choices.length<2||locked?' disabled':'')+'><span class="hd-i hd-i--sm hd-i-chevron-down" aria-hidden="true"></span></button></div>'+list+(note?'<div class="hd-m04-model-note"><span class="hd-field__hint" id="m04-model-note">'+esc(note)+'</span>'+(c.state==='unavailable'&&!locked?button('Try again','model-retry'):'')+'</div>':'')+'</div>';
       }
-      bar.innerHTML='<span class="hd-m04-options-anchor"><button type="button" class="hd-btn hd-btn--icon hd-m04-options-trigger" data-m04="options" aria-label="More task options" title="More task options" aria-expanded="'+s.advanced+'" aria-controls="m04-task-options" aria-describedby="m04-options-description"><span class="hd-i hd-i-plus" aria-hidden="true"></span><span class="hd-m04-options-dot"'+(customized(s)?'':' hidden')+' aria-hidden="true"></span><span class="hd-sr" id="m04-options-description">'+(customized(s)?'Customized options':'Default options')+'</span></button></span>'+pill(s.repository,'folder',field('Repository / recent folders','repository',['HarflowMCP','HarflowDesign','Unavailable folder']))+pill(s.harness+' · '+modelName(s),'harness',s.catalog?draftHarness()+draftModel():field('Harness','harness',['Claude Code','Codex','Mistral Vibe','Unavailable harness'])+field('Model','model',models(s.harness)),'harness')+pill({'read_only':'Read only','write_in_repo':'Can edit this repo','publish':'Can publish','unrestricted':'Broad access'}[s.access],'shield','<label class="hd-m04-menu-field">Access<select data-m04-field="access"'+(locked?' disabled':'')+'>'+['read_only','write_in_repo','publish','unrestricted'].map(function(v){return '<option value="'+v+'"'+(s.access===v?' selected':'')+'>'+({'read_only':'Read only','write_in_repo':'Can edit this repo','publish':'Can publish','unrestricted':'Broad access'})[v]+'</option>';}).join('')+'</select></label>')+'<span class="hd-composer__spacer"></span><button type="submit" class="hd-composer__send" aria-label="'+(plainStarting?'Starting task':'Start task')+'"'+(problem(s)||s.status==='created'?' disabled':'')+'><span class="hd-i hd-i-arrow-up" aria-hidden="true"></span></button>';
+      bar.innerHTML='<span class="hd-m04-options-anchor"><button type="button" class="hd-btn hd-btn--icon hd-m04-options-trigger" data-m04="options" aria-label="More task options" title="More task options" aria-expanded="'+s.advanced+'" aria-controls="m04-task-options" aria-describedby="m04-options-description"><span class="hd-i hd-i-plus" aria-hidden="true"></span><span class="hd-m04-options-dot"'+(customized(s)?'':' hidden')+' aria-hidden="true"></span><span class="hd-sr" id="m04-options-description">'+(customized(s)?'Customized options':'Default options')+'</span></button></span>'+pill(s.repository,'folder',field('Repository / recent folders','repository',['HarflowMCP','HarflowDesign','Unavailable folder']))+pill(s.harness+' · '+modelName(s),'harness',s.catalog?(route==='centered-harness-open'?field('Harness','harness',['Claude Code','Codex','Mistral Vibe','Unavailable harness']):catalogHarness())+catalogModel():field('Harness','harness',['Claude Code','Codex','Mistral Vibe','Unavailable harness'])+field('Model','model',models(s.harness)),'harness')+pill({'read_only':'Read only','write_in_repo':'Can edit this repo','publish':'Can publish','unrestricted':'Broad access'}[s.access],'shield','<label class="hd-m04-menu-field">Access<select data-m04-field="access"'+(locked?' disabled':'')+'>'+['read_only','write_in_repo','publish','unrestricted'].map(function(v){return '<option value="'+v+'"'+(s.access===v?' selected':'')+'>'+({'read_only':'Read only','write_in_repo':'Can edit this repo','publish':'Can publish','unrestricted':'Broad access'})[v]+'</option>';}).join('')+'</select></label>')+'<span class="hd-composer__spacer"></span><button type="submit" class="hd-composer__send" aria-label="'+(plainStarting?'Starting task':'Start task')+'"'+(problem(s)||s.status==='created'?' disabled':'')+'><span class="hd-i hd-i-arrow-up" aria-hidden="true"></span></button>';
 
       var wrap=app.querySelector('.hd-composer').parentElement;
       var oldCaption=wrap.querySelector('p'); if(oldCaption) oldCaption.remove();
@@ -358,8 +378,9 @@
       input.style.overflowY = wanted > cap ? 'auto' : 'hidden';
     }
     function syncOptions(){
-      // Model drafts: the open suggestions list fits the space left below it in the frame.
-      var modelList=frame.querySelector('.hd-m04-combo__list');if(modelList){modelList.style.maxHeight='';modelList.style.maxHeight=Math.max(96,Math.min(320,frame.getBoundingClientRect().bottom-modelList.getBoundingClientRect().top-16))+'px';}
+      // Model states: the open suggestions list sits beside the picker; where the compose area would clip it (the 1000 × 620
+      // frame) it drops below the field instead. It then fits the space left below it in the frame.
+      var modelList=frame.querySelector('.hd-m04-combo__list');if(modelList){var clip=modelList.closest('.hd-m04-compose-area')||frame;modelList.classList.remove('hd-m04-combo__list--below');modelList.style.top='';modelList.style.maxHeight='';if(modelList.getBoundingClientRect().right>clip.getBoundingClientRect().right-8){var combo=modelList.previousElementSibling;modelList.classList.add('hd-m04-combo__list--below');modelList.style.top=(combo.offsetTop+combo.offsetHeight+4)+'px';}modelList.style.maxHeight=Math.max(96,Math.min(320,frame.getBoundingClientRect().bottom-modelList.getBoundingClientRect().top-16))+'px';}
       var trigger=frame.querySelector('[data-m04="options"]'), popup=frame.querySelector('#m04-task-options');
       if(!trigger||!popup)return;
       var hint=popup.querySelector('[data-m04-qualification]');if(hint)hint.textContent='Harness qualification: '+s.qualification+'. Unsupported requested choices stay visible for review.';
@@ -384,20 +405,20 @@
     }
     function closeOptions(focus){if(!s.advanced)return;optionsOpen(s,false);syncOptions();if(focus){var trigger=frame.querySelector('[data-m04="options"]');if(trigger)trigger.focus();}}
     function keydown(e){
-      // Model drafts: Escape closes the open suggestions and returns focus to their button.
+      // Model states: Escape closes the open suggestions and returns focus to their button.
       if(e.key==='Escape'&&s.catalog&&s.catalog.open&&e.target.closest('.hd-m04-model-field')){e.preventDefault();e.stopPropagation();s.catalog.open=false;render();refocus('[data-m04="model-suggestions"]');return;}
       if(e.key==='Escape'&&s.advanced){e.preventDefault();closeOptions(true);}
     }
     function refocus(selector){var node=frame.querySelector(selector);if(node&&!node.disabled)node.focus();}
     function outside(e){
-      // Model drafts: a click outside the Model field closes the open suggestions, as a native menu closes.
+      // Model states: a click outside the Model field closes the open suggestions, as a native menu closes.
       if(s.catalog&&s.catalog.open&&!e.target.closest('.hd-m04-model-field')&&!e.target.closest('.hd-m04-catalog')){s.catalog.open=false;render();}
       if(s.advanced&&!host.querySelector('.hd-m04-options-anchor')?.contains(e.target))closeOptions(false);}
     function input(e) {
       if (loading) return;
       var key=e.target.dataset.m04Field;
       if(['starting','unknown','created'].includes(s.status))return;
-      // Model drafts: any typed text is the requested model; the pill and the status follow without a re-render.
+      // Model states: any typed text is the requested model; the pill and the status follow without a re-render.
       if(key==='model-text'&&s.catalog){s.model=e.target.value;s.modelHarness=s.harness;var pillLabel=frame.querySelector('[data-m04-picker="harness"] .hd-pill__label');if(pillLabel)pillLabel.textContent=s.harness+' · '+modelName(s);syncOptions();return;}
       if(!['draft','turns'].includes(key))return;
       if (key==='draft')s.draft=e.target.value;else select(s,key,e.target.value);
@@ -405,7 +426,7 @@
       sizePrompt();
     }
 
-    function change(e) { var key=e.target.dataset.m04Field; if(!key || key==='draft' || key==='model-text')return;if(s.catalog&&key==='harness'&&!loading){if(['starting','unknown','created'].includes(s.status))return;pickHarness(s,e.target.value);render();return;}if(loading && key!=='size')return;if(key==='turns' && s.turns===e.target.value)return;if(['effort','turns','approvals'].includes(key)){select(s,key,e.target.value);syncOptions();return;} if(key==='size')s.narrow=e.target.value==='minimum'; else if(key==='repository'||key==='harness'||key==='model'||key==='access'||key==='effort'||key==='turns'||key==='approvals') select(s,key,e.target.value); else if(!['starting','unknown','created'].includes(s.status)) s[key]=e.target.value; render(); }
+    function change(e) { var key=e.target.dataset.m04Field; if(!key || key==='draft' || key==='model-text')return;if(s.catalog&&key==='harness'&&!loading){if(['starting','unknown','created'].includes(s.status))return;if(route==='centered-harness-open')pickOpenHarness(s,e.target.value);else pickHarness(s,e.target.value);render();return;}if(loading && key!=='size')return;if(key==='turns' && s.turns===e.target.value)return;if(['effort','turns','approvals'].includes(key)){select(s,key,e.target.value);syncOptions();return;} if(key==='size')s.narrow=e.target.value==='minimum'; else if(key==='repository'||key==='harness'||key==='model'||key==='access'||key==='effort'||key==='turns'||key==='approvals') select(s,key,e.target.value); else if(!['starting','unknown','created'].includes(s.status)) s[key]=e.target.value; render(); }
     function click(e) { var b=e.target.closest('[data-m04]'); if(loading){ if(e.target.closest('summary'))e.preventDefault(); if(!b||!loadingAllows(b.dataset.m04))return; } if(!b)return; var a=b.dataset.m04;
       if(a==='options'){optionsOpen(s,!s.advanced);syncOptions();if(s.advanced&&e.detail===0){var first=frame.querySelector('#m04-task-options select');if(first)first.focus();}return;}
       if(a==='reset'){s=create(route);lastState=s;} if(a==='collapse')s.collapsed=!s.collapsed;
@@ -443,5 +464,5 @@
     render();
     return function(){disposed=true;host.removeEventListener('keydown',keydown);document.removeEventListener('click',outside);host.removeEventListener('input',input);host.removeEventListener('change',change);host.removeEventListener('click',click);host.removeEventListener('submit',submit);host.removeEventListener('toggle',toggle,true);if(widthRaf)window.cancelAnimationFrame(widthRaf);if(widthObserver)widthObserver.disconnect();};
   }
-  H.m04Proposal={mount:mount,model:{loadingAllows:loadingAllows,create:create,customized:customized,optionsOpen:optionsOpen,problem:problem,select:select,qualify:qualify,start:start,settle:settle,history:history,listing:listing,isAmendment:isAmendment,isRedraw:isRedraw,isPending:isPending,redrawSources:REDRAW_SOURCES,pendingSources:PENDING_SOURCES,amendmentPopupMetrics:amendmentPopupMetrics,promptOneLineHeight:promptOneLineHeight,promptCapHeight:promptCapHeight,amendmentDrafts:AMENDMENT_DRAFTS,modelDrafts:MODEL_DRAFTS,isModelDraft:isModelDraft,modelName:modelName,modelNote:modelNote,modelAction:modelAction,pickHarness:pickHarness,listingFor:listingFor,reasons:REASONS}};
+  H.m04Proposal={mount:mount,model:{loadingAllows:loadingAllows,create:create,customized:customized,optionsOpen:optionsOpen,problem:problem,select:select,qualify:qualify,start:start,settle:settle,history:history,listing:listing,isAmendment:isAmendment,isRedraw:isRedraw,isPending:isPending,isModelApproved:isModelApproved,modelSources:MODEL_SOURCES,redrawSources:REDRAW_SOURCES,pendingSources:PENDING_SOURCES,amendmentPopupMetrics:amendmentPopupMetrics,promptOneLineHeight:promptOneLineHeight,promptCapHeight:promptCapHeight,amendmentDrafts:AMENDMENT_DRAFTS,modelStates:MODEL_STATES,isModelState:isModelState,modelName:modelName,modelNote:modelNote,modelAction:modelAction,pickHarness:pickHarness,pickOpenHarness:pickOpenHarness,catalogRows:catalogRows,listingFor:listingFor,reasons:REASONS}};
 })();

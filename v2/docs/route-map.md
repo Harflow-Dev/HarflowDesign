@@ -97,7 +97,7 @@ These are canonical routes with no earlier name; they are not aliases or redirec
 | `workflow-run/lane-message-undeliverable-minimum` | `workflow-run/lane-message-undeliverable` at 1000 × 620 |
 | `menu-bar/approval-stale`, `menu-bar/answered-elsewhere` | `menu-bar/busy`, first request |
 | `harness-runtime/updating` | `new-task/centered-empty` with the runtime gate of `harness-runtime/installing` in the main pane; standalone, no pending pair |
-| `new-task/centered-model-loading`, `new-task/centered-model-unavailable`, `new-task/centered-model-not-installed`, `new-task/centered-model-truncated`, `new-task/centered-model-empty` | `new-task/centered-ready` with the harness picker of `new-task/centered-harness-open` open and the Model field drawn as an editable combo with suggestions; standalone, no pending pair ([decisions](decisions/README.md#model-picker-states-provisional)) |
+| `new-task/centered-model-default` | `new-task/centered-ready` with the harness picker of `new-task/centered-harness-open` open, Cursor selected and its suggestions open, the harness default tagged; standalone, no pending pair. ([decisions](decisions/README.md#model-picker-states)) |
 
 ### Redraws awaiting approval
 

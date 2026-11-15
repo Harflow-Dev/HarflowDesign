@@ -88,7 +88,7 @@ test('registry routes are unique and every descriptor resolves to a template, gu
     }
   }
   const mountIds = {
-    m04: [...HFV2.m04ProposalStates, ...HFV2.m04AmendmentStates, ...HFV2.m04RedrawStates, ...HFV2.m04PendingStates].map(x => x.id),
+    m04: [...HFV2.m04ProposalStates, ...HFV2.m04AmendmentStates, ...HFV2.m04RedrawStates, ...HFV2.m04ModelStates, ...HFV2.m04PendingStates].map(x => x.id),
     m05: HFV2.m05ProposalStates.map(x => x.id),
     messages: HFV2.messageStates.map(x => x.id)
   };
@@ -367,9 +367,9 @@ function rendererReads() {
 
 test('aliases resolve old routes without shadowing or chaining, and land on a live route or a retired one', () => {
   const entries = Object.entries(aliases);
-  // The transcript and queued-message renderers and the centered redraws are excluded: their routes are new canonical routes with no earlier name.
+  // The transcript and queued-message renderers, the centered redraws and the model picker states are excluded: their routes are new canonical routes with no earlier name.
   // The retired duplicate shell state and the retired starting state (replaced on 2026-11-09) had no earlier name either.
-  const redrawMounts = new Set([...HFV2.m04RedrawStates, ...HFV2.m04PendingStates].map(x => x.id));
+  const redrawMounts = new Set([...HFV2.m04RedrawStates, ...HFV2.m04ModelStates, ...HFV2.m04PendingStates].map(x => x.id));
   // The retired runtime card draft (2026-11-14) was a provisional route with no earlier name either.
   const nameless = new Set(['sidebar/centered-expanded', 'new-task/centered-starting', 'harness-runtime/installing-sidebar']);
   assert.equal(entries.length, descriptors.filter(d => d.renderer && !d.skeleton && d.renderer !== 'transcript' && d.renderer !== 'messages' && !(d.renderer === 'm04' && redrawMounts.has(d.mount))).length + retired.filter(e => e.renderer && !nameless.has(e.route)).length, 'every renderer route has exactly one old route, retired ones included, except the redraws');
@@ -549,7 +549,9 @@ test('status and approval are per state and never borrowed from a sibling', () =
   assert.equal(line('task/transcript-observed'), 'Approved by the owner on 2026-11-08 · Task transcript');
   assert.equal(line('new-task/centered-loading'), 'Approved by the owner on 2026-11-08 · Centered composer');
   assert.equal(line('sidebar/centered-minimum'), 'Approved by the owner on 2026-11-08 · Sidebar');
-  assert.equal(line('new-task/centered-harness-open'), 'Approved by the owner on 2026-11-08 · Centered composer');
+  assert.equal(line('new-task/centered-harness-open'), 'Approved by the owner on 2026-11-15 · Centered composer · Model field');
+  assert.equal(line('new-task/centered-model-truncated'), 'Approved by the owner on 2026-11-15 · Model picker');
+  assert.equal(stateOf('new-task/centered-model-default')[1].status, 'provisional');
   assert.match(line('sidebar/history-empty'), /^Approved by the owner on 2026-11-05 · /);
   assert.match(line('new-task/centered-ready'), /^Approved by the owner on 2026-11-06 · /);
   assert.match(line('task/running-stop'), /^Approved by the owner on 2026-11-07 · /);
@@ -781,15 +783,15 @@ test('three redraws are pending, the exact-action approval and the two menu bar 
   for (const pair of pending) assert.ok(!(pair.older in HFV2.routeRedirects) && !(pair.newer in HFV2.routeRedirects));
 });
 
-test('the 16 redraws are approved by the owner on 2026-11-08 and the starting state on 2026-11-09, with the decision of their screen', () => {
+test('the 16 redraws are approved by the owner on 2026-11-08, the starting state on 2026-11-09 and the Model field of the open harness picker on 2026-11-15, with the decision of their screen', () => {
   const redraws = [...COMPOSER_REDRAWS, ...SHELL_REDRAWS, ...TRANSCRIPT_REDRAWS].map(pair => pair[1]).concat('new-task/centered-harness-open');
   assert.equal(redraws.length, 17);
   for (const route of redraws) {
     assert.ok(routeSet.has(route), `${route} is registered`);
     const [family, state] = stateOfRoute(route);
     assert.equal(state.status, 'approved');
-    const decision = route === 'new-task/centered-starting-plain' ? 'Starting row' : DECISION[family.id];
-    const date = route === 'new-task/centered-starting-plain' ? '2026-11-09' : '2026-11-08';
+    const decision = route === 'new-task/centered-starting-plain' ? 'Starting row' : route === 'new-task/centered-harness-open' ? 'Centered composer · Model field' : DECISION[family.id];
+    const date = route === 'new-task/centered-starting-plain' ? '2026-11-09' : route === 'new-task/centered-harness-open' ? '2026-11-15' : '2026-11-08';
     assert.deepEqual({ ...state.approval }, { by: 'the owner', date, decision }, `${route} approval`);
     assert.equal(HFV2.describe(route).approval, `Approved by the owner on ${date} · ${decision}`);
     assert.equal(state.redrawOf, undefined);
@@ -901,8 +903,13 @@ test('redraw strips carry the approval and none of the provisional wording', () 
   assert.ok(!('provisional' in HFV2.catalogStrips.transcript));
   assert.ok(!('d2b' in HFV2.catalogStrips));
   const m04source = read_('m04-proposal.js');
-  assert.match(m04source, /isRedraw\(route\) \? \(route\.indexOf\('centered-shell'\)===0 \? strips\.redrawShellHeading : route==='centered-starting-plain' \? strips\.redrawStartingHeading : strips\.redrawHeading\)/);
-  assert.match(m04source, /route==='centered-starting-plain' \? strips\.redrawStartingNotice : strips\.redrawNotice/);
+  assert.equal(strips.redrawHarnessHeading, 'Approved · Centered composer · Owner 2026-11-08 · Model field 2026-11-15');
+  assert.match(strips.redrawHarnessNotice, /^Approved by the owner, 2026-11-08; the Model field .* 2026-11-15\./);
+  assert.equal(strips.modelHeading, 'Approved · Model picker · Owner 2026-11-15');
+  assert.match(strips.modelNotice, /^Approved by the owner, 2026-11-15\./);
+  assert.match(m04source, /isRedraw\(route\) \? \(route\.indexOf\('centered-shell'\)===0 \? strips\.redrawShellHeading : route==='centered-starting-plain' \? strips\.redrawStartingHeading : route==='centered-harness-open' \? strips\.redrawHarnessHeading : strips\.redrawHeading\)/);
+  assert.match(m04source, /route==='centered-starting-plain' \? strips\.redrawStartingNotice : route==='centered-harness-open' \? strips\.redrawHarnessNotice : strips\.redrawNotice/);
+  assert.match(m04source, /isModelApproved\(route\) \? strips\.modelHeading/);
 });
 
 test('the decisions record lists every redraw with its earlier state, the owner items and the Events deep links', () => {

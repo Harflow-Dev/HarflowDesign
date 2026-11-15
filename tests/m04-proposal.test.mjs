@@ -60,9 +60,9 @@ test('amendment routes are separate and approved by the owner on 2026-11-06',()=
   }
 });
 const m04States=()=>H.registry.families.flatMap(f=>f.states.filter(s=>s.source&&s.source.renderer==='m04'&&!H.m04PendingStates.some(x=>x.id===s.source.mount)).map(s=>Object.assign({route:f.id+'/'+s.id},s)));
-test('registry lists 26 approved entry states: 11 baseline, six amendment and nine redraws on separate provenance',()=>{
+test('registry lists 31 approved entry states: 11 baseline, six amendment, nine redraws and five model picker states on separate provenance',()=>{
   const registered=m04States();
-  assert.equal(registered.length,26,'11 baseline states (history loading is retired), the six centered composer states and nine redraws');
+  assert.equal(registered.length,31,'11 baseline states (history loading is retired), the six centered composer states, nine redraws and five model picker states');
   assert.equal(registered.filter(s=>s.status==='provisional').length,0);
   const all=registered;
   assert.ok(all.every(s=>s.status==='approved'));
@@ -73,9 +73,13 @@ test('registry lists 26 approved entry states: 11 baseline, six amendment and ni
   assert.ok(centered.every(s=>s.approval.date==='2026-11-06'&&/separate from the 2026-11-05 entry direction/.test(s.approval.decision)));
   const redraws=all.filter(s=>H.m04RedrawStates.some(x=>x.id===s.source.mount));
   assert.equal(redraws.length,9);
-  assert.ok(redraws.every(s=>s.approval.by==='the owner'&&s.approval.date===(s.source.mount==='centered-starting-plain'?'2026-11-09':'2026-11-08')));
+  assert.ok(redraws.every(s=>s.approval.by==='the owner'&&s.approval.date===(s.source.mount==='centered-starting-plain'?'2026-11-09':s.source.mount==='centered-harness-open'?'2026-11-15':'2026-11-08')));
   assert.equal(redraws.find(s=>s.source.mount==='centered-starting-plain').approval.decision,'Starting row');
-  const baseline=all.filter(s=>!s.source.mount.startsWith('amendment-')&&!redraws.includes(s));
+  assert.equal(redraws.find(s=>s.source.mount==='centered-harness-open').approval.decision,'Centered composer · Model field');
+  const models=all.filter(s=>H.m04ModelStates.some(x=>x.id===s.source.mount));
+  assert.equal(models.length,5);
+  assert.ok(models.every(s=>s.approval.by==='the owner'&&s.approval.date==='2026-11-15'&&s.approval.decision==='Model picker'));
+  const baseline=all.filter(s=>!s.source.mount.startsWith('amendment-')&&!redraws.includes(s)&&!models.includes(s));
   assert.equal(baseline.length,11);
   assert.ok(baseline.every(s=>s.approval.date==='2026-11-05'),'folding the states keeps each state\'s own approval date');
   const sidebar=H.registry.families.find(f=>f.id==='sidebar');
@@ -173,10 +177,13 @@ test('each centered redraw has the model of its source apart from the route',()=
 });
 test('the open harness picker copies the one-line ready fixture and only changes the harness selection',()=>{
   const open=M.create('centered-harness-open'),ready=M.create('amendment-ready');
-  assert.deepEqual(Object.assign({},open,{route:ready.route,harness:ready.harness,model:ready.model,qualification:ready.qualification,picker:ready.picker,remembered:{}}),Object.assign({},ready,{remembered:{}}));
+  const combo={harnessList:open.harnessList,modelHarness:open.modelHarness,modelOption:open.modelOption,catalog:open.catalog};
+  assert.equal(JSON.stringify(Object.assign({},open,{route:ready.route,harness:ready.harness,model:ready.model,qualification:ready.qualification,picker:ready.picker,remembered:{}})),JSON.stringify(Object.assign({},ready,combo,{remembered:{}})));
   assert.equal(open.picker,'harness');
   assert.equal(open.harness,'Unavailable harness');
-  assert.equal(open.model,'Default');
+  // Owner amendment (2026-11-15): Model is the editable combo; empty text means Default and no listing is read.
+  assert.equal(open.model,'');assert.equal(M.modelName(open),'Default');
+  assert.equal(JSON.stringify(open.catalog),JSON.stringify({state:'not_read',models:[]}));assert.equal(M.modelNote(open),'');
   assert.equal(M.problem(open),'Choose a qualified harness and model.');
   assert.equal(M.problem(ready),'');
   assert.equal(M.create('amendment-ready').picker,'');
@@ -196,7 +203,7 @@ test('redraw routes are not amendments of 2026-11-06 and keep no amendment draft
   assert.equal(M.isRedraw('centered-shell'),false,'the retired expanded shell redraw has no mount');
 });
 test('redraw descriptions carry the approval date and no provisional wording',()=>{
-  for(const x of H.m04RedrawStates){assert.equal(x.approved,true);assert.equal(x.status,'Approved');assert.match(x.description,x.id==='centered-starting-plain'?/Owner-approved centered redraw \(2026-11-09\)/:/Owner-approved centered redraw \(2026-11-08\)/);}
+  for(const x of H.m04RedrawStates){assert.equal(x.approved,true);assert.equal(x.status,'Approved');assert.match(x.description,x.id==='centered-starting-plain'?/Owner-approved centered redraw \(2026-11-09\)/:x.id==='centered-harness-open'?/Owner-approved centered redraw \(2026-11-08; Model field amended 2026-11-15\)/:/Owner-approved centered redraw \(2026-11-08\)/);}
   for(const s of m04States().filter(s=>H.m04RedrawStates.some(x=>x.id===s.source.mount))){
     assert.equal(s.status,'approved');
     assert.equal(s.approvalNote,undefined);
@@ -219,16 +226,19 @@ test('the open harness picker disables the unavailable option and shows the hint
   assert.match(src,/options\(values,s\[key\],gate\?'Unavailable harness':''\)/);
 });
 
-// The starting state without a status row is approved (2026-11-09). The runtime update in the main pane is a provisional draft.
-test('the provisional draft copies its source fixture apart from the route and is centered',()=>{
-  assert.deepEqual(Array.from(H.m04PendingStates,x=>x.id),['runtime-updating','model-loading','model-unavailable','model-not-installed','model-truncated','model-empty']);
+// The starting state without a status row is approved (2026-11-09). The runtime update in the main pane and the default marker
+// are provisional drafts; the five model picker states were approved on 2026-11-15.
+test('the provisional drafts and model picker states copy their source fixture apart from the route and are centered',()=>{
+  assert.deepEqual(Array.from(H.m04PendingStates,x=>x.id),['runtime-updating','model-default']);
   assert.ok(H.m04PendingStates.every(x=>x.approved===false&&x.status==='Provisional'));
-  for(const [route,source] of Object.entries(M.pendingSources)){
+  assert.deepEqual(Array.from(H.m04ModelStates,x=>x.id),['model-loading','model-unavailable','model-not-installed','model-truncated','model-empty']);
+  assert.ok(H.m04ModelStates.every(x=>x.approved===true&&x.status==='Approved'&&/Owner-approved model picker state \(2026-11-15\)/.test(x.description)));
+  for(const [route,source] of Object.entries(Object.assign({},M.pendingSources,M.modelSources))){
     const draft=M.create(route),from=M.create(source);
-    assert.equal(M.isPending(route),true);assert.equal(M.isAmendment(route),true);assert.equal(M.isRedraw(route),false);
+    assert.equal(M.isPending(route),!M.isModelApproved(route));assert.equal(M.isAmendment(route),true);assert.equal(M.isRedraw(route),false);
     assert.equal(draft.route,route);
     // A model picker draft opens the harness picker and sets only its own harness, listing and Default model.
-    const own=M.isModelDraft(route)?(d=>Object.assign(d,{modelHarness:d.harness,modelOption:d.harness==='Mistral Vibe'?'unsupported':'supported'}))(Object.assign({model:'',picker:'harness',harnessList:'ready'},JSON.parse(JSON.stringify(M.modelDrafts[route])))):{};
+    const own=M.isModelState(route)?(d=>Object.assign(d,{modelHarness:d.harness,modelOption:d.harness==='Mistral Vibe'?'unsupported':'supported'}))(Object.assign({model:'',picker:'harness',harnessList:'ready'},JSON.parse(JSON.stringify(M.modelStates[route])))):{};
     assert.deepEqual(JSON.parse(JSON.stringify(Object.assign({},draft,{route:''}))),JSON.parse(JSON.stringify(Object.assign({},from,own,{route:''}))));
     assert.match(H.templates['m04-proposal/'+route],/hd-m04-amendment/);
   }
@@ -265,12 +275,12 @@ test('source gates of the starting state without the row and the runtime update 
 
 // Model picker drafts: editable Model combo backed by advisory listings.
 const J=x=>JSON.parse(JSON.stringify(x));
-const MODEL_ROUTES=['model-loading','model-unavailable','model-not-installed','model-truncated','model-empty'];
+const MODEL_ROUTES=['model-loading','model-unavailable','model-not-installed','model-truncated','model-empty','model-default'];
 const modelDraft=route=>{const s=M.create(route);if(!s.draft.trim())s.draft='Review the queue';return s;};
 test('model drafts register and every one is a model draft, approved routes are not',()=>{
-  assert.deepEqual(J(Object.keys(M.modelDrafts)),MODEL_ROUTES);
-  for(const r of MODEL_ROUTES){assert.equal(M.isModelDraft(r),true);assert.ok(M.create(r).catalog,r+' has a catalog');}
-  assert.equal(M.isModelDraft('amendment-ready'),false);
+  assert.deepEqual(J(Object.keys(M.modelStates)),MODEL_ROUTES);
+  for(const r of MODEL_ROUTES){assert.equal(M.isModelState(r),true);assert.ok(M.create(r).catalog,r+' has a catalog');}
+  assert.equal(M.isModelState('amendment-ready'),false);
   assert.equal(M.create('amendment-ready').catalog,undefined);
 });
 test('model notes match the approved copy for each draft as created',()=>{
@@ -406,7 +416,8 @@ test('Opencode listing has 400 unique rows and is truncated',()=>{
   assert.equal(M.listingFor('Codex').truncated,false);
   assert.equal(M.listingFor('Antigravity').state,'not_installed');
   assert.equal(M.listingFor('Mistral Vibe').state,'not_read');
-  assert.equal(M.listingFor('Cursor').reason,'auth_required');
+  // Cursor lists the contract fixture's rows; its sign-in failure is reached through the auth_required reason control.
+  assert.equal(M.listingFor('Cursor').state,'available');assert.equal(M.listingFor('Cursor').models[0].default,true);
 });
 test('Codex model drafts have empty turns and no model draft counts as customized',()=>{
   for(const r of ['model-unavailable','model-empty'])assert.equal(M.create(r).turns,'');
@@ -423,4 +434,77 @@ test('locked model drafts ignore pick, type and default actions',()=>{
     M.modelAction(s,'model-default');assert.equal(s.model,'keep',status);
   }
   const s=modelDraft('model-truncated');M.modelAction(s,'model-pick',b);assert.equal(s.model,'picked');assert.equal(s.catalog.open,false);
+});
+
+// Default marker draft, approved model picker status and the open harness picker's model field.
+const regState=id=>H.registry.families.find(f=>f.id==='new-task').states.find(s=>s.id===id);
+test('Cursor catalog rows come from the contract fixture and mark only Auto as default',()=>{
+  const rows=J(M.catalogRows('Cursor'));
+  assert.deepEqual(rows.map(r=>r.id),['auto','gpt-5.3-codex-low','gpt-5.3-codex-low-fast','gpt-5.3-codex','gpt-5.3-codex-fast','gpt-5.3-codex-high','gpt-5.3-codex-high-fast']);
+  assert.deepEqual(rows[0],{id:'auto',label:'Auto',default:true});
+  assert.ok(rows.slice(1).every(r=>r.default===false));
+  for(const h of ['Claude Code','Codex','Opencode'])assert.ok(M.catalogRows(h).every(r=>!r.default),h);
+  const l=M.listingFor('Cursor');assert.equal(l.state,'available');assert.ok(!l.truncated);assert.equal(JSON.stringify(l.models),JSON.stringify(rows));
+});
+test('model-default is a provisional Cursor draft with the default marked and the picker open',()=>{
+  assert.ok('model-default' in M.pendingSources);assert.ok(!('model-default' in M.modelSources));
+  assert.equal(M.isPending('model-default'),true);assert.equal(M.isModelApproved('model-default'),false);assert.equal(M.isModelState('model-default'),true);
+  const s=M.create('model-default');
+  assert.equal(s.harness,'Cursor');assert.equal(s.catalog.state,'available');assert.equal(s.catalog.open,true);
+  assert.equal(JSON.stringify(s.catalog.models),JSON.stringify(M.catalogRows('Cursor')));
+  assert.equal(s.model,'');assert.equal(M.modelNote(s),'');assert.equal(M.customized(s),false);
+  s.draft='Review the queue';assert.equal(M.problem(s),'');
+  const p=H.m04PendingStates.find(x=>x.id==='model-default');assert.equal(p.status,'Provisional');assert.equal(p.approved,false);
+  const r=regState('centered-model-default');assert.equal(r.status,'provisional');assert.equal(r.approvalNote,'Provisional · not approved');
+});
+test('the five model picker states are approved amendments with the 2026-11-15 owner decision',()=>{
+  for(const route of Object.keys(M.modelSources)){
+    assert.equal(M.isModelApproved(route),true,route);assert.equal(M.isPending(route),false,route);assert.equal(M.isAmendment(route),true,route);
+    const r=regState('centered-'+route);
+    assert.equal(r.status,'approved',route);
+    assert.equal(JSON.stringify(r.approval),JSON.stringify({by:'the owner',date:'2026-11-15',decision:'Model picker'}),route);
+    assert.equal(r.approvalNote,undefined,route);
+  }
+  assert.equal(Object.keys(M.modelSources).length,5);
+});
+test('the open harness route starts gated with an unread catalog and an editable empty model',()=>{
+  const s=M.create('centered-harness-open');
+  assert.equal(JSON.stringify(s.catalog),JSON.stringify({state:'not_read',models:[]}));
+  assert.equal(s.model,'');assert.equal(s.harnessList,'ready');assert.equal(s.modelHarness,'Unavailable harness');assert.equal(s.modelOption,'supported');
+  assert.equal(M.modelNote(s),'');assert.equal(M.problem(s),'Choose a qualified harness and model.');
+});
+test('pickOpenHarness keeps the approved qualification check and reads the harness listing',()=>{
+  const s=M.create('centered-harness-open'),rev=s.revision;
+  M.pickOpenHarness(s,'Claude Code');
+  assert.equal(s.qualification,'checking');assert.equal(s.revision,rev+1);
+  assert.equal(JSON.stringify(s.catalog),JSON.stringify(M.listingFor('Claude Code')));assert.equal(s.modelOption,'supported');
+  s.draft='Review the queue';assert.equal(M.problem(s),'Choose a qualified harness and model.');
+  M.qualify(s,s.revision,'ready');assert.equal(M.problem(s),'');
+  const v=M.create('centered-harness-open');M.pickOpenHarness(v,'Mistral Vibe');
+  assert.equal(v.modelOption,'unsupported');assert.equal(M.modelNote(v),"Model selection isn't available for this harness.");
+  M.pickOpenHarness(v,'Unavailable harness');assert.equal(v.catalog.state,'not_read');assert.equal(v.catalog.models.length,0);
+  const p=M.create('centered-harness-open'),q=M.create('centered-harness-open');M.pickHarness(p,'Claude Code');M.pickOpenHarness(q,'Claude Code');
+  assert.equal(p.qualification,'ready');assert.equal(q.qualification,'checking');
+});
+test('open harness picker keeps the approved turn-limit and typed-model review rules',()=>{
+  let s=M.create('centered-harness-open');s.draft='Review the queue';M.pickOpenHarness(s,'Codex');M.qualify(s,s.revision,'ready');
+  assert.equal(s.turns,'12');assert.equal(M.problem(s),'This harness does not support a turn limit. Clear it in task options.');
+  s=M.create('centered-harness-open');s.draft='Review the queue';M.pickOpenHarness(s,'Claude Code');M.qualify(s,s.revision,'ready');
+  M.modelAction(s,'model-type');assert.equal(s.modelHarness,'Claude Code');assert.equal(M.problem(s),'');
+  M.pickOpenHarness(s,'Codex');s.turns='';M.qualify(s,s.revision,'ready');
+  assert.equal(M.problem(s),'Review and select the model for this harness.');
+});
+const m04Src=()=>fs.readFileSync(new URL('../v2/scripts/m04-proposal.js',import.meta.url),'utf8');
+const m04Css=()=>fs.readFileSync(new URL('../v2/styles/m04-proposal.css',import.meta.url),'utf8');
+test('the default tag is emitted only for rows whose default is truthy and is styled',()=>{
+  assert.ok(m04Src().includes(`(m.default?'<span class="hd-m04-combo__tag">default</span>':'')`));
+  assert.match(m04Css(),/\.hd-m04-combo__tag\{/);
+});
+test('the suggestion list drops below the combo when it passes the compose area right edge',()=>{
+  assert.match(m04Src(),/modelList\.closest\('\.hd-m04-compose-area'\)[\s\S]*modelList\.getBoundingClientRect\(\)\.right>clip\.getBoundingClientRect\(\)\.right[\s\S]*?classList\.add\('hd-m04-combo__list--below'\)/);
+  assert.match(m04Css(),/\.hd-m04-combo__list--below\{/);
+});
+test('the app has no Use default model button; the fixture control is Clear the model',()=>{
+  assert.ok(!m04Src().includes('Use default model'));
+  assert.ok(m04Src().includes("button('Clear the model','model-default')"));
 });

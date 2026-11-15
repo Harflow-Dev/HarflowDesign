@@ -4,7 +4,7 @@ This glossary governs user-facing design copy. The terminology was requested dur
 
 | Term | Meaning and usage |
 | --- | --- |
-| Harness | Installed execution tool, such as Claude Code, Codex CLI, opencode, Mistral Vibe, or Antigravity. Use in tool selectors, filters, and tool status. |
+| Harness | Installed execution tool, such as Claude Code, Codex CLI, opencode, Mistral Vibe, Antigravity, or Cursor. Use in tool selectors, filters, and tool status. |
 | Agent | Autonomous AI participant doing work. A harness runs an agent. Retain for orchestrators, workers, and generated roles, including multiple agents using one harness. |
 | Model | Selected model inside a harness. Keep separate from harness identity and agent role. |
 | Orchestrator | Agent coordinating a workflow and choosing its next actions. |

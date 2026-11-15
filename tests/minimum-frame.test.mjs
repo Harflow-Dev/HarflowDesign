@@ -125,13 +125,13 @@ test('no existing template changed: the digests equal those of the base commit a
     'menu-bar/approval-stale', 'menu-bar/answered-elsewhere', 'menu-bar/busy-approve-once', 'workflow-run/lane-message-undeliverable',
     ...['queued', 'delivering', 'delivered', 'cancelled', 'send-now-refused', 'uncertain', 'unsupported', 'queued-settled'].map(x => `messages/message-${x}`),
     'm04-proposal/centered-starting-plain', 'm04-proposal/runtime-updating',
-    // The provisional model picker drafts (2026-11-15).
-    ...['loading', 'unavailable', 'not-installed', 'truncated', 'empty'].map(x => `m04-proposal/model-${x}`),
+    // The model picker states (approved 2026-11-15) and the provisional default marker draft.
+    ...['loading', 'unavailable', 'not-installed', 'truncated', 'empty', 'default'].map(x => `m04-proposal/model-${x}`),
     // The approved pending-launch states (2026-11-10) and the approved parallel-group lane states (2026-11-12).
     ...HFV2.pendingLaunchStates.map(([id]) => `task/pending-${id}`).filter(key => key in HFV2.templates),
     ...HFV2.parallelLaneStates.map(id => `parallel-group/${id}`).filter(key => key in HFV2.templates)
   ];
-  assert.equal(added.length, 22 + 20 + 24 + 2 + 5);
+  assert.equal(added.length, 22 + 20 + 24 + 2 + 6);
   const removed = ['m04-proposal/centered-starting'];
   for (const key of removed) { assert.ok(key in manifest && !(key in HFV2.templates), `${key} is removed with its retired state`); delete manifest[key]; }
   for (const key of added) assert.ok(key in HFV2.templates, `${key} is a template`);
