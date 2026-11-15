@@ -1134,7 +1134,8 @@ test('the transcript renderer is registered and draws each activity fixture in t
 // The digest covers task screen markup in eight interface variants and both appearances. The 2026-11-10
 // owner-approved continuation copy amendment intentionally changes two state specimens; the updated
 // digest records that copy change while guarding all resulting markup against unintended drift. The owner's canonical
-// task glyphs (2026-11-14) change the timed-out badge and sidebar glyph from a clock to the failed x.
+// task glyphs (2026-11-14) change the timed-out badge and sidebar glyph from a clock to the failed x. The owner's copy
+// decision of 2026-11-15 changes the events-page-error retry wording; only that state's digests change.
 test('the task screen markup of every existing state is unchanged by the optional hooks', () => {
   const m05 = HFV2.m05Proposal;
   assert.equal(typeof m05.screenHtml, 'function');
@@ -1151,7 +1152,13 @@ test('the task screen markup of every existing state is unchanged by the optiona
     });
   }
   assert.equal(lines.length, 944);
-  assert.equal(crypto.createHash('sha256').update(lines.join('\n')).digest('hex'), '2ad03ce7b8f524aa250f7490e131dd84d05a7b38e38ed4aabbbcdd69568848fc');
+  assert.equal(crypto.createHash('sha256').update(lines.join('\n')).digest('hex'), '7513aa777a569ad3cee81c3402be412de8fb717a1b2bd1570b53661b31177b44');
+});
+
+test('the Events page error retries the same earlier page with the app wording', () => {
+  const renderer = read(path.join(v2, 'scripts', 'm05-proposal.js'));
+  assert.match(renderer, /'Earlier records couldn\\'t be read', 'Records below stay\. Retrying reads the same earlier page again\.', btn\('Retry history read'\)/);
+  assert.doesNotMatch(renderer, /Reload from newest|starts again from the newest page/);
 });
 
 test('continuation copy separates acceptance from completion and refusal reason', () => {

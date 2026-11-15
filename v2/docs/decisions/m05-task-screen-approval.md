@@ -71,3 +71,11 @@ The owner approved these exact copy changes. This amendment is limited to wordin
 - `state-continue-started`: notice title **New session accepted**; body **The engine accepted the request. It may still be waiting for resources; acceptance does not mean completion.** The catalog title and description use acceptance language. `state-continue-started` and its route ID remain unchanged.
 - `state-continue-refused`: replace **Nothing started. The engine said:** with **The engine refused this request.** The engine reason remains separate and unchanged.
 - `state-launch-unknown`: retain its warning and **Check for a new task** action unchanged.
+
+## Copy amendment — 2026-11-15
+
+The owner decided on 2026-11-15 (relayed by the coordinating session) that `task/events-page-error` (`m05-proposal/events-page-error`) uses retry wording that matches the app. This amendment is limited to wording; the state, its layout and its route are unchanged.
+
+- The note body **Records below stay. Reloading starts again from the newest page.** becomes **Records below stay. Retrying reads the same earlier page again.**
+- The action **Reload from newest** becomes **Retry history read**, the label the app uses for this retry (HarflowMac `4f695ec`, `macos/HfFeatures/MainWindowFeature/Sources/MainWindowFeature/TaskDetail/Component/ObservationViews.swift:367-371`; at `f474c0b` the label is `label(.retryRead)`, `ObservationViews.swift:195-202`). The Events pane retry re-reads the same earlier page and keeps the rows already shown: `.retryRead` calls `retryObservation()` (`macos/HfCore/HfRepository/Sources/HfRepository/EventStream/EventStreamRepositoryImpl.swift:144`), which keeps the older-page cursor and asks for that page again (`EventStream/PublicObservation/PublicEventObservationSession.swift:101-116`, same lines at both commits). The transcript column retries the same way (`TaskDetail/Activity/ActivityFeedNativeObservation.swift:324-337`, `requestPage(retry: true)`). Starting again from the newest page is a separate action ("Load current activity"). The app currently titles this note "Captured history unavailable"; the design keeps its own title and body, which the app adopts when it implements the state.
+- The note title **Earlier records couldn't be read** is unchanged.

@@ -32,6 +32,8 @@ Routes are written as the current route, with the route used before the informat
 
 Copy-only amendment approved by the owner on 2026-11-10: continuation acceptance wording, refusal wording, and unchanged launch-unknown warning/action. No additional states or features were approved. See [M05 task screen approval](m05-task-screen-approval.md#copy-amendment--2026-11-10).
 
+Copy-only amendment decided by the owner on 2026-11-15: `task/events-page-error` retries the same earlier page, so its action reads "Retry history read" instead of "Reload from newest", and its note says the same page is read again. See [M05 task screen approval](m05-task-screen-approval.md#copy-amendment--2026-11-15).
+
 ## Retired designs
 
 The owner answered the five replacement questions on 2026-11-08. A retired design leaves navigation, the picker and the overview counts. Its route still opens and shows the replacement; the old design stays in Git history, at the commits below. Records live in `v2/scripts/supersessions.js` (`routeRedirects` and `retired`).

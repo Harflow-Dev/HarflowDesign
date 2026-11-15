@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Apply the owner's copy decision of 2026-11-15 to `task/events-page-error`: the action reads "Retry history read" and the note says the same earlier page is read again, matching the app, instead of "Reload from newest".
+
 - Draw provisional states for the six stage-3 gap families of the `v2/` reference ahead of implementation, on the owner's decision of 2026-11-15, not approved: 54 routes in the workflow editor (validation and saving, Edit with agent, More actions, Generate), Workflows (New workflow menu and Generate), the workflow run (orchestrator conversation, node messages and goal revision), Resources and Statistics. Each is derived from an approved template by exact swaps; no approved state changes. The decision record lists the copy sources, the states not drawn, 13 owner questions and the deviations from the Mac.
 
 - Approve the provisional drafts of the `v2/` reference on the owner's decision of 2026-11-15, except the known-title loading states, which stay provisional with their three pending parallel group pairs. Approved: the queued-message, approval, Needs you, menu bar and cancelled run lane states (decision "Queued messages and approval states"), `harness-runtime/updating` (decision "Runtime update") and `new-task/centered-model-default` (decision "Model picker"). The contract gaps stay open. Retire `task/approval`, `menu-bar/busy` and `menu-bar/busy-minimum`, which open `task/approval-exact` (no "Approve for this task"), `menu-bar/busy-approve-once` and `menu-bar/busy-approve-once-minimum`; their templates stay as the base of the approval states. `menu-bar/loading` and `menu-bar/loading-minimum` mirror `menu-bar/busy-approve-once` and look the same, because the request cards are placeholders.
