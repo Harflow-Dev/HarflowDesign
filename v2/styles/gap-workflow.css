@@ -1,0 +1,23 @@
+/* Provisional workflow editor and Workflows states (states-workflow-gaps.js). Only what the shared styles do not give. */
+.hd-node.hd-gap-node--warning{border-color:var(--warning)}
+.hd-gap-node--warning .hd-node__meta{color:var(--warning)}
+.hd-gap-node--warning .hd-node__meta .hd-i{color:var(--warning)}
+.hd-gap-warn{display:inline-flex;align-items:center;gap:6px;color:var(--warning)}
+.hd-gap-warn .hd-i{color:var(--warning)}
+.hd-gap-strip{flex:none;padding:var(--space-3) var(--space-4) 0}
+.hd-gap-banner-row{flex:none;align-items:center;border-radius:0;border-top:1px solid var(--border)}
+.hd-gap-banner-row > .hd-i{margin-top:0}
+.hd-gap-banner-row .caption{margin-top:2px}
+.hd-gap-menu-anchor{position:relative;display:inline-flex}
+.hd-gap-menu-anchor > .hd-menu{position:absolute;top:calc(100% + 6px);right:0;z-index:5}
+.hd-gap-menu-anchor--up > .hd-menu{top:auto;bottom:calc(100% + 6px);right:auto;left:0}
+.hd-gap-menu-anchor .hd-menu__item[aria-disabled="true"]{opacity:.45;cursor:default;pointer-events:none}
+.hd-gap-menu-anchor .hd-menu__item{text-decoration:none}
+.hd-gap-status{display:flex;align-items:center;gap:var(--space-2);font-size:13px;line-height:18px;font-weight:500;color:var(--text-secondary)}
+.hd-gap-status--done{color:var(--success)}
+.hd-gap-status--failed{color:var(--danger)}
+.hd-gap-reason{margin:0;font-size:13px;line-height:20px;color:var(--warning)}
+.hd-gap-canvas-note{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:var(--space-5);text-align:center;font-size:13px;line-height:20px;color:var(--text-secondary)}
+.hd-gap-note{margin:0;font-size:13px;line-height:20px;color:var(--text-secondary)}
+.hd-gap-note--danger{color:var(--danger)}
+.hd-gap-lines{margin:0;padding-left:var(--space-4);display:flex;flex-direction:column;gap:2px}

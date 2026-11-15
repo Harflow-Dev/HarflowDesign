@@ -1,0 +1,28 @@
+/* Provisional workflow run, resources and statistics states. Tokens only, so light and dark both follow the theme. */
+
+/* Workflow run: locked composer note and goal pieces. */
+.hd-gap-composer-note{margin:var(--space-2) var(--space-2) 0;color:var(--text-secondary)}
+.hd-gap-field{width:100%;box-sizing:border-box;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--surface);color:var(--text);font:inherit;font-size:14px;line-height:22px;padding:8px 10px;resize:vertical}
+.hd-gap-field:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.hd-gap-run-note{margin:0;font-size:13px;line-height:19px;color:var(--text-secondary)}
+.hd-gap-run-note--danger{color:var(--danger)}
+.hd-gap-run-note--danger strong{font-weight:600}
+.hd-gap-revise{display:flex;flex-direction:column;gap:2px;align-items:flex-start}
+.hd-gap-link{border:0;background:transparent;padding:0;font:inherit;font-size:13px;color:var(--accent);cursor:pointer}
+.hd-gap-link[disabled]{color:var(--text-tertiary);cursor:default}
+.hd-gap-history{font-size:13px;line-height:18px;color:var(--text-secondary)}
+.hd-gap-history summary{cursor:pointer;color:var(--text-secondary)}
+.hd-gap-history ul{margin:var(--space-2) 0 0;padding-left:var(--space-4);display:flex;flex-direction:column;gap:var(--space-2)}
+.hd-gap-history li span{display:block;color:var(--text-tertiary)}
+.hd-gap-result{padding-top:var(--space-3);gap:var(--space-1)}
+.hd-gap-result__label{margin-top:var(--space-2);font-size:11px;line-height:14px;font-weight:600;letter-spacing:.02em;color:var(--text-tertiary)}
+
+/* Resources: the extra holder of an overcommitted harness. */
+.hd-meter__cell.hd-gap-cell--over{outline:1.5px solid var(--warning);outline-offset:1px}
+.hd-gap-holder-note{padding:0 var(--space-2);color:var(--warning)}
+.hd-gap-banner{margin-bottom:var(--space-4);align-items:center}
+
+/* Statistics: failed empty state and the notes under the tiles. */
+.hd-gap-empty--failed .hd-empty__icon{background:var(--danger-subtle);color:var(--danger)}
+.hd-gap-stat-note{margin:var(--space-2) 0 0}
+.hd-stat__value.hd-gap-stat-value--unavailable{color:var(--text-tertiary)}

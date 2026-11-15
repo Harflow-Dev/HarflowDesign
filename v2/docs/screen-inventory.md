@@ -142,3 +142,15 @@ The six states `new-task/centered-model-loading`, `centered-model-unavailable`, 
 
 The 25 states `parallel-group/lanes-titled`, `lane-menu-open`, `prompt-shown`, `cancel-all-confirm`, `lanes-settled`, `lane-failed`, `lane-cancelled`, `lane-taken-over`, `lane-activity-unavailable`, `lane-history-boundary`, `lane-messages-queued`, `lane-message-delivering`, `lane-message-uncertain`, `lane-message-cancelled`, `group-empty`, `two-lanes`, `loading-two`, `lanes-titled-minimum`, `lane-menu-open-minimum`, `prompt-shown-minimum`, `cancel-all-confirm-minimum`, `lanes-settled-minimum`, `lane-cancelled-minimum`, `lane-failed-minimum` and `group-empty-minimum` are **approved by the owner on 2026-11-12**, pinned at `2153ab1d963709d8fbe77cd0bfd678292202a863`. They apply the owner's decisions of 2026-11-12 (task titles, an "Open task" lane menu, a Send-only lane composer, the approved top bar) and draw the lane and group states the approved family never covered. See [the decision record](decisions/parallel-group-proposal.md) for approval, native citations, defaults and owner answers. The four earlier approved `parallel-group` states are unchanged. The "Available captured history" line is not drawn in `lane-history-boundary`. Browser inspection was done in light and dark; native and VoiceOver checks are outstanding.
 
+## Workflow and capacity gap states
+
+Provisional, not approved. Drawn on 2026-11-15 ahead of implementation; each state derives from an approved template and nothing approved changes. The basis, copy sources, undrawn states and owner questions are in the [decision record](decisions/README.md#workflow-and-capacity-gap-states).
+
+- Workflow editor, Validation and saving: `workflow-editor/checking`, `invalid`, `validate-unavailable`, `name-required`, `missing-child`, `missing-child-paths`, `missing-child-replace`, `conflict`, `conflict-unreadable`, `save-failed`, `load-failed`.
+- Workflow editor, Edit with agent: `workflow-editor/agent-request`, `agent-starting`, `agent-working`, `agent-failed`, `agent-cancelled`, `agent-canvas-changed`.
+- Workflow editor, More actions: `workflow-editor/more-actions`, `more-actions-unsaved`, `delete-confirm`, `delete-failed`.
+- Workflow editor, Generate: `workflow-editor/generate-starting`, `generate-working`, `generate-ready`, `generate-failed`.
+- Workflows, New workflow: `workflows/new-menu`, `generate`, `generate-refused`, `generate-uncertain`.
+- Workflow run, Messages and goal: `workflow-run/orchestrator-selected`, `orchestrator-steering-open`, `orchestrator-steering-unavailable`, `node-message-queued`, `node-message-refused`, `node-message-unavailable`, `messages-unsupported`, `revise-goal`, `goal-revised`, `revise-goal-unavailable`, `revise-goal-answered-elsewhere`, `revise-goal-failed`.
+- Resources, Resource states: `resources/not-enabled`, `unsupported`, `unavailable`, `unavailable-permission`, `empty`, `stale`, `over-capacity`.
+- Statistics, Statistics states: `statistics/empty`, `error`, `stale`, `partial-accounting`, `all-time`, `unsupported`.

@@ -135,9 +135,11 @@ test('no existing template changed: the digests equal those of the base commit a
     ...['loading', 'unavailable', 'not-installed', 'truncated', 'empty', 'default'].map(x => `m04-proposal/model-${x}`),
     // The approved pending-launch states (2026-11-10) and the approved parallel-group lane states (2026-11-12).
     ...HFV2.pendingLaunchStates.map(([id]) => `task/pending-${id}`).filter(key => key in HFV2.templates),
-    ...HFV2.parallelLaneStates.map(id => `parallel-group/${id}`).filter(key => key in HFV2.templates)
+    ...HFV2.parallelLaneStates.map(id => `parallel-group/${id}`).filter(key => key in HFV2.templates),
+    // The provisional workflow and capacity gap states (2026-11-15), each derived from an approved template.
+    ...(HFV2.gapStates || [])
   ];
-  assert.equal(added.length, 22 + 20 + 24 + 2 + 6);
+  assert.equal(added.length, 22 + 20 + 24 + 2 + 6 + HFV2.gapStates.length);
   const removed = ['m04-proposal/centered-starting'];
   for (const key of removed) { assert.ok(key in manifest && !(key in HFV2.templates), `${key} is removed with its retired state`); delete manifest[key]; }
   for (const key of added) assert.ok(key in HFV2.templates, `${key} is a template`);
@@ -361,7 +363,9 @@ test('every static template with a sidebar has the top, nav, sections and foot s
   // 22 static screens, plus the four templates the New task and Task renderers read and components/sidebar,
   // plus the ten provisional approval states that start from a task or Needs you screen and the provisional
   // cancelled-run lane view.
-  assert.equal(keys.length, 60);
+  // The provisional workflow and capacity gap states (2026-11-15) that keep the live sidebar; the ones drawn behind a dialog
+  // mark the sidebar inert and are not counted here.
+  assert.equal(keys.length, 60 + HFV2.gapStates.filter(k => HFV2.templates[k].includes('<aside class="hd-sidebar"')).length);
   const odd = [];
   for (const key of keys) {
     const kids = sidebarChildren(HFV2.templates[key]);
