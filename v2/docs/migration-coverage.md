@@ -168,3 +168,7 @@ These observations identify planning inputs, not a new compatibility guarantee. 
 - Statistics: HarflowMCP `docs/contracts.md`, `statistics-page.v1`, is the source for retained-history coverage and accounting.
 
 The Python development route uses its public CLI and selected runtime. Rust implementation runs alongside native work after shared readiness; Mac-on-Rust integration and cutover follow accepted M12 and R14; fresh-state cutover, exclusive writers and no historical execution-state import remain unchanged. Cross-platform adaptations require their own approved v2 references. No planning entry marks a migration checklist item complete.
+
+## Workflow question drawing
+
+Provisional only: `needs-you/workflow-question`, `workflow-question-offered`, `workflow-question-answered`, `workflow-question-unavailable` and their `-minimum` variants. [Decision](decisions/workflow-questions.md). The workflow question card gap has a bounded drawing awaiting browser verification and owner approval; it remains open for native implementation. Generic question stale and transport-unknown outcomes remain undesigned. Existing approved acceptance classifications are unchanged.

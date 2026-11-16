@@ -23,6 +23,14 @@ const APPROVAL = { by: 'the owner', date: '2026-11-08', decision: 'Minimum windo
 const APPROVED_LINE = 'Approved by the owner on 2026-11-08 · Minimum window';
 const NAMING_RULE = /\bm0\d\b|d2b|propos(al|ed)|native entry|\bG-[A-Z]+\b/i;
 
+// New isolated question drawings; never regenerate the existing template digests for these additions.
+const WORKFLOW_QUESTION_TEMPLATES = [
+  'needs-you/workflow-question', 'needs-you/workflow-question-minimum',
+  'needs-you/workflow-question-offered', 'needs-you/workflow-question-offered-minimum',
+  'needs-you/workflow-question-answered', 'needs-you/workflow-question-answered-minimum',
+  'needs-you/workflow-question-unavailable', 'needs-you/workflow-question-unavailable-minimum'
+];
+
 const STATES = {
   'needs-you/waiting-minimum': { of: 'needs-you/waiting', fixes: ['sidebar'], title: 'Waiting · 1000 × 620' },
   'parallel-group/lanes-minimum': { of: 'parallel-group/lanes', fixes: ['sidebar', 'lanes', 'topbar-meta'], title: 'Lanes · 1000 × 620' },
@@ -137,9 +145,10 @@ test('no existing template changed: the digests equal those of the base commit a
     ...HFV2.pendingLaunchStates.map(([id]) => `task/pending-${id}`).filter(key => key in HFV2.templates),
     ...HFV2.parallelLaneStates.map(id => `parallel-group/${id}`).filter(key => key in HFV2.templates),
     // The provisional workflow and capacity gap states (2026-11-15), each derived from an approved template.
-    ...(HFV2.gapStates || [])
+    ...(HFV2.gapStates || []),
+    ...WORKFLOW_QUESTION_TEMPLATES
   ];
-  assert.equal(added.length, 22 + 20 + 24 + 2 + 6 + HFV2.gapStates.length);
+  assert.equal(added.length, 22 + 20 + 24 + 2 + 6 + HFV2.gapStates.length + 8);
   const removed = ['m04-proposal/centered-starting'];
   for (const key of removed) { assert.ok(key in manifest && !(key in HFV2.templates), `${key} is removed with its retired state`); delete manifest[key]; }
   for (const key of added) assert.ok(key in HFV2.templates, `${key} is a template`);
@@ -368,7 +377,8 @@ test('every static template with a sidebar has the top, nav, sections and foot s
   // cancelled-run lane view.
   // The provisional workflow and capacity gap states (2026-11-15) that keep the live sidebar; the ones drawn behind a dialog
   // mark the sidebar inert and are not counted here.
-  assert.equal(keys.length, 60 + HFV2.gapStates.filter(k => HFV2.templates[k].includes('<aside class="hd-sidebar"')).length);
+  for (const key of WORKFLOW_QUESTION_TEMPLATES) assert.ok(keys.includes(key), `${key} retains the shared sidebar structure`);
+  assert.equal(keys.length, 60 + 8 + HFV2.gapStates.filter(k => HFV2.templates[k].includes('<aside class="hd-sidebar"')).length);
   const odd = [];
   for (const key of keys) {
     const kids = sidebarChildren(HFV2.templates[key]);

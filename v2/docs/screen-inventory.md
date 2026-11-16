@@ -154,3 +154,7 @@ Approved by the owner on 2026-11-15. Each state derives from an approved templat
 - Workflow run, Messages and goal: `workflow-run/orchestrator-selected`, `orchestrator-steering-open`, `orchestrator-steering-unavailable`, `orchestrator-steering-waiting`, `orchestrator-steering-cancelling` and `orchestrator-steering-unknown`, `node-message-queued`, `node-message-refused`, `node-message-unavailable`, `messages-unsupported`, `revise-goal`, `goal-revised`, `revise-goal-unavailable`, `revise-goal-answered-elsewhere`, `revise-goal-failed`.
 - Resources, Resource states: `resources/not-enabled`, `unsupported`, `unavailable`, `unavailable-permission`, `empty`, `stale`, `over-capacity`.
 - Statistics, Statistics states: `statistics/empty`, `error`, `stale`, `partial-accounting`, `all-time`, `unsupported`.
+
+## Workflow questions
+
+Eight provisional Needs you states: `workflow-question`, `workflow-question-offered`, `workflow-question-answered`, `workflow-question-unavailable`, each with a `-minimum` variant. They draw the free-text, usage-limit offered-only, competing winner/saved draft and withdrawn last-known source surfaces. [Source pin, preview, gaps and approval](decisions/workflow-questions.md). Page-level loading and empty retain their existing references. No existing approved route is changed.

@@ -263,9 +263,9 @@
     els.description.textContent = state.description;
     els.approval.textContent = d.approval;
     updateNote(route);
-    var specimenSize = d.minimum ? '1000 × 620' : d.sizeCaption
+    var specimenSize = d.state.specimenSize || (d.minimum ? '1000 × 620' : d.sizeCaption
       ? 'app frame 1280 × 800 or minimum 1000 × 620 via Size; catalogue controls outside the app'
-      : (meta ? meta.width + ' wide' : '1280 × 800');
+      : (meta ? meta.width + ' wide' : '1280 × 800'));
     els.caption.textContent = 'Specimen at native size (' + specimenSize + '). Appearance: ' +
       (current.override ? current.override + ' (this view only)' : preference) + (mode === 'system' ? ', currently ' + resolved : '') + '.';
     document.title = state.title + ' · ' + family.title + ' · Harflow Desktop · Interface reference';
