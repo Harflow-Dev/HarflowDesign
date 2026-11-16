@@ -1402,12 +1402,19 @@ test('parallel group lane approval is pinned, quotes the question and answer, an
   for (const route of ['task/cancelled-partial', 'task/artifacts-empty', 'task/loading-known-title']) assert.equal(HFV2.describe(route).status, 'provisional', route);
 });
 
-test('workflow questions remain provisional and distinct from approvals', () => {
+test('workflow question approval is pinned to the eight cards and does not broaden other provisional states', () => {
+  const record = read(path.join(v2, 'docs', 'decisions', 'workflow-questions.md'));
+  assert.match(record, /9093e7515a7759f864c106a210649292209f87e4/);
+  assert.match(record, /“Approve these cards”/);
+  assert.match(record, /does not close the full M07 gap or establish a new retention policy/);
   for (const id of ['workflow-question', 'workflow-question-offered', 'workflow-question-answered', 'workflow-question-unavailable']) {
     for (const suffix of ['', '-minimum']) {
       const d = HFV2.describe(`needs-you/${id}${suffix}`);
-      assert.equal(d.status, 'provisional');
-      assert.equal(d.state.approval, undefined);
+      assert.equal(d.status, 'approved');
+      assert.deepEqual(Object.keys(d.state.approval).sort(), ['by', 'date', 'decision']);
+      assert.equal(d.state.approval.by, 'the owner');
+      assert.equal(d.state.approval.date, '2026-11-17');
+      assert.equal(d.state.approval.decision, 'Workflow questions');
       const html = HFV2.templates[d.templateKey];
       assert.ok(html.includes('aria-label="Workflow question"'));
       assert.ok(!html.includes('Preview only') && !html.includes('data-question-result'));
@@ -1426,4 +1433,5 @@ test('workflow questions remain provisional and distinct from approvals', () => 
       assert.ok(html.includes(suffix ? 'width: 1000px; height: 620px;' : 'width: 1280px; height: 800px;'));
     }
   }
+  for (const route of ['task/cancelled-partial', 'task/artifacts-empty', 'task/loading-known-title']) assert.equal(HFV2.describe(route).status, 'provisional', route);
 });

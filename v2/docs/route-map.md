@@ -290,4 +290,4 @@ See the "Moved from" table in [decisions/README.md](decisions/README.md).
 
 ## Workflow questions
 
-Provisional; [decision and limits](decisions/workflow-questions.md). No existing route is replaced or redirected. Each of `needs-you/workflow-question`, `needs-you/workflow-question-offered`, `needs-you/workflow-question-answered`, and `needs-you/workflow-question-unavailable` has a separate `-minimum` variant; all support `/light`, `/dark` and `/system`.
+Approved by the owner on 2026-11-17 (“Approve these cards”) at `9093e7515a7759f864c106a210649292209f87e4`; [decision and limits](decisions/workflow-questions.md). No existing route is replaced or redirected. Each of `needs-you/workflow-question`, `needs-you/workflow-question-offered`, `needs-you/workflow-question-answered`, and `needs-you/workflow-question-unavailable` has a separate `-minimum` variant; all support `/light`, `/dark` and `/system`.

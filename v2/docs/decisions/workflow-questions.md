@@ -1,6 +1,6 @@
 # Workflow questions
 
-Status: provisional. Owner approval pending. No approval is inherited from the waiting shell. HarflowDesign base: `b710856`. No commit or publication is claimed.
+Status: approved by the owner on 2026-11-17. Approved design commit: `9093e7515a7759f864c106a210649292209f87e4`. No approval is inherited from the waiting shell. The owner approved these eight workflow-question drawings in response to “Approve these cards”. The approval covers only the routes listed below. The approval was explicitly for native Mac implementation of these cards. Implementation is not yet delivered; no publication is claimed.
 
 ## Routes and composition
 
@@ -38,7 +38,7 @@ Question prose, shared-answering sentence, fixture run/step, answer, timestamp a
 
 Generic question stale refusals and transport-unknown outcomes remain explicit gaps. This drawing adds no expiry policy, authenticated caller identity, automatic replay, new wire semantics, engine authority or retry guarantee. Unavailable means the specific withdrawn last-known source only. Retry here is a read attempt, not submission or recovery from an unknown send.
 
-Before native UI implementation, an explicit owner decision must approve the concrete Design commit/path/states. These states remain provisional.
+The owner approved the concrete design at `9093e7515a7759f864c106a210649292209f87e4`, path `v2/scripts/states-workflow-questions.js`, for the eight routes above: `needs-you/workflow-question`, `needs-you/workflow-question-minimum`, `needs-you/workflow-question-offered`, `needs-you/workflow-question-offered-minimum`, `needs-you/workflow-question-answered`, `needs-you/workflow-question-answered-minimum`, `needs-you/workflow-question-unavailable` and `needs-you/workflow-question-unavailable-minimum` (“Approve these cards”, 2026-11-17). Generic question stale refusals and transport-unknown outcomes remain open; native implementation is authorized but not yet delivered; this approval does not close the full M07 gap or establish a new retention policy.
 
 Primary verification on 2026-11-16, after the native gate released the serialized execution lane:
 
@@ -48,3 +48,16 @@ Primary verification on 2026-11-16, after the native gate released the serialize
 - Primary visually inspected the four card variants across light/dark plus the minimum sidebar. This caught an initial minimum-footer clipping issue, corrected by enabling the existing scoped minimum layout; all browser checks and the full Node suite passed after that fix.
 
 Evidence remains outside the product repository in workspace `.claude-work/codex-2026-11-16/question-browser/` and `question-unit-final.log`. Captures include app frames and card details. No real engine, native implementation or VoiceOver validation is claimed. The local proposal has not been published.
+
+## Approval recording verification — 2026-11-17
+
+The approval metadata update passed the complete Node suite (498/498). All 312
+rendered templates compare byte-for-byte with approved visual commit `9093e75`;
+no layout, CSS or interaction behavior changed. Independent source review found
+no actionable issues. No desktop or browser run was needed for this metadata-only
+record; the earlier visual evidence remains explicitly scoped above. Evidence is
+retained outside this repository under workspace
+`.claude-work/codex-2026-11-17/`.
+
+The recording commit is titled “Approve workflow question card designs”. Nothing
+was pushed or published as part of recording this decision.

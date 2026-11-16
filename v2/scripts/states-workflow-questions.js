@@ -1,10 +1,11 @@
-/* Isolated workflow-question drawings. Provisional; no engine connection or authority. */
+/* Isolated workflow-question drawings. Demonstration controls have no engine connection or authority. */
 (function () {
   'use strict';
   var H = window.HFV2, T = H.templates;
   var family = H.findFamily('needs-you');
   family.groups.splice(family.groups.indexOf('Loading'), 0, 'Workflow questions');
   H.RENDERERS.workflowQuestions = { api: 'workflowQuestions', wrapper: 'hdc-specimen' };
+  var approval = { by: 'the owner', date: '2026-11-17', decision: 'Workflow questions' };
   var states = [
     ['workflow-question', 'Workflow question', 'A workflow question with a free-text answer.'],
     ['workflow-question-offered', 'Workflow question · offered answers', 'A usage-limit question with only the offered answers.'],
@@ -40,7 +41,7 @@
       html = html.slice(0, begin) + card(entry[0]) + html.slice(end + '</section>'.length);
       html = html.replace('class="hd-app"', 'class="hd-app hf-question-app' + (small ? ' hf-question-app--minimum' : '') + '"').replace('width: 100%; height: 800px;', 'width: ' + (small ? '1000' : '1280') + 'px; height: ' + (small ? '620' : '800') + 'px;');
       T[route] = html;
-      H.registerState('needs-you', { id: id, title: entry[1] + (small ? ' · 1000 × 620' : ''), description: entry[2], group: 'Workflow questions', status: 'provisional', specimenSize: small ? '1000 × 620' : '1280 × 800', source: { renderer: 'workflowQuestions', mount: id } });
+      H.registerState('needs-you', { id: id, title: entry[1] + (small ? ' · 1000 × 620' : ''), description: entry[2], group: 'Workflow questions', status: 'approved', approval: approval, specimenSize: small ? '1000 × 620' : '1280 × 800', source: { renderer: 'workflowQuestions', mount: id } });
       docs[route] = '<p>Workflow question in Needs you. <a href="docs/decisions/workflow-questions.md">Design record and source limits</a>. The other two cards retain the waiting screen context. Loading and empty use the existing Needs you states. Reload or leave and reopen this route to reset. Send and offered-answer buttons preserve the input and focus in this demonstration; Try again repeats the unavailable read without enabling an answer. No engine operation occurs.</p>';
     });
   });
