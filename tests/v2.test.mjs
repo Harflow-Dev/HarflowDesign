@@ -91,7 +91,8 @@ test('registry routes are unique and every descriptor resolves to a template, gu
     m04: [...HFV2.m04ProposalStates, ...HFV2.m04AmendmentStates, ...HFV2.m04RedrawStates, ...HFV2.m04ModelStates, ...HFV2.m04RuntimeStates].map(x => x.id),
     m05: HFV2.m05ProposalStates.map(x => x.id),
     messages: HFV2.messageStates.map(x => x.id),
-    workflowQuestions: HFV2.findFamily('needs-you').states.filter(x => x.source?.renderer === 'workflowQuestions').map(x => x.id)
+    workflowQuestions: HFV2.findFamily('needs-you').states.filter(x => x.source?.renderer === 'workflowQuestions').map(x => x.id),
+    workflowNaming: HFV2.findFamily('workflow-editor').states.filter(x => x.source?.renderer === 'workflowNaming').map(x => x.id)
   };
   for (const d of descriptors.filter(x => x.renderer)) {
     if (d.renderer === 'transcript') assert.equal(HFV2.d2bProposal.createState(d.mount).name, d.mount, `${d.route} is a known fixture`);
@@ -372,12 +373,12 @@ function rendererReads() {
 
 test('aliases resolve old routes without shadowing or chaining, and land on a live route or a retired one', () => {
   const entries = Object.entries(aliases);
-  // The transcript and queued-message renderers, the centered redraws and the model picker states are excluded: their routes are new canonical routes with no earlier name.
+  // The transcript, queued-message, workflow-question and workflow-naming renderers, the centered redraws and model picker states have new canonical routes with no earlier name.
   // The retired duplicate shell state and the retired starting state (replaced on 2026-11-09) had no earlier name either.
   const redrawMounts = new Set([...HFV2.m04RedrawStates, ...HFV2.m04ModelStates, ...HFV2.m04RuntimeStates].map(x => x.id));
   // The retired runtime card draft (2026-11-14) was a provisional route with no earlier name either.
   const nameless = new Set(['sidebar/centered-expanded', 'new-task/centered-starting', 'harness-runtime/installing-sidebar']);
-  assert.equal(entries.length, descriptors.filter(d => d.renderer && !d.skeleton && d.renderer !== 'transcript' && d.renderer !== 'messages' && d.renderer !== 'workflowQuestions' && !(d.renderer === 'm04' && redrawMounts.has(d.mount))).length + retired.filter(e => e.renderer && !nameless.has(e.route)).length, 'every renderer route has exactly one old route, retired ones included, except the redraws');
+  assert.equal(entries.length, descriptors.filter(d => d.renderer && !d.skeleton && d.renderer !== 'transcript' && d.renderer !== 'messages' && d.renderer !== 'workflowQuestions' && d.renderer !== 'workflowNaming' && !(d.renderer === 'm04' && redrawMounts.has(d.mount))).length + retired.filter(e => e.renderer && !nameless.has(e.route)).length, 'every renderer route has exactly one old route, retired ones included, except the redraws');
   for (const [old, target] of entries) {
     assert.match(old, /^[a-z0-9-]+\/[a-z0-9-]+$/);
     assert.ok(!routeSet.has(old), `${old} is an alias and must not also be canonical`);
@@ -608,7 +609,7 @@ test('the decisions index lists every decision file and each screen has an ancho
     'approval.md', 'd2b-observation-approval.md', 'd2b-observation-proposal.md',
     'm04-centered-composer-proposal.md', 'm04-proposal.md',
     'm05-task-screen-approval.md', 'm05-task-screen-proposal.md',
-    'parallel-group-proposal.md', 'pending-launch-discovery.md', 'workflow-questions.md'
+    'parallel-group-proposal.md', 'pending-launch-discovery.md', 'workflow-first-save-name.md', 'workflow-questions.md'
   ].sort());
   for (const name of docs) assert.ok(index.includes(`(${name})`), `${name} is indexed`);
   for (const family of HFV2.registry.families.filter(f => f.area)) assert.ok(index.includes(`### \`${family.id}\``), `${family.id} has a decision section`);
@@ -757,6 +758,7 @@ const stateOfRoute = route => { const [f, s] = route.split('/'); return [HFV2.fi
 const DECISION = { 'new-task': 'Centered composer', sidebar: 'Sidebar', task: 'Task transcript' };
 
 const PENDING_PAIRS = [
+  { older: 'workflow-editor/name-required', newer: 'workflow-editor/name-entry-empty' },
   { older: 'parallel-group/loading', newer: 'parallel-group/loading-known-title' },
   { older: 'parallel-group/loading-minimum', newer: 'parallel-group/loading-known-title-minimum' },
   { older: 'parallel-group/loading-two', newer: 'parallel-group/loading-two-known-title' }
@@ -773,7 +775,7 @@ const APPROVED_1115 = [
   ['new-task/centered-model-default', 'Model picker']
 ];
 const STILL_PROVISIONAL = ['task/loading-known-title', 'task/loading-pane-known-title', ...PENDING_PAIRS.map(pair => pair.newer)];
-test('three redraws are pending, the parallel group loading titles, and the drafts approved on 2026-11-15 are approved with their own approval', () => {
+test('four redraws are pending, the workflow name and parallel group loading titles, and the drafts approved on 2026-11-15 are approved with their own approval', () => {
   assert.deepEqual(JSON.parse(JSON.stringify(pending)), PENDING_PAIRS);
   assert.ok(!routeSet.has('new-task/centered-starting'), 'the earlier starting state is retired');
   assert.equal(stateOfRoute('new-task/centered-starting-plain')[1].status, 'approved');
@@ -1434,4 +1436,19 @@ test('workflow question approval is pinned to the eight cards and does not broad
     }
   }
   for (const route of ['task/cancelled-partial', 'task/artifacts-empty', 'task/loading-known-title']) assert.equal(HFV2.describe(route).status, 'provisional', route);
+});
+
+
+test('workflow first-save naming has exactly eight provisional routes without implying saved-workflow rename approval', () => {
+  const routes = ['empty', 'focused', 'named', 'long'].flatMap(name => [
+    `workflow-editor/name-entry-${name}`, `workflow-editor/name-entry-${name}-minimum`
+  ]);
+  assert.deepEqual(Array.from(descriptors.filter(d => d.renderer === 'workflowNaming'), d => d.route).sort(), routes.sort());
+  for (const route of routes) {
+    const state = stateOfRoute(route)[1];
+    assert.equal(state.status, 'provisional');
+    assert.equal(state.approval, undefined);
+    assert.equal(HFV2.describe(route).approval, 'Provisional · not approved');
+  }
+  assert.equal(stateOfRoute('workflow-editor/name-required')[1].status, 'approved');
 });

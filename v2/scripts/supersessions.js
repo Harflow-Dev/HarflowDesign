@@ -72,6 +72,7 @@
   // retired the earlier states above; the base templates task/approval and menu-bar/busy stay in HFV2.templates
   // because the approval states derive from them.
   HFV2.pendingRedraw = [
+    { older: 'workflow-editor/name-required', newer: 'workflow-editor/name-entry-empty' },
     { older: 'parallel-group/loading', newer: 'parallel-group/loading-known-title' },
     { older: 'parallel-group/loading-minimum', newer: 'parallel-group/loading-known-title-minimum' },
     { older: 'parallel-group/loading-two', newer: 'parallel-group/loading-two-known-title' }

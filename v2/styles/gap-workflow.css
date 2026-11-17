@@ -34,3 +34,6 @@
 .hd-gap-flip .hd-i{transform:rotate(180deg)}
 .hd-gap-add-row{display:flex}
 .hd-gap-hint{font-size:12px;line-height:16px;color:var(--text-tertiary)}
+/* First-save workflow name. Provisional drawing: keep the existing title slot and native input scrolling. */
+.hd-workflow-naming .hd-workflow-name{flex:0 1 260px;width:260px;min-width:96px;max-width:260px;font:inherit;font-weight:600;color:var(--text);text-overflow:clip}
+.hd-workflow-naming .hd-workflow-name::placeholder{color:var(--text-tertiary);font-weight:600}

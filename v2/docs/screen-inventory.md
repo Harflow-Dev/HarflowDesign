@@ -158,3 +158,13 @@ Approved by the owner on 2026-11-15. Each state derives from an approved templat
 ## Workflow questions
 
 Eight Needs you states approved by the owner on 2026-11-17 (“Approve these cards”) at design commit `9093e7515a7759f864c106a210649292209f87e4`: `workflow-question`, `workflow-question-offered`, `workflow-question-answered`, `workflow-question-unavailable`, each with a `-minimum` variant. They draw the free-text, usage-limit offered-only, competing winner/saved draft and withdrawn last-known source surfaces. [Source pin, approval, preview and remaining gaps](decisions/workflow-questions.md). Page-level loading and empty retain their existing references. No existing approved route is changed. Native implementation and generic stale/transport-unknown outcomes remain open.
+
+## Workflow name before first save
+
+Provisional, not approved: `workflow-editor/name-entry-empty`, `name-entry-focused`,
+`name-entry-named`, `name-entry-long` and each `-minimum` route. These draw the proposed
+name input for never-saved workflows only, at 1280 × 800 and 1000 × 620, in both appearances.
+Typing binds directly to the draft; blur retains text. Saved workflow titles remain static.
+The earlier approved `name-required` state remains available pending owner review.
+See the [design record](decisions/workflow-first-save-name.md) for the source anchor,
+interaction semantics and pending verification.
