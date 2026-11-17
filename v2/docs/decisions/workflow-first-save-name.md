@@ -1,6 +1,6 @@
 # Workflow name before first save
 
-Status: **Provisional — not approved.** Prepared on 2026-11-17 for owner review. No native implementation is authorized by this drawing; the existing approved name-required state remains listed.
+Status: **Approved by the owner, 2026-11-17**, at proposal `533c579`, with the explicit answer “Approve and implement the name field”. Approval covers all eight first-save name-entry states. The existing name-required reference remains listed; saved-workflow renaming is outside this approval. The owner also clarified that existing canvas node dimensions must remain unchanged.
 
 ## Source and missing interaction
 
@@ -13,7 +13,7 @@ Native behavior anchor: HarflowMac `c4cfc5508caa09c7a655428eb2073e181186793d`:
 
 Approved design `b710856a31702e46e3b8f3a54be19f3cb7c422dc`, `v2/scripts/states-workflow-gaps.js`, `workflow-editor/name-required`, draws a static faint “New workflow” title, “Enter a workflow name.” and disabled Save. It supplies no naming interaction for Blank workflow. Generating a workflow has its own name field; opening that unrelated form is not the intended Blank naming route. The saved-workflow rename proposal remains outside this work, as recorded in the migration coverage ledger.
 
-## Proposed interaction
+## Approved interaction
 
 For a **new, never-saved workflow only**, replace the title with one native single-line text field labelled “Workflow name”, with placeholder “New workflow”. Keep its place in the existing top bar. After the first successful save, show the saved name as the existing static title. Opening an existing workflow keeps the static title. No Rename action is added.
 
@@ -21,7 +21,7 @@ Typing updates the draft name directly through the existing binding. Blur retain
 
 The field can be focused with the keyboard and uses the shared native focus treatment. The focused empty drawing begins with focus in the field; the long-name drawing begins with the caret at the end so the input scrolls horizontally. No automatic focus-on-every-edit or focus transfer from other controls is implied. A browser input approximates native single-line selection, caret, focus and horizontal scrolling.
 
-The field occupies the existing title slot: nominal width 260, minimum width 96, shrinking with the available top-bar space. The minimum frame keeps the approved sidebar, inspector, canvas and top-bar-meta adaptations. These proposed field sizes still require browser inspection and native fitting verification; no pixel-fidelity claim is made.
+The field occupies the existing title slot: nominal width 260, minimum width 96, shrinking with the available top-bar space. The minimum frame keeps the approved sidebar, inspector, canvas and top-bar-meta adaptations. Browser inspection covered focused minimum light, long minimum dark, normal dark and direct typing/blur retention. Native fitting verification remains required; no pixel-fidelity claim is made.
 
 ## Review routes
 
@@ -38,8 +38,8 @@ The name input is interactive. No engine call, Save operation, provider operatio
 
 ## Files and evidence
 
-- `v2/scripts/states-workflow-naming.js`: eight provisional states and bounded input/focus demonstration.
+- `v2/scripts/states-workflow-naming.js`: eight approved states and bounded input/focus demonstration.
 - `v2/styles/gap-workflow.css`: field fitting and placeholder treatment using existing semantic tokens.
 - `v2/index.html`: classic-script registration, preserving offline and `file://` preview.
 
-JavaScript syntax was checked with `node --check`. Browser inspection, keyboard/blur checks, both appearances, minimum-frame overflow checks and owner approval are pending. No build, test suite, native implementation, commit, deployment or release was performed for this preparation.
+JavaScript syntax and all 63 catalog tests passed. Primary browser checks observed the labelled field, direct typing and blur retention, name-required/checking copy, focused and long-name layouts across light/dark references. The normal specimen retains native width with catalog scrolling. Independent read-only review found no design blocker. Native implementation and product acceptance remain separate; nothing was deployed or released.

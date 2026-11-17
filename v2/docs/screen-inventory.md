@@ -161,10 +161,10 @@ Eight Needs you states approved by the owner on 2026-11-17 (“Approve these car
 
 ## Workflow name before first save
 
-Provisional, not approved: `workflow-editor/name-entry-empty`, `name-entry-focused`,
-`name-entry-named`, `name-entry-long` and each `-minimum` route. These draw the proposed
+Approved by the owner on 2026-11-17 at proposal `533c579`: `workflow-editor/name-entry-empty`, `name-entry-focused`,
+`name-entry-named`, `name-entry-long` and each `-minimum` route. These draw the
 name input for never-saved workflows only, at 1280 × 800 and 1000 × 620, in both appearances.
 Typing binds directly to the draft; blur retains text. Saved workflow titles remain static.
-The earlier approved `name-required` state remains available pending owner review.
+The earlier `name-required` reference remains available; no saved-workflow rename is approved.
 See the [design record](decisions/workflow-first-save-name.md) for the source anchor,
-interaction semantics and pending verification.
+interaction semantics and verification limits.

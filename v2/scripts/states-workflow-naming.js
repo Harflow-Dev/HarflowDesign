@@ -1,4 +1,4 @@
-/* First-save naming in the workflow editor. Provisional; no owner approval.
+/* First-save naming in the workflow editor. Owner approved 2026-11-17 at proposal 533c579.
    HarflowMac c4cfc5508caa09c7a655428eb2073e181186793d has a static title and no Blank naming control.
    This adds only a draft-name field; saved-workflow renaming and engine operations remain outside this drawing. */
 (function () {
@@ -27,7 +27,7 @@
       H.registerState('workflow-editor', {
         id: id, title: entry.title + (minimum ? ' · 1000 × 620' : ''),
         description: 'A new unsaved workflow with its name editable in the title position; saved workflow titles remain static.',
-        group: 'Workflow name', status: 'provisional', approvalNote: 'Provisional · not approved',
+        group: 'Workflow name', status: 'approved', approval: { by: 'the owner', date: '2026-11-17', decision: 'Workflow name before first save' },
         specimenSize: minimum ? '1000 × 620' : '1280 × 800', source: { renderer: 'workflowNaming', mount: id }
       });
       docs[route] = '<p>The name field is for a new unsaved workflow only. Type directly; leaving the field retains the draft text. Enter and Escape have no separate commit, revert or submission behavior. Empty or whitespace-only text keeps Save off. A nonblank edited name shows Checking workflow… and keeps Save off: this demonstration makes no validator call and never invents a successful check. The initial named and long-name states likewise await validation. Focused states place keyboard focus in the field; long names use native input horizontal scrolling. Reload or reopen the route to reset. Browser text fields, focus and canvas fixtures approximate native controls. <a href="docs/decisions/workflow-first-save-name.md">Design record and source limits</a>.</p>';

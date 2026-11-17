@@ -758,7 +758,6 @@ const stateOfRoute = route => { const [f, s] = route.split('/'); return [HFV2.fi
 const DECISION = { 'new-task': 'Centered composer', sidebar: 'Sidebar', task: 'Task transcript' };
 
 const PENDING_PAIRS = [
-  { older: 'workflow-editor/name-required', newer: 'workflow-editor/name-entry-empty' },
   { older: 'parallel-group/loading', newer: 'parallel-group/loading-known-title' },
   { older: 'parallel-group/loading-minimum', newer: 'parallel-group/loading-known-title-minimum' },
   { older: 'parallel-group/loading-two', newer: 'parallel-group/loading-two-known-title' }
@@ -775,7 +774,7 @@ const APPROVED_1115 = [
   ['new-task/centered-model-default', 'Model picker']
 ];
 const STILL_PROVISIONAL = ['task/loading-known-title', 'task/loading-pane-known-title', ...PENDING_PAIRS.map(pair => pair.newer)];
-test('four redraws are pending, the workflow name and parallel group loading titles, and the drafts approved on 2026-11-15 are approved with their own approval', () => {
+test('three redraws are pending, the workflow name and parallel group loading titles, and the drafts approved on 2026-11-15 are approved with their own approval', () => {
   assert.deepEqual(JSON.parse(JSON.stringify(pending)), PENDING_PAIRS);
   assert.ok(!routeSet.has('new-task/centered-starting'), 'the earlier starting state is retired');
   assert.equal(stateOfRoute('new-task/centered-starting-plain')[1].status, 'approved');
@@ -1439,16 +1438,16 @@ test('workflow question approval is pinned to the eight cards and does not broad
 });
 
 
-test('workflow first-save naming has exactly eight provisional routes without implying saved-workflow rename approval', () => {
+test('workflow first-save naming has exactly eight approved routes without implying saved-workflow rename approval', () => {
   const routes = ['empty', 'focused', 'named', 'long'].flatMap(name => [
     `workflow-editor/name-entry-${name}`, `workflow-editor/name-entry-${name}-minimum`
   ]);
   assert.deepEqual(Array.from(descriptors.filter(d => d.renderer === 'workflowNaming'), d => d.route).sort(), routes.sort());
   for (const route of routes) {
     const state = stateOfRoute(route)[1];
-    assert.equal(state.status, 'provisional');
-    assert.equal(state.approval, undefined);
-    assert.equal(HFV2.describe(route).approval, 'Provisional · not approved');
+    assert.equal(state.status, 'approved');
+    assert.equal(state.approval.date, '2026-11-17');
+    assert.equal(state.approval.decision, 'Workflow name before first save');
   }
   assert.equal(stateOfRoute('workflow-editor/name-required')[1].status, 'approved');
 });
