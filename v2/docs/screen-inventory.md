@@ -161,11 +161,12 @@ Eight Needs you states approved by the owner on 2026-11-17 (“Approve these car
 
 ## Repository picker
 
-Provisional, not approved: `new-task/centered-repository-empty`, `centered-repository-recents`,
-`centered-repository-hover`, `centered-repository-focus` and `centered-repository-invalid`. Each opens
-the repository pill's popover in the centered composer: the path field, Choose folder… and up to five
-Recent chips that wrap as whole chips, in both appearances and at 1280 × 800 and 1000 × 620. See the
-[design record](decisions/repository-picker.md) for the source, the chip width proposal and the owner questions.
+The five states `new-task/centered-repository-empty`, `centered-repository-recents`,
+`centered-repository-hover`, `centered-repository-focus` and `centered-repository-invalid` are
+**approved by the owner on 2026-11-19**. Each opens the repository pill's popover in the centered
+composer: the path field, Choose folder… and up to five Recent chips, as wide as their row, shortened
+in the middle and wrapping as whole chips, in both appearances and at 1280 × 800 and 1000 × 620. See the
+[design record](decisions/repository-picker.md) for the source, the decisions and what the app must change.
 
 ## Workflow name before first save
 

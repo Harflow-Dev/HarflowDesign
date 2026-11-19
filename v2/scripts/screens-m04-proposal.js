@@ -19,9 +19,9 @@
   // Owner-approved runtime update (2026-11-15). The fixture comes from its source mount, named in m04-proposal.js.
   var runtimeIds = ['runtime-updating'];
   H.m04RuntimeStates = runtimeIds.map(function (id) { return { id: id, title: id.replace(/-/g, ' '), description: 'Owner-approved runtime update (2026-11-15): ' + id.replace(/-/g, ' ') + ' review fixture.', status: 'Approved', approved: true }; });
-  // Provisional drafts, not approved: the open repository picker. The fixture comes from its source mount, named in m04-proposal.js.
+  // Owner-approved repository picker (2026-11-19). The fixture comes from its source mount, named in m04-proposal.js.
   var repositoryIds = ['repository-empty','repository-recents','repository-hover','repository-focus','repository-invalid'];
-  H.m04RepositoryStates = repositoryIds.map(function (id) { return { id: id, title: id.replace(/-/g, ' '), description: 'Provisional draft: ' + id.replace(/-/g, ' ') + ' review fixture.', status: 'Provisional', approved: false }; });
+  H.m04RepositoryStates = repositoryIds.map(function (id) { return { id: id, title: id.replace(/-/g, ' '), description: 'Owner-approved repository picker state (2026-11-19): ' + id.replace(/-/g, ' ') + ' review fixture.', status: 'Approved', approved: true }; });
   var T = H.templates = H.templates || {};
   // Labels of the catalog-only strip above the app frame. The Node test scans them for process names.
   var STRIPS = (H.catalogStrips = H.catalogStrips || {}).m04 = {
@@ -40,8 +40,8 @@
     redrawStartingNotice: 'Approved by the owner, 2026-11-09. Local preview · appearance preserves draft · route changes reset · Reduce Motion: instant changes. Native titlebar and OS controls are browser approximations; native validation is pending.',
     redrawNotice: 'Approved by the owner, 2026-11-08. Local preview · appearance preserves draft · route changes reset · Reduce Motion: instant changes. Native titlebar and OS controls are browser approximations; native validation is pending.',
     runtimeHeading: 'Approved · Runtime update · Owner 2026-11-15',
-    repositoryHeading: 'Draft · Not approved',
-    repositoryNotice: 'Draft, not approved. Local preview · appearance preserves draft · route changes reset · Reduce Motion: instant changes. Native titlebar, OS controls, the native help tag and the open panel of Choose folder… are browser approximations; native validation is pending.',
+    repositoryHeading: 'Approved · Repository picker · Owner 2026-11-19',
+    repositoryNotice: 'Approved by the owner, 2026-11-19. Local preview · appearance preserves draft · route changes reset · Reduce Motion: instant changes. Native titlebar, OS controls, the native help tag and the open panel of Choose folder… are browser approximations; native validation is pending.',
     runtimeNotice: 'Approved by the owner, 2026-11-15. Local preview · appearance preserves draft · route changes reset · Reduce Motion: instant changes. Native titlebar and OS controls are browser approximations; native validation is pending.',
     centeredNotice: 'Approved amendment (owner, 2026-11-06), separate from the 2026-11-05 approval; the 2026-11-06 sidebar body-scroll correction applies to every entry, composer and sidebar state. Local preview · appearance preserves draft · route changes reset · Reduce Motion: instant changes. Native titlebar and OS controls are browser approximations; native validation is pending.'
   };
@@ -84,8 +84,8 @@
     ["model-empty", "new-task", "centered-model-empty", "Model", "Centered composer · No suggested models", "The harness answered with no models. Only Default is offered and the Model field still accepts any model name.", "model-empty"],
     ["model-default", "new-task", "centered-model-default", "Model", "Centered composer · Harness default marked", "The suggestions open for a harness that reports its own default model. That row carries a small default tag; Default at the top of the list still leaves the choice to the harness.", "model-default"],
     ["repository-empty", "new-task", "centered-repository-empty", "Repository", "Centered composer · Repository picker, no recent repositories", "The repository picker open with no recent repositories: the path field, Choose folder… and no Recent row. Start waits for a repository.", "repository-empty"],
-    ["repository-recents", "new-task", "centered-repository-recents", "Repository", "Centered composer · Repository picker with recent repositories", "Five recent repositories as one-line chips that wrap as whole chips; long names end in an ellipsis and the chip of the current repository is highlighted.", "repository-recents"],
-    ["repository-hover", "new-task", "centered-repository-hover", "Repository", "Centered composer · Recent repository full path", "The pointer rests on a truncated chip and its tooltip shows the full path.", "repository-hover"],
+    ["repository-recents", "new-task", "centered-repository-recents", "Repository", "Centered composer · Repository picker with recent repositories", "Five recent repositories as one-line chips that wrap as whole chips; a name too long for its row is shortened in the middle, keeping its end, and the chip of the current repository is highlighted.", "repository-recents"],
+    ["repository-hover", "new-task", "centered-repository-hover", "Repository", "Centered composer · Recent repository full path", "The pointer rests on a shortened chip and its tooltip shows the full path.", "repository-hover"],
     ["repository-focus", "new-task", "centered-repository-focus", "Repository", "Centered composer · Recent repository keyboard focus", "Keyboard focus on a recent repository chip, shown with the focus ring.", "repository-focus"],
     ["repository-invalid", "new-task", "centered-repository-invalid", "Repository", "Centered composer · Repository path not found", "A typed path that is not an existing folder: the field is marked, says so under it, and Start waits for an existing folder.", "repository-invalid"]
   ];
@@ -97,6 +97,7 @@
     redrawStarting: { by: 'the owner', date: '2026-11-09', decision: 'Starting row' },
     redrawHarness: { by: 'the owner', date: '2026-11-15', decision: 'Centered composer · Model field' },
     model: { by: 'the owner', date: '2026-11-15', decision: 'Model picker' },
+    repository: { by: 'the owner', date: '2026-11-19', decision: 'Repository picker' },
     runtime: { by: 'the owner', date: '2026-11-15', decision: 'Runtime update' }
   };
   ROWS.forEach(function (row) {
@@ -105,14 +106,9 @@
     var state = {
       id: row[2], title: row[4], description: row[5], group: row[3] || undefined,
       source: { template: 'm04-proposal/' + id, renderer: 'm04', mount: id, guide: 'm04-proposal/' + id },
-      status: repository ? 'provisional' : 'approved'
+      status: 'approved'
     };
-    if (repository) {
-      state.approvalNote = 'Provisional · not approved';
-      H.registerState(row[1], state);
-      return;
-    }
-    state.approval = runtime ? APPROVAL.runtime : model ? APPROVAL.model : redraw ? (row[1] === 'sidebar' ? APPROVAL.redrawSidebar : id === 'centered-starting-plain' ? APPROVAL.redrawStarting : id === 'centered-harness-open' ? APPROVAL.redrawHarness : APPROVAL.redraw) : amendmentIds.indexOf(id) >= 0 ? APPROVAL.centered : APPROVAL.baseline;
+    state.approval = repository ? APPROVAL.repository : runtime ? APPROVAL.runtime : model ? APPROVAL.model : redraw ? (row[1] === 'sidebar' ? APPROVAL.redrawSidebar : id === 'centered-starting-plain' ? APPROVAL.redrawStarting : id === 'centered-harness-open' ? APPROVAL.redrawHarness : APPROVAL.redraw) : amendmentIds.indexOf(id) >= 0 ? APPROVAL.centered : APPROVAL.baseline;
     H.registerState(row[1], state);
   });
 })();

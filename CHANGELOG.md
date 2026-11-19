@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Approve the five repository picker states of the `v2/` reference (owner, 2026-11-19) and switch the Recent chips to middle truncation, so names that share a prefix keep their different endings. Chips stay as wide as their row; a typed path is checked when the field is committed and at Start. The design record lists what the app must change.
+
 - Propose five repository picker states in the `v2/` reference, not approved: `new-task/centered-repository-empty`, `centered-repository-recents`, `centered-repository-hover`, `centered-repository-focus` and `centered-repository-invalid`. They draw the repository pill's popover with the path field, Choose folder… and the Recent chips, propose chips as wide as their row instead of 240 pt, and check a typed path when the field is committed.
 
 - Approve the six workflow and capacity states drawn on the owner's answers of 2026-11-15 (decision "Workflow and capacity states"): `workflow-editor/delete-confirm-saved`, `workflow-editor/discard-confirm`, `workflows/generate-builder-options`, `workflow-run/orchestrator-steering-waiting`, `orchestrator-steering-cancelling` and `orchestrator-steering-unknown`. All 60 states of the decision are approved. With the approval, `workflows/generate-builder-options` shows the full agent editor for the builder and for each fallback (Harness, Model, Effort, Turn limit and the "Caller approvals: ask before each eligible action" switch); the popover body scrolls inside the frame while its title stays in view.

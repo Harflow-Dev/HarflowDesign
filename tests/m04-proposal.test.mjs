@@ -524,26 +524,26 @@ test('the app has no Use default model button; the fixture control is Clear the 
   assert.ok(m04Src().includes("button('Clear the model','model-default')"));
 });
 
-// Provisional repository picker states (2026-11-19).
+// Owner-approved repository picker states (2026-11-19).
 const REPO_ROUTES=['repository-empty','repository-recents','repository-hover','repository-focus','repository-invalid'];
 const RECENTS=J(M.recentRepos);
-test('repository states register as provisional amendments sourced from the ready composer',()=>{
+test('repository states register as approved amendments sourced from the ready composer',()=>{
   assert.deepEqual(J(Object.keys(M.repositorySources)),REPO_ROUTES);
   assert.deepEqual(Array.from(H.m04RepositoryStates,x=>x.id),REPO_ROUTES);
-  assert.ok(H.m04RepositoryStates.every(x=>x.status==='Provisional'&&x.approved===false));
+  assert.ok(H.m04RepositoryStates.every(x=>x.status==='Approved'&&x.approved===true&&/^Owner-approved repository picker state \(2026-11-19\)/.test(x.description)));
   for(const r of REPO_ROUTES){
     assert.equal(M.repositorySources[r],'amendment-ready',r);
     assert.equal(M.isRepositoryState(r),true);assert.equal(M.isAmendment(r),true);assert.equal(M.isRedraw(r),false);assert.equal(M.isModelApproved(r),false);
     const st=regState('centered-'+r);
-    assert.equal(st.status,'provisional',r);assert.equal(st.approvalNote,'Provisional · not approved',r);assert.equal(st.approval,undefined,r);assert.equal(st.group,'Repository',r);
+    assert.equal(st.status,'approved',r);assert.equal(st.approvalNote,undefined,r);assert.equal(JSON.stringify(st.approval),JSON.stringify({by:'the owner',date:'2026-11-19',decision:'Repository picker'}),r);assert.equal(st.group,'Repository',r);
   }
   assert.equal(M.isRepositoryState('amendment-ready'),false);
 });
-test('repository drafts copy the ready fixture apart from the picker and repository fields',()=>{
-  const base=J(M.create('amendment-ready')),own=['route','picker','repository','repoPath','recents','repoTip','repoFocus','repoError','chipCap','repoPicker'];
+test('repository states copy the ready fixture apart from the picker and repository fields',()=>{
+  const base=J(M.create('amendment-ready')),own=['route','picker','repository','repoPath','recents','repoTip','repoFocus','repoError','repoPicker'];
   for(const r of REPO_ROUTES){
     const s=M.create(r),d=J(s);
-    assert.equal(s.picker,'repository');assert.equal(s.repoPicker,true);assert.equal(s.chipCap,'row');
+    assert.equal(s.picker,'repository');assert.equal(s.repoPicker,true);assert.equal(s.chipCap,undefined);
     for(const k of own){delete d[k];delete base[k];}
     assert.equal(JSON.stringify(d),JSON.stringify(base),r);
     Object.assign(base,J(M.create('amendment-ready')));
@@ -582,7 +582,7 @@ test('repoAction drives the popover and the fixture controls',()=>{
   s.repoPath='/nowhere';assert.equal(M.repoAction(s,'repo-check'),true);assert.equal(s.repoError,true);
   M.repoAction(s,'repo-recents-none');assert.equal(s.recents.length,0);
   M.repoAction(s,'repo-recents-five');assert.equal(JSON.stringify(s.recents),JSON.stringify(RECENTS));
-  M.repoAction(s,'repo-cap-240');assert.equal(s.chipCap,'240');M.repoAction(s,'repo-cap-row');assert.equal(s.chipCap,'row');
+  assert.equal(M.repoAction(s,'repo-cap-240'),false);assert.equal(M.repoAction(s,'repo-cap-row'),false);assert.equal(s.chipCap,undefined);
   M.repoAction(s,'repo-tip-long');assert.equal(s.repoTip,RECENTS[4]);M.repoAction(s,'repo-tip-none');assert.equal(s.repoTip,'');
   M.repoAction(s,'repo-recents-none');M.repoAction(s,'repo-tip-long');assert.equal(s.repoTip,'');
   assert.equal(M.repoAction(s,'not-an-action'),false);
@@ -594,10 +594,32 @@ test('repository picker markup carries the full path, accessible names and the e
   const src=m04Src();
   assert.ok(src.includes(`title="'+esc(path)+'"`));assert.ok(src.includes(`aria-description="'+esc(path)+'"`));
   assert.ok(src.includes(`aria-label="Recent repository '+esc(repoName(path))+'"`));assert.ok(src.includes(`aria-pressed="'+on+'"`));
-  assert.ok(src.includes(`(s.recents.length?'<div class="hd-m04-recents'`));
+  assert.ok(src.includes(`(s.recents.length?'<div class="hd-m04-recents" role="group"`));
   assert.ok(src.includes(`aria-invalid="true" aria-describedby="m04-repo-error"`));assert.ok(src.includes(`id="m04-repo-error">Choose an existing folder.</span>`));
   const css=m04Css();
   assert.ok(css.includes('.hd-m04-picker-menu.hd-m04-repo{width:360px'));
-  assert.ok(css.includes('.hd-m04-recents--cap240 .hd-m04-chip{max-width:256px}'));
+  assert.ok(!css.includes('cap240'));
   assert.match(css,/\.hd-m04-chip\{[^}]*max-width:100%/);
+});
+test('middleTruncate keeps the head and tail of a name',()=>{
+  const n='abcdefghijklmnopqrstuvwxyz';
+  assert.equal(M.middleTruncate('short',5),'short');assert.equal(M.middleTruncate('short',9),'short');
+  assert.equal(M.middleTruncate(n,10),'abcde…vwxyz');assert.equal(M.middleTruncate(n,9),'abcde…wxyz');
+  assert.equal(M.middleTruncate(n,1),'a…');
+});
+test('long worktree names stay distinguishable under middle truncation',()=>{
+  const [a,b]=RECENTS.slice(3).map(M.repoName);
+  assert.equal(a.slice(0,-6),b.slice(0,-6));assert.notEqual(a.slice(-6),b.slice(-6));
+  for(let k=12;k<a.length;k++)assert.notEqual(M.middleTruncate(a,k),M.middleTruncate(b,k),String(k));
+});
+test('start checks a typed repository path that was never committed',()=>{
+  const s=M.create('repository-recents');s.draft='Review';M.setRepoPath(s,'/nowhere');assert.equal(s.repoError,false);
+  assert.equal(M.start(s),false);assert.equal(s.repoError,true);assert.equal(M.problem(s),'Choose an existing folder.');
+  const t=M.create('repository-recents');t.draft='Review';M.setRepoPath(t,'/Users/me/Code/HarflowWeb');assert.equal(M.start(t),true);
+});
+test('chip labels are measured and middle truncated from the full name, and the accessible name stays full',()=>{
+  const src=m04Src();
+  assert.ok(src.includes(".hd-m04-chip__label"));assert.ok(src.includes('middleTruncate('));
+  assert.ok(src.includes('label.dataset.name=name'));assert.ok(src.includes('label.dataset.name||label.textContent'));
+  assert.ok(src.includes(`aria-label="Recent repository '+esc(repoName(path))+'"`));
 });

@@ -43,7 +43,7 @@
     'model-empty': 'amendment-ready',
     'model-default': 'amendment-ready'
   };
-  // Provisional, not approved: the open repository picker (2026-11-19). Each copies the fixture of its source mount and opens
+  // Owner-approved repository picker (2026-11-19). Each copies the fixture of its source mount and opens
   // the repository pill's popover as HarflowMac ba1deb8b draws it (`NewSessionView.repositoryOptions`, `RecentRepos`): the
   // "Repository" title, a path field, "Choose folder…" and up to five Recent chips, newest first, for folders that still exist.
   var REPOSITORY_SOURCES = {
@@ -53,7 +53,8 @@
     'repository-focus': 'amendment-ready',
     'repository-invalid': 'amendment-ready'
   };
-  var RECENT_REPOS = ['/Users/me/Code/HarflowMCP', '/Users/me/Code/HarflowDesign', '/Users/me/Code/worktrees/r10-workflow-definitions-e2f0c3', '/Users/me/Code/clients/customer-onboarding-service-integration-tests', '/Users/me/Code/archive/a-very-long-repository-name-that-cannot-fit-on-one-chip-row-even-alone'];
+  // Newest first. The two worktrees share a long prefix and differ only at the end, which middle truncation keeps.
+  var RECENT_REPOS = ['/Users/me/Code/HarflowMCP', '/Users/me/Code/HarflowDesign', '/Users/me/Code/clients/customer-onboarding-service-integration-tests', '/Users/me/Code/worktrees/harflow-mac-repository-picker-recent-chips-review-e2f0c3', '/Users/me/Code/worktrees/harflow-mac-repository-picker-recent-chips-review-9b41d7'];
   // Folders the fixture treats as existing: the recents and one more folder a typed path or Choose folder… can reach.
   var EXISTING_REPOS = RECENT_REPOS.concat(['/Users/me/Code/HarflowWeb']);
   var REPOSITORY_STATES = {
@@ -66,6 +67,8 @@
   function isRepositoryState(route) { return has(REPOSITORY_SOURCES, route); }
   // The chip and pill show the last path component, as the app does (`lastPathComponent`).
   function repoName(path) { var parts = String(path).replace(/\/+$/, '').split('/'); return parts[parts.length - 1] || ''; }
+  // Middle truncation: keep `keep` characters of the name, the larger half at the start, around one ellipsis.
+  function middleTruncate(name, keep) { if (keep >= name.length) return name; var head = Math.ceil(keep / 2), tail = keep - head; return name.slice(0, head) + '…' + (tail ? name.slice(name.length - tail) : ''); }
   function setRepoPath(s, path) { s.repoPath = path; s.repository = repoName(path) || 'Choose repository'; s.repoError = false; }
   // The proposed check of a typed path: an absolute path to an existing folder (`~` is expanded by the app). A blank field
   // is not an error; Start is held back by the empty repository instead.
@@ -159,7 +162,7 @@
   function create(route) {
     if (isRepositoryState(route)) {
       var repo = create(REPOSITORY_SOURCES[route]); repo.route = route;
-      Object.assign(repo, { picker: 'repository', repoPicker: true, repoTip: '', repoFocus: '', repoError: false, chipCap: 'row' }, JSON.parse(JSON.stringify(REPOSITORY_STATES[route])));
+      Object.assign(repo, { picker: 'repository', repoPicker: true, repoTip: '', repoFocus: '', repoError: false }, JSON.parse(JSON.stringify(REPOSITORY_STATES[route])));
       repo.repository = repoName(repo.repoPath) || 'Choose repository';
       return repo;
     }
@@ -272,7 +275,6 @@
     if (a === 'repo-choose') { if (!locked) setRepoPath(s, EXISTING_REPOS[EXISTING_REPOS.length - 1]); return true; }
     if (a === 'repo-check') { checkRepoPath(s); return true; }
     if (a === 'repo-recents-none' || a === 'repo-recents-five') { s.recents = a === 'repo-recents-five' ? RECENT_REPOS.slice() : []; s.repoTip = ''; s.repoFocus = ''; return true; }
-    if (a === 'repo-cap-240' || a === 'repo-cap-row') { s.chipCap = a === 'repo-cap-240' ? '240' : 'row'; return true; }
     if (a === 'repo-tip-long' || a === 'repo-tip-none') { s.repoTip = a === 'repo-tip-long' && s.recents.length ? RECENT_REPOS[4] : ''; return true; }
     return false;
   }
@@ -306,7 +308,7 @@
       var theme = host.getAttribute('data-theme') || 'light';
       var updating = route === 'runtime-updating' && !s.updated;
       var runtimeBoard=route.indexOf('runtime-')===0 && !isRuntimeUpdate(route), historyBoard=route.indexOf('history-')===0;
-      var controls=isRepositoryState(route) ? button('Check the typed path','repo-check')+(s.recents.length?button('No recent repositories','repo-recents-none'):button('Five recent repositories','repo-recents-five'))+(s.chipCap==='row'?button('Chip cap: 240 pt','repo-cap-240'):button('Chip cap: row width','repo-cap-row'))+(s.repoTip?button('Hide the tooltip','repo-tip-none'):button('Tooltip on the long chip','repo-tip-long')) : isModelState(route) ? button('Type a model','model-type')+button('Clear the model','model-default')+(s.harnessList==='ready'?button('Harness list loading','harness-list-loading'):button('Harness list ready','harness-list-ready'))+(s.catalog.state==='loading'?button('Listing finished','model-listed'):'')+(route==='model-unavailable'?Object.keys(REASONS).map(function(r){return button('Reason: '+r,'reason-'+r);}).join(''):'')+(route==='model-truncated'?button('Dropped rows: 0','dropped-0')+button('Dropped rows: 3','dropped-3'):'') : route==='runtime-updating' ? button('Updating','update-start')+button('Runtime ready','update-done') : runtimeBoard ? button('Runtime failure','runtime-failure')+button('Runtime ready','runtime-ready')+button('Listing ready','listing-ready')+button('Listing failed','listing-failed') : historyBoard ? '' : button('Qualification ready','qualified')+button('Qualification unavailable','unqualified')+button('Complete: created','created',s.status!=='starting')+button('Complete: refused','refused',s.status!=='starting')+button('Complete: unknown','unknown',s.status!=='starting')+button('Enforcement supported','enforcement-supported')+button('Enforcement unknown','enforcement-unknown')+button('Enforcement unsupported','enforcement-unsupported');
+      var controls=isRepositoryState(route) ? button('Check the typed path','repo-check')+(s.recents.length?button('No recent repositories','repo-recents-none'):button('Five recent repositories','repo-recents-five'))+(s.repoTip?button('Hide the tooltip','repo-tip-none'):button('Tooltip on the long chip','repo-tip-long')) : isModelState(route) ? button('Type a model','model-type')+button('Clear the model','model-default')+(s.harnessList==='ready'?button('Harness list loading','harness-list-loading'):button('Harness list ready','harness-list-ready'))+(s.catalog.state==='loading'?button('Listing finished','model-listed'):'')+(route==='model-unavailable'?Object.keys(REASONS).map(function(r){return button('Reason: '+r,'reason-'+r);}).join(''):'')+(route==='model-truncated'?button('Dropped rows: 0','dropped-0')+button('Dropped rows: 3','dropped-3'):'') : route==='runtime-updating' ? button('Updating','update-start')+button('Runtime ready','update-done') : runtimeBoard ? button('Runtime failure','runtime-failure')+button('Runtime ready','runtime-ready')+button('Listing ready','listing-ready')+button('Listing failed','listing-failed') : historyBoard ? '' : button('Qualification ready','qualified')+button('Qualification unavailable','unqualified')+button('Complete: created','created',s.status!=='starting')+button('Complete: refused','refused',s.status!=='starting')+button('Complete: unknown','unknown',s.status!=='starting')+button('Enforcement supported','enforcement-supported')+button('Enforcement unknown','enforcement-unknown')+button('Enforcement unsupported','enforcement-unsupported');
       // Strip links point at current states only. The earlier composer and Advanced links now open the
       // centered composer states that replaced them.
       var boards = amendment
@@ -386,12 +388,12 @@
       function options(values,current,gated){var all=values.slice();if(!all.includes(current))all.push(current);return all.map(function(v){return '<option value="'+esc(v)+'"'+(v===current?' selected':'')+(gated&&v===gated?' disabled':'')+'>'+esc(v)+(values.includes(v)?'':' — unavailable for this harness')+'</option>';}).join('');}
       function pill(label,icon,content,key,menuClass){return '<details class="hd-m04-picker"'+(key&&s.picker===key?' open':'')+(key&&(route==='centered-harness-open'||s.catalog||s.repoPicker)?' data-m04-picker="'+key+'"':'')+'><summary class="hd-pill"><span class="hd-i hd-i-'+icon+'" aria-hidden="true"></span><span class="hd-pill__label">'+esc(label)+'</span><span class="hd-i hd-i-chevron-down" aria-hidden="true"></span></summary><div class="hd-menu hd-m04-picker-menu'+(menuClass?' '+menuClass:'')+'">'+content+'</div></details>';}
       // Repository states: the popover of HarflowMac's repository pill. The Recent row is drawn only when there are recents; each
-      // chip is one line truncated at the tail, at most the row width (proposed; the app caps it at 240 pt, fixture control
-      // "Chip cap"), wraps as a whole chip, carries the full path as its tooltip and is accent on the running tint when it
-      // matches the field. The drawn tooltip stands in for the native help tag, which a browser cannot show on demand.
+      // chip is one line at most the row width, shortened in the middle (owner, 2026-11-19), wraps as a whole chip, carries the
+      // full path as its tooltip and is accent on the running tint when it matches the field. The drawn tooltip stands in for
+      // the native help tag, which a browser cannot show on demand.
       function repoMenu(){
         var invalid=s.repoError, chips=s.recents.map(function(path){var on=path===s.repoPath.trim(),tip=s.repoTip===path;return '<button type="button" class="hd-m04-chip'+(on?' is-selected':'')+(s.repoFocus===path?' is-focus':'')+'" data-m04="repo-pick" data-path="'+esc(path)+'"'+(tip?'':' title="'+esc(path)+'"')+' aria-label="Recent repository '+esc(repoName(path))+'" aria-description="'+esc(path)+'" aria-pressed="'+on+'"'+(locked?' disabled':'')+'><span class="hd-m04-chip__label">'+esc(repoName(path))+'</span>'+(tip?'<span class="hd-tooltip hd-m04-chip__tip" role="tooltip">'+esc(path)+'</span>':'')+'</button>';}).join('');
-        return '<strong class="hd-m04-repo__title">Repository</strong><div class="hd-m04-repo__field"><input id="m04-repo-path" class="hd-input hd-m04-repo__path'+(invalid?' is-invalid':'')+'" type="text" data-m04-field="repo-path" placeholder="/path/to/repo" aria-label="Repository path" autocomplete="off" spellcheck="false" value="'+esc(s.repoPath)+'"'+(invalid?' aria-invalid="true" aria-describedby="m04-repo-error"':'')+(locked?' disabled':'')+'>'+(invalid?'<span class="hd-field__hint hd-m04-repo__error" id="m04-repo-error">Choose an existing folder.</span>':'')+'</div><div><button type="button" class="hd-btn hd-btn--secondary hd-btn--sm" data-m04="repo-choose"'+(locked?' disabled':'')+'>Choose folder…</button></div>'+(s.recents.length?'<div class="hd-m04-recents'+(s.chipCap==='240'?' hd-m04-recents--cap240':'')+'" role="group" aria-label="Recent repositories"><span class="hd-m04-recents__label" aria-hidden="true">Recent</span>'+chips+'</div>':'');
+        return '<strong class="hd-m04-repo__title">Repository</strong><div class="hd-m04-repo__field"><input id="m04-repo-path" class="hd-input hd-m04-repo__path'+(invalid?' is-invalid':'')+'" type="text" data-m04-field="repo-path" placeholder="/path/to/repo" aria-label="Repository path" autocomplete="off" spellcheck="false" value="'+esc(s.repoPath)+'"'+(invalid?' aria-invalid="true" aria-describedby="m04-repo-error"':'')+(locked?' disabled':'')+'>'+(invalid?'<span class="hd-field__hint hd-m04-repo__error" id="m04-repo-error">Choose an existing folder.</span>':'')+'</div><div><button type="button" class="hd-btn hd-btn--secondary hd-btn--sm" data-m04="repo-choose"'+(locked?' disabled':'')+'>Choose folder…</button></div>'+(s.recents.length?'<div class="hd-m04-recents" role="group" aria-label="Recent repositories"><span class="hd-m04-recents__label" aria-hidden="true">Recent</span>'+chips+'</div>':'');
       }
       // Only the open harness picker repeats the existing status message under the Harness select.
       function field(label,key,values){var gate=route==='centered-harness-open'&&key==='harness',hint=gate&&(s.harness==='Unavailable harness'||s.qualification!=='ready')?'Choose a qualified harness and model.':'';return '<label class="hd-m04-menu-field">'+label+'<select data-m04-field="'+key+'"'+(locked?' disabled':'')+(hint?' aria-describedby="m04-harness-hint"':'')+'>'+options(values,s[key],gate?'Unavailable harness':'')+'</select>'+(hint?'<span class="hd-field__hint" id="m04-harness-hint">'+esc(hint)+'</span>':'')+'</label>';}
@@ -438,6 +440,10 @@
       input.style.overflowY = wanted > cap ? 'auto' : 'hidden';
     }
     function syncOptions(){
+      // Repository states: a chip name too long for its row keeps its start and its end around an ellipsis, as macOS middle
+      // truncation does; CSS can only cut the end, so each label is measured and shortened here. The full name stays the
+      // accessible label and the tooltip.
+      frame.querySelectorAll('.hd-m04-chip__label').forEach(function(label){var name=label.dataset.name||label.textContent;label.dataset.name=name;label.textContent=name;if(label.scrollWidth<=label.clientWidth)return;var lo=1,hi=name.length-1,best=name.charAt(0)+'…';while(lo<=hi){var k=(lo+hi)>>1;label.textContent=middleTruncate(name,k);if(label.scrollWidth<=label.clientWidth){best=label.textContent;lo=k+1;}else hi=k-1;}label.textContent=best;});
       // Repository states: the popover opens below the pill and moves above it where the compose area has no room below,
       // as a native popover does; the drawn tooltip likewise moves above its chip rather than being clipped.
       var repoMenuNode=frame.querySelector('.hd-m04-repo');if(repoMenuNode){var area=repoMenuNode.closest('.hd-m04-compose-area')||frame,bottom=Math.min(area.getBoundingClientRect().bottom,frame.getBoundingClientRect().bottom)-8;repoMenuNode.classList.remove('hd-m04-repo--above');if(repoMenuNode.getBoundingClientRect().bottom>bottom)repoMenuNode.classList.add('hd-m04-repo--above');var tipNode=repoMenuNode.querySelector('.hd-m04-chip__tip');if(tipNode){tipNode.classList.remove('hd-m04-chip__tip--above');if(tipNode.getBoundingClientRect().bottom>bottom)tipNode.classList.add('hd-m04-chip__tip--above');}}
@@ -536,9 +542,9 @@
       if(a==='older'){location.hash='#'+H.routeFor('m04','history-older')+'/'+(host.getAttribute('data-theme')||'light');return;} render();
     }
     function submit(e){if(e.target.matches('.hd-composer')){e.preventDefault();if(loading)return;start(s);render();}}
-    function toggle(e){if(e.target.matches('.hd-m04-fixtures'))s.fixtures=e.target.open;else if((route==='centered-harness-open'||s.catalog||s.repoPicker)&&e.target.matches('.hd-m04-picker[data-m04-picker]'))s.picker=e.target.open?e.target.dataset.m04Picker:'';}
+    function toggle(e){if(e.target.matches('.hd-m04-fixtures'))s.fixtures=e.target.open;else if((route==='centered-harness-open'||s.catalog||s.repoPicker)&&e.target.matches('.hd-m04-picker[data-m04-picker]')){s.picker=e.target.open?e.target.dataset.m04Picker:'';if(s.repoPicker&&s.picker==='repository')syncOptions();}}
     host.addEventListener('input',input);host.addEventListener('change',change);host.addEventListener('click',click);host.addEventListener('submit',submit);host.addEventListener('toggle',toggle,true);
-    host.addEventListener('keydown',keydown);host.addEventListener('focusin',focusin);host.addEventListener('pointerdown',pointerdown,true);document.addEventListener('pointerup',pointerup,true);document.addEventListener('click',outside);
+    host.addEventListener('keydown',keydown);host.addEventListener('focusin',focusin);host.addEventListener('pointerdown',pointerdown,true);document.addEventListener('pointerup',pointerup,true);document.addEventListener('pointercancel',pointerup,true);document.addEventListener('click',outside);
     // Amendment only: prompt wrapping depends on the width, not the height, so
     // the observer triggers solely on a width change and batches into one RAF.
     // Sizing changes the textarea height only, which cannot feed back into the
@@ -556,7 +562,7 @@
       widthObserver.observe(frame);
     }
     render();
-    return function(){disposed=true;host.removeEventListener('keydown',keydown);host.removeEventListener('focusin',focusin);host.removeEventListener('pointerdown',pointerdown,true);document.removeEventListener('pointerup',pointerup,true);document.removeEventListener('click',outside);host.removeEventListener('input',input);host.removeEventListener('change',change);host.removeEventListener('click',click);host.removeEventListener('submit',submit);host.removeEventListener('toggle',toggle,true);if(widthRaf)window.cancelAnimationFrame(widthRaf);if(widthObserver)widthObserver.disconnect();};
+    return function(){disposed=true;host.removeEventListener('keydown',keydown);host.removeEventListener('focusin',focusin);host.removeEventListener('pointerdown',pointerdown,true);document.removeEventListener('pointerup',pointerup,true);document.removeEventListener('pointercancel',pointerup,true);document.removeEventListener('click',outside);host.removeEventListener('input',input);host.removeEventListener('change',change);host.removeEventListener('click',click);host.removeEventListener('submit',submit);host.removeEventListener('toggle',toggle,true);if(widthRaf)window.cancelAnimationFrame(widthRaf);if(widthObserver)widthObserver.disconnect();};
   }
-  H.m04Proposal={mount:mount,model:{loadingAllows:loadingAllows,create:create,customized:customized,optionsOpen:optionsOpen,problem:problem,select:select,qualify:qualify,start:start,settle:settle,history:history,listing:listing,isAmendment:isAmendment,isRedraw:isRedraw,isRuntimeUpdate:isRuntimeUpdate,isModelApproved:isModelApproved,isRepositoryState:isRepositoryState,repositorySources:REPOSITORY_SOURCES,repositoryStates:REPOSITORY_STATES,recentRepos:RECENT_REPOS,repoName:repoName,setRepoPath:setRepoPath,checkRepoPath:checkRepoPath,repoAction:repoAction,modelSources:MODEL_SOURCES,redrawSources:REDRAW_SOURCES,runtimeSources:RUNTIME_SOURCES,amendmentPopupMetrics:amendmentPopupMetrics,promptOneLineHeight:promptOneLineHeight,promptCapHeight:promptCapHeight,amendmentDrafts:AMENDMENT_DRAFTS,modelStates:MODEL_STATES,isModelState:isModelState,modelName:modelName,modelNote:modelNote,modelAction:modelAction,pickHarness:pickHarness,pickOpenHarness:pickOpenHarness,catalogRows:catalogRows,listingFor:listingFor,reasons:REASONS}};
+  H.m04Proposal={mount:mount,model:{loadingAllows:loadingAllows,create:create,customized:customized,optionsOpen:optionsOpen,problem:problem,select:select,qualify:qualify,start:start,settle:settle,history:history,listing:listing,isAmendment:isAmendment,isRedraw:isRedraw,isRuntimeUpdate:isRuntimeUpdate,isModelApproved:isModelApproved,isRepositoryState:isRepositoryState,repositorySources:REPOSITORY_SOURCES,repositoryStates:REPOSITORY_STATES,recentRepos:RECENT_REPOS,repoName:repoName,middleTruncate:middleTruncate,setRepoPath:setRepoPath,checkRepoPath:checkRepoPath,repoAction:repoAction,modelSources:MODEL_SOURCES,redrawSources:REDRAW_SOURCES,runtimeSources:RUNTIME_SOURCES,amendmentPopupMetrics:amendmentPopupMetrics,promptOneLineHeight:promptOneLineHeight,promptCapHeight:promptCapHeight,amendmentDrafts:AMENDMENT_DRAFTS,modelStates:MODEL_STATES,isModelState:isModelState,modelName:modelName,modelNote:modelNote,modelAction:modelAction,pickHarness:pickHarness,pickOpenHarness:pickOpenHarness,catalogRows:catalogRows,listingFor:listingFor,reasons:REASONS}};
 })();
