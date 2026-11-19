@@ -159,6 +159,14 @@ Approved by the owner on 2026-11-15. Each state derives from an approved templat
 
 Eight Needs you states approved by the owner on 2026-11-17 (“Approve these cards”) at design commit `9093e7515a7759f864c106a210649292209f87e4`: `workflow-question`, `workflow-question-offered`, `workflow-question-answered`, `workflow-question-unavailable`, each with a `-minimum` variant. They draw the free-text, usage-limit offered-only, competing winner/saved draft and withdrawn last-known source surfaces. [Source pin, approval, preview and remaining gaps](decisions/workflow-questions.md). Page-level loading and empty retain their existing references. No existing approved route is changed. Native implementation and generic stale/transport-unknown outcomes remain open.
 
+## Repository picker
+
+Provisional, not approved: `new-task/centered-repository-empty`, `centered-repository-recents`,
+`centered-repository-hover`, `centered-repository-focus` and `centered-repository-invalid`. Each opens
+the repository pill's popover in the centered composer: the path field, Choose folder… and up to five
+Recent chips that wrap as whole chips, in both appearances and at 1280 × 800 and 1000 × 620. See the
+[design record](decisions/repository-picker.md) for the source, the chip width proposal and the owner questions.
+
 ## Workflow name before first save
 
 Approved by the owner on 2026-11-17 at proposal `533c579`: `workflow-editor/name-entry-empty`, `name-entry-focused`,

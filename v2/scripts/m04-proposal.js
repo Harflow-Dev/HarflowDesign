@@ -43,6 +43,33 @@
     'model-empty': 'amendment-ready',
     'model-default': 'amendment-ready'
   };
+  // Provisional, not approved: the open repository picker (2026-11-19). Each copies the fixture of its source mount and opens
+  // the repository pill's popover as HarflowMac ba1deb8b draws it (`NewSessionView.repositoryOptions`, `RecentRepos`): the
+  // "Repository" title, a path field, "Choose folder…" and up to five Recent chips, newest first, for folders that still exist.
+  var REPOSITORY_SOURCES = {
+    'repository-empty': 'amendment-ready',
+    'repository-recents': 'amendment-ready',
+    'repository-hover': 'amendment-ready',
+    'repository-focus': 'amendment-ready',
+    'repository-invalid': 'amendment-ready'
+  };
+  var RECENT_REPOS = ['/Users/me/Code/HarflowMCP', '/Users/me/Code/HarflowDesign', '/Users/me/Code/worktrees/r10-workflow-definitions-e2f0c3', '/Users/me/Code/clients/customer-onboarding-service-integration-tests', '/Users/me/Code/archive/a-very-long-repository-name-that-cannot-fit-on-one-chip-row-even-alone'];
+  // Folders the fixture treats as existing: the recents and one more folder a typed path or Choose folder… can reach.
+  var EXISTING_REPOS = RECENT_REPOS.concat(['/Users/me/Code/HarflowWeb']);
+  var REPOSITORY_STATES = {
+    'repository-empty': { repoPath: '', recents: [] },
+    'repository-recents': { repoPath: RECENT_REPOS[0], recents: RECENT_REPOS },
+    'repository-hover': { repoPath: RECENT_REPOS[0], recents: RECENT_REPOS, repoTip: RECENT_REPOS[4] },
+    'repository-focus': { repoPath: RECENT_REPOS[0], recents: RECENT_REPOS, repoFocus: RECENT_REPOS[1] },
+    'repository-invalid': { repoPath: '/Users/me/Code/HarflowMPC', recents: RECENT_REPOS, repoError: true }
+  };
+  function isRepositoryState(route) { return has(REPOSITORY_SOURCES, route); }
+  // The chip and pill show the last path component, as the app does (`lastPathComponent`).
+  function repoName(path) { var parts = String(path).replace(/\/+$/, '').split('/'); return parts[parts.length - 1] || ''; }
+  function setRepoPath(s, path) { s.repoPath = path; s.repository = repoName(path) || 'Choose repository'; s.repoError = false; }
+  // The proposed check of a typed path: an absolute path to an existing folder (`~` is expanded by the app). A blank field
+  // is not an error; Start is held back by the empty repository instead.
+  function checkRepoPath(s) { var p = s.repoPath.trim(); s.repoError = !!p && EXISTING_REPOS.indexOf(p.replace(/\/+$/, '')) < 0; return !s.repoError; }
   // Model picker states: the open harness picker with the Model field as an editable combo (any model id, with a
   // menu of the engine's advisory suggestions, `backend-models.v1`). The field always accepts free text; the listing
   // never blocks Start by itself. `s.model` is the typed text and empty means Default. Fixture rows follow the contract
@@ -115,7 +142,7 @@
   function isRuntimeUpdate(route) { return has(RUNTIME_SOURCES, route); }
   function isModelApproved(route) { return has(MODEL_SOURCES, route); }
   // The centered layout: the six amendment mounts, the redraw mounts, the model picker states and the runtime update.
-  function isAmendment(route) { return has(AMENDMENT_DRAFTS, route) || isRedraw(route) || isModelApproved(route) || isRuntimeUpdate(route); }
+  function isAmendment(route) { return has(AMENDMENT_DRAFTS, route) || isRedraw(route) || isModelApproved(route) || isRuntimeUpdate(route) || isRepositoryState(route); }
   function promptOneLineHeight(lineHeight, verticalExtra) { return lineHeight + verticalExtra; }
   function promptCapHeight(lineHeight, verticalExtra) { return lineHeight * AMENDMENT_LINE_CAP + verticalExtra; }
   // Amendment only: the scrollable compose area clips the popover, so its height
@@ -130,6 +157,12 @@
   // The actions a loading mount lets through: the sidebar toggle is chrome. Every other in-frame action is data-dependent.
   function loadingAllows(action) { return action === 'collapse'; }
   function create(route) {
+    if (isRepositoryState(route)) {
+      var repo = create(REPOSITORY_SOURCES[route]); repo.route = route;
+      Object.assign(repo, { picker: 'repository', repoPicker: true, repoTip: '', repoFocus: '', repoError: false, chipCap: 'row' }, JSON.parse(JSON.stringify(REPOSITORY_STATES[route])));
+      repo.repository = repoName(repo.repoPath) || 'Choose repository';
+      return repo;
+    }
     if (isRuntimeUpdate(route) || isModelApproved(route)) {
       var draft = create(isRuntimeUpdate(route) ? RUNTIME_SOURCES[route] : MODEL_SOURCES[route]); draft.route = route;
       if (isModelState(route)) { Object.assign(draft, { model: '', picker: 'harness', harnessList: 'ready' }, JSON.parse(JSON.stringify(MODEL_STATES[route]))); draft.modelHarness = draft.harness; draft.modelOption = modelOptionFor(draft.harness); }
@@ -174,6 +207,10 @@
   function models(harness){return {'Claude Code':['Default','Opus 5.5','Sonnet 5.5'],'Codex':['Default','gpt-6-astra'],'Mistral Vibe':['Default']}[harness] || ['Default'];}
   function problem(s) {
     if (!s.draft.trim()) return 'Describe a task to continue.';
+    // Repository states: Start needs a repository (the app disables Start while the field is empty) and, as proposed, a
+    // typed path that the check found missing holds Start with the app's own message.
+    if (s.repoPicker && !s.repoPath.trim()) return 'Choose a repository to continue.';
+    if (s.repoPicker && s.repoError) return 'Choose an existing folder.';
     if (!['default','low','medium','high','xhigh'].includes(s.effort) || (s.harness === 'Mistral Vibe' && s.effort !== 'default')) return 'This harness does not support the requested effort. Review task options.';
     if (s.turns && (!/^\d+$/.test(s.turns) || +s.turns < 1 || !Number.isSafeInteger(+s.turns))) return 'Enter a whole number above 0, or leave it empty for the default.';
     if (s.turns && s.harness === 'Codex') return 'This harness does not support a turn limit. Clear it in task options.';
@@ -227,8 +264,22 @@
     if (a === 'dropped-0' || a === 'dropped-3') { c.dropped = +a.slice(8); return true; }
     return false;
   }
+  // Repository states: the in-app popover actions and the catalog fixture controls. Returns false for any other action.
+  // Choose folder… stands in for the native open panel, which is not drawn: it picks the fixture's other existing folder.
+  function repoAction(s, a, b) {
+    var locked = ['starting','unknown','created'].includes(s.status);
+    if (a === 'repo-pick') { if (!locked) { setRepoPath(s, b.dataset.path); s.repoFocus = ''; s.repoTip = ''; } return true; }
+    if (a === 'repo-choose') { if (!locked) setRepoPath(s, EXISTING_REPOS[EXISTING_REPOS.length - 1]); return true; }
+    if (a === 'repo-check') { checkRepoPath(s); return true; }
+    if (a === 'repo-recents-none' || a === 'repo-recents-five') { s.recents = a === 'repo-recents-five' ? RECENT_REPOS.slice() : []; s.repoTip = ''; s.repoFocus = ''; return true; }
+    if (a === 'repo-cap-240' || a === 'repo-cap-row') { s.chipCap = a === 'repo-cap-240' ? '240' : 'row'; return true; }
+    if (a === 'repo-tip-long' || a === 'repo-tip-none') { s.repoTip = a === 'repo-tip-long' && s.recents.length ? RECENT_REPOS[4] : ''; return true; }
+    return false;
+  }
   function qualify(s, revision, result) { if (revision === s.revision) s.qualification = result; }
-  function start(s) { if (problem(s)) return false; s.status = 'starting'; s.remembered[s.repository] = { harness:s.harness, model:s.model, effort:s.effort, turns:s.turns, approvals:s.approvals, access:s.access }; return true; }
+  // Repository states check the typed path at Start too, as the app does, so a path typed and started without leaving
+  // the field cannot start with a missing folder.
+  function start(s) { if (s.repoPicker) checkRepoPath(s); if (problem(s)) return false; s.status = 'starting'; s.remembered[s.repository] = { harness:s.harness, model:s.model, effort:s.effort, turns:s.turns, approvals:s.approvals, access:s.access }; return true; }
   function settle(s, outcome) { if (s.status === 'starting' && ['refused','unknown','created'].includes(outcome)) s.status = outcome; }
   function history(s, rows) { s.rows = rows.slice(); /* selection remains stable even outside retained page */ }
   function listing(s, result) { s.listing = result; }
@@ -255,7 +306,7 @@
       var theme = host.getAttribute('data-theme') || 'light';
       var updating = route === 'runtime-updating' && !s.updated;
       var runtimeBoard=route.indexOf('runtime-')===0 && !isRuntimeUpdate(route), historyBoard=route.indexOf('history-')===0;
-      var controls=isModelState(route) ? button('Type a model','model-type')+button('Clear the model','model-default')+(s.harnessList==='ready'?button('Harness list loading','harness-list-loading'):button('Harness list ready','harness-list-ready'))+(s.catalog.state==='loading'?button('Listing finished','model-listed'):'')+(route==='model-unavailable'?Object.keys(REASONS).map(function(r){return button('Reason: '+r,'reason-'+r);}).join(''):'')+(route==='model-truncated'?button('Dropped rows: 0','dropped-0')+button('Dropped rows: 3','dropped-3'):'') : route==='runtime-updating' ? button('Updating','update-start')+button('Runtime ready','update-done') : runtimeBoard ? button('Runtime failure','runtime-failure')+button('Runtime ready','runtime-ready')+button('Listing ready','listing-ready')+button('Listing failed','listing-failed') : historyBoard ? '' : button('Qualification ready','qualified')+button('Qualification unavailable','unqualified')+button('Complete: created','created',s.status!=='starting')+button('Complete: refused','refused',s.status!=='starting')+button('Complete: unknown','unknown',s.status!=='starting')+button('Enforcement supported','enforcement-supported')+button('Enforcement unknown','enforcement-unknown')+button('Enforcement unsupported','enforcement-unsupported');
+      var controls=isRepositoryState(route) ? button('Check the typed path','repo-check')+(s.recents.length?button('No recent repositories','repo-recents-none'):button('Five recent repositories','repo-recents-five'))+(s.chipCap==='row'?button('Chip cap: 240 pt','repo-cap-240'):button('Chip cap: row width','repo-cap-row'))+(s.repoTip?button('Hide the tooltip','repo-tip-none'):button('Tooltip on the long chip','repo-tip-long')) : isModelState(route) ? button('Type a model','model-type')+button('Clear the model','model-default')+(s.harnessList==='ready'?button('Harness list loading','harness-list-loading'):button('Harness list ready','harness-list-ready'))+(s.catalog.state==='loading'?button('Listing finished','model-listed'):'')+(route==='model-unavailable'?Object.keys(REASONS).map(function(r){return button('Reason: '+r,'reason-'+r);}).join(''):'')+(route==='model-truncated'?button('Dropped rows: 0','dropped-0')+button('Dropped rows: 3','dropped-3'):'') : route==='runtime-updating' ? button('Updating','update-start')+button('Runtime ready','update-done') : runtimeBoard ? button('Runtime failure','runtime-failure')+button('Runtime ready','runtime-ready')+button('Listing ready','listing-ready')+button('Listing failed','listing-failed') : historyBoard ? '' : button('Qualification ready','qualified')+button('Qualification unavailable','unqualified')+button('Complete: created','created',s.status!=='starting')+button('Complete: refused','refused',s.status!=='starting')+button('Complete: unknown','unknown',s.status!=='starting')+button('Enforcement supported','enforcement-supported')+button('Enforcement unknown','enforcement-unknown')+button('Enforcement unsupported','enforcement-unsupported');
       // Strip links point at current states only. The earlier composer and Advanced links now open the
       // centered composer states that replaced them.
       var boards = amendment
@@ -265,11 +316,12 @@
             : [['centered-loading','Loading'],['centered-unqualified','Unavailable'],['centered-invalid','Validation'],['centered-starting-plain','Starting'],['centered-refused','Refused'],['centered-options-closed','Options closed'],['centered-harness-open','Harness open']])
           : [['amendment-empty','Empty'],['amendment-ready','One line'],['amendment-growing','Growing'],['amendment-capped','Capped'],['amendment-options','Options open'],['amendment-unknown','Unknown']])
         : [['amendment-empty','Shell'],['amendment-ready','Composer'],['amendment-options','Advanced'],['history-retained','History'],['runtime-checking','Runtime']];
-      if (isRuntimeUpdate(route) || isModelApproved(route)) boards = isModelState(route) ? [['model-loading','Loading'],['model-unavailable','Unavailable'],['model-not-installed','Not installed'],['model-truncated','Shortened'],['model-empty','Empty'],['model-default','Default marked'],['centered-harness-open','Harness open']] : [['runtime-installing', 'Installing']];
+      if (isRepositoryState(route)) boards = [['repository-empty','No recents'],['repository-recents','Recents'],['repository-hover','Full path'],['repository-focus','Keyboard focus'],['repository-invalid','Missing folder']];
+      else if (isRuntimeUpdate(route) || isModelApproved(route)) boards = isModelState(route) ? [['model-loading','Loading'],['model-unavailable','Unavailable'],['model-not-installed','Not installed'],['model-truncated','Shortened'],['model-empty','Empty'],['model-default','Default marked'],['centered-harness-open','Harness open']] : [['runtime-installing', 'Installing']];
       var boardLinks = boards.map(function (board) { return '<a href="#' + H.routeFor('m04', board[0]) + '/' + theme + '">' + board[1] + '</a>'; }).join('');
       var strips = H.catalogStrips.m04;
-      var notice = isRuntimeUpdate(route) ? strips.runtimeNotice : isModelApproved(route) ? strips.modelNotice : isRedraw(route) ? (route==='centered-starting-plain' ? strips.redrawStartingNotice : route==='centered-harness-open' ? strips.redrawHarnessNotice : strips.redrawNotice) : amendment ? strips.centeredNotice : strips.baselineNotice;
-      var heading = isRuntimeUpdate(route) ? strips.runtimeHeading : isModelApproved(route) ? strips.modelHeading : isRedraw(route) ? (route.indexOf('centered-shell')===0 ? strips.redrawShellHeading : route==='centered-starting-plain' ? strips.redrawStartingHeading : route==='centered-harness-open' ? strips.redrawHarnessHeading : strips.redrawHeading) : amendment ? strips.centeredHeading : strips.baselineHeading;
+      var notice = isRepositoryState(route) ? strips.repositoryNotice : isRuntimeUpdate(route) ? strips.runtimeNotice : isModelApproved(route) ? strips.modelNotice : isRedraw(route) ? (route==='centered-starting-plain' ? strips.redrawStartingNotice : route==='centered-harness-open' ? strips.redrawHarnessNotice : strips.redrawNotice) : amendment ? strips.centeredNotice : strips.baselineNotice;
+      var heading = isRepositoryState(route) ? strips.repositoryHeading : isRuntimeUpdate(route) ? strips.runtimeHeading : isModelApproved(route) ? strips.modelHeading : isRedraw(route) ? (route.indexOf('centered-shell')===0 ? strips.redrawShellHeading : route==='centered-starting-plain' ? strips.redrawStartingHeading : route==='centered-harness-open' ? strips.redrawHarnessHeading : strips.redrawHeading) : amendment ? strips.centeredHeading : strips.baselineHeading;
       if (loading) catalog.innerHTML = '<div class="hd-m04-actions"><strong>' + loadingStrip.heading + '</strong><label>Frame <select data-m04-field="size"><option value="reference"' + (!s.narrow?' selected':'') + '>1280 × 800</option><option value="minimum"' + (s.narrow?' selected':'') + '>1000 × 620</option></select></label></div><p>' + loadingStrip.note + '</p>';
       else catalog.innerHTML = '<div class="hd-m04-actions"><strong>' + heading + '</strong>' + boardLinks + '<label>Frame <select data-m04-field="size"><option value="reference"' + (!s.narrow?' selected':'') + '>1280 × 800</option><option value="minimum"' + (s.narrow?' selected':'') + '>1000 × 620</option></select></label>' + button('Reset fixture','reset') + '</div><p>' + notice + '</p><details class="hd-m04-fixtures"'+(s.fixtures?' open':'')+'><summary>Fixture controls</summary><div class="hd-m04-actions">' + controls + '</div></details>';
       var base = template(s.collapsed ? 'new-task/sidebar-collapsed' : 'new-task/default');
@@ -291,7 +343,7 @@
         }
       }
       var main = app.querySelector('.hd-main');
-      var topbar=main.querySelector('.hd-topbar'); if(topbar)topbar.innerHTML='<span class="caption hd-faint">'+esc(runtimeBoard?'Harflow · Setup':s.repository+' · New task')+'</span><span class="hd-topbar__spacer"></span>';
+      var topbar=main.querySelector('.hd-topbar'); if(topbar)topbar.innerHTML='<span class="caption hd-faint">'+esc(runtimeBoard?'Harflow · Setup':s.repoPicker&&!s.repoPath.trim()?'New task':s.repository+' · New task')+'</span><span class="hd-topbar__spacer"></span>';
       if(route==='history-empty'){var running=app.querySelector('[aria-label="Running"]');if(running){running.querySelector('.hd-section__list').textContent='No running work';var count=running.querySelector('.hd-section__count');if(count)count.textContent='0';}}
       var collapse = app.querySelector('[aria-label="Collapse sidebar"], [aria-label="Expand sidebar"]'); if(collapse) collapse.dataset.m04='collapse';
       var recent = app.querySelector('[aria-label="Recent work"] .hd-section__list');
@@ -332,7 +384,15 @@
       var locked=['starting','unknown','created'].includes(s.status);
       var plainStarting = route === 'centered-starting-plain' && s.status === 'starting';
       function options(values,current,gated){var all=values.slice();if(!all.includes(current))all.push(current);return all.map(function(v){return '<option value="'+esc(v)+'"'+(v===current?' selected':'')+(gated&&v===gated?' disabled':'')+'>'+esc(v)+(values.includes(v)?'':' — unavailable for this harness')+'</option>';}).join('');}
-      function pill(label,icon,content,key){return '<details class="hd-m04-picker"'+(key&&s.picker===key?' open':'')+(key&&(route==='centered-harness-open'||s.catalog)?' data-m04-picker="'+key+'"':'')+'><summary class="hd-pill"><span class="hd-i hd-i-'+icon+'" aria-hidden="true"></span><span class="hd-pill__label">'+esc(label)+'</span><span class="hd-i hd-i-chevron-down" aria-hidden="true"></span></summary><div class="hd-menu hd-m04-picker-menu">'+content+'</div></details>';}
+      function pill(label,icon,content,key,menuClass){return '<details class="hd-m04-picker"'+(key&&s.picker===key?' open':'')+(key&&(route==='centered-harness-open'||s.catalog||s.repoPicker)?' data-m04-picker="'+key+'"':'')+'><summary class="hd-pill"><span class="hd-i hd-i-'+icon+'" aria-hidden="true"></span><span class="hd-pill__label">'+esc(label)+'</span><span class="hd-i hd-i-chevron-down" aria-hidden="true"></span></summary><div class="hd-menu hd-m04-picker-menu'+(menuClass?' '+menuClass:'')+'">'+content+'</div></details>';}
+      // Repository states: the popover of HarflowMac's repository pill. The Recent row is drawn only when there are recents; each
+      // chip is one line truncated at the tail, at most the row width (proposed; the app caps it at 240 pt, fixture control
+      // "Chip cap"), wraps as a whole chip, carries the full path as its tooltip and is accent on the running tint when it
+      // matches the field. The drawn tooltip stands in for the native help tag, which a browser cannot show on demand.
+      function repoMenu(){
+        var invalid=s.repoError, chips=s.recents.map(function(path){var on=path===s.repoPath.trim(),tip=s.repoTip===path;return '<button type="button" class="hd-m04-chip'+(on?' is-selected':'')+(s.repoFocus===path?' is-focus':'')+'" data-m04="repo-pick" data-path="'+esc(path)+'"'+(tip?'':' title="'+esc(path)+'"')+' aria-label="Recent repository '+esc(repoName(path))+'" aria-description="'+esc(path)+'" aria-pressed="'+on+'"'+(locked?' disabled':'')+'><span class="hd-m04-chip__label">'+esc(repoName(path))+'</span>'+(tip?'<span class="hd-tooltip hd-m04-chip__tip" role="tooltip">'+esc(path)+'</span>':'')+'</button>';}).join('');
+        return '<strong class="hd-m04-repo__title">Repository</strong><div class="hd-m04-repo__field"><input id="m04-repo-path" class="hd-input hd-m04-repo__path'+(invalid?' is-invalid':'')+'" type="text" data-m04-field="repo-path" placeholder="/path/to/repo" aria-label="Repository path" autocomplete="off" spellcheck="false" value="'+esc(s.repoPath)+'"'+(invalid?' aria-invalid="true" aria-describedby="m04-repo-error"':'')+(locked?' disabled':'')+'>'+(invalid?'<span class="hd-field__hint hd-m04-repo__error" id="m04-repo-error">Choose an existing folder.</span>':'')+'</div><div><button type="button" class="hd-btn hd-btn--secondary hd-btn--sm" data-m04="repo-choose"'+(locked?' disabled':'')+'>Choose folder…</button></div>'+(s.recents.length?'<div class="hd-m04-recents'+(s.chipCap==='240'?' hd-m04-recents--cap240':'')+'" role="group" aria-label="Recent repositories"><span class="hd-m04-recents__label" aria-hidden="true">Recent</span>'+chips+'</div>':'');
+      }
       // Only the open harness picker repeats the existing status message under the Harness select.
       function field(label,key,values){var gate=route==='centered-harness-open'&&key==='harness',hint=gate&&(s.harness==='Unavailable harness'||s.qualification!=='ready')?'Choose a qualified harness and model.':'';return '<label class="hd-m04-menu-field">'+label+'<select data-m04-field="'+key+'"'+(locked?' disabled':'')+(hint?' aria-describedby="m04-harness-hint"':'')+'>'+options(values,s[key],gate?'Unavailable harness':'')+'</select>'+(hint?'<span class="hd-field__hint" id="m04-harness-hint">'+esc(hint)+'</span>':'')+'</label>';}
       // Model states: the harness select marks a harness that is not installed, as the app does.
@@ -345,12 +405,12 @@
         var list=open?'<div class="hd-m04-combo__list" id="m04-model-list" role="group" aria-label="Suggested models">'+choices.map(function(m){var on=m.id===s.model.trim();return '<button type="button" class="hd-menu__item hd-m04-combo__option'+(on?' is-selected':'')+'" data-m04="model-pick" data-model="'+esc(m.id)+'"'+' aria-pressed="'+on+'"'+'><span class="hd-i hd-i--sm hd-i-check" aria-hidden="true"></span><span class="hd-m04-combo__label">'+esc(m.label)+'</span>'+(m.default?'<span class="hd-m04-combo__tag">default</span>':'')+'</button>';}).join('')+'</div>':'';
         return '<div class="hd-m04-menu-field hd-m04-model-field"><label for="m04-model">Model</label><div class="hd-m04-combo"><input id="m04-model" class="hd-m04-combo__input" type="text" data-m04-field="model-text" placeholder="Default" autocomplete="off" spellcheck="false" value="'+esc(s.model)+'"'+(note?' aria-describedby="m04-model-note"':'')+(locked?' disabled':'')+'><button type="button" class="hd-m04-combo__toggle" data-m04="model-suggestions" aria-label="Suggested models" aria-expanded="'+open+'"'+(open?' aria-controls="m04-model-list"':'')+(choices.length<2||locked?' disabled':'')+'><span class="hd-i hd-i--sm hd-i-chevron-down" aria-hidden="true"></span></button></div>'+list+(note?'<div class="hd-m04-model-note"><span class="hd-field__hint" id="m04-model-note">'+esc(note)+'</span>'+(c.state==='unavailable'&&!locked?button('Try again','model-retry'):'')+'</div>':'')+'</div>';
       }
-      bar.innerHTML='<span class="hd-m04-options-anchor"><button type="button" class="hd-btn hd-btn--icon hd-m04-options-trigger" data-m04="options" aria-label="More task options" title="More task options" aria-expanded="'+s.advanced+'" aria-controls="m04-task-options" aria-describedby="m04-options-description"><span class="hd-i hd-i-plus" aria-hidden="true"></span><span class="hd-m04-options-dot"'+(customized(s)?'':' hidden')+' aria-hidden="true"></span><span class="hd-sr" id="m04-options-description">'+(customized(s)?'Customized options':'Default options')+'</span></button></span>'+pill(s.repository,'folder',field('Repository / recent folders','repository',['HarflowMCP','HarflowDesign','Unavailable folder']))+pill(s.harness+' · '+modelName(s),'harness',s.catalog?(route==='centered-harness-open'?field('Harness','harness',['Claude Code','Codex','Mistral Vibe','Unavailable harness']):catalogHarness())+catalogModel():field('Harness','harness',['Claude Code','Codex','Mistral Vibe','Unavailable harness'])+field('Model','model',models(s.harness)),'harness')+pill({'read_only':'Read only','write_in_repo':'Can edit this repo','publish':'Can publish','unrestricted':'Broad access'}[s.access],'shield','<label class="hd-m04-menu-field">Access<select data-m04-field="access"'+(locked?' disabled':'')+'>'+['read_only','write_in_repo','publish','unrestricted'].map(function(v){return '<option value="'+v+'"'+(s.access===v?' selected':'')+'>'+({'read_only':'Read only','write_in_repo':'Can edit this repo','publish':'Can publish','unrestricted':'Broad access'})[v]+'</option>';}).join('')+'</select></label>')+'<span class="hd-composer__spacer"></span><button type="submit" class="hd-composer__send" aria-label="'+(plainStarting?'Starting task':'Start task')+'"'+(problem(s)||s.status==='created'?' disabled':'')+'><span class="hd-i hd-i-arrow-up" aria-hidden="true"></span></button>';
+      bar.innerHTML='<span class="hd-m04-options-anchor"><button type="button" class="hd-btn hd-btn--icon hd-m04-options-trigger" data-m04="options" aria-label="More task options" title="More task options" aria-expanded="'+s.advanced+'" aria-controls="m04-task-options" aria-describedby="m04-options-description"><span class="hd-i hd-i-plus" aria-hidden="true"></span><span class="hd-m04-options-dot"'+(customized(s)?'':' hidden')+' aria-hidden="true"></span><span class="hd-sr" id="m04-options-description">'+(customized(s)?'Customized options':'Default options')+'</span></button></span>'+pill(s.repository,'folder',s.repoPicker?repoMenu():field('Repository / recent folders','repository',['HarflowMCP','HarflowDesign','Unavailable folder']),s.repoPicker?'repository':undefined,s.repoPicker?'hd-m04-repo':'')+pill(s.harness+' · '+modelName(s),'harness',s.catalog?(route==='centered-harness-open'?field('Harness','harness',['Claude Code','Codex','Mistral Vibe','Unavailable harness']):catalogHarness())+catalogModel():field('Harness','harness',['Claude Code','Codex','Mistral Vibe','Unavailable harness'])+field('Model','model',models(s.harness)),'harness')+pill({'read_only':'Read only','write_in_repo':'Can edit this repo','publish':'Can publish','unrestricted':'Broad access'}[s.access],'shield','<label class="hd-m04-menu-field">Access<select data-m04-field="access"'+(locked?' disabled':'')+'>'+['read_only','write_in_repo','publish','unrestricted'].map(function(v){return '<option value="'+v+'"'+(s.access===v?' selected':'')+'>'+({'read_only':'Read only','write_in_repo':'Can edit this repo','publish':'Can publish','unrestricted':'Broad access'})[v]+'</option>';}).join('')+'</select></label>')+'<span class="hd-composer__spacer"></span><button type="submit" class="hd-composer__send" aria-label="'+(plainStarting?'Starting task':'Start task')+'"'+(problem(s)||s.status==='created'?' disabled':'')+'><span class="hd-i hd-i-arrow-up" aria-hidden="true"></span></button>';
 
       var wrap=app.querySelector('.hd-composer').parentElement;
       var oldCaption=wrap.querySelector('p'); if(oldCaption) oldCaption.remove();
       bar.querySelector('.hd-m04-options-anchor').insertAdjacentHTML('beforeend','<div id="m04-task-options" class="hd-menu hd-m04-options-popover" role="group" aria-label="Task options"'+(s.advanced?'':' hidden')+'><strong>Task options</strong><div class="hd-m04-actions"><label>Effort<select data-m04-field="effort"'+(locked?' disabled':'')+'>'+['default','low','medium','high','xhigh','unsupported'].map(function(x){return '<option'+(s.effort===x?' selected':'')+'>'+x+'</option>';}).join('')+'</select></label><label>Turn limit<input class="hd-input" data-m04-field="turns" type="text" inputmode="numeric" value="'+esc(s.turns)+'"'+(locked?' disabled':'')+'></label><label>Approvals<select data-m04-field="approvals"'+(locked?' disabled':'')+'><option value="harness">Harness managed</option><option value="caller"'+(s.approvals==='caller'?' selected':'')+'>Caller approvals (supported harness only)</option></select></label></div><p class="caption">Permission preview: '+esc({'read_only':'Read only','write_in_repo':'Repository write','publish':'Publish access','unrestricted':'Broad access'}[s.access])+' · enforcement '+esc(s.enforcement)+'. '+(s.enforcement==='supported'?'The selected harness reports support for the requested access; this is not an OS sandbox guarantee.':'Required enforcement is not confirmed; Start is blocked.')+'</p><p class="caption" data-m04-qualification>Harness qualification: '+esc(s.qualification)+'. Unsupported requested choices stay visible for review.</p></div>');
-      wrap.insertAdjacentHTML('beforeend','<div class="hd-m04-status'+(plainStarting?' hd-sr':'')+'" role="status">'+esc(s.status==='refused'?'Start was refused. Review the settings and try again.':s.status==='created'?'Task created.':problem(s)||'Ready to start · '+modelName(s))+'</div><div class="hd-m04-actions">'+(s.status==='unknown'?button('Review Recent work','recent'):s.status==='refused'?button('Review settings','settings'):'')+'</div>');
+      wrap.insertAdjacentHTML('beforeend','<div class="hd-m04-status'+(plainStarting?' hd-sr':'')+(s.repoPicker&&s.repoError?' is-error':'')+'" role="status">'+esc(s.status==='refused'?'Start was refused. Review the settings and try again.':s.status==='created'?'Task created.':problem(s)||'Ready to start · '+modelName(s))+'</div><div class="hd-m04-actions">'+(s.status==='unknown'?button('Review Recent work','recent'):s.status==='refused'?button('Review settings','settings'):'')+'</div>');
       app.querySelector('.hd-scroll').classList.add('hd-m04-compose-area');
       if (amendment) {
         // Override the baseline rows=3 and min-height:44px with a compact
@@ -378,6 +438,9 @@
       input.style.overflowY = wanted > cap ? 'auto' : 'hidden';
     }
     function syncOptions(){
+      // Repository states: the popover opens below the pill and moves above it where the compose area has no room below,
+      // as a native popover does; the drawn tooltip likewise moves above its chip rather than being clipped.
+      var repoMenuNode=frame.querySelector('.hd-m04-repo');if(repoMenuNode){var area=repoMenuNode.closest('.hd-m04-compose-area')||frame,bottom=Math.min(area.getBoundingClientRect().bottom,frame.getBoundingClientRect().bottom)-8;repoMenuNode.classList.remove('hd-m04-repo--above');if(repoMenuNode.getBoundingClientRect().bottom>bottom)repoMenuNode.classList.add('hd-m04-repo--above');var tipNode=repoMenuNode.querySelector('.hd-m04-chip__tip');if(tipNode){tipNode.classList.remove('hd-m04-chip__tip--above');if(tipNode.getBoundingClientRect().bottom>bottom)tipNode.classList.add('hd-m04-chip__tip--above');}}
       // Model states: the open suggestions list sits beside the picker; where the compose area would clip it (the 1000 × 620
       // frame) it drops below the field instead. It then fits the space left below it in the frame.
       var modelList=frame.querySelector('.hd-m04-combo__list');if(modelList){var clip=modelList.closest('.hd-m04-compose-area')||frame;modelList.classList.remove('hd-m04-combo__list--below');modelList.style.top='';modelList.style.maxHeight='';if(modelList.getBoundingClientRect().right>clip.getBoundingClientRect().right-8){var combo=modelList.previousElementSibling;modelList.classList.add('hd-m04-combo__list--below');modelList.style.top=(combo.offsetTop+combo.offsetHeight+4)+'px';}modelList.style.maxHeight=Math.max(96,Math.min(320,frame.getBoundingClientRect().bottom-modelList.getBoundingClientRect().top-16))+'px';}
@@ -401,14 +464,42 @@
       trigger.querySelector('.hd-m04-options-dot').hidden=!customized(s);
       trigger.querySelector('.hd-sr').textContent=customized(s)?'Customized options':'Default options';
       var send=frame.querySelector('[type="submit"]');if(send)send.disabled=!!problem(s);
-      var status=frame.querySelector('.hd-m04-status');if(status)status.textContent=s.status==='refused'?'Start was refused. Review the settings and try again.':problem(s)||'Ready to start · '+modelName(s);
+      var status=frame.querySelector('.hd-m04-status');if(status)status.classList.toggle('is-error',!!(s.repoPicker&&s.repoError));if(status)status.textContent=s.status==='refused'?'Start was refused. Review the settings and try again.':problem(s)||'Ready to start · '+modelName(s);
     }
     function closeOptions(focus){if(!s.advanced)return;optionsOpen(s,false);syncOptions();if(focus){var trigger=frame.querySelector('[data-m04="options"]');if(trigger)trigger.focus();}}
     function keydown(e){
+      // Repository states: Return in the path field commits it; it never submits the composer (Start is ⌘Return in the app).
+      if(e.key==='Enter'&&e.target.matches&&e.target.matches('#m04-repo-path')){e.preventDefault();commitRepo(e.target);return;}
       // Model states: Escape closes the open suggestions and returns focus to their button.
       if(e.key==='Escape'&&s.catalog&&s.catalog.open&&e.target.closest('.hd-m04-model-field')){e.preventDefault();e.stopPropagation();s.catalog.open=false;render();refocus('[data-m04="model-suggestions"]');return;}
       if(e.key==='Escape'&&s.advanced){e.preventDefault();closeOptions(true);}
     }
+    // Repository states: typing patches the drawing in place, so the field keeps focus and its change event.
+    function syncRepo(field){
+      var label=frame.querySelector('[data-m04-picker="repository"] .hd-pill__label');if(label)label.textContent=s.repository;
+      var cap=frame.querySelector('.hd-topbar .caption');if(cap)cap.textContent=s.repoPath.trim()?s.repository+' · New task':'New task';
+      frame.querySelectorAll('.hd-m04-chip').forEach(function(chip){var on=chip.dataset.path===s.repoPath.trim();chip.classList.toggle('is-selected',on);chip.setAttribute('aria-pressed',String(on));});
+      markRepo(field);
+    }
+    // Repository states: the field's missing-folder mark, patched in place so a click that blurs the field still lands.
+    function markRepo(field){
+      field.classList.toggle('is-invalid',!!s.repoError);
+      var hint=frame.querySelector('#m04-repo-error');
+      if(s.repoError){field.setAttribute('aria-invalid','true');field.setAttribute('aria-describedby','m04-repo-error');if(!hint)field.insertAdjacentHTML('afterend','<span class="hd-field__hint hd-m04-repo__error" id="m04-repo-error">Choose an existing folder.</span>');}
+      else{field.removeAttribute('aria-invalid');field.removeAttribute('aria-describedby');if(hint)hint.remove();}
+    }
+    // Repository states: leaving the field or pressing Return checks the typed path, without rebuilding the popover.
+    // A blur caused by a pointer press commits after that press completes, so the mark cannot move its target mid-click.
+    var pointerHeld=false;
+    function commitRepo(field){
+      if(!s.repoPicker||loading||['starting','unknown','created'].includes(s.status))return;
+      if(pointerHeld){document.addEventListener('pointerup',function(){setTimeout(function(){var now=frame.querySelector('#m04-repo-path');if(now&&!disposed)commitRepo(now);},0);},{once:true});return;}
+      checkRepoPath(s);markRepo(field);syncOptions();
+    }
+    function pointerdown(){pointerHeld=true;}
+    function pointerup(){setTimeout(function(){pointerHeld=false;},0);}
+    // Repository states: the drawn focus ring gives way to real focus as soon as focus moves.
+    function focusin(e){if(s.repoPicker&&s.repoFocus&&!(e.target.dataset&&e.target.dataset.path===s.repoFocus)){s.repoFocus='';frame.querySelectorAll('.hd-m04-chip.is-focus').forEach(function(c){c.classList.remove('is-focus');});}}
     function refocus(selector){var node=frame.querySelector(selector);if(node&&!node.disabled)node.focus();}
     function outside(e){
       // Model states: a click outside the Model field closes the open suggestions, as a native menu closes.
@@ -420,13 +511,15 @@
       if(['starting','unknown','created'].includes(s.status))return;
       // Model states: any typed text is the requested model; the pill and the status follow without a re-render.
       if(key==='model-text'&&s.catalog){s.model=e.target.value;s.modelHarness=s.harness;var pillLabel=frame.querySelector('[data-m04-picker="harness"] .hd-pill__label');if(pillLabel)pillLabel.textContent=s.harness+' · '+modelName(s);syncOptions();return;}
+      // Repository states: the typed path is the repository; the chips, the pill, the top bar and the status follow.
+      if(key==='repo-path'&&s.repoPicker){setRepoPath(s,e.target.value);syncRepo(e.target);syncOptions();return;}
       if(!['draft','turns'].includes(key))return;
       if (key==='draft')s.draft=e.target.value;else select(s,key,e.target.value);
       syncOptions();
       sizePrompt();
     }
 
-    function change(e) { var key=e.target.dataset.m04Field; if(!key || key==='draft' || key==='model-text')return;if(s.catalog&&key==='harness'&&!loading){if(['starting','unknown','created'].includes(s.status))return;if(route==='centered-harness-open')pickOpenHarness(s,e.target.value);else pickHarness(s,e.target.value);render();return;}if(loading && key!=='size')return;if(key==='turns' && s.turns===e.target.value)return;if(['effort','turns','approvals'].includes(key)){select(s,key,e.target.value);syncOptions();return;} if(key==='size')s.narrow=e.target.value==='minimum'; else if(key==='repository'||key==='harness'||key==='model'||key==='access'||key==='effort'||key==='turns'||key==='approvals') select(s,key,e.target.value); else if(!['starting','unknown','created'].includes(s.status)) s[key]=e.target.value; render(); }
+    function change(e) { var key=e.target.dataset.m04Field; if(!key || key==='draft' || key==='model-text')return;if(key==='repo-path'){commitRepo(e.target);return;}if(s.catalog&&key==='harness'&&!loading){if(['starting','unknown','created'].includes(s.status))return;if(route==='centered-harness-open')pickOpenHarness(s,e.target.value);else pickHarness(s,e.target.value);render();return;}if(loading && key!=='size')return;if(key==='turns' && s.turns===e.target.value)return;if(['effort','turns','approvals'].includes(key)){select(s,key,e.target.value);syncOptions();return;} if(key==='size')s.narrow=e.target.value==='minimum'; else if(key==='repository'||key==='harness'||key==='model'||key==='access'||key==='effort'||key==='turns'||key==='approvals') select(s,key,e.target.value); else if(!['starting','unknown','created'].includes(s.status)) s[key]=e.target.value; render(); }
     function click(e) { var b=e.target.closest('[data-m04]'); if(loading){ if(e.target.closest('summary'))e.preventDefault(); if(!b||!loadingAllows(b.dataset.m04))return; } if(!b)return; var a=b.dataset.m04;
       if(a==='options'){optionsOpen(s,!s.advanced);syncOptions();if(s.advanced&&e.detail===0){var first=frame.querySelector('#m04-task-options select');if(first)first.focus();}return;}
       if(a==='reset'){s=create(route);lastState=s;} if(a==='collapse')s.collapsed=!s.collapsed;
@@ -438,13 +531,14 @@
       if(a.indexOf('enforcement-')===0){s.enforcement=a.slice(12);s.revision+=1;s.qualification='checking';}
       if(a==='runtime-failure')s.runtime='failed'; if(a==='install')s.runtime='installing'; if(a==='runtime-ready')s.runtime='qualified'; if(a==='update-start')s.updated=false; if(a==='update-done')s.updated=true;
       if(a==='listing-ready')listing(s,'ready');if(a==='listing-failed')listing(s,'failed');if(a==='listing-retry')listing(s,'pending');
+      if(s.repoPicker&&repoAction(s,a,b)){render();if(a==='repo-pick')refocus('[data-m04="repo-pick"][data-path="'+CSS.escape(b.dataset.path)+'"]');return;}
       if(s.catalog&&modelAction(s,a,b)){render();if(a==='model-suggestions')refocus(s.catalog.open?'.hd-m04-combo__option':'[data-m04="model-suggestions"]');if(a==='model-pick')refocus('#m04-model');return;}
       if(a==='older'){location.hash='#'+H.routeFor('m04','history-older')+'/'+(host.getAttribute('data-theme')||'light');return;} render();
     }
     function submit(e){if(e.target.matches('.hd-composer')){e.preventDefault();if(loading)return;start(s);render();}}
-    function toggle(e){if(e.target.matches('.hd-m04-fixtures'))s.fixtures=e.target.open;else if((route==='centered-harness-open'||s.catalog)&&e.target.matches('.hd-m04-picker[data-m04-picker]'))s.picker=e.target.open?e.target.dataset.m04Picker:'';}
+    function toggle(e){if(e.target.matches('.hd-m04-fixtures'))s.fixtures=e.target.open;else if((route==='centered-harness-open'||s.catalog||s.repoPicker)&&e.target.matches('.hd-m04-picker[data-m04-picker]'))s.picker=e.target.open?e.target.dataset.m04Picker:'';}
     host.addEventListener('input',input);host.addEventListener('change',change);host.addEventListener('click',click);host.addEventListener('submit',submit);host.addEventListener('toggle',toggle,true);
-    host.addEventListener('keydown',keydown);document.addEventListener('click',outside);
+    host.addEventListener('keydown',keydown);host.addEventListener('focusin',focusin);host.addEventListener('pointerdown',pointerdown,true);document.addEventListener('pointerup',pointerup,true);document.addEventListener('click',outside);
     // Amendment only: prompt wrapping depends on the width, not the height, so
     // the observer triggers solely on a width change and batches into one RAF.
     // Sizing changes the textarea height only, which cannot feed back into the
@@ -462,7 +556,7 @@
       widthObserver.observe(frame);
     }
     render();
-    return function(){disposed=true;host.removeEventListener('keydown',keydown);document.removeEventListener('click',outside);host.removeEventListener('input',input);host.removeEventListener('change',change);host.removeEventListener('click',click);host.removeEventListener('submit',submit);host.removeEventListener('toggle',toggle,true);if(widthRaf)window.cancelAnimationFrame(widthRaf);if(widthObserver)widthObserver.disconnect();};
+    return function(){disposed=true;host.removeEventListener('keydown',keydown);host.removeEventListener('focusin',focusin);host.removeEventListener('pointerdown',pointerdown,true);document.removeEventListener('pointerup',pointerup,true);document.removeEventListener('click',outside);host.removeEventListener('input',input);host.removeEventListener('change',change);host.removeEventListener('click',click);host.removeEventListener('submit',submit);host.removeEventListener('toggle',toggle,true);if(widthRaf)window.cancelAnimationFrame(widthRaf);if(widthObserver)widthObserver.disconnect();};
   }
-  H.m04Proposal={mount:mount,model:{loadingAllows:loadingAllows,create:create,customized:customized,optionsOpen:optionsOpen,problem:problem,select:select,qualify:qualify,start:start,settle:settle,history:history,listing:listing,isAmendment:isAmendment,isRedraw:isRedraw,isRuntimeUpdate:isRuntimeUpdate,isModelApproved:isModelApproved,modelSources:MODEL_SOURCES,redrawSources:REDRAW_SOURCES,runtimeSources:RUNTIME_SOURCES,amendmentPopupMetrics:amendmentPopupMetrics,promptOneLineHeight:promptOneLineHeight,promptCapHeight:promptCapHeight,amendmentDrafts:AMENDMENT_DRAFTS,modelStates:MODEL_STATES,isModelState:isModelState,modelName:modelName,modelNote:modelNote,modelAction:modelAction,pickHarness:pickHarness,pickOpenHarness:pickOpenHarness,catalogRows:catalogRows,listingFor:listingFor,reasons:REASONS}};
+  H.m04Proposal={mount:mount,model:{loadingAllows:loadingAllows,create:create,customized:customized,optionsOpen:optionsOpen,problem:problem,select:select,qualify:qualify,start:start,settle:settle,history:history,listing:listing,isAmendment:isAmendment,isRedraw:isRedraw,isRuntimeUpdate:isRuntimeUpdate,isModelApproved:isModelApproved,isRepositoryState:isRepositoryState,repositorySources:REPOSITORY_SOURCES,repositoryStates:REPOSITORY_STATES,recentRepos:RECENT_REPOS,repoName:repoName,setRepoPath:setRepoPath,checkRepoPath:checkRepoPath,repoAction:repoAction,modelSources:MODEL_SOURCES,redrawSources:REDRAW_SOURCES,runtimeSources:RUNTIME_SOURCES,amendmentPopupMetrics:amendmentPopupMetrics,promptOneLineHeight:promptOneLineHeight,promptCapHeight:promptCapHeight,amendmentDrafts:AMENDMENT_DRAFTS,modelStates:MODEL_STATES,isModelState:isModelState,modelName:modelName,modelNote:modelNote,modelAction:modelAction,pickHarness:pickHarness,pickOpenHarness:pickOpenHarness,catalogRows:catalogRows,listingFor:listingFor,reasons:REASONS}};
 })();

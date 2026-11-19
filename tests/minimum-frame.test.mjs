@@ -141,6 +141,8 @@ test('no existing template changed: the digests equal those of the base commit a
     'm04-proposal/centered-starting-plain', 'm04-proposal/runtime-updating',
     // The model picker states, the default marker included (approved 2026-11-15).
     ...['loading', 'unavailable', 'not-installed', 'truncated', 'empty', 'default'].map(x => `m04-proposal/model-${x}`),
+    // The provisional repository picker drafts (2026-11-19).
+    ...['empty', 'recents', 'hover', 'focus', 'invalid'].map(x => `m04-proposal/repository-${x}`),
     // The approved pending-launch states (2026-11-10) and the approved parallel-group lane states (2026-11-12).
     ...HFV2.pendingLaunchStates.map(([id]) => `task/pending-${id}`).filter(key => key in HFV2.templates),
     ...HFV2.parallelLaneStates.map(id => `parallel-group/${id}`).filter(key => key in HFV2.templates),
@@ -148,7 +150,7 @@ test('no existing template changed: the digests equal those of the base commit a
     ...(HFV2.gapStates || []),
     ...WORKFLOW_QUESTION_TEMPLATES
   ];
-  assert.equal(added.length, 22 + 20 + 24 + 2 + 6 + HFV2.gapStates.length + 8);
+  assert.equal(added.length, 22 + 20 + 24 + 2 + 6 + HFV2.gapStates.length + 8 + 5);
   const removed = ['m04-proposal/centered-starting'];
   for (const key of removed) { assert.ok(key in manifest && !(key in HFV2.templates), `${key} is removed with its retired state`); delete manifest[key]; }
   for (const key of added) assert.ok(key in HFV2.templates, `${key} is a template`);

@@ -110,6 +110,7 @@ These are canonical routes with no earlier name; they are not aliases or redirec
 | --- | --- |
 | `task/loading-known-title`, `task/loading-pane-known-title` | `task/loading` and `task/loading-pane`, with the title shown and the loaded sidebar; standalone, no pending pair: the approved states stay for a title that is not known yet |
 | `parallel-group/loading-known-title`, `parallel-group/loading-known-title-minimum`, `parallel-group/loading-two-known-title` | `parallel-group/loading`, `parallel-group/loading-minimum` and `parallel-group/loading-two`, with the group title shown |
+| `new-task/centered-repository-empty`, `new-task/centered-repository-recents`, `new-task/centered-repository-hover`, `new-task/centered-repository-focus`, `new-task/centered-repository-invalid` | `new-task/centered-ready` with the repository pill's popover open; standalone, no pending pair ([design record](decisions/repository-picker.md)) |
 
 ### Redraws awaiting approval
 

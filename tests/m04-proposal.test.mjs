@@ -59,7 +59,8 @@ test('amendment routes are separate and approved by the owner on 2026-11-06',()=
     assert.doesNotMatch(H.templates[key],/Approved/);
   }
 });
-const m04States=()=>H.registry.families.flatMap(f=>f.states.filter(s=>s.source&&s.source.renderer==='m04').map(s=>Object.assign({route:f.id+'/'+s.id},s)));
+// The provisional repository picker drafts are counted on their own (see the repository tests).
+const m04States=()=>H.registry.families.flatMap(f=>f.states.filter(s=>s.source&&s.source.renderer==='m04'&&!H.m04RepositoryStates.some(x=>x.id===s.source.mount)).map(s=>Object.assign({route:f.id+'/'+s.id},s)));
 test('registry lists 33 approved entry states: 11 baseline, six amendment, nine redraws, six model picker states and the runtime update on separate provenance',()=>{
   const registered=m04States();
   assert.equal(registered.length,33,'11 baseline states (history loading is retired), the six centered composer states, nine redraws, six model picker states and the runtime update');
@@ -521,4 +522,82 @@ test('the suggestion list drops below the combo when it passes the compose area 
 test('the app has no Use default model button; the fixture control is Clear the model',()=>{
   assert.ok(!m04Src().includes('Use default model'));
   assert.ok(m04Src().includes("button('Clear the model','model-default')"));
+});
+
+// Provisional repository picker states (2026-11-19).
+const REPO_ROUTES=['repository-empty','repository-recents','repository-hover','repository-focus','repository-invalid'];
+const RECENTS=J(M.recentRepos);
+test('repository states register as provisional amendments sourced from the ready composer',()=>{
+  assert.deepEqual(J(Object.keys(M.repositorySources)),REPO_ROUTES);
+  assert.deepEqual(Array.from(H.m04RepositoryStates,x=>x.id),REPO_ROUTES);
+  assert.ok(H.m04RepositoryStates.every(x=>x.status==='Provisional'&&x.approved===false));
+  for(const r of REPO_ROUTES){
+    assert.equal(M.repositorySources[r],'amendment-ready',r);
+    assert.equal(M.isRepositoryState(r),true);assert.equal(M.isAmendment(r),true);assert.equal(M.isRedraw(r),false);assert.equal(M.isModelApproved(r),false);
+    const st=regState('centered-'+r);
+    assert.equal(st.status,'provisional',r);assert.equal(st.approvalNote,'Provisional · not approved',r);assert.equal(st.approval,undefined,r);assert.equal(st.group,'Repository',r);
+  }
+  assert.equal(M.isRepositoryState('amendment-ready'),false);
+});
+test('repository drafts copy the ready fixture apart from the picker and repository fields',()=>{
+  const base=J(M.create('amendment-ready')),own=['route','picker','repository','repoPath','recents','repoTip','repoFocus','repoError','chipCap','repoPicker'];
+  for(const r of REPO_ROUTES){
+    const s=M.create(r),d=J(s);
+    assert.equal(s.picker,'repository');assert.equal(s.repoPicker,true);assert.equal(s.chipCap,'row');
+    for(const k of own){delete d[k];delete base[k];}
+    assert.equal(JSON.stringify(d),JSON.stringify(base),r);
+    Object.assign(base,J(M.create('amendment-ready')));
+  }
+  assert.equal(M.recentRepos.length,5);
+  let s=M.create('repository-empty');
+  assert.equal(s.repoPath,'');assert.equal(s.recents.length,0);assert.equal(s.repository,'Choose repository');assert.equal(M.problem(s),'Choose a repository to continue.');
+  for(const r of ['repository-recents','repository-hover','repository-focus']){
+    s=M.create(r);assert.equal(s.repoPath,RECENTS[0]);assert.equal(JSON.stringify(s.recents),JSON.stringify(RECENTS));assert.equal(s.repository,'HarflowMCP');assert.equal(M.problem(s),'');
+  }
+  assert.equal(M.create('repository-hover').repoTip,RECENTS[4]);assert.equal(M.create('repository-focus').repoFocus,RECENTS[1]);
+  s=M.create('repository-invalid');s.draft='Review';
+  assert.equal(s.repoPath,'/Users/me/Code/HarflowMPC');assert.equal(s.repoError,true);assert.equal(M.problem(s),'Choose an existing folder.');assert.equal(M.start(s),false);
+});
+test('approved entry states are unaffected by the repository fields',()=>{
+  const s=M.create('amendment-ready');assert.ok(!s.repoPicker);assert.equal(M.problem(s),'');
+});
+test('repoName takes the last path component and ignores trailing slashes',()=>{
+  assert.equal(M.repoName('/Users/me/Code/HarflowMCP'),'HarflowMCP');assert.equal(M.repoName('/Users/me/Code/HarflowMCP///'),'HarflowMCP');assert.equal(M.repoName(''),'');
+});
+test('setRepoPath updates the repository name and clears the error',()=>{
+  const s=M.create('repository-invalid');M.setRepoPath(s,'/a/b/Web/');assert.equal(s.repoPath,'/a/b/Web/');assert.equal(s.repository,'Web');assert.equal(s.repoError,false);
+  M.setRepoPath(s,'');assert.equal(s.repository,'Choose repository');
+});
+test('checkRepoPath flags only non-blank paths that are not existing fixture folders',()=>{
+  const s=M.create('repository-empty');
+  for(const p of ['','   ',...RECENTS,'/Users/me/Code/HarflowWeb','/Users/me/Code/HarflowWeb/',RECENTS[0]+'/']){s.repoPath=p;assert.equal(M.checkRepoPath(s),true,p);assert.equal(s.repoError,false,p);}
+  s.repoPath='/nowhere';assert.equal(M.checkRepoPath(s),false);assert.equal(s.repoError,true);
+  s.repoPath='';assert.equal(M.checkRepoPath(s),true);assert.equal(s.repoError,false);
+});
+test('repoAction drives the popover and the fixture controls',()=>{
+  let s=M.create('repository-invalid');s.repoFocus='x';s.repoTip='y';
+  assert.equal(M.repoAction(s,'repo-pick',{dataset:{path:RECENTS[1]}}),true);
+  assert.equal(s.repoPath,RECENTS[1]);assert.equal(s.repository,'HarflowDesign');assert.equal(s.repoError,false);assert.equal(s.repoFocus,'');assert.equal(s.repoTip,'');
+  M.repoAction(s,'repo-choose');assert.equal(s.repoPath,'/Users/me/Code/HarflowWeb');assert.equal(s.repository,'HarflowWeb');
+  s.repoPath='/nowhere';assert.equal(M.repoAction(s,'repo-check'),true);assert.equal(s.repoError,true);
+  M.repoAction(s,'repo-recents-none');assert.equal(s.recents.length,0);
+  M.repoAction(s,'repo-recents-five');assert.equal(JSON.stringify(s.recents),JSON.stringify(RECENTS));
+  M.repoAction(s,'repo-cap-240');assert.equal(s.chipCap,'240');M.repoAction(s,'repo-cap-row');assert.equal(s.chipCap,'row');
+  M.repoAction(s,'repo-tip-long');assert.equal(s.repoTip,RECENTS[4]);M.repoAction(s,'repo-tip-none');assert.equal(s.repoTip,'');
+  M.repoAction(s,'repo-recents-none');M.repoAction(s,'repo-tip-long');assert.equal(s.repoTip,'');
+  assert.equal(M.repoAction(s,'not-an-action'),false);
+  s=M.create('repository-recents');s.status='starting';
+  assert.equal(M.repoAction(s,'repo-pick',{dataset:{path:RECENTS[1]}}),true);assert.equal(s.repoPath,RECENTS[0]);
+  assert.equal(M.repoAction(s,'repo-choose'),true);assert.equal(s.repoPath,RECENTS[0]);
+});
+test('repository picker markup carries the full path, accessible names and the error wiring',()=>{
+  const src=m04Src();
+  assert.ok(src.includes(`title="'+esc(path)+'"`));assert.ok(src.includes(`aria-description="'+esc(path)+'"`));
+  assert.ok(src.includes(`aria-label="Recent repository '+esc(repoName(path))+'"`));assert.ok(src.includes(`aria-pressed="'+on+'"`));
+  assert.ok(src.includes(`(s.recents.length?'<div class="hd-m04-recents'`));
+  assert.ok(src.includes(`aria-invalid="true" aria-describedby="m04-repo-error"`));assert.ok(src.includes(`id="m04-repo-error">Choose an existing folder.</span>`));
+  const css=m04Css();
+  assert.ok(css.includes('.hd-m04-picker-menu.hd-m04-repo{width:360px'));
+  assert.ok(css.includes('.hd-m04-recents--cap240 .hd-m04-chip{max-width:256px}'));
+  assert.match(css,/\.hd-m04-chip\{[^}]*max-width:100%/);
 });

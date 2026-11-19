@@ -88,7 +88,7 @@ test('registry routes are unique and every descriptor resolves to a template, gu
     }
   }
   const mountIds = {
-    m04: [...HFV2.m04ProposalStates, ...HFV2.m04AmendmentStates, ...HFV2.m04RedrawStates, ...HFV2.m04ModelStates, ...HFV2.m04RuntimeStates].map(x => x.id),
+    m04: [...HFV2.m04ProposalStates, ...HFV2.m04AmendmentStates, ...HFV2.m04RedrawStates, ...HFV2.m04ModelStates, ...HFV2.m04RuntimeStates, ...HFV2.m04RepositoryStates].map(x => x.id),
     m05: HFV2.m05ProposalStates.map(x => x.id),
     messages: HFV2.messageStates.map(x => x.id),
     workflowQuestions: HFV2.findFamily('needs-you').states.filter(x => x.source?.renderer === 'workflowQuestions').map(x => x.id),
@@ -375,7 +375,7 @@ test('aliases resolve old routes without shadowing or chaining, and land on a li
   const entries = Object.entries(aliases);
   // The transcript, queued-message, workflow-question and workflow-naming renderers, the centered redraws and model picker states have new canonical routes with no earlier name.
   // The retired duplicate shell state and the retired starting state (replaced on 2026-11-09) had no earlier name either.
-  const redrawMounts = new Set([...HFV2.m04RedrawStates, ...HFV2.m04ModelStates, ...HFV2.m04RuntimeStates].map(x => x.id));
+  const redrawMounts = new Set([...HFV2.m04RedrawStates, ...HFV2.m04ModelStates, ...HFV2.m04RuntimeStates, ...HFV2.m04RepositoryStates].map(x => x.id));
   // The retired runtime card draft (2026-11-14) was a provisional route with no earlier name either.
   const nameless = new Set(['sidebar/centered-expanded', 'new-task/centered-starting', 'harness-runtime/installing-sidebar']);
   assert.equal(entries.length, descriptors.filter(d => d.renderer && !d.skeleton && d.renderer !== 'transcript' && d.renderer !== 'messages' && d.renderer !== 'workflowQuestions' && d.renderer !== 'workflowNaming' && !(d.renderer === 'm04' && redrawMounts.has(d.mount))).length + retired.filter(e => e.renderer && !nameless.has(e.route)).length, 'every renderer route has exactly one old route, retired ones included, except the redraws');
@@ -609,7 +609,7 @@ test('the decisions index lists every decision file and each screen has an ancho
     'approval.md', 'd2b-observation-approval.md', 'd2b-observation-proposal.md',
     'm04-centered-composer-proposal.md', 'm04-proposal.md',
     'm05-task-screen-approval.md', 'm05-task-screen-proposal.md',
-    'parallel-group-proposal.md', 'pending-launch-discovery.md', 'workflow-first-save-name.md', 'workflow-questions.md'
+    'parallel-group-proposal.md', 'pending-launch-discovery.md', 'repository-picker.md', 'workflow-first-save-name.md', 'workflow-questions.md'
   ].sort());
   for (const name of docs) assert.ok(index.includes(`(${name})`), `${name} is indexed`);
   for (const family of HFV2.registry.families.filter(f => f.area)) assert.ok(index.includes(`### \`${family.id}\``), `${family.id} has a decision section`);

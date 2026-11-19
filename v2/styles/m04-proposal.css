@@ -114,3 +114,25 @@
 /* A row the harness reports as its default carries a small neutral text tag after its label. */
 .hd-m04-combo__tag{flex:none;margin-left:auto;padding:0 6px;border-radius:var(--radius-full);background:var(--surface-hover);color:var(--text-secondary);font-size:11px;line-height:16px;font-weight:500}
 .hd-m04-model-note{display:flex;flex-direction:column;align-items:flex-start;gap:6px;margin:0;padding:0 4px;max-width:288px;box-sizing:border-box}
+/* Repository picker (provisional): HarflowMac's repository popover, 360 wide with 16 padding and 12 between rows. */
+.hd-m04-picker-menu.hd-m04-repo{width:360px;min-width:0;max-width:none;box-sizing:border-box;padding:16px;gap:12px;align-items:stretch}
+.hd-m04-repo__title{font-size:13px;line-height:18px;font-weight:600;color:var(--text)}
+.hd-m04-repo__field{display:flex;flex-direction:column;gap:4px}
+.hd-m04-repo__path{height:24px;font-size:13px}
+.hd-m04-repo__path.is-invalid{border-color:var(--danger)}
+.hd-m04-repo__error{color:var(--danger)}
+.hd-m04-status.is-error{color:var(--danger)}
+/* The Recent row: the label and one-line chips that wrap as whole chips, 6 apart. */
+.hd-m04-recents{display:flex;flex-wrap:wrap;align-items:center;gap:6px;min-width:0}
+.hd-m04-recents__label{font-size:12px;line-height:16px;color:var(--text-secondary)}
+.hd-m04-chip{position:relative;display:inline-flex;align-items:center;max-width:100%;min-width:0;box-sizing:border-box;padding:3px 8px;border:0;border-radius:var(--radius-full);background:var(--surface-hover);color:var(--text);font:inherit;font-size:12px;line-height:16px;cursor:pointer}
+.hd-m04-recents--cap240 .hd-m04-chip{max-width:256px}
+.hd-m04-chip.is-selected{background:var(--accent-subtle);color:var(--accent)}
+.hd-m04-chip.is-focus{outline:2px solid var(--accent);outline-offset:3px}
+.hd-m04-chip:disabled{cursor:default;opacity:.55}
+.hd-m04-chip__label{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* Where the frame leaves no room below the pill, the popover opens above it, as a native popover does. */
+.hd-m04-picker-menu.hd-m04-repo--above{top:auto;bottom:calc(100% + 6px)}
+/* Drawn stand-in for the native help tag of the hovered chip: below the chip, start-aligned; a long path wraps, as a help tag does. */
+.hd-m04-chip__tip{position:absolute;top:calc(100% + 6px);left:0;z-index:10;width:max-content;max-width:300px;white-space:normal;overflow-wrap:anywhere;pointer-events:none}
+.hd-m04-chip__tip--above{top:auto;bottom:calc(100% + 6px)}
