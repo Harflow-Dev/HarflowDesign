@@ -92,7 +92,8 @@ test('registry routes are unique and every descriptor resolves to a template, gu
     m05: HFV2.m05ProposalStates.map(x => x.id),
     messages: HFV2.messageStates.map(x => x.id),
     workflowQuestions: HFV2.findFamily('needs-you').states.filter(x => x.source?.renderer === 'workflowQuestions').map(x => x.id),
-    workflowNaming: HFV2.findFamily('workflow-editor').states.filter(x => x.source?.renderer === 'workflowNaming').map(x => x.id)
+    workflowNaming: HFV2.findFamily('workflow-editor').states.filter(x => x.source?.renderer === 'workflowNaming').map(x => x.id),
+    runQuestions: HFV2.findFamily('workflow-run').states.filter(x => x.source?.renderer === 'runQuestions').map(x => x.id)
   };
   for (const d of descriptors.filter(x => x.renderer)) {
     if (d.renderer === 'transcript') assert.equal(HFV2.d2bProposal.createState(d.mount).name, d.mount, `${d.route} is a known fixture`);
@@ -378,7 +379,7 @@ test('aliases resolve old routes without shadowing or chaining, and land on a li
   const redrawMounts = new Set([...HFV2.m04RedrawStates, ...HFV2.m04ModelStates, ...HFV2.m04RuntimeStates, ...HFV2.m04RepositoryStates].map(x => x.id));
   // The retired runtime card draft (2026-11-14) was a provisional route with no earlier name either.
   const nameless = new Set(['sidebar/centered-expanded', 'new-task/centered-starting', 'harness-runtime/installing-sidebar']);
-  assert.equal(entries.length, descriptors.filter(d => d.renderer && !d.skeleton && d.renderer !== 'transcript' && d.renderer !== 'messages' && d.renderer !== 'workflowQuestions' && d.renderer !== 'workflowNaming' && !(d.renderer === 'm04' && redrawMounts.has(d.mount))).length + retired.filter(e => e.renderer && !nameless.has(e.route)).length, 'every renderer route has exactly one old route, retired ones included, except the redraws');
+  assert.equal(entries.length, descriptors.filter(d => d.renderer && !d.skeleton && d.renderer !== 'transcript' && d.renderer !== 'messages' && d.renderer !== 'workflowQuestions' && d.renderer !== 'workflowNaming' && d.renderer !== 'runQuestions' && !(d.renderer === 'm04' && redrawMounts.has(d.mount))).length + retired.filter(e => e.renderer && !nameless.has(e.route)).length, 'every renderer route has exactly one old route, retired ones included, except the redraws');
   for (const [old, target] of entries) {
     assert.match(old, /^[a-z0-9-]+\/[a-z0-9-]+$/);
     assert.ok(!routeSet.has(old), `${old} is an alias and must not also be canonical`);
@@ -609,7 +610,8 @@ test('the decisions index lists every decision file and each screen has an ancho
     'approval.md', 'd2b-observation-approval.md', 'd2b-observation-proposal.md',
     'm04-centered-composer-proposal.md', 'm04-proposal.md',
     'm05-task-screen-approval.md', 'm05-task-screen-proposal.md',
-    'parallel-group-proposal.md', 'pending-launch-discovery.md', 'repository-picker.md', 'workflow-first-save-name.md', 'workflow-questions.md'
+    'parallel-group-proposal.md', 'pending-launch-discovery.md', 'repository-picker.md', 'workflow-first-save-name.md', 'workflow-questions.md',
+    'run-top-bar.md', 'parallel-run-pane.md', 'orchestrator-steering-held.md', 'run-message-locks.md'
   ].sort());
   for (const name of docs) assert.ok(index.includes(`(${name})`), `${name} is indexed`);
   for (const family of HFV2.registry.families.filter(f => f.area)) assert.ok(index.includes(`### \`${family.id}\``), `${family.id} has a decision section`);

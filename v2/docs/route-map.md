@@ -111,6 +111,12 @@ These are canonical routes with no earlier name; they are not aliases or redirec
 | --- | --- |
 | `task/loading-known-title`, `task/loading-pane-known-title` | `task/loading` and `task/loading-pane`, with the title shown and the loaded sidebar; standalone, no pending pair: the approved states stay for a title that is not known yet |
 | `parallel-group/loading-known-title`, `parallel-group/loading-known-title-minimum`, `parallel-group/loading-two-known-title` | `parallel-group/loading`, `parallel-group/loading-minimum` and `parallel-group/loading-two`, with the group title shown |
+| `workflow-run/topbar-started`, `topbar-counts`, `topbar-no-more`, `topbar-more-actions` | `workflow-run/graph-needs-you` with the run top bar changed ([record](decisions/run-top-bar.md)); standalone, no pending pair |
+| `workflow-run/topbar-more-actions-disabled` | `workflow-run/parallel` with a More actions menu open |
+| `workflow-run/parallel-run-pane` | `workflow-run/parallel` with the run pane ([record](decisions/parallel-run-pane.md)) |
+| `workflow-run/orchestrator-steering-stale`, `-expired`, `-dismissing`, `-dismissed` | `workflow-run/orchestrator-selected` with a held conversation ([record](decisions/orchestrator-steering-held.md)) |
+| `workflow-run/lanes-completed`, `lanes-cancelling`, `lanes-unsupported`, `cancelled-node-locked`, `cancelled-orchestrator-locked` | `workflow-run/parallel`, `on-demand` or `orchestrator-selected` with message locks ([record](decisions/run-message-locks.md)) |
+| each of the fifteen above plus `-minimum` | the same state at 1000 × 620 |
 
 ### Redraws awaiting approval
 

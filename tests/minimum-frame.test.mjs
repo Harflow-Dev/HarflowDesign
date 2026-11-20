@@ -30,6 +30,8 @@ const WORKFLOW_QUESTION_TEMPLATES = [
   'needs-you/workflow-question-answered', 'needs-you/workflow-question-answered-minimum',
   'needs-you/workflow-question-unavailable', 'needs-you/workflow-question-unavailable-minimum'
 ];
+// The first-save workflow name states and their minimum twins (approved 2026-11-17), drawn by their own renderer.
+const WORKFLOW_NAMING_TEMPLATES = ['empty', 'focused', 'named', 'long'].flatMap(x => [`workflow-editor/name-entry-${x}`, `workflow-editor/name-entry-${x}-minimum`]);
 
 const STATES = {
   'needs-you/waiting-minimum': { of: 'needs-you/waiting', fixes: ['sidebar'], title: 'Waiting · 1000 × 620' },
@@ -148,9 +150,13 @@ test('no existing template changed: the digests equal those of the base commit a
     ...HFV2.parallelLaneStates.map(id => `parallel-group/${id}`).filter(key => key in HFV2.templates),
     // The provisional workflow and capacity gap states (2026-11-15), each derived from an approved template.
     ...(HFV2.gapStates || []),
-    ...WORKFLOW_QUESTION_TEMPLATES
+    ...WORKFLOW_QUESTION_TEMPLATES,
+    ...WORKFLOW_NAMING_TEMPLATES,
+    // The provisional run question states and their minimum twins (2026-11-20), each derived from an approved template.
+    ...HFV2.runQuestionStates
   ];
-  assert.equal(added.length, 22 + 20 + 24 + 2 + 6 + HFV2.gapStates.length + 8 + 5);
+  assert.equal(added.length, 22 + 20 + 24 + 2 + 6 + HFV2.gapStates.length + 8 + 5 + 8 + 30);
+  assert.equal(HFV2.runQuestionStates.length, 30);
   const removed = ['m04-proposal/centered-starting'];
   for (const key of removed) { assert.ok(key in manifest && !(key in HFV2.templates), `${key} is removed with its retired state`); delete manifest[key]; }
   for (const key of added) assert.ok(key in HFV2.templates, `${key} is a template`);
@@ -380,7 +386,7 @@ test('every static template with a sidebar has the top, nav, sections and foot s
   // The provisional workflow and capacity gap states (2026-11-15) that keep the live sidebar; the ones drawn behind a dialog
   // mark the sidebar inert and are not counted here.
   for (const key of WORKFLOW_QUESTION_TEMPLATES) assert.ok(keys.includes(key), `${key} retains the shared sidebar structure`);
-  assert.equal(keys.length, 60 + 8 + HFV2.gapStates.filter(k => HFV2.templates[k].includes('<aside class="hd-sidebar"')).length);
+  assert.equal(keys.length, 60 + 8 + HFV2.gapStates.filter(k => HFV2.templates[k].includes('<aside class="hd-sidebar"')).length + WORKFLOW_NAMING_TEMPLATES.length + HFV2.runQuestionStates.length);
   const odd = [];
   for (const key of keys) {
     const kids = sidebarChildren(HFV2.templates[key]);

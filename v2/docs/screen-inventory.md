@@ -159,6 +159,10 @@ Approved by the owner on 2026-11-15. Each state derives from an approved templat
 
 Eight Needs you states approved by the owner on 2026-11-17 (“Approve these cards”) at design commit `9093e7515a7759f864c106a210649292209f87e4`: `workflow-question`, `workflow-question-offered`, `workflow-question-answered`, `workflow-question-unavailable`, each with a `-minimum` variant. They draw the free-text, usage-limit offered-only, competing winner/saved draft and withdrawn last-known source surfaces. [Source pin, approval, preview and remaining gaps](decisions/workflow-questions.md). Page-level loading and empty retain their existing references. No existing approved route is changed. Native implementation and generic stale/transport-unknown outcomes remain open.
 
+## Workflow run questions
+
+Fifteen provisional states of the workflow run, each with a `-minimum` twin, drawn on 2026-11-20 as answers to four open questions; none is approved. Run top bar: `workflow-run/topbar-started`, `topbar-counts`, `topbar-no-more`, `topbar-more-actions`, `topbar-more-actions-disabled` ([record](decisions/run-top-bar.md)). Parallel view: `parallel-run-pane` ([record](decisions/parallel-run-pane.md)). Messages and goal: `orchestrator-steering-stale`, `-expired`, `-dismissing`, `-dismissed` ([record](decisions/orchestrator-steering-held.md)). Run message locks: `lanes-completed`, `lanes-cancelling`, `cancelled-node-locked`, `cancelled-orchestrator-locked`, `lanes-unsupported` ([record](decisions/run-message-locks.md)). Each derives from an approved run state by exact swap; no approved state changed.
+
 ## Repository picker
 
 The five states `new-task/centered-repository-empty`, `centered-repository-recents`,

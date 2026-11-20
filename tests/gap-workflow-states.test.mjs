@@ -19,7 +19,7 @@ function load(skip) {
   return context.HFV2;
 }
 // The runtime without this script, to compare the base templates against.
-const WITHOUT = load([OWN, 'states-run-actions.js', 'states-capacity-gaps.js']);
+const WITHOUT = load([OWN, 'states-run-actions.js', 'states-capacity-gaps.js', 'states-workflow-naming.js', 'states-run-questions.js']);
 const HFV2 = load([]);
 
 // route: [group, base template, key strings the specimen must contain]

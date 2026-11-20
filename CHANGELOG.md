@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Draw fifteen provisional workflow run states of the `v2/` reference (each with a 1000 × 620 twin, not approved) as answers to four open questions: the run top bar (`workflow-run/topbar-started`, `topbar-counts`, `topbar-no-more`, `topbar-more-actions`, `topbar-more-actions-disabled`), the Parallel view run pane (`parallel-run-pane`), the held orchestrator conversation states (`orchestrator-steering-stale`, `-expired`, `-dismissing`, `-dismissed`) and the run message locks (`lanes-completed`, `lanes-cancelling`, `cancelled-node-locked`, `cancelled-orchestrator-locked`, `lanes-unsupported`). Four decision records in `v2/docs/decisions/`. No approved state changed. Test housekeeping: the workflow naming states and the new states are counted in the template manifest tests, and `tests/gap-workflow-states.test.mjs` skips the naming script in its baseline load.
+
 - Approve the five repository picker states of the `v2/` reference (owner, 2026-11-19) and switch the Recent chips to middle truncation, so names that share a prefix keep their different endings. Chips stay as wide as their row; a typed path is checked when the field is committed and at Start. The design record lists what the app must change.
 
 - Propose five repository picker states in the `v2/` reference, not approved: `new-task/centered-repository-empty`, `centered-repository-recents`, `centered-repository-hover`, `centered-repository-focus` and `centered-repository-invalid`. They draw the repository pill's popover with the path field, Choose folder… and the Recent chips, propose chips as wide as their row instead of 240 pt, and check a typed path when the field is committed.
