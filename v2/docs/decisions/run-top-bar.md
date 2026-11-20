@@ -1,6 +1,13 @@
 # Run top bar
 
-Status: **Provisional, not approved.** Drawn on 2026-11-20 on the owner's "yes please", relayed by the coordinator, as the answer to the first open question of the Mac workflow run receipt (HarflowMac `docs/migration-receipts/M09.md`, "Open owner questions"): the run top bar ("Step N of M" and its More actions menu). No owner decision exists; every state below is a drawing to decide on.
+Status: **Approved by the owner on 2026-11-20** (relayed by the coordinator; the owner viewed the drawings first), approved in the commit titled "Approve the workflow-run question states". The states were drawn in commit `eadd22d` as the answer to the first open question of the Mac workflow run receipt (HarflowMac `docs/migration-receipts/M09.md`, "Open owner questions"): the run top bar ("Step N of M" and its More actions menu).
+
+## Owner answers (2026-11-20)
+
+1. Counter form: the started line, "Run started {time} · {repo}".
+2. No More actions menu.
+3. The sidebar row shows the elapsed time, not "2/4".
+4. Moot: the counts were not chosen.
 
 ## Source
 
@@ -16,46 +23,33 @@ HarflowMCP at `5face8b` (read-only):
 - `workflow_monitor_controls.py:47-117`: `workflow-status --monitor-view` returns `monitor_controls`, each `{allowed, reason}`, for pause, resume, recover, revise_goal, skip_optional_review, additional_attempts and cancel. `workflow_goals.py:113,140` is the reason of Revise goal outside a paused or awaiting-input checkpoint: "Goal revision requires a paused or awaiting-input checkpoint".
 - `workflow-artifacts` returns artifact metadata. There is no export, delete-run, rerun or duplicate command.
 
-Approved v2 drawings this changes nothing in: `workflow-run/graph-needs-you` and `on-demand` draw "Step 2 of 4 · 06:31" and a More actions icon button (`v2/scripts/screens-workflow-run.js`), and the sidebar row meta "2/4". `parallel` and `recovery` already draw "Run started 02:00 · HarflowMCP" and no More button.
+Approved v2 drawings this decision supersedes as the app reference (not edited): `workflow-run/graph-needs-you` and `on-demand` draw "Step 2 of 4 · 06:31" and a More actions icon button (`v2/scripts/screens-workflow-run.js`), and the sidebar row meta "2/4". `parallel` and `recovery` already draw "Run started 02:00 · HarflowMCP" and no More button. The lock states derived from `on-demand` (for example `cancelled-node-locked`) and the held states derived from `orchestrator-selected` also keep "Step 2 of 4".
 
 ## States
 
-All routes support light and dark, and each has a `-minimum` twin at 1000 × 620 (group Minimum window). Every state is provisional.
+All routes support light and dark, and the approved state has a `-minimum` twin at 1000 × 620 (group Minimum window).
 
-| State | Route | Draws |
-| --- | --- | --- |
-| Run started line | `workflow-run/topbar-started` | `graph-needs-you` with "Run started 02:00 · HarflowMCP" in place of "Step 2 of 4 · 06:31", and the elapsed time in the sidebar row. More actions stays an icon button. |
-| Finished and active counts | `workflow-run/topbar-counts` | The same, reading "Run started 02:00 · 4 finished · 1 active": the engine's settled and active counts, with no total. |
-| No More actions | `workflow-run/topbar-no-more` | The started line and the Mac's header: no More actions button. |
-| More actions menu | `workflow-run/topbar-more-actions` | The menu open on the run that needs you: Revise goal… (enabled), a separator, Copy run ID. Pause and Cancel run stay buttons. |
-| More actions, revise goal unavailable | `workflow-run/topbar-more-actions-disabled` | The menu open on a running run (the Parallel view top bar, which gains a More button for this drawing): Revise goal… disabled with the engine's reason under it. |
+| State | Route | Status | Draws |
+| --- | --- | --- | --- |
+| Run started line | `workflow-run/topbar-no-more` | Approved 2026-11-20 | `graph-needs-you` with "Run started 02:00 · HarflowMCP" in place of "Step 2 of 4 · 06:31", Pause and Cancel run, no More actions button, and the elapsed time in the sidebar row. |
 
-The counts come from the executions of the Graph view fixture (Scan lockfiles, Draft upgrade plan and the two Security reviewer calls are finished; Open pull request is active). Menu wording other than Revise goal… is design wording; Copy run ID is a client-only action. The elapsed time in the sidebar row is the form the other running rows use.
+## Not chosen
 
-## Recommendations
+Retired on 2026-11-20; each route and its `-minimum` twin opens `workflow-run/topbar-no-more` (or its twin) through `v2/scripts/supersessions.js`, and the old drawings stay in Git at `eadd22d`:
 
-1. **The started line** (`topbar-started`). It is what the app draws, it is true for every run and it needs no engine data. The approved "Step N of M" promises a total the engine cannot give.
-2. **Counts are an alternative** (`topbar-counts`) if the owner wants progress at a glance. They are real engine numbers but carry no total, and "finished" includes failed and cancelled executions, so the wording may need another word.
-3. **Keep a More actions menu only if it carries something the buttons do not.** On the engine's contract the run-level actions are Revise goal (already reachable from the goal block of the pane) and nothing else; there is no export, delete-run, rerun or duplicate. The menu drawn is therefore thin. The Mac has none (`topbar-no-more`).
-4. No Show artifacts item is drawn: no artifacts surface is approved for a workflow run.
-
-## Owner questions
-
-1. Counter form: the started line, or the counts, or the approved "Step N of M" kept as a design intent with the app computing nothing?
-2. Keep a run More actions menu at all (the Mac has none), and if so which items? Revise goal… in the menu duplicates the approved pane entry point (`workflow-run/revise-goal`). Is Copy run ID wanted?
-3. The sidebar row meta: elapsed time (drawn) instead of "2/4".
-4. Should "finished" in the counts include failed and cancelled executions, or is another word needed?
+- `workflow-run/topbar-started`: the started line with a More actions icon button kept. The owner chose no menu.
+- `workflow-run/topbar-counts`: "Run started 02:00 · 4 finished · 1 active". The owner chose the started line.
+- `workflow-run/topbar-more-actions` and `workflow-run/topbar-more-actions-disabled`: the menu open with Revise goal… and Copy run ID. The owner chose no menu; Revise goal stays reachable from the goal block of the run pane.
 
 ## What the app would change
 
-- Started line: nothing; the Mac already draws it. The v2 reference would replace "Step 2 of 4 · 06:31" and "2/4" in the approved states once the owner decides.
-- Counts: show `progress.settled` and `progress.active` of `workflow-status` after the started line.
-- More actions menu: add the menu to the run header with the chosen items, reading enablement and reasons from `monitor_controls` (Revise goal: `revise_goal.allowed` and `.reason`).
-
-Not changed now: the approved states that draw "Step 2 of 4" or "2/4" are left as they are: `workflow-run/graph-needs-you`, `on-demand`, their sidebar rows, the derived states of the group Messages and goal, and the drawings derived from them.
+- Nothing in the app for the top bar: the Mac already draws the started line and has no run menu, and its sidebar row already shows elapsed time.
+- The change is to the approved v2 references. The approved "Step 2 of 4" top bars (`workflow-run/graph-needs-you`, `on-demand` and the states derived from them) and the "2/4" sidebar meta are superseded as the reference for the app by this decision. Those approved templates are not edited in this change; they stay as drawn until they are redrawn, and the states of the group Messages and goal derived from them keep their step count. The states drawn on this decision (`topbar-no-more`, the run pane states) use the decided top bar.
+- Engine: `progress {executions, active, settled}` stays unused for the top bar; no total exists to draw.
 
 ## Files
 
-- `v2/scripts/states-run-questions.js`: the states, derived from the approved templates by exact swap.
-- `v2/styles/run-questions.css`: the menu anchor and the minimum window rules.
+- `v2/scripts/states-run-questions.js`: the state, derived from the approved template by exact swap.
+- `v2/scripts/supersessions.js`: the eight retired routes.
+- `v2/styles/run-questions.css`
 - `tests/run-questions.test.mjs`

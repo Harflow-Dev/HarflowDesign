@@ -1,12 +1,14 @@
-/* Workflow run drawings that answer four open questions about the Mac app: the run top bar, the right pane of the
-   Parallel view, the held states of an orchestrator conversation, and the message locks of settled and unsupported runs.
-   Provisional: the owner has not approved any of them. Each state is an approved workflow run template (graph-needs-you,
+/* Workflow run drawings that answer four questions about the Mac app: the run top bar, the right pane of the Parallel
+   and Graph views, the held states of an orchestrator conversation, and the message locks of settled and unsupported
+   runs. The owner decided the four questions on 2026-11-20 and approved the drawings, including the run pane toggle
+   (new behaviour the owner chose); only the refused-command state, drawn on those answers, is provisional until the
+   owner has seen it. Each state is an approved workflow run template (graph-needs-you,
    on-demand, orchestrator-selected or parallel) with only the blocks it changes replaced, by exact swap, so a changed
    base throws instead of silently drawing another screen. Every state also has a 1000 × 620 twin, rendered here (the
    same self-rendered form as the workflow question states) with the existing sidebar, canvas, lanes and top bar meta
    treatments of the minimum window. Templates are computed on first use, so the base screens and the lane parts load in
-   any order. Messages, reasons and the paused-run wording are fixture or design text and are named as such in each
-   guide. Decision records: docs/decisions/run-top-bar.md, parallel-run-pane.md, orchestrator-steering-held.md,
+   any order. Messages, reasons and the held-conversation wording are fixture or design text and are named as such in
+   each guide. Decision records: docs/decisions/run-top-bar.md, parallel-run-pane.md, orchestrator-steering-held.md,
    run-message-locks.md. Display only: no engine calls. */
 (function () {
   'use strict';
@@ -21,17 +23,16 @@
   var ORCHESTRATOR = FAMILY + '/orchestrator-selected';
   var PARALLEL = FAMILY + '/parallel';
   var NOTE = 'Provisional · not approved';
+  // The owner's decisions of 2026-11-20 (relayed by the coordinator after the drawings were seen), named as the records are.
+  var DECIDED = '2026-11-20';
+  function approval(decision) { return { by: 'the owner', date: DECIDED, decision: decision }; }
+  var A_TOPBAR = approval('Run top bar'), A_PANE = approval('Run pane'), A_STEER = approval('Orchestrator conversation'), A_LOCKS = approval('Run message locks');
 
-  var G_TOPBAR = 'Run top bar', G_PANE = 'Parallel view', G_STEER = 'Messages and goal', G_LOCKS = 'Run message locks', G_MIN = 'Minimum window';
+  var G_TOPBAR = 'Run top bar', G_PANE = 'Run pane', G_STEER = 'Messages and goal', G_LOCKS = 'Run message locks', G_MIN = 'Minimum window';
 
   // ---- Fixture and design text -----------------------------------------------------------------------------------
   var STARTED = 'Run started 02:00 · HarflowMCP';
-  // Derived from the executions of the Graph view fixture: Scan lockfiles, Draft upgrade plan and the two calls of the
-  // Security reviewer are finished; Open pull request is the active one.
-  var COUNTS = 'Run started 02:00 · 4 finished · 1 active';
   var ELAPSED = '06:31';
-  // The engine text of the monitor control for Revise goal while the run neither is paused nor awaits input.
-  var REVISE_REASON = 'Goal revision requires a paused or awaiting-input checkpoint';
   // The engine text of the monitor control for Resume while no actionable checkpoint is recorded (trimmed at the clause).
   var RESUME_REASON = 'No qualified actionable checkpoint is available; refresh the workflow.';
   var EARLIER_ASK = 'Skip the docs checker for this run; the docs did not change.';
@@ -39,6 +40,10 @@
   var OPEN_ASK = 'Run the security reviewer again after the pull request opens.';
   var OPEN_ANSWER = 'I will call Security reviewer again once the pull request is open.';
   var QUEUED_TEXT = 'Also list which advisories have a fixed version.';
+  // Fixture text for the engine's refusal reason of a command the orchestrator could not carry out (role_command_invalid).
+  var REFUSED_ASK = 'Replace the Security reviewer with a custom checker.';
+  var REFUSED_REASON = 'The request could not be applied to the current run.';
+  var REFUSED_CAPTION = 'The orchestrator couldn\'t carry out that request. Reply to continue.';
   var GOAL = 'Upgrade the three vulnerable dependencies with all tests passing, and open one pull request with the lockfile changes.';
   var REQUEST = 'Audit the dependencies of HarflowMCP, upgrade the vulnerable ones with all tests passing, and open one pull request.';
   var TECHNICAL = 'Scan both lockfiles in parallel, then draft one pull request with the upgrades.';
@@ -51,6 +56,7 @@
     running: '<span class="hd-glyph hd-glyph--running" aria-label="Running"></span>',
     done: '<span class="hd-glyph hd-glyph--done" aria-label="Done"><span class="hd-i hd-i--sm hd-i-check" aria-hidden="true"></span></span>',
     cancelled: '<span class="hd-glyph hd-glyph--cancelled" aria-label="Cancelled"><span class="hd-i hd-i--sm hd-i-stop" aria-hidden="true"></span></span>',
+    attention: '<span class="hd-glyph hd-glyph--attention" aria-label="Needs you"><span class="hd-i hd-i--sm hd-i-hand" aria-hidden="true"></span></span>',
     paused: '<span class="hd-glyph" aria-label="Paused"><span class="hd-i hd-i--sm hd-i-pause" aria-hidden="true"></span></span>',
     pending: '<span class="hd-glyph hd-glyph--queued" aria-label="Pending"></span>'
   };
@@ -111,18 +117,13 @@
     return swap(html, ROW_NEEDS_YOU, G.paused + '<span class="hd-task-row__title">Nightly dependency audit</span>', base);
   }
 
-  // ---- Menu pieces -----------------------------------------------------------------------------------------------
-  var SEP = '<div class="hd-menu__sep" role="separator"></div>';
-  function menuItem(label, o) {
-    o = o || {};
-    var attrs = ' type="button"' + (o.disabled ? ' aria-disabled="true" aria-describedby="' + o.id + '-reason"' : '');
-    return '<button class="hd-menu__item' + (o.disabled ? ' hd-rq-menu__item--off' : '') + '" role="menuitem"' + attrs + '>' + (o.icon ? icon(o.icon) : '') +
-      '<span class="hd-menu__item-body"><span class="hd-rq-menu__label">' + label + '</span>' +
-      (o.hint ? '<span class="hd-menu__item-hint hd-rq-menu__hint" id="' + o.id + '-reason">' + esc(o.hint) + '</span>' : '') + '</span></button>';
-  }
-  function moreMenu(items) {
-    return '<span class="hd-rq-anchor"><button type="button" class="hd-btn hd-btn--icon hd-btn--sm" aria-label="More actions" aria-haspopup="menu" aria-expanded="true"><span class="hd-i hd-i-more" aria-hidden="true"></span></button>' +
-      '<div class="hd-menu hd-rq-menu" role="menu" aria-label="More actions">' + items + '</div></span>';
+  // ---- Right pane toggle -----------------------------------------------------------------------------------------
+  // The Mac run view has no toggle for its run sidebar (its split keeps a 220 point minimum); the task screen's right pane
+  // toggle is the one the app draws (TaskDetailToolbar.swift, sidebar.right icon, label and help "Hide right pane" /
+  // "Show right pane"). It sits at the right end of the top bar, where the task screen draws it.
+  function paneToggle(open) {
+    var label = open ? 'Hide right pane' : 'Show right pane';
+    return '<button type="button" class="hd-btn hd-btn--icon hd-btn--sm hd-rq-toggle' + (open ? ' is-active' : '') + '" aria-pressed="' + (open ? 'true' : 'false') + '" aria-label="' + label + '" title="' + label + '"><span class="hd-i hd-i-panel-right" aria-hidden="true"></span></button>';
   }
 
   // ---- Pane pieces -----------------------------------------------------------------------------------------------
@@ -159,8 +160,9 @@
   function orchestratorPane(lead, parts, comp) {
     return { label: 'Selected orchestrator', title: 'Orchestrator', caption: 'Always present', body: lead + conversation(parts), composer: comp };
   }
-  function heldNote(text, withDismiss) {
-    return '<div class="hd-rq-note" role="status"><p>' + text + '</p>' + (withDismiss ? '<div class="hd-row" style="gap:var(--space-2);"><button type="button" class="hd-btn hd-btn--ghost hd-btn--sm">Dismiss</button></div>' : '') + '</div>';
+  var DISMISS_ROW = '<div class="hd-row" style="gap:var(--space-2);"><button type="button" class="hd-btn hd-btn--ghost hd-btn--sm">Dismiss</button></div>';
+  function heldNote(text, withDismiss, extra) {
+    return '<div class="hd-rq-note" role="status"><p>' + text + '</p>' + (extra || '') + (withDismiss ? DISMISS_ROW : '') + '</div>';
   }
 
   // ---- Lane pieces -----------------------------------------------------------------------------------------------
@@ -210,106 +212,109 @@
   // ---- Run top bar -----------------------------------------------------------------------------------------------
   function started(html, base) { return rowMeta(metaLine(html, STARTED, base), ELAPSED, base); }
   def({
-    id: 'topbar-started', base: NEEDS_YOU, kind: 'graph', group: G_TOPBAR, record: 'run-top-bar',
-    title: 'Run top bar · Run started line',
-    description: 'The top bar of a run that needs you reads Run started 02:00 · HarflowMCP, as the app does, instead of a step count. More actions stays as an icon button.',
-    build: function (html, base) { return started(html, base); },
-    guide: 'The Graph view of a run that needs a person, with the step count replaced by the line the Mac draws for every run: when it started and the repository. The sidebar row shows the elapsed time the other running rows show. The engine reports no step number or total, so none is drawn. Derived from <a href="#workflow-run/graph-needs-you">Graph, needs you</a>.'
-  });
-  def({
-    id: 'topbar-counts', base: NEEDS_YOU, kind: 'graph', group: G_TOPBAR, record: 'run-top-bar',
-    title: 'Run top bar · Finished and active counts',
-    description: 'The top bar reads Run started 02:00 · 4 finished · 1 active: the engine counts, with no total, because the engine cannot know one.',
-    build: function (html, base) { return rowMeta(metaLine(html, COUNTS, base), ELAPSED, base); },
-    guide: 'An alternative to the started line: the counts the engine reports (settled and active executions). There is no total, because on-demand nodes, retries and orchestrator-chosen branches make the final count unknown. The numbers come from the fixture of the Graph view (the on-demand calls included); finished includes failed and cancelled executions, which is a wording question for the owner. Derived from <a href="#workflow-run/graph-needs-you">Graph, needs you</a>.'
-  });
-  def({
     id: 'topbar-no-more', base: NEEDS_YOU, kind: 'graph', group: G_TOPBAR, record: 'run-top-bar',
-    title: 'Run top bar · No More actions',
-    description: 'The run top bar as the Mac draws it: the started line, Pause and Cancel run, and no More actions button.',
+    title: 'Run top bar · Run started line',
+    description: 'The run top bar as the Mac draws it: Run started 02:00 · HarflowMCP, Pause and Cancel run, and no More actions button. The sidebar row shows the elapsed time.',
     build: function (html, base) { return swap(started(html, base), MORE_BUTTON, '', base); },
-    guide: 'The Mac run header has no More actions menu: it offers Open parent, the Graph and Parallel switch, Pause and Cancel run. This drawing removes the icon button from the approved Graph view so the owner can compare it. Derived from <a href="#workflow-run/graph-needs-you">Graph, needs you</a>.'
-  });
-  def({
-    id: 'topbar-more-actions', base: NEEDS_YOU, kind: 'graph', group: G_TOPBAR, record: 'run-top-bar',
-    title: 'Run top bar · More actions menu',
-    description: 'The More actions menu open on a run that needs you: Revise goal is available, Copy run ID is a client action. Pause and Cancel run stay buttons.',
-    build: function (html, base) {
-      html = started(html, base);
-      var items = menuItem('Revise goal…', { icon: 'target', id: 'rq-revise' }) + SEP + menuItem('Copy run ID', { icon: 'copy', id: 'rq-copy' });
-      return swap(html, MORE_BUTTON, moreMenu(items), base);
-    },
-    guide: 'The menu holds the run-level actions the engine exposes that are not already buttons. Revise goal is enabled because the run awaits input (the engine control is allowed). Copy run ID is a client-only action and is design wording. A Show artifacts item is not drawn: no artifacts surface is approved for a workflow run. The same Revise goal entry point exists in the goal block of the pane. Derived from <a href="#workflow-run/graph-needs-you">Graph, needs you</a>.'
-  });
-  def({
-    id: 'topbar-more-actions-disabled', base: PARALLEL, kind: 'lanes', group: G_TOPBAR, record: 'run-top-bar',
-    title: 'Run top bar · More actions, revise goal unavailable',
-    description: 'The More actions menu open on a running run: Revise goal is disabled and its reason, the engine text, is shown under it.',
-    build: function (html, base) {
-      var items = menuItem('Revise goal…', { icon: 'target', id: 'rq-revise', disabled: true, hint: REVISE_REASON }) + SEP + menuItem('Copy run ID', { icon: 'copy', id: 'rq-copy' });
-      html = rowMeta(html, ELAPSED, base);
-      return swap(html, CANCEL_SECONDARY, CANCEL_SECONDARY + moreMenu(items), base);
-    },
-    guide: 'The Parallel view top bar of a running run, which gains a More actions button for this drawing (the approved state has none). The reason is the text the engine returns for the Revise goal control of a run that is neither paused nor awaiting input, and it is fixture text here. Derived from <a href="#workflow-run/parallel">Parallel view</a>.'
+    guide: 'The Graph view of a run that needs a person, with the top bar the Mac draws for every run: the started line (when it started and the repository) instead of a step count, the Graph and Parallel switch, Pause and Cancel run, and no More actions menu. The sidebar row shows the elapsed time the other running rows show. The engine reports no step number or total, so none is drawn. Derived from <a href="#workflow-run/graph-needs-you">Graph, needs you</a>; the approved states that draw "Step 2 of 4" and "2/4" are no longer the reference for the app.'
   });
 
-  // ---- Parallel view right pane ------------------------------------------------------------------------------------
+  // ---- Run pane ----------------------------------------------------------------------------------------------------
   function disclosure(label, inner) {
     return '<details class="hd-rq-disc"><summary>' + icon('chevron-right') + label + '</summary>' + inner + '</details>';
   }
   function planRow(glyph, text) { return '<li>' + glyph + '<span>' + text + '</span></li>'; }
+  // The run pane in the Mac order: Original request, goal, run plan, Technical plan. The plan list is design wording.
+  function runPaneOptions(rows) {
+    var goal = '<div style="display:flex;flex-direction:column;gap:var(--space-2);padding-bottom:var(--space-3);border-bottom:1px solid var(--border);"><span class="hd-inspector__label">GOAL</span><p class="body" style="margin:0;">' + esc(GOAL) + '</p>' +
+      '<div style="display:flex;align-items:center;gap:var(--space-2);font-size:13px;color:var(--text-secondary);"><span class="hd-i hd-i--sm hd-i-target" aria-hidden="true"></span><span>Assessment: in progress</span></div>' +
+      '<a href="#workflow-run/revise-goal" style="font-size:13px;color:var(--accent);text-decoration:none;">Revise goal…</a></div>';
+    var request = disclosure('Original request', '<p class="caption hd-faint">Complete stored request</p><p class="hd-rq-quote">' + esc(REQUEST) + '</p>');
+    var plan = '<div style="display:flex;flex-direction:column;gap:var(--space-2);"><span class="hd-inspector__label">RUN PLAN</span><ul class="hd-rq-plan">' + rows + '</ul></div>';
+    var technical = disclosure('Technical plan', '<p class="caption hd-faint">' + esc(TECHNICAL) + '</p>');
+    return { label: 'Run', title: 'Run', caption: 'Overview', close: false, width: 288, body: request + goal + plan + technical };
+  }
+  var LANE_PLAN = planRow(G.done, 'Scan Python deps') + planRow(G.running, 'Scan npm deps') + planRow(G.pending, 'Draft upgrade PR');
+  var GRAPH_PLAN = planRow(G.done, 'Scan lockfiles') + planRow(G.done, 'Draft upgrade plan') + planRow(G.attention, 'Open pull request') + planRow(G.pending, 'Notify');
+  // The Parallel view with the pane beside the lanes (which shrink and scroll), or full width when the pane is hidden. Both
+  // carry the toggle and the elapsed time of the decided top bar.
+  function parallelBase(html, open, base) {
+    html = rowMeta(html, ELAPSED, base);
+    html = swap(html, CANCEL_SECONDARY, CANCEL_SECONDARY + paneToggle(open), base);
+    if (!open) return html;
+    var from = html.indexOf('<div class="hd-lanes">');
+    var to = html.indexOf('\n  </main>', from);
+    if (from < 0 || to < 0) throw new Error('Lanes not found in ' + base);
+    return html.slice(0, from) + '<div class="hd-split"><div class="hd-rq-lanes">' + html.slice(from, to) + '</div>' + pane(runPaneOptions(LANE_PLAN)) + '</div>' + html.slice(to);
+  }
   def({
     id: 'parallel-run-pane', base: PARALLEL, kind: 'lanes', group: G_PANE, record: 'parallel-run-pane',
     title: 'Parallel view · Run pane',
-    description: 'The Parallel view with the run pane on the right, as the Mac shows it: the goal, the original request, the run plan and the technical plan. The lanes scroll beside it.',
+    description: 'The Parallel view with the run pane on the right, as the Mac shows it: the original request, the goal, the run plan and the technical plan. The lanes scroll beside it, and a toggle in the top bar hides the pane.',
+    build: function (html, base) { return parallelBase(html, true, base); },
+    guide: 'The Mac shows its default run sidebar beside the Parallel view. The pane is 288 wide, the Mac default sidebar width, and holds the blocks of a root run with no caller approvals, in the Mac order: an Original request disclosure (collapsed; its loading and unavailable forms are the approved Original request ones), the goal block (as drawn in the Graph view), the run plan and a collapsed Technical plan disclosure. The toggle at the right end of the top bar is new behaviour: the Mac run view cannot hide its sidebar today, and the owner chose to add the toggle on 2026-11-20. It reuses the control and labels of the Mac task screen\'s right pane toggle (icon <code>sidebar.right</code>, "Hide right pane" while open, <code>TaskDetailToolbar.swift:178-185</code>). The plan list and its look are design wording; the child-run banner, Open owning orchestrator, child links and the caller approvals panel are not drawn because this run has none. The elapsed time replaces the step count in the sidebar row. Derived from <a href="#workflow-run/parallel">Parallel view</a>; the pane hidden is <a href="#workflow-run/parallel-run-pane-collapsed">Parallel view · Run pane hidden</a>.'
+  });
+  def({
+    id: 'parallel-run-pane-collapsed', base: PARALLEL, kind: 'lanes', group: G_PANE, record: 'parallel-run-pane',
+    title: 'Parallel view · Run pane hidden',
+    description: 'The Parallel view with the run pane hidden: the lanes use the full width and the toggle in the top bar reads Show right pane.',
+    build: function (html, base) { return parallelBase(html, false, base); },
+    guide: 'The run pane hidden with the toggle: the lanes take the full width, and the toggle is in its off state with the label Show right pane. This is the approved Parallel view with the toggle added and the elapsed time in the sidebar row. Derived from <a href="#workflow-run/parallel">Parallel view</a>.'
+  });
+  def({
+    id: 'graph-no-selection', base: NEEDS_YOU, kind: 'graph', group: G_PANE, record: 'parallel-run-pane', run: true,
+    title: 'Graph view · Run pane, no step selected',
+    description: 'The Graph view with no step selected: the same run pane as the Parallel view at 288 wide, the started line in the top bar and the toggle that hides the pane.',
     build: function (html, base) {
-      var goal = '<div style="display:flex;flex-direction:column;gap:var(--space-2);padding-bottom:var(--space-3);border-bottom:1px solid var(--border);"><span class="hd-inspector__label">GOAL</span><p class="body" style="margin:0;">' + esc(GOAL) + '</p>' +
-        '<div style="display:flex;align-items:center;gap:var(--space-2);font-size:13px;color:var(--text-secondary);"><span class="hd-i hd-i--sm hd-i-target" aria-hidden="true"></span><span>Assessment: in progress</span></div>' +
-        '<a href="#workflow-run/revise-goal" style="font-size:13px;color:var(--accent);text-decoration:none;">Revise goal…</a></div>';
-      var request = disclosure('Original request', '<p class="caption hd-faint">Complete stored request</p><p class="hd-rq-quote">' + esc(REQUEST) + '</p>');
-      var plan = '<div style="display:flex;flex-direction:column;gap:var(--space-2);"><span class="hd-inspector__label">RUN PLAN</span><ul class="hd-rq-plan">' +
-        planRow(G.done, 'Scan Python deps') + planRow(G.running, 'Scan npm deps') + planRow(G.pending, 'Draft upgrade PR') + '</ul></div>';
-      var technical = disclosure('Technical plan', '<p class="caption hd-faint">' + esc(TECHNICAL) + '</p>');
-      var side = pane({ label: 'Run', title: 'Run', caption: 'Overview', close: false, width: 288, body: request + goal + plan + technical });
-      var from = html.indexOf('<div class="hd-lanes">');
-      var to = html.indexOf('\n  </main>', from);
-      if (from < 0 || to < 0) throw new Error('Lanes not found in ' + base);
-      return html.slice(0, from) + '<div class="hd-split"><div class="hd-rq-lanes">' + html.slice(from, to) + '</div>' + side + '</div>' + html.slice(to);
+      html = swap(started(html, base), MORE_BUTTON, paneToggle(true), base);
+      html = swap(html, 'hd-node hd-node--waiting is-selected"', 'hd-node hd-node--waiting"', base);
+      return replacePane(html, base, runPaneOptions(GRAPH_PLAN));
     },
-    guide: 'The Mac shows its default run sidebar beside the Parallel view; the approved Parallel view has none. The pane is 288 wide, the Mac default sidebar width, and holds the blocks of a root run with no caller approvals, in the Mac order: an Original request disclosure (collapsed; its loading and unavailable forms are the approved Original request ones), the goal block (as drawn in the Graph view), the run plan and a collapsed Technical plan disclosure. The plan list and its look are design wording; the child-run banner, Open owning orchestrator, child links and the caller approvals panel are not drawn because this run has none. The same pane would be the Graph view with no node selected, which has no drawing. Derived from <a href="#workflow-run/parallel">Parallel view</a>; that state, without a pane, stays the alternative.'
+    guide: 'The Mac shows the default run sidebar in the Graph view while no node is selected (and the run is not on a recovery checkpoint), at the same 288 width as in the Parallel view. This drawing deselects the step of Graph, needs you and shows that pane: the original request, the goal, the run plan (the four steps of the graph) and the technical plan. The top bar is the decided one: the started line, no More actions, and the pane toggle. Selecting a step shows its own pane as <a href="#workflow-run/graph-needs-you">Graph, needs you</a> draws it, and a paused run on a checkpoint keeps its <a href="#workflow-run/recovery">recovery pane</a>. The plan list is design wording. Derived from <a href="#workflow-run/graph-needs-you">Graph, needs you</a>.'
   });
 
   // ---- Orchestrator conversation: held states -----------------------------------------------------------------------
-  // O is the approved orchestrator-selected state; it already has the orchestrator selected, so only the run status changes.
+  // O is the approved orchestrator-selected state; it already has the orchestrator selected. A held conversation keeps the
+  // run waiting for the person, so the top bar and the sidebar row stay as that state draws them (badge Needs you).
   function paused(html, base, withPause) {
     html = swap(html, BADGE_ATTENTION, BADGE_PAUSED, base);
     html = swap(html, PAUSE, withPause || '', base);
     return pausedRow(html, base);
   }
   var NEXT_NEW = 'Your next message starts a new conversation.';
-  var PAUSED_STATUS = status(G.paused, 'The run is paused.');
+  var WAITING_STATUS = status(G.attention, 'The run is waiting for you.');
   def({
     id: 'orchestrator-steering-stale', base: ORCHESTRATOR, kind: 'graph', group: G_STEER, record: 'orchestrator-steering-held',
     title: 'Orchestrator conversation stale',
-    description: 'The run moved on since the conversation started. The run is paused, a note says so, Dismiss closes the conversation, and the composer stays open to start a new one.',
+    description: 'The run moved on since the conversation started. The run needs you, a note says so, Dismiss closes the conversation, and the composer stays open to start a new one.',
     build: function (html, base) {
-      html = paused(html, base);
       var comp = Object.assign({}, ORCH_COMPOSER, { note: NEXT_NEW });
-      return replacePane(html, base, orchestratorPane(PAUSED_STATUS, HELD.concat([heldNote('The run moved on since this conversation started.', true)]), composer(comp)));
+      return replacePane(html, base, orchestratorPane(WAITING_STATUS, HELD.concat([heldNote('The run moved on since this conversation started.', true)]), composer(comp)));
     },
-    guide: 'The orchestrator pane while an episode is stale: its target changed (the engine marks the superseded episode stale and keeps the hold), so the run is paused with the attention reason that the target changed. The engine accepts a message only to retarget, which starts a new conversation, so the composer stays open and a caption says so; Dismiss is the one action. All wording is design wording; the messages are fixture text. Derived from <a href="#workflow-run/orchestrator-selected">Orchestrator selected</a>.'
+    guide: 'The orchestrator pane while an episode is stale: its target changed (the engine marks the superseded episode stale and keeps the hold). Every held conversation draws the Needs you badge, so the top bar and the sidebar row are the ones of the other held states, with Pause and Cancel run. The engine accepts a message only to retarget, which starts a new conversation, so the composer stays open and a caption says so; Dismiss is the one action, the same Dismiss the other held states carry. All wording is design wording; the messages are fixture text. Derived from <a href="#workflow-run/orchestrator-selected">Orchestrator selected</a>.'
   });
   def({
     id: 'orchestrator-steering-expired', base: ORCHESTRATOR, kind: 'graph', group: G_STEER, record: 'orchestrator-steering-held',
     title: 'Orchestrator conversation expired',
-    description: 'The conversation expired after 30 minutes. The run stays paused until it is dismissed or a new message starts another; Dismiss is the one action.',
+    description: 'The conversation expired after 30 minutes. The run needs you until the conversation is dismissed or a new message starts another; Dismiss is the one action.',
     build: function (html, base) {
-      html = paused(html, base);
       var comp = Object.assign({}, ORCH_COMPOSER, { note: NEXT_NEW });
-      var text = 'This conversation expired after 30 minutes. The run stays paused until you dismiss it or send a new message.';
-      return replacePane(html, base, orchestratorPane(PAUSED_STATUS, HELD.concat([heldNote(text, true)]), composer(comp)));
+      var text = 'This conversation expired after 30 minutes. The run waits for you until you dismiss it or send a new message.';
+      return replacePane(html, base, orchestratorPane(WAITING_STATUS, HELD.concat([heldNote(text, true)]), composer(comp)));
     },
-    guide: 'The orchestrator pane once the episode is older than the 1800 second window of the engine, counted from when the episode was created and not from the last turn. The hold is kept and the run is paused until the person dismisses or retargets. The 30 minute figure is the engine window; the wording is design wording. Derived from <a href="#workflow-run/orchestrator-selected">Orchestrator selected</a>.'
+    guide: 'The orchestrator pane once the episode is older than the 1800 second window of the engine, counted from when the episode was created and not from the last turn. The hold is kept until the person dismisses or retargets, and the badge is Needs you like every held state. The 30 minute figure is the engine window; the wording is design wording. Derived from <a href="#workflow-run/orchestrator-selected">Orchestrator selected</a>.'
+  });
+  def({
+    id: 'orchestrator-steering-command-refused', base: ORCHESTRATOR, kind: 'graph', group: G_STEER, record: 'orchestrator-steering-held', provisional: true,
+    title: 'Orchestrator conversation refused',
+    description: 'The orchestrator could not carry out a request. A note says so and shows the reason, the composer stays open for a reply, and Dismiss closes the conversation.',
+    build: function (html, base) {
+      var parts = EARLIER.concat(['<div class="hd-msg-user">' + esc(REFUSED_ASK) + '</div>',
+        heldNote(REFUSED_CAPTION, true, '<p class="caption hd-faint">Reason: ' + esc(REFUSED_REASON) + '</p>')]);
+      var open = Object.assign({}, ORCH_COMPOSER, { placeholder: 'Reply to the orchestrator' });
+      return replacePane(html, base, orchestratorPane(WAITING_STATUS, parts, composer(open)));
+    },
+    guide: 'The orchestrator pane in the engine state <code>command_refused</code>: a request of the person became a command the engine refused, the hold is kept and a reply is still allowed (<code>workflow_steering.py</code> STATES; set at <code>steering_runner.py:126</code> and <code>orchestrator_steering.py:424, 512</code>, HarflowMCP 5face8b). The composer is open as in the waiting state, Dismiss is available as in every held state and the badge is Needs you. The caption is design wording; the reason line stands for the refusal reason the engine returns (for example <code>role_command_invalid</code>) and is fixture text, as is the message. Derived from <a href="#workflow-run/orchestrator-selected">Orchestrator selected</a>.'
   });
   def({
     id: 'orchestrator-steering-dismissing', base: ORCHESTRATOR, kind: 'graph', group: G_STEER, record: 'orchestrator-steering-held',
@@ -332,7 +337,7 @@
       var comp = Object.assign({}, ORCH_COMPOSER, { note: 'Sending a message opens a new conversation.' });
       return replacePane(html, base, orchestratorPane(status(G.paused, 'Conversation dismissed') + reason, HELD, composer(comp)));
     },
-    guide: 'The orchestrator pane after a dismissal. The hold is gone, so the engine no longer refuses resume with <code>steering_active</code>, but dismissal parks the run as paused without recording a checkpoint, so Resume is drawn disabled with the engine reason of the monitor control (fixture text). Whether a dismissed run should carry a resumable checkpoint is an open engine question. The wording is design wording. Derived from <a href="#workflow-run/orchestrator-selected">Orchestrator selected</a>.'
+    guide: 'The orchestrator pane after a dismissal. The hold is gone, so the run is no longer held and is drawn as paused, not as needing the person. The engine no longer refuses resume with <code>steering_active</code>, but dismissal parks the run without recording a checkpoint, so Resume is drawn disabled with the engine reason of the monitor control (fixture text). Whether a dismissed run should carry a resumable checkpoint is an open engine question. The wording is design wording. Derived from <a href="#workflow-run/orchestrator-selected">Orchestrator selected</a>.'
   });
 
   // ---- Message locks ---------------------------------------------------------------------------------------------
@@ -435,6 +440,7 @@
     return swap(html, 'width: 100%; height: 800px;', 'width: 1000px; height: 620px;', base);
   }
   var KINDS = {};
+  var APPROVALS = { 'run-top-bar': A_TOPBAR, 'parallel-run-pane': A_PANE, 'orchestrator-steering-held': A_STEER, 'run-message-locks': A_LOCKS };
 
   [G_TOPBAR, G_PANE, G_LOCKS].forEach(function (name) { ensureGroup(name, 'Loading'); });
   ensureGroup(G_MIN, null);
@@ -447,40 +453,41 @@
     }
     lazy(route, make);
     lazy(minRoute, function () { return resize(make(), d.base); });
-    KINDS[d.id + '-minimum'] = d.kind;
+    KINDS[d.id + '-minimum'] = { kind: d.kind, run: !!d.run };
     var record = '<a href="docs/decisions/' + d.record + '.md">Decision record</a>';
-    docs[route] = '<p><strong>Provisional, not approved.</strong> ' + d.guide + ' ' + record + '.</p>';
-    docs[minRoute] = '<p><strong>Provisional, not approved.</strong> The same state in the minimum window (1000 × 620), with the sidebar scrolling' +
+    var lead = d.provisional ? '<strong>Provisional, not approved.</strong>' : '<strong>Approved by the owner · ' + DECIDED + '.</strong>';
+    docs[route] = '<p>' + lead + ' ' + d.guide + ' ' + record + '.</p>';
+    docs[minRoute] = '<p>' + lead + ' The same state in the minimum window (1000 × 620), with the sidebar scrolling' +
       (d.kind === 'graph' ? ', the canvas scrolling at 400 points and the run pane narrowing to what is left (no narrower than 220 points)' : ' and the lanes keeping their 360 point floor and scrolling horizontally') +
       ', and the top bar meta shown on hover and focus. ' + record + '.</p>';
     H.runQuestionStates.push(route, minRoute);
-    H.registerState(FAMILY, {
-      id: d.id, title: d.title, description: d.description, group: d.group, status: 'provisional', approvalNote: NOTE
-    });
-    H.registerState(FAMILY, {
+    var status = d.provisional ? { status: 'provisional', approvalNote: NOTE } : { status: 'approved', approval: APPROVALS[d.record] };
+    H.registerState(FAMILY, Object.assign({ id: d.id, title: d.title, description: d.description, group: d.group }, status));
+    H.registerState(FAMILY, Object.assign({
       id: d.id + '-minimum', title: d.title + ' · 1000 × 620',
       description: d.description + ' Drawn in the minimum window.',
-      group: G_MIN, status: 'provisional', approvalNote: NOTE, specimenSize: '1000 × 620',
+      group: G_MIN, specimenSize: '1000 × 620',
       source: { renderer: 'runQuestions', mount: d.id + '-minimum' }
-    });
+    }, status));
   });
 
   H.RENDERERS.runQuestions = { api: 'runQuestions', wrapper: 'hdc-specimen' };
   // The twin is a template; the mount adds the minimum window treatments to the rendered frame and removes them again.
   H.runQuestions = {
     mount: function (root, mountId) {
-      var kind = KINDS[mountId];
+      var spec = KINDS[mountId], kind = spec.kind;
       var fixes = kind === 'graph' ? ['sidebar', 'canvas', 'topbar-meta'] : ['sidebar', 'lanes', 'topbar-meta'];
-      root.classList.add('hdc-specimen--minimum', 'hd-rq-min', 'hd-rq-min--' + kind);
+      var classes = ['hdc-specimen--minimum', 'hd-rq-min', 'hd-rq-min--' + kind].concat(spec.run ? ['hd-rq-min--run'] : []);
+      root.classList.add.apply(root.classList, classes);
       H.applyMinimum(root, fixes);
       // The canvas fix makes its viewport the labelled region, so the image role of the outer box is dropped.
       Array.prototype.slice.call(root.querySelectorAll('.hd-canvas[role="img"]')).forEach(function (cv) { cv.removeAttribute('role'); });
       return function () {
         H.clearMinimum(root);
-        root.classList.remove('hdc-specimen--minimum', 'hd-rq-min', 'hd-rq-min--' + kind);
+        root.classList.remove.apply(root.classList, classes);
         fixes.forEach(function (name) { root.classList.remove('hdc-min-' + name); });
       };
     }
   };
-  H.runQuestionDerivation = { states: DEFS.map(function (d) { return d.id; }), locks: { complete: LOCK_COMPLETE, cancelling: LOCK_CANCELLING, cancelled: LOCK_CANCELLED }, counts: COUNTS, started: STARTED };
+  H.runQuestionDerivation = { states: DEFS.map(function (d) { return d.id; }), locks: { complete: LOCK_COMPLETE, cancelling: LOCK_CANCELLING, cancelled: LOCK_CANCELLED }, started: STARTED };
 })();

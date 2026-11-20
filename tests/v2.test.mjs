@@ -423,7 +423,7 @@ test('resolveRoute canonicalises old routes and keeps the appearance suffix', ()
 
 test('redirects send retired routes to live states and obey their invariants', () => {
   const entries = Object.entries(redirects);
-  assert.equal(entries.length, 33);
+  assert.equal(entries.length, 41);
   assert.deepEqual(Array.from(retired, e => e.route).sort(), entries.map(([from]) => from).sort(), 'every redirect is a recorded retirement');
   for (const [from, to] of entries) {
     assert.match(from, /^[a-z0-9-]+\/[a-z0-9-]+$/);
@@ -495,8 +495,9 @@ test('retired states are gone from the registry; superseded-state handling no lo
     'new-task/composer-unknown', 'new-task/composer-unqualified', 'new-task/default', 'new-task/harness-menu', 'new-task/options-closed', 'new-task/options-open',
     'new-task/sidebar-collapsed', 'sidebar/centered-expanded', 'sidebar/collapsed', 'sidebar/expanded', 'sidebar/history-loading', 'sidebar/minimum',
     'task/activity-capacity', 'task/activity-integrity-failed', 'task/activity-loading', 'task/activity-observed', 'task/activity-partial', 'task/activity-reconnecting',
-    'task/activity-sources', 'task/activity-unavailable', 'task/approval', 'task/done', 'task/failed', 'task/running'
-  ]);
+    'task/activity-sources', 'task/activity-unavailable', 'task/approval', 'task/done', 'task/failed', 'task/running',
+    ...['topbar-started', 'topbar-counts', 'topbar-more-actions', 'topbar-more-actions-disabled'].flatMap(id => [`workflow-run/${id}`, `workflow-run/${id}-minimum`])
+  ].sort());
   for (const entry of retired) {
     assert.equal(stateOf(entry.route), null, `${entry.route} is not registered`);
     assert.ok(!HFV2.currentStates(HFV2.findFamily(entry.route.split('/')[0])).some(s => s.id === entry.route.split('/')[1]));
@@ -630,7 +631,7 @@ test('the route map lists every redraw with the route it replaces and the Events
   assert.ok(map.includes('## Redraw routes') && map.includes('### Route grammar'));
   assert.ok(!map.includes('provisional-redraws-awaiting-owner-review') && !map.includes('Provisional redraw'));
   assert.ok(map.includes('decisions/README.md#centered-and-transcript-redraws'));
-  assert.ok(map.includes('33 retired routes'));
+  assert.ok(map.includes('41 retired routes'));
   const redraws = [...COMPOSER_REDRAWS, ...SHELL_REDRAWS, ...TRANSCRIPT_REDRAWS, ['new-task/harness-menu', 'new-task/centered-harness-open']].map(([older, newer]) => ({ older, newer }));
   for (const { older, newer } of redraws) {
     const row = map.split('\n').find(line => line.startsWith(`| \`${newer}\` |`));
@@ -899,7 +900,7 @@ test('18 states are retired by the redraws and 20 redirects point at the redraws
   assert.equal(stateOfRoute('harness-runtime/updating')[1].status, 'approved', 'the redirect target is approved');
   assert.ok(!('m04-proposal/runtime-installing-sidebar' in HFV2.templates), 'the retired draft keeps no template');
   for (const suffix of SUFFIXES) assert.equal(HFV2.resolveRoute(`#harness-runtime/installing-sidebar${suffix}`), `#harness-runtime/updating${suffix}`);
-  for (const entry of retired.filter(e => !(e.pins || '').includes('3f12d29') && !(e.pins || '').includes('854caae') && !(e.pins || '').includes('d82b59f') && !(e.pins || '').includes('4ff7d83') && !(e.pins || '').includes('9709483'))) assert.ok(/at 17739e4/.test(entry.pins), `${entry.route} keeps its generated pins`);
+  for (const entry of retired.filter(e => !(e.pins || '').includes('3f12d29') && !(e.pins || '').includes('854caae') && !(e.pins || '').includes('d82b59f') && !(e.pins || '').includes('4ff7d83') && !(e.pins || '').includes('9709483') && !(e.pins || '').includes('eadd22d'))) assert.ok(/at 17739e4/.test(entry.pins), `${entry.route} keeps its generated pins`);
   // The exact-action approval and the two menu bar relabels replaced approved drawings on 2026-11-15. The old designs are visible at 9709483.
   const approvalRetired = [
     ['task/approval', 'task/approval-exact', 'task/approval'],

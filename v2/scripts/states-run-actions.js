@@ -150,6 +150,9 @@
   function orchestratorPane(parts, comp, decision) {
     return { label: 'Selected orchestrator', title: 'Orchestrator', caption: 'Always present', body: (decision || DECISION) + conversation(parts), composer: comp };
   }
+  // Dismiss closes a held conversation (workflow-steer, action dismiss). The owner added it to the open, waiting and unknown
+  // states on 2026-11-20; it is the same button the held states of the run question records draw.
+  var DISMISS_ROW = '<div class="hd-row" style="gap:var(--space-2);"><button type="button" class="hd-btn hd-btn--ghost hd-btn--sm">Dismiss</button></div>';
   var ORCH_COMPOSER = { id: 'msg-orchestrator', label: 'Message the orchestrator', placeholder: 'Ask or tell the orchestrator', send: 'Send to the orchestrator' };
 
   define('orchestrator-selected', ON_DEMAND, function (html, base) {
@@ -164,11 +167,11 @@
     html = selectOrchestrator(html, base);
     var parts = EARLIER.concat(['<div class="hd-msg-user">' + esc(OPEN_ASK) + '</div>', status(G.running, 'Waiting for the orchestrator to respond')]);
     var locked = Object.assign({}, ORCH_COMPOSER, { locked: true, placeholder: 'One conversation at a time — wait for the reply' });
-    return replacePane(html, base, orchestratorPane(parts, composer(locked)));
+    return replacePane(html, base, orchestratorPane(parts.concat([DISMISS_ROW]), composer(locked)));
   }, {
     title: 'Orchestrator conversation open',
     description: 'A message to the orchestrator is waiting for its reply. The composer is locked until the reply arrives, so there is one conversation at a time.'
-  }, 'The orchestrator pane while a message of the person is unanswered and the engine has not settled it: classifying, queued at a boundary, turn reserved or discussing. The waiting status and the locked-composer wording are design wording for those in-flight states. Delivery unknown has its own state. Settling a pending delivery (<code>dismiss_pending_settlement</code>) belongs with Dismiss, which is not drawn. The message is fixture text.');
+  }, 'The orchestrator pane while a message of the person is unanswered and the engine has not settled it: classifying, queued at a boundary, turn reserved or discussing. The waiting status and the locked-composer wording are design wording for those in-flight states. Delivery unknown has its own state. Dismiss closes the conversation; asked while a turn is unsettled it settles first (<code>dismiss_pending_settlement</code>, drawn in <a href="#workflow-run/orchestrator-steering-dismissing">Orchestrator conversation dismissing</a>). Dismiss was added to this state by the owner on 2026-11-20. The message is fixture text.');
 
   define('orchestrator-steering-unavailable', ON_DEMAND, function (html, base) {
     html = selectOrchestrator(html, base);
@@ -187,11 +190,11 @@
     var parts = EARLIER.concat(['<div class="hd-msg-user">' + esc(OPEN_ASK) + '</div>', '<div class="hd-msg-agent"><p>' + esc(QUESTION) + '</p></div>',
       status('', 'The orchestrator asked a question. Reply to continue.')]);
     var open = Object.assign({}, ORCH_COMPOSER, { placeholder: 'Reply to the orchestrator' });
-    return replacePane(html, base, orchestratorPane(parts, composer(open)));
+    return replacePane(html, base, orchestratorPane(parts.concat([DISMISS_ROW]), composer(open)));
   }, {
     title: 'Orchestrator waiting for you',
     description: 'The orchestrator answered with a question to the person. The composer is open, with a caption that a reply is needed.'
-  }, 'The orchestrator pane in the engine state <code>awaiting_caller</code>: the reply of the orchestrator is a question and the conversation waits for the person. The caption and the composer placeholder are design wording; the question is fixture text.');
+  }, 'The orchestrator pane in the engine state <code>awaiting_caller</code>: the reply of the orchestrator is a question and the conversation waits for the person. The caption and the composer placeholder are design wording; the question is fixture text. Dismiss was added to this state by the owner on 2026-11-20.');
 
   define('orchestrator-steering-cancelling', ON_DEMAND, function (html, base) {
     html = selectOrchestrator(html, base);
@@ -209,11 +212,11 @@
     html = host(selectOrchestrator(html, base), base);
     var bubble = '<div class="hd-msg-user hd-msgq" data-message="steering-unknown"><span class="hd-msgq__caption">Delivery unknown</span><span class="hd-msgq__text">' + esc(OPEN_ASK) + '</span><span class="hd-msgq__note">' + esc(UNKNOWN_NOTE) + '</span></div>';
     var locked = Object.assign({}, ORCH_COMPOSER, { locked: true, placeholder: 'Messages are off until delivery is settled' });
-    return replacePane(html, base, orchestratorPane(EARLIER.concat([bubble]), composer(locked)));
+    return replacePane(html, base, orchestratorPane(EARLIER.concat([bubble, DISMISS_ROW]), composer(locked)));
   }, {
     title: 'Orchestrator delivery unknown',
     description: 'A message to the orchestrator whose delivery could not be confirmed. It is captioned Delivery unknown and is not sent again; the composer is locked.'
-  }, 'The orchestrator pane in the engine state <code>delivery_unknown</code>. The bubble uses the classes of the approved queued message bubble; the wording is design wording aligned with the approved caller-approval phrasing, and the composer stays locked until the engine settles the message. The message is fixture text.');
+  }, 'The orchestrator pane in the engine state <code>delivery_unknown</code>. The bubble uses the classes of the approved queued message bubble; the wording is design wording aligned with the approved caller-approval phrasing, and the composer stays locked until the engine settles the message. Dismiss was added to this state by the owner on 2026-11-20. The message is fixture text.');
 
   // ---- Node messages ---------------------------------------------------------------------------------------------
   var SEND_NOW = '<button type="button" class="hd-btn hd-btn--ghost hd-btn--sm" data-m05="noop" disabled title="Ask for immediate delivery; an engine refusal keeps the message queued">Send now</button>';

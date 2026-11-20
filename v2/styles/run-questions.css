@@ -1,13 +1,7 @@
-/* Run questions (states-run-questions.js). Provisional workflow run drawings. Tokens only, so light and dark follow the theme. */
+/* Run questions (states-run-questions.js). Workflow run drawings: run top bar, run pane, held conversations and message locks. Tokens only, so light and dark follow the theme. */
 
-/* More actions menu: anchored under the icon button at the right edge of the top bar. A disabled item keeps its reason readable. */
-.hd-rq-anchor{position:relative;display:inline-flex}
-.hd-rq-anchor>.hd-menu{position:absolute;top:calc(100% + 6px);right:0;z-index:5;width:max-content}
-.hd-rq-menu .hd-menu__item{text-decoration:none}
-.hd-rq-menu__item--off{cursor:default;pointer-events:none;align-items:flex-start}
-.hd-rq-menu__item--off .hd-rq-menu__label,.hd-rq-menu__item--off>.hd-i{opacity:.45}
-.hd-rq-menu__item--off>.hd-i{margin-top:2px}
-.hd-rq-menu__hint{color:var(--text-secondary);white-space:normal}
+/* Run pane toggle: the Mac quiet button style, selected while the pane is shown. */
+.hd-rq-toggle.is-active{background:var(--surface-active);color:var(--text)}
 
 /* Parallel view with the run pane: the lanes column shrinks and scrolls, the pane keeps its width. */
 .hd-rq-lanes{flex:1 1 0;min-width:0;min-height:0;display:flex;flex-direction:column}
@@ -31,3 +25,5 @@
 .hdc-specimen--minimum.hd-rq-min--graph .hd-split>.hd-pane{flex:0 1 460px!important;width:auto!important;min-width:220px;max-width:500px}
 .hdc-specimen--minimum.hd-rq-min--graph .hd-standalone__nodes{scrollbar-width:thin}
 .hdc-specimen--minimum.hd-rq-min--graph .hd-standalone__nodes>.hd-node{flex:0 0 200px}
+/* The run pane of the Graph view keeps the Mac default sidebar width of 288 and narrows to what is left, no narrower than 220. */
+.hdc-specimen--minimum.hd-rq-min--graph.hd-rq-min--run .hd-split>.hd-pane{flex:0 1 288px!important}

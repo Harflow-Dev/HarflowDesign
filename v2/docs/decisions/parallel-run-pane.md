@@ -1,6 +1,16 @@
-# Parallel view run pane
+# Run pane
 
-Status: **Provisional, not approved.** Drawn on 2026-11-20 on the owner's "yes please", relayed by the coordinator, as the answer to the second open question of the Mac workflow run receipt (HarflowMac `docs/migration-receipts/M09.md`): the right-pane content of the Parallel view. No owner decision exists.
+Status: **Approved by the owner on 2026-11-20** (relayed by the coordinator; the owner viewed the drawings first), approved in the commit titled "Approve the workflow-run question states". The pane was drawn in commit `eadd22d` as the answer to the second open question of the Mac workflow run receipt (HarflowMac `docs/migration-receipts/M09.md`): the right-pane content of the Parallel view. The states drawn on the owner's answers (`parallel-run-pane-collapsed` and `graph-no-selection`) were approved the same day (decision "Run pane"). The toggle is new behaviour, not parity (see the correction under answer 3).
+
+## Owner answers (2026-11-20)
+
+1. The pane, as drawn.
+2. All four blocks: Original request, goal, run plan and Technical plan.
+3. Collapsible, matching the Mac toggle: the toggle is drawn.
+
+   Correction (2026-11-20): the question claimed that the Mac sidebar can be toggled; that was inaccurate at 360a67c4 (the sidebar is in an `HSplitView` with a 220 minimum, and the run view has no toggle). The owner was told the sidebar cannot be hidden today and confirmed "Add the toggle" on 2026-11-20. The toggle is therefore new behaviour, not parity: it reuses the task screen's `inspectorToggle` control and labels (`TaskDetailToolbar.swift:178-185`).
+4. Yes: draw the Graph view with no node selected in this decision.
+5. The minimum window rule is accepted.
 
 ## Source
 
@@ -14,36 +24,27 @@ HarflowMCP at `5face8b`: `workflow-status` supplies the goal and its assessment;
 
 Approved v2: `workflow-run/parallel` has no right pane (lanes full width); `parallel-group-proposal.md` D21 says the Parallel group and the run Parallel view share one lane view.
 
+Toggle (HarflowMac at `360a67c4`, git objects only): the Mac run view has no toggle for its run sidebar. `WorkflowRunPanes.swift` keeps the sidebar in an `HSplitView` with a 220 minimum, so it cannot be hidden. The Mac control that hides a right pane is the task screen's `inspectorToggle` (`TaskDetail/Component/TaskDetailToolbar.swift:178-185`, `TaskDetailView.swift`): icon `sidebar.right`, quiet button style selected while the pane shows, and the help and accessibility label "Hide right pane" while it is open and "Show right pane" while it is hidden. v2 draws the same control for the task right pane. The drawings reuse that control, with its label verbatim, at the right end of the run top bar.
+
+Graph with no node selected: `WorkflowRecoveryPanePresentation.swift:19-25` resolves the slot. With no node selected and no recovery checkpoint the Graph view shows the default run sidebar (288 ideal); a node selection shows the selected-node pane (460 ideal); a recovery-eligible run shows the recovery pane (360), which `workflow-run/recovery` already draws.
+
 ## States
 
-| State | Route | Draws |
-| --- | --- | --- |
-| Run pane | `workflow-run/parallel-run-pane` | `workflow-run/parallel` with a 288 wide pane on the right: an Original request disclosure (collapsed), the goal block as the Graph view draws it, the run plan and a collapsed Technical plan disclosure. The lanes scroll beside it. |
+| State | Route | Status | Draws |
+| --- | --- | --- | --- |
+| Run pane | `workflow-run/parallel-run-pane` | Approved 2026-11-20 | `workflow-run/parallel` with a 288 wide pane on the right: an Original request disclosure (collapsed), the goal block as the Graph view draws it, the run plan and a collapsed Technical plan disclosure, and the toggle "Hide right pane" (selected) at the right end of the top bar. The lanes scroll beside it; the elapsed time shows in the sidebar row. |
+| Run pane hidden | `workflow-run/parallel-run-pane-collapsed` | Approved 2026-11-20 | The same top bar with the toggle off ("Show right pane"); no pane, lanes at full width. |
+| Graph, no step selected | `workflow-run/graph-no-selection` | Approved 2026-11-20 | `workflow-run/graph-needs-you` with the step deselected and the same run pane at 288, its plan listing the four steps of the graph; the decided top bar (started line, no More actions) and the toggle. |
 
-The `-minimum` twin (1000 × 620) keeps the lanes at their 360 floor, scrolling horizontally, beside the 288 pane.
+Each has a `-minimum` twin (1000 × 620). The Parallel twins keep the lanes at their 360 floor, scrolling horizontally, beside the 288 pane. The Graph twin keeps the canvas at 400 and lets the pane narrow to what is left, no narrower than 220 (the accepted rule).
 
-The approved `workflow-run/parallel` stays the alternative and is referenced, not redrawn.
-
-Not drawn for a root run with no caller approvals: the child-run banner, Open owning orchestrator, the child links and the caller approvals panel. The run plan list and its look are new design (the Mac plan is a checklist whose look is not specified here); the Original request disclosure reuses the approved task wording, with its loading and unavailable forms as the task screens draw them (not redrawn).
-
-## Recommendations
-
-1. **Mirror the Mac: draw the pane** (`parallel-run-pane`). The run-level content (goal, original request, plan) is otherwise reachable only from the Graph view, and the lanes already scroll horizontally.
-2. If the owner prefers full-width lanes, keep the approved `parallel` and make the app hide the sidebar in the Parallel view.
-
-## Owner questions
-
-1. Pane or no pane in the Parallel view?
-2. Which blocks: all four drawn, or fewer?
-3. Collapsible, or fixed? The Mac sidebar can be toggled; a toggle is not drawn.
-4. The same pane would be the Graph view with no node selected, which has no approved drawing. Should it be drawn in the same decision?
-5. At 1000 × 620 the pane is drawn at 288 and the lanes scroll. The graph run at that size needs a new rule (below); is it acceptable?
+The approved `workflow-run/parallel` stays as drawn and is the base of these states. Not drawn for a root run with no caller approvals: the child-run banner, Open owning orchestrator, the child links and the caller approvals panel. The run plan list and its look are design wording; the Original request disclosure reuses the approved task wording, with its loading and unavailable forms as the task screens draw them (not redrawn).
 
 ## What the app would change
 
-- If the pane is approved: nothing in the app for the Parallel view; the v2 reference gains the pane.
-- If no pane: the app would hide the run sidebar in the Parallel view (`WorkflowRunPanes.swift:59-72`).
-- The minimum window rule for graph runs (also used by the graph states of the other records): the canvas keeps 400 and the 460 pane narrows to what remains, no narrower than 220. It is a new minimum rule, drawn with the existing sidebar, canvas, lanes and top bar meta treatments.
+- The Mac app already shows the pane; the v2 reference gains it.
+- Add the toggle to the run top bar, wired to hiding the right side of the `HSplitView`, with the task screen's label and icon. This is new behaviour, not parity: the Mac run view cannot hide its sidebar today.
+- The minimum window rule for graph runs: the canvas keeps 400 and the pane narrows to what remains, no narrower than 220.
 
 ## Files
 

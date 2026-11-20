@@ -6,11 +6,11 @@ The aliases and the route grammar are defined in `v2/scripts/route-aliases.js`. 
 
 ## Unchanged routes
 
-The routes of the base screens, the brand book, the foundations and the components keep their ids (for example `needs-you/waiting`, `workflow-editor/node-selected`, `components/button`), except the 33 retired routes listed under "Retired routes".
+The routes of the base screens, the brand book, the foundations and the components keep their ids (for example `needs-you/waiting`, `workflow-editor/node-selected`, `components/button`), except the 41 retired routes listed under "Retired routes".
 
 ## Retired routes
 
-The owner replaced these designs on 2026-11-08, nine of them by answering the replacement questions and eighteen by accepting the centered and transcript redraws. A further route, `new-task/centered-starting`, was retired on 2026-11-09, when the owner approved its redraw without the status row. The route still opens, and it shows the replacement. The address bar then shows the replacement route. Another route, `harness-runtime/installing-sidebar`, was retired on 2026-11-14, when the owner dropped the sidebar card draft for the runtime update of an already set-up app; it opens `harness-runtime/updating`, which the owner approved on 2026-11-15. Three further routes were retired on 2026-11-15, when the owner approved their redraws: `task/approval` opens `task/approval-exact`, which removes "Approve for this task", and `menu-bar/busy` and `menu-bar/busy-minimum` open `menu-bar/busy-approve-once` and `menu-bar/busy-approve-once-minimum`, which name the request's button Approve once. The templates of `task/approval` and `menu-bar/busy` stay, because the approval states are drawn from them. The decisions record gives the basis and the commits where the old design can be seen.
+The owner replaced these designs on 2026-11-08, nine of them by answering the replacement questions and eighteen by accepting the centered and transcript redraws. A further route, `new-task/centered-starting`, was retired on 2026-11-09, when the owner approved its redraw without the status row. The route still opens, and it shows the replacement. The address bar then shows the replacement route. Another route, `harness-runtime/installing-sidebar`, was retired on 2026-11-14, when the owner dropped the sidebar card draft for the runtime update of an already set-up app; it opens `harness-runtime/updating`, which the owner approved on 2026-11-15. Three further routes were retired on 2026-11-15, when the owner approved their redraws: `task/approval` opens `task/approval-exact`, which removes "Approve for this task", and `menu-bar/busy` and `menu-bar/busy-minimum` open `menu-bar/busy-approve-once` and `menu-bar/busy-approve-once-minimum`, which name the request's button Approve once. The templates of `task/approval` and `menu-bar/busy` stay, because the approval states are drawn from them. Eight further routes were retired on 2026-11-20, when the owner chose the run top bar: `workflow-run/topbar-started`, `topbar-counts`, `topbar-more-actions` and `topbar-more-actions-disabled`, each with its `-minimum` twin, open `workflow-run/topbar-no-more` or its `-minimum` twin (the started line, no More actions menu, elapsed time in the sidebar row). Their templates were deleted with them; no renderer clones them. The decisions record gives the basis and the commits where the old design can be seen.
 
 | Retired route | Opens | Screen and state |
 | --- | --- | --- |
@@ -47,6 +47,14 @@ The owner replaced these designs on 2026-11-08, nine of them by answering the re
 | `task/approval` | `task/approval-exact` | Task · Waiting for approval, exact action |
 | `menu-bar/busy` | `menu-bar/busy-approve-once` | Menu bar · Busy, approve once |
 | `menu-bar/busy-minimum` | `menu-bar/busy-approve-once-minimum` | Menu bar · Busy, approve once · 1000 × 620 |
+| `workflow-run/topbar-started` | `workflow-run/topbar-no-more` | Run top bar · Run started line |
+| `workflow-run/topbar-started-minimum` | `workflow-run/topbar-no-more-minimum` | Run top bar · Run started line · 1000 × 620 |
+| `workflow-run/topbar-counts` | `workflow-run/topbar-no-more` | Run top bar · Run started line |
+| `workflow-run/topbar-counts-minimum` | `workflow-run/topbar-no-more-minimum` | Run top bar · Run started line · 1000 × 620 |
+| `workflow-run/topbar-more-actions` | `workflow-run/topbar-no-more` | Run top bar · Run started line |
+| `workflow-run/topbar-more-actions-minimum` | `workflow-run/topbar-no-more-minimum` | Run top bar · Run started line · 1000 × 620 |
+| `workflow-run/topbar-more-actions-disabled` | `workflow-run/topbar-no-more` | Run top bar · Run started line |
+| `workflow-run/topbar-more-actions-disabled-minimum` | `workflow-run/topbar-no-more-minimum` | Run top bar · Run started line · 1000 × 620 |
 
 The earlier routes `m04-proposal/*` and `d2b-proposal/*` of the retired states (listed below) reach the same replacements through their alias followed by the redirect. `sidebar/centered-expanded` was a duplicate of `new-task/centered-empty` and opens it.
 
@@ -103,6 +111,20 @@ These are canonical routes with no earlier name; they are not aliases or redirec
 | `new-task/centered-model-default` | `new-task/centered-ready` with the harness picker of `new-task/centered-harness-open` open, Cursor selected and its suggestions open, the harness default tagged; standalone ([decisions](decisions/README.md#model-picker-states)) |
 | `new-task/centered-repository-empty`, `new-task/centered-repository-recents`, `new-task/centered-repository-hover`, `new-task/centered-repository-focus`, `new-task/centered-repository-invalid` | `new-task/centered-ready` with the repository pill's popover open; standalone, no pending pair. Approved on 2026-11-19 ([design record](decisions/repository-picker.md)) |
 
+## Run question routes
+
+Approved by the owner on 2026-11-20 (relayed by the coordinator after the owner saw the drawings). Each is a canonical route with no earlier name, derived from the approved run state named, and has a `-minimum` twin at 1000 × 620.
+
+| Route | Draws |
+| --- | --- |
+| `workflow-run/topbar-no-more` | `workflow-run/graph-needs-you` with the started line, no More actions button and the elapsed time in the sidebar row ([record](decisions/run-top-bar.md)); replaces the four retired top bar routes above |
+| `workflow-run/parallel-run-pane`, `parallel-run-pane-collapsed` | `workflow-run/parallel` with the run pane and the toggle, and with the pane hidden ([record](decisions/parallel-run-pane.md)) |
+| `workflow-run/graph-no-selection` | `workflow-run/graph-needs-you` with no step selected and the run pane |
+| `workflow-run/orchestrator-steering-stale`, `-expired`, `-dismissing`, `-dismissed` | `workflow-run/orchestrator-selected` with a held conversation ([record](decisions/orchestrator-steering-held.md)); stale and expired draw Needs you |
+| `workflow-run/lanes-completed`, `lanes-cancelling`, `lanes-unsupported`, `cancelled-node-locked`, `cancelled-orchestrator-locked` | `workflow-run/parallel`, `on-demand` or `orchestrator-selected` with message locks ([record](decisions/run-message-locks.md)) |
+
+The approved `workflow-run/orchestrator-steering-open`, `-waiting` and `-unknown` gained a Dismiss action on the same day (amended, still approved).
+
 ## Provisional routes
 
 These are canonical routes with no earlier name; they are not aliases or redirects, and none is approved. The decisions record has the basis ([decisions](decisions/README.md#loading-states-with-a-known-title)).
@@ -111,12 +133,7 @@ These are canonical routes with no earlier name; they are not aliases or redirec
 | --- | --- |
 | `task/loading-known-title`, `task/loading-pane-known-title` | `task/loading` and `task/loading-pane`, with the title shown and the loaded sidebar; standalone, no pending pair: the approved states stay for a title that is not known yet |
 | `parallel-group/loading-known-title`, `parallel-group/loading-known-title-minimum`, `parallel-group/loading-two-known-title` | `parallel-group/loading`, `parallel-group/loading-minimum` and `parallel-group/loading-two`, with the group title shown |
-| `workflow-run/topbar-started`, `topbar-counts`, `topbar-no-more`, `topbar-more-actions` | `workflow-run/graph-needs-you` with the run top bar changed ([record](decisions/run-top-bar.md)); standalone, no pending pair |
-| `workflow-run/topbar-more-actions-disabled` | `workflow-run/parallel` with a More actions menu open |
-| `workflow-run/parallel-run-pane` | `workflow-run/parallel` with the run pane ([record](decisions/parallel-run-pane.md)) |
-| `workflow-run/orchestrator-steering-stale`, `-expired`, `-dismissing`, `-dismissed` | `workflow-run/orchestrator-selected` with a held conversation ([record](decisions/orchestrator-steering-held.md)) |
-| `workflow-run/lanes-completed`, `lanes-cancelling`, `lanes-unsupported`, `cancelled-node-locked`, `cancelled-orchestrator-locked` | `workflow-run/parallel`, `on-demand` or `orchestrator-selected` with message locks ([record](decisions/run-message-locks.md)) |
-| each of the fifteen above plus `-minimum` | the same state at 1000 × 620 |
+| `workflow-run/orchestrator-steering-command-refused`, plus `-minimum` | `workflow-run/orchestrator-selected` with a refused command; drawn on the owner's answers of 2026-11-20 and not yet seen ([held conversations](decisions/orchestrator-steering-held.md)); standalone, no pending pair |
 
 ### Redraws awaiting approval
 

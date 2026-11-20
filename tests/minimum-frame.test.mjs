@@ -152,11 +152,11 @@ test('no existing template changed: the digests equal those of the base commit a
     ...(HFV2.gapStates || []),
     ...WORKFLOW_QUESTION_TEMPLATES,
     ...WORKFLOW_NAMING_TEMPLATES,
-    // The provisional run question states and their minimum twins (2026-11-20), each derived from an approved template.
+    // The run question states and their minimum twins (decided 2026-11-20; one is still provisional, orchestrator-steering-command-refused), each derived from an approved template.
     ...HFV2.runQuestionStates
   ];
-  assert.equal(added.length, 22 + 20 + 24 + 2 + 6 + HFV2.gapStates.length + 8 + 5 + 8 + 30);
-  assert.equal(HFV2.runQuestionStates.length, 30);
+  assert.equal(added.length, 22 + 20 + 24 + 2 + 6 + HFV2.gapStates.length + 8 + 5 + 8 + 28);
+  assert.equal(HFV2.runQuestionStates.length, 28);
   const removed = ['m04-proposal/centered-starting'];
   for (const key of removed) { assert.ok(key in manifest && !(key in HFV2.templates), `${key} is removed with its retired state`); delete manifest[key]; }
   for (const key of added) assert.ok(key in HFV2.templates, `${key} is a template`);

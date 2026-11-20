@@ -1,6 +1,14 @@
 # Run message locks
 
-Status: **Provisional, not approved.** Drawn on 2026-11-20 on the owner's "yes please", relayed by the coordinator, as the answer to the fourth open question of the Mac workflow run receipt (HarflowMac `docs/migration-receipts/M09.md`): which message composers lock when a run is completed, cancelling or cancelled, and when the runtime does not support messages. No owner decision exists. Lock copy not marked Mac is design wording.
+Status: **Approved by the owner on 2026-11-20** (relayed by the coordinator; the owner viewed the drawings first), approved in the commit titled "Approve the workflow-run question states". The states were drawn in commit `eadd22d` as the answer to the fourth open question of the Mac workflow run receipt (HarflowMac `docs/migration-receipts/M09.md`): which message composers lock when a run is completed, cancelling or cancelled, and when the runtime does not support messages. Lock copy not marked Mac is design wording.
+
+## Owner answers (2026-11-20)
+
+1. Lock completed lanes and the completed orchestrator composer, with the copy as drawn ("Messages are off — this run is complete").
+2. Lock cancelling lanes.
+3. Lock cancelled graph composers, node and orchestrator.
+4. Lanes on an unsupported runtime: the locked form.
+5. The minimum window rule is accepted (canvas 400, pane narrows, no narrower than 220).
 
 ## Source
 
@@ -22,7 +30,8 @@ Approved v2: `lane-message-undeliverable` (cancelled lanes), `messages-unsupport
 
 ## States
 
-All routes have a `-minimum` twin and are in group Run message locks.
+
+All five are approved as drawn on 2026-11-20. Each route has a `-minimum` twin and is in group Run message locks.
 
 | State | Route | Draws |
 | --- | --- | --- |
@@ -34,27 +43,12 @@ All routes have a `-minimum` twin and are in group Run message locks.
 
 The canvases of the graph states are the base fixtures and are not redrawn for a cancelled run, as in the approved cancelling state.
 
-## Recommendations
-
-1. **Lock completed lanes** with copy in the form of the cancelled one ("this run is complete"). The engine marks such sends undeliverable at once; a composer that accepts them only to fail is worse than a lock. The same applies to the orchestrator composer on a completed run (proposed copy: "Messages are off — this run is complete").
-2. **Lock cancelling lanes**, keeping Cancel on queued messages.
-3. **Lock cancelled graph composers**, node and orchestrator.
-4. **Failed runs stay open**: messages are retained for recovery.
-5. **Unsupported lanes: the locked form**, as the node pane draws it, rather than hiding the composer. A hidden composer leaves no sign that messaging exists.
-
-## Owner questions
-
-1. Lock completed lanes (and the completed orchestrator composer), and the copy?
-2. Lock cancelling lanes?
-3. Lock cancelled graph composers (the Mac never does)?
-4. Lanes on an unsupported runtime: locked form, or hidden composer?
-5. The graph run states use a new minimum rule: the canvas keeps 400 and the pane narrows to what remains (no narrower than 220). Acceptable?
-
 ## What the app would change
 
 - Lock lane composers for completed and cancelling runs (today only cancelled locks) in `ParallelColumnModel.swift`, with the copy chosen.
 - Lock graph node and orchestrator composers when the run is cancelled, and the orchestrator composer when it is completed.
 - Apply the unsupported form to lane composers (`ParallelVM+MessageLock.swift`).
+- Failed runs keep their composers open: messages are retained for recovery.
 
 ## Files
 
