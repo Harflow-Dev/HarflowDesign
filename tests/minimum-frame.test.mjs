@@ -152,7 +152,7 @@ test('no existing template changed: the digests equal those of the base commit a
     ...(HFV2.gapStates || []),
     ...WORKFLOW_QUESTION_TEMPLATES,
     ...WORKFLOW_NAMING_TEMPLATES,
-    // The run question states and their minimum twins (decided 2026-11-20; one is still provisional, orchestrator-steering-command-refused), each derived from an approved template.
+    // The run question states and their minimum twins (approved 2026-11-20), each derived from an approved template.
     ...HFV2.runQuestionStates
   ];
   assert.equal(added.length, 22 + 20 + 24 + 2 + 6 + HFV2.gapStates.length + 8 + 5 + 8 + 28);

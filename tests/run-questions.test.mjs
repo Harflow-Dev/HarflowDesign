@@ -7,8 +7,7 @@ import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
 // The workflow run drawings for the four questions the owner decided on 2026-11-20: registration, derivation from their
-// approved bases, the copy they carry, the retired top bar states and their decision records. Three drawings made on the
-// answers are provisional until the owner has seen them.
+// approved bases, the copy they carry, the retired top bar states and their decision records. All are approved.
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const scriptsDir = path.join(root, 'v2', 'scripts');
 
@@ -39,7 +38,7 @@ const STATES = {
   'graph-no-selection': [Q2, 'workflow-run/graph-needs-you', 'parallel-run-pane', ['aria-label="Run"', 'style="width: 288px;"', 'GOAL', 'Original request', 'RUN PLAN', 'Technical plan', 'Run started 02:00 · HarflowMCP', 'aria-label="Hide right pane"']],
   'orchestrator-steering-stale': [Q3, 'workflow-run/orchestrator-selected', 'orchestrator-steering-held', ['The run moved on since this conversation started.', 'Your next message starts a new conversation.', '>Dismiss</button>', 'Needs you</span>']],
   'orchestrator-steering-expired': [Q3, 'workflow-run/orchestrator-selected', 'orchestrator-steering-held', ['This conversation expired after 30 minutes.', 'Your next message starts a new conversation.', '>Dismiss</button>', 'Needs you</span>']],
-  'orchestrator-steering-command-refused': [Q3, 'workflow-run/orchestrator-selected', 'orchestrator-steering-held', ['The orchestrator couldn\'t carry out that request. Reply to continue.', 'Reason: ', '>Dismiss</button>', 'Needs you</span>', 'placeholder="Reply to the orchestrator" style="min-height:24px;"'], true],
+  'orchestrator-steering-command-refused': [Q3, 'workflow-run/orchestrator-selected', 'orchestrator-steering-held', ['The orchestrator couldn\'t carry out that request. Reply to continue.', 'Reason: ', '>Dismiss</button>', 'Needs you</span>', 'placeholder="Reply to the orchestrator" style="min-height:24px;"']],
   'orchestrator-steering-dismissing': [Q3, 'workflow-run/orchestrator-selected', 'orchestrator-steering-held', ['Dismissing — waiting for running work to settle', 'disabled style="min-height:40px;"']],
   'orchestrator-steering-dismissed': [Q3, 'workflow-run/orchestrator-selected', 'orchestrator-steering-held', ['Conversation dismissed', 'Resume</button>', 'No qualified actionable checkpoint is available; refresh the workflow.', 'Paused</span>']],
   'lanes-completed': [Q4, 'workflow-run/parallel', 'run-message-locks', ['hd-badge--done', 'Messages are off — this run is complete', 'Done · 02:51']],
@@ -54,9 +53,9 @@ const RETIRED = ['topbar-started', 'topbar-counts', 'topbar-more-actions', 'topb
 const family = H.findFamily('workflow-run');
 const read = id => H.templates[`workflow-run/${id}`];
 
-test('fourteen states, each with a minimum twin, are registered in their groups; one is provisional and the rest approved', () => {
+test('fourteen states, each with a minimum twin, are registered in their groups; all approved', () => {
   assert.equal(IDS.length, 14);
-  assert.deepEqual(PROVISIONAL, ['orchestrator-steering-command-refused']);
+  assert.deepEqual(PROVISIONAL, []);
   assert.equal(H.runQuestionStates.length, 28);
   for (const id of IDS) {
     const [group, , record] = STATES[id];
@@ -266,7 +265,7 @@ test('catalog text names the screen only and the guides link to existing records
   assert.ok(pane.includes('new behaviour, not parity') && pane.includes('TaskDetailToolbar.swift:178-185'));
   assert.ok(!pane.includes('Only if the owner confirms') && /^- Add the toggle to the run top bar/m.test(pane));
   assert.ok(!/## Source\n\n\n/.test(pane));
-  assert.ok(fs.readFileSync(path.join(root, 'v2', 'docs', 'decisions', 'orchestrator-steering-held.md'), 'utf8').includes('Approved, except the state drawn on these answers, which waits for the owner'));
+  assert.ok(fs.readFileSync(path.join(root, 'v2', 'docs', 'decisions', 'orchestrator-steering-held.md'), 'utf8').includes('Nothing in this record is provisional.'));
   const top = fs.readFileSync(path.join(root, 'v2', 'docs', 'decisions', 'run-top-bar.md'), 'utf8');
   assert.ok(top.includes('Approved v2 drawings this decision supersedes as the app reference (not edited):') && top.includes('cancelled-node-locked'));
   for (const id of RETIRED) assert.ok(top.includes(`workflow-run/${id}`), `${id} is named under Not chosen`);

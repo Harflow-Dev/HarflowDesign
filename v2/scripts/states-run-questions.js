@@ -1,8 +1,7 @@
 /* Workflow run drawings that answer four questions about the Mac app: the run top bar, the right pane of the Parallel
    and Graph views, the held states of an orchestrator conversation, and the message locks of settled and unsupported
    runs. The owner decided the four questions on 2026-11-20 and approved the drawings, including the run pane toggle
-   (new behaviour the owner chose); only the refused-command state, drawn on those answers, is provisional until the
-   owner has seen it. Each state is an approved workflow run template (graph-needs-you,
+   (new behaviour the owner chose) and the refused-command state drawn on those answers. Each state is an approved workflow run template (graph-needs-you,
    on-demand, orchestrator-selected or parallel) with only the blocks it changes replaced, by exact swap, so a changed
    base throws instead of silently drawing another screen. Every state also has a 1000 × 620 twin, rendered here (the
    same self-rendered form as the workflow question states) with the existing sidebar, canvas, lanes and top bar meta
@@ -305,7 +304,7 @@
     guide: 'The orchestrator pane once the episode is older than the 1800 second window of the engine, counted from when the episode was created and not from the last turn. The hold is kept until the person dismisses or retargets, and the badge is Needs you like every held state. The 30 minute figure is the engine window; the wording is design wording. Derived from <a href="#workflow-run/orchestrator-selected">Orchestrator selected</a>.'
   });
   def({
-    id: 'orchestrator-steering-command-refused', base: ORCHESTRATOR, kind: 'graph', group: G_STEER, record: 'orchestrator-steering-held', provisional: true,
+    id: 'orchestrator-steering-command-refused', base: ORCHESTRATOR, kind: 'graph', group: G_STEER, record: 'orchestrator-steering-held',
     title: 'Orchestrator conversation refused',
     description: 'The orchestrator could not carry out a request. A note says so and shows the reason, the composer stays open for a reply, and Dismiss closes the conversation.',
     build: function (html, base) {
