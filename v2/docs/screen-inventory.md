@@ -171,7 +171,7 @@ workflow approvals. See the [routes and interaction rules](decisions/task-detail
 
 ## Task conversation composer edge
 
-Provisional task conversation, group and workflow task views with a tighter
+Approved task conversation, group and workflow task views with a tighter
 composer boundary and a fade only while the feed continues below the viewport.
 [Design record and route list](decisions/task-composer-edge.md).
 

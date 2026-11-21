@@ -1,8 +1,11 @@
 # Task conversation composer edge
 
-Status: **Provisional, awaiting owner review of the drawings.** On
-2026-11-21 the owner requested less space above the composer and a fade at
-the activity feed edge across task views, and authorized the design update.
+Status: **Approved on 2026-11-21.** The owner reviewed the composer edge
+and confirmed that it applies to Parallel tasks and to tasks inside a
+workflow as well as standalone Task Detail. The approved drawings are
+pinned to `f345556ae3f36c6ba3ded013f272fc096c83d585`,
+`v2/scripts/states-composer-edge.js` and `v2/styles/composer-edge.css`.
+The pinned preview still carries its original provisional labels.
 
 Use a 4-point inset immediately above the fixed composer where the task
 surface had an 8- or 12-point inset. The composer stays anchored even in a
@@ -39,9 +42,9 @@ background and existing control styling.
   composer boundary and `Parallel/Component/ParallelColumnView.swift` for
   lane and inspector layout, both under `MainWindowFeature`.
 
-The proposed treatment covers task conversation feeds. The separate root
+The treatment covers task conversation feeds. The separate root
 steering approval and workflow builder layouts retain their current design
 records. Browser fixtures use synthetic data. Links in the Parallel and
 Graph companions open the original interaction specimens. Native inset,
 focus, scroll edge behavior and disabled appearance require their own
-verification after approval.
+verification.
