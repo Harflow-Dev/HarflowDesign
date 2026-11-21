@@ -155,9 +155,13 @@ test('no existing template changed: the digests equal those of the base commit a
     // The run question states and their minimum twins (approved 2026-11-20), each derived from an approved template.
     ...HFV2.runQuestionStates,
     ...['changes-inline', 'events-result-usage', 'events-usage', 'running-composer-empty', 'running-composer-draft'].flatMap(id => [`m05-proposal/${id}`, `m05-proposal/${id}-minimum`]),
-    ...['single', 'five', 'several'].flatMap(id => [`workflow-run/root-approval-${id}`, `workflow-run/root-approval-${id}-minimum`])
+    ...['single', 'five', 'several'].flatMap(id => [`workflow-run/root-approval-${id}`, `workflow-run/root-approval-${id}-minimum`]),
+    // The eleven new provisional composer-edge companions derive from existing task, lane and workflow states.
+    ...['task/composer-edge', 'task/composer-edge-end', 'task/composer-edge-short', 'task/composer-edge-minimum', 'task/composer-edge-embedded',
+      'parallel-group/composer-edge', 'parallel-group/composer-edge-minimum',
+      'workflow-run/composer-edge-parallel', 'workflow-run/composer-edge-parallel-minimum', 'workflow-run/composer-edge-graph', 'workflow-run/composer-edge-graph-minimum']
   ];
-  assert.equal(added.length, 22 + 20 + 24 + 2 + 6 + HFV2.gapStates.length + 8 + 5 + 8 + 28 + 10 + 6);
+  assert.equal(added.length, 22 + 20 + 24 + 2 + 6 + HFV2.gapStates.length + 8 + 5 + 8 + 28 + 10 + 6 + 11);
   assert.equal(HFV2.runQuestionStates.length, 28);
   const removed = ['m04-proposal/centered-starting'];
   for (const key of removed) { assert.ok(key in manifest && !(key in HFV2.templates), `${key} is removed with its retired state`); delete manifest[key]; }
@@ -387,8 +391,15 @@ test('every static template with a sidebar has the top, nav, sections and foot s
   // cancelled-run lane view.
   // The provisional workflow and capacity gap states (2026-11-15) that keep the live sidebar; the ones drawn behind a dialog
   // mark the sidebar inert and are not counted here.
+  // The six provisional composer-edge companions below reuse static lane and workflow templates with the shared sidebar.
+  const composerEdgeSidebarTemplates = [
+    'parallel-group/composer-edge', 'parallel-group/composer-edge-minimum',
+    'workflow-run/composer-edge-parallel', 'workflow-run/composer-edge-parallel-minimum',
+    'workflow-run/composer-edge-graph', 'workflow-run/composer-edge-graph-minimum'
+  ];
+  for (const key of composerEdgeSidebarTemplates) assert.ok(keys.includes(key), `${key} retains the shared sidebar structure`);
   for (const key of WORKFLOW_QUESTION_TEMPLATES) assert.ok(keys.includes(key), `${key} retains the shared sidebar structure`);
-  assert.equal(keys.length, 60 + 8 + HFV2.gapStates.filter(k => HFV2.templates[k].includes('<aside class="hd-sidebar"')).length + WORKFLOW_NAMING_TEMPLATES.length + HFV2.runQuestionStates.length + 6);
+  assert.equal(keys.length, 60 + 8 + HFV2.gapStates.filter(k => HFV2.templates[k].includes('<aside class="hd-sidebar"')).length + WORKFLOW_NAMING_TEMPLATES.length + HFV2.runQuestionStates.length + 6 + composerEdgeSidebarTemplates.length);
   const odd = [];
   for (const key of keys) {
     const kids = sidebarChildren(HFV2.templates[key]);

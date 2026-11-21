@@ -169,6 +169,12 @@ Approved 1280 × 800 and 1000 × 620 specimens for inline Changes diffs,
 compact Events result and usage, the running task composer, and root
 workflow approvals. See the [routes and interaction rules](decisions/task-detail-and-workflow-approvals.md).
 
+## Task conversation composer edge
+
+Provisional task conversation, group and workflow task views with a tighter
+composer boundary and a fade only while the feed continues below the viewport.
+[Design record and route list](decisions/task-composer-edge.md).
+
 ## Repository picker
 
 The five states `new-task/centered-repository-empty`, `centered-repository-recents`,

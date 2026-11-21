@@ -1,0 +1,11 @@
+/* Scoped to provisional composer edge companions. */
+.hd-composer-edge-fixture .hd-composer-edge-viewport{position:relative;flex:1 1 auto;min-height:0;display:flex;flex-direction:column}
+.hd-composer-edge-fixture .hd-composer-edge-viewport > .hd-scroll,
+.hd-composer-edge-fixture .hd-composer-edge-viewport > .hd-lane__body{flex:1 1 auto;min-height:0}
+.hd-composer-edge-fixture .hd-composer-edge-viewport.has-more::after{content:"";position:absolute;bottom:0;left:0;right:var(--space-4);height:var(--space-4);background:linear-gradient(to bottom,transparent,var(--bg));pointer-events:none}
+.hd-composer-edge-fixture .hd-m05-composer{padding-top:var(--space-1)}
+.hd-composer-edge-fixture .hd-lane__foot{padding-top:var(--space-1)}
+.hd-composer-edge-fixture .hd-pane > .hd-composer-edge-viewport + div{padding-top:var(--space-1)!important}
+/* This specimen isolates the shared column; surrounding group/embedded chrome is not drawn. */
+.hd-composer-edge-partial > .hd-sidebar,
+.hd-composer-edge-partial .hd-m05-main > .hd-m05-bar{display:none}

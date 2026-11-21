@@ -95,11 +95,105 @@ test('registry routes are unique and every descriptor resolves to a template, gu
     workflowQuestions: HFV2.findFamily('needs-you').states.filter(x => x.source?.renderer === 'workflowQuestions').map(x => x.id),
     workflowNaming: HFV2.findFamily('workflow-editor').states.filter(x => x.source?.renderer === 'workflowNaming').map(x => x.id),
     runQuestions: HFV2.findFamily('workflow-run').states.filter(x => x.source?.renderer === 'runQuestions').map(x => x.id),
-    rootApprovals: HFV2.findFamily('workflow-run').states.filter(x => x.source?.renderer === 'rootApprovals').map(x => x.id)
+    rootApprovals: HFV2.findFamily('workflow-run').states.filter(x => x.source?.renderer === 'rootApprovals').map(x => x.id),
+    composerEdge: HFV2.findFamily('task').states.filter(x => x.source?.renderer === 'composerEdge').map(x => x.id)
   };
   for (const d of descriptors.filter(x => x.renderer)) {
     if (d.renderer === 'transcript') assert.equal(HFV2.d2bProposal.createState(d.mount).name, d.mount, `${d.route} is a known fixture`);
     else assert.ok(mountIds[d.renderer].includes(d.mount), `${d.route} mounts a known fixture`);
+  }
+});
+
+test('composer edge companions stay provisional and retain their derivation routes', () => {
+  const expected = {
+    task: ['composer-edge', 'composer-edge-end', 'composer-edge-short', 'composer-edge-minimum', 'composer-edge-embedded'],
+    'parallel-group': ['composer-edge', 'composer-edge-minimum'],
+    'workflow-run': ['composer-edge-parallel', 'composer-edge-parallel-minimum', 'composer-edge-graph', 'composer-edge-graph-minimum']
+  };
+  const bases = {
+    'task/composer-edge': 'task/running-composer-empty',
+    'task/composer-edge-end': 'task/running-composer-empty',
+    'task/composer-edge-short': 'task/running-composer-empty',
+    'task/composer-edge-minimum': 'task/running-composer-empty',
+    'task/composer-edge-embedded': 'task/running-stop',
+    'parallel-group/composer-edge': 'parallel-group/lane-messages-queued',
+    'parallel-group/composer-edge-minimum': 'parallel-group/lane-messages-queued',
+    'workflow-run/composer-edge-parallel': 'workflow-run/parallel',
+    'workflow-run/composer-edge-parallel-minimum': 'workflow-run/parallel',
+    'workflow-run/composer-edge-graph': 'workflow-run/node-message-queued',
+    'workflow-run/composer-edge-graph-minimum': 'workflow-run/node-message-queued'
+  };
+  for (const [family, ids] of Object.entries(expected)) for (const id of ids) {
+    const route = `${family}/${id}`;
+    const state = HFV2.findState(HFV2.findFamily(family), id);
+    assert.ok(state, `${route} is registered`);
+    assert.equal(state.status, 'provisional', route);
+    assert.equal(HFV2.describe(route).status, 'provisional', `${route} route keeps its status`);
+    const base = bases[route];
+    assert.ok(routeSet.has(base), `${route} derives from a registered route`);
+    assert.ok(HFV2.describe(base), `${route} derivation route is renderable`);
+    assert.match(HFV2.componentDocs[route], new RegExp(`Derived from <a href="#${base}">`), `${route} records route provenance`);
+    assert.equal(typeof HFV2.templates[route], 'string', `${route} resolves to a rendered template`);
+  }
+  for (const [family, ids] of Object.entries(expected)) {
+    const actual = HFV2.findFamily(family).states.filter(state => state.id.startsWith('composer-edge')).map(state => state.id);
+    assert.deepEqual(JSON.parse(JSON.stringify(actual)), ids, `${family} companion routes stay explicit`);
+  }
+});
+
+test('composer edge fade activation requires remaining content and no focus in the feed', () => {
+  const source = read(path.join(v2, 'scripts', 'states-composer-edge.js'));
+  const styles = read(path.join(v2, 'styles', 'composer-edge.css'));
+  assert.match(source, /var more = feed\.scrollHeight - feed\.clientHeight - feed\.scrollTop > 1;/);
+  assert.match(source, /wrapper\.classList\.toggle\('has-more', more && !feed\.contains\(document\.activeElement\)\);/);
+  assert.match(styles, /\.hd-composer-edge-viewport\.has-more::after/);
+  assert.doesNotMatch(styles, /\.hd-composer-edge-viewport::after\s*\{/);
+});
+
+test('composer edge content stays before live or queued rows, including minimum companions', () => {
+  const activityRoutes = [
+    'parallel-group/composer-edge', 'parallel-group/composer-edge-minimum',
+    'workflow-run/composer-edge-parallel', 'workflow-run/composer-edge-parallel-minimum'
+  ];
+  for (const route of activityRoutes) {
+    const html = HFV2.templates[route];
+    const filler = html.indexOf('data-edge-fixture="activity"');
+    const live = html.indexOf('class="hd-working"');
+    assert.ok(filler >= 0 && live > filler, `${route}: synthetic activity precedes the live row`);
+  }
+  for (const route of ['workflow-run/composer-edge-graph', 'workflow-run/composer-edge-graph-minimum']) {
+    const html = HFV2.templates[route];
+    const paneStart = html.indexOf('aria-label="Selected on-demand node"');
+    assert.ok(paneStart >= 0, `${route}: selected node pane exists`);
+    const pane = html.slice(paneStart);
+    const filler = pane.indexOf('data-edge-fixture="completed-call"');
+    const queuedMatch = /class="[^"]*\bhd-msgq\b[^"]*"/.exec(pane);
+    assert.ok(filler >= 0 && queuedMatch && queuedMatch.index > filler, `${route}: completed call output precedes the queued message in the selected node pane`);
+  }
+  for (const route of [
+    'parallel-group/composer-edge-minimum', 'workflow-run/composer-edge-parallel-minimum',
+    'workflow-run/composer-edge-graph-minimum'
+  ]) {
+    const html = HFV2.templates[route];
+    const graph = route.includes('-graph-');
+    assert.match(html, /height: 620px;/, `${route}: minimum height`);
+    assert.match(html, new RegExp(`data-pl-min="sidebar,${graph ? 'canvas' : 'lanes'},topbar-meta"`), `${route}: minimum fixes`);
+  }
+
+  // The task companion is mounted dynamically; capture its renderer hook and inspect the resulting DOM string.
+  const original = HFV2.m05Proposal.mountState;
+  let captured;
+  HFV2.m05Proposal.mountState = (root, state, extensions) => { captured = { state, extensions }; return extensions; };
+  try {
+    const extensions = HFV2.composerEdge.mount({}, 'composer-edge');
+    const body = '<div class="hd-msg-agent">Earlier</div><div class="hd-working">Running</div>';
+    const html = extensions.hooks.transcriptTail({}, body);
+    assert.ok(html.indexOf('data-edge-fixture="activity"') < html.indexOf('class="hd-working"'), 'Task synthetic activity precedes the live row');
+    assert.ok(html.indexOf('class="hd-working"') < html.indexOf('hd-msgq--pending'), 'the queued message remains below live activity');
+    HFV2.composerEdge.mount({}, 'composer-edge-minimum');
+    assert.equal(captured.state.spec.frame, 'minimum', 'Task minimum companion selects the minimum frame');
+  } finally {
+    HFV2.m05Proposal.mountState = original;
   }
 });
 
@@ -380,8 +474,9 @@ test('aliases resolve old routes without shadowing or chaining, and land on a li
   // The retired duplicate shell state and the retired starting state (replaced on 2026-11-09) had no earlier name either.
   const redrawMounts = new Set([...HFV2.m04RedrawStates, ...HFV2.m04ModelStates, ...HFV2.m04RuntimeStates, ...HFV2.m04RepositoryStates].map(x => x.id));
   // The retired runtime card draft (2026-11-14) was a provisional route with no earlier name either.
+  // Composer-edge states are new provisional companions and have no earlier route identity.
   const nameless = new Set(['sidebar/centered-expanded', 'new-task/centered-starting', 'harness-runtime/installing-sidebar']);
-  assert.equal(entries.length, descriptors.filter(d => d.renderer && !d.skeleton && d.renderer !== 'transcript' && d.renderer !== 'messages' && d.renderer !== 'workflowQuestions' && d.renderer !== 'workflowNaming' && d.renderer !== 'runQuestions' && d.renderer !== 'rootApprovals' && !(d.renderer === 'm05' && NEW_M05_MOUNTS.has(d.mount)) && !(d.renderer === 'm04' && redrawMounts.has(d.mount))).length + retired.filter(e => e.renderer && !nameless.has(e.route)).length, 'every renderer route has exactly one old route, retired ones included, except the redraws');
+  assert.equal(entries.length, descriptors.filter(d => d.renderer && !d.skeleton && d.renderer !== 'transcript' && d.renderer !== 'messages' && d.renderer !== 'workflowQuestions' && d.renderer !== 'workflowNaming' && d.renderer !== 'runQuestions' && d.renderer !== 'rootApprovals' && d.renderer !== 'composerEdge' && !(d.renderer === 'm05' && NEW_M05_MOUNTS.has(d.mount)) && !(d.renderer === 'm04' && redrawMounts.has(d.mount))).length + retired.filter(e => e.renderer && !nameless.has(e.route)).length, 'every renderer route has exactly one old route, retired ones included, except new companions and redraws');
   for (const [old, target] of entries) {
     assert.match(old, /^[a-z0-9-]+\/[a-z0-9-]+$/);
     assert.ok(!routeSet.has(old), `${old} is an alias and must not also be canonical`);
@@ -614,7 +709,7 @@ test('the decisions index lists every decision file and each screen has an ancho
     'm04-centered-composer-proposal.md', 'm04-proposal.md',
     'm05-task-screen-approval.md', 'm05-task-screen-proposal.md',
     'parallel-group-proposal.md', 'pending-launch-discovery.md', 'repository-picker.md', 'task-detail-and-workflow-approvals.md', 'workflow-first-save-name.md', 'workflow-questions.md',
-    'run-top-bar.md', 'parallel-run-pane.md', 'orchestrator-steering-held.md', 'run-message-locks.md'
+    'run-top-bar.md', 'parallel-run-pane.md', 'orchestrator-steering-held.md', 'run-message-locks.md', 'task-composer-edge.md'
   ].sort());
   for (const name of docs) assert.ok(index.includes(`(${name})`), `${name} is indexed`);
   for (const family of HFV2.registry.families.filter(f => f.area)) assert.ok(index.includes(`### \`${family.id}\``), `${family.id} has a decision section`);
