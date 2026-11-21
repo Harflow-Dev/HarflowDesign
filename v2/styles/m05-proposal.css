@@ -150,3 +150,15 @@
 .hd-m05-barfig{margin:0}
 .hd-m05-barfig figcaption{margin-bottom:4px;font-size:12px}
 .hd-m05-barfig figcaption span{color:var(--text-secondary)}
+
+/* Provisional inline Task Detail specimens */
+.hd-m05-inline>summary{cursor:pointer;list-style:none}
+.hd-m05-inline>summary::-webkit-details-marker{display:none}
+.hd-m05-inline[open]>summary>.hd-i-chevron-right{transform:rotate(90deg)}
+.hd-m05-inline__diff{padding:0 6px 8px}
+.hd-m05-inline>summary:focus-visible,.hd-m05-events-proposal .hd-m05-facts>summary:focus-visible{outline:2px solid var(--accent);outline-offset:-2px;border-radius:var(--radius-sm)}
+.hd-m05-usage{display:grid;grid-template-columns:repeat(auto-fit,minmax(105px,1fr));gap:6px}
+.hd-m05-usage .hd-stat{padding:8px}
+.hd-m05-usage .hd-stat__value{font-size:16px;line-height:22px;overflow-wrap:anywhere}
+.hd-m05-composer-proposal [hidden]{display:none}
+.hd-m05-composer-proposal [data-m05-slot][aria-disabled="true"]{opacity:.45;cursor:default}

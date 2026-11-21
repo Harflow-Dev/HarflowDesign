@@ -93,7 +93,20 @@
   }
 
   /* ---------- Composer ---------- */
-  function composer(kind) {
+  function canStop(spec, ui) { return spec.composer === 'running' && !ui.stopping && spec.stoppable !== false; }
+  function composerEligibility(spec, ui) {
+    var running = spec.composer === 'running' && !ui.stopping;
+    var supported = spec.messagingSupported !== false;
+    var text = !!(ui.draft || '').trim();
+    var stop = canStop(spec, ui) && (!text || !supported);
+    return { stop: stop, send: running && supported && text, disabled: !!ui.stopping || (!stop && !(running && supported && text)), now: running && supported && text, locked: !supported || !!ui.stopping };
+  }
+  function composer(kind, spec, ui) {
+    if (spec && spec.composerProposal) {
+      var draft = ui.draft || '', mode = composerEligibility(spec, ui);
+      var label = ui.stopping ? 'Stopping…' : mode.stop ? 'Stop task' : 'Send';
+      return '<div class="hd-m05-composer"><form class="hd-composer hd-m05-composer-proposal" aria-label="Follow-up"><label class="hd-sr" for="m05-followup">Message this task</label><textarea id="m05-followup" class="hd-composer__input" rows="1" placeholder="Queue a message…"' + (mode.locked ? ' disabled' : '') + ' style="min-height:26px">' + esc(draft) + '</textarea><div class="hd-composer__bar"><span class="caption hd-faint" data-composer-hint' + (mode.now ? '' : ' hidden') + '>Send queues. Send now requests delivery when safe.</span><span class="hd-composer__spacer"></span><button type="button" class="hd-btn hd-btn--ghost hd-btn--sm" data-send-now' + (mode.now ? '' : ' hidden') + '>Send now</button><button type="' + (mode.send ? 'submit' : 'button') + '" class="hd-composer__send" data-m05-slot data-m05="' + (mode.stop ? 'stop' : 'noop') + '" aria-disabled="' + mode.disabled + '" aria-label="' + label + '" title="' + label + '">' + icon(mode.stop || ui.stopping ? 'stop' : 'arrow-up', false) + '</button></div></form></div>';
+    }
     var placeholder = 'Queue a message…', hint = 'Send queues. Send now requests delivery when safe.', stop = '', locked = false;
     if (kind === 'running') stop = btn('Stop', { action: 'stop', icon: 'stop' });
     if (kind === 'stopping') stop = btn('Stopping…', { icon: 'stop', disabled: true });
@@ -112,7 +125,7 @@
       return '<button type="button" role="menuitem" class="hd-menu__item' + (opt.danger ? ' hd-menu__item--danger' : '') + '"' + (opt.action ? ' data-m05="' + opt.action + '"' : '') + '>' + icon(ic, false) + '<span class="hd-menu__item-body"><span>' + esc(label) + '</span>' + (opt.hint ? '<span class="hd-menu__item-hint">' + esc(opt.hint) + '</span>' : '') + '</span></button>';
     }, parts = [];
     var unavailable = spec.menuVariant === 'unavailable';
-    if (spec.composer === 'running' || spec.composer === 'pending') parts.push(item('stop', 'Stop task…', { danger: true, action: 'stop' }));
+    if (spec.composerProposal ? canStop(spec, s) : (spec.composer === 'running' || spec.composer === 'pending')) parts.push(item('stop', 'Stop task…', { danger: true, action: 'stop' }));
     if (!unavailable && spec.composer !== 'pending') parts.push(item('terminal', spec.composer === 'running' ? 'Take over in terminal…' : 'Open in terminal…', spec.composer === 'running' ? { action: 'takeover' } : {}));
     if (spec.subtask) parts.push(item('external', 'Open parent task', { hint: 'Started by Nightly dependency audit' }));
     if (!unavailable && spec.composer !== 'pending') parts.push(item('terminal', 'Copy resume command'));
@@ -206,6 +219,20 @@
     turns: { count: '4', html: function () { return '<div class="hd-m05-panebody"><div class="hd-m05-turnbar"><label>Showing <select aria-label="Turn"><option>Turn 3 of 3 · current</option><option>Turn 2 of 3</option><option>Turn 1 of 3</option></select></label><span class="caption hd-faint hd-mono">task 7be02d91</span></div><p class="hd-m05-caption">Each turn is its own task with its own capture. Turns are not added together.</p>' + repoHtml('HarflowWeb', { count: '4', body: provenance() + scopeHtml('Committed', '3', { rows: WEB_ROWS }) + scopeHtml('Working tree', '1', { note: WORKING_NOTE, rows: [{ status: 'untracked', path: 'notes/retry-budget.md', add: null, state: 'name only' }] }) }) + diffBlock('harflow_web/delivery/queue.py', 'Committed', QUEUE_DIFF) + '</div>'; } }
   };
 
+
+  function inlineChanges() {
+    function row(scope, path, body, open, status, add, del) {
+      var identity = ['7be02d91', 'HarflowWeb', scope, path, ''].join('|');
+      var state = status === 'A' ? 'added' : status === '?' || !status ? 'untracked' : 'modified';
+      var glyph = '<span class="hd-m05-status hd-m05-status--' + state + '" title="' + state + '">' + LETTER[state] + '<span class="hd-sr"> ' + state + '</span></span>';
+      if (!body) return '<div class="hd-file hd-m05-file">' + glyph + '<span class="hd-file__path">' + esc(path) + '</span><span class="hd-m05-rowstate">' + (path === 'assets/logo.png' ? 'Binary' : 'Directory · name only') + '</span></div>';
+      return '<details class="hd-m05-inline" data-row-identity="' + esc(identity) + '"' + (open ? ' open' : '') + '><summary class="hd-file hd-m05-file">' + icon('chevron-right') + glyph + '<span class="hd-file__path">' + esc(path) + '</span><span class="hd-file__add">+' + (add || 0) + '</span><span class="hd-file__del">−' + (del || 0) + '</span></summary><div class="hd-m05-inline__diff">' + body + '</div></details>';
+    }
+    var queue = diffBlock('harflow_web/delivery/queue.py', 'Committed', QUEUE_DIFF);
+    var partial = diffBlock('harflow_web/config.py', 'Committed', ['@@ -8,3 +8,5 @@', ' RETRY_WINDOW = 3600', '+RETRY_BUDGET = 5'], '<div class="hd-m05-more"><span class="caption hd-faint">Read 32 KiB of 48 KiB stored</span>' + btn('Read more') + '</div>');
+    return '<div class="hd-m05-panebody">' + repoHtml('HarflowWeb', { count: '8', body: provenance() + '<div class="hd-m05-scope"><div class="hd-m05-scope__head">Committed <span class="hd-tab__count">5</span></div>' + row('Committed', 'harflow_web/delivery/queue.py', queue, true, 'M', 24, 3) + row('Committed', 'harflow_web/config.py', partial, false, 'M', 2, 0) + row('Committed', 'tests/test_delivery_queue.py', '<div role="status" aria-label="Reading diff">' + skeleton(2) + '</div>', false, 'A', 31, 0) + row('Committed', 'harflow_web/retry.py', paneNote('warn', 'This diff could not be read', 'Try reading the stored text again.', btn('Retry read')), false, 'M', 3, 1) + row('Committed', 'harflow_web/old.py', paneNote('warn', 'This diff couldn\'t be read', 'The stored changes were replaced since this list loaded. Reload the list, then choose the row again.', btn('Reload changes')), false, 'M', 1, 1) + '</div><div class="hd-m05-scope"><div class="hd-m05-scope__head">Working tree <span class="hd-tab__count">3</span></div><p class="hd-m05-caption">' + WORKING_NOTE + '</p>' + row('Working tree', 'harflow_web/delivery/queue.py', diffBlock('harflow_web/delivery/queue.py', 'Working tree', ['@@ -1 +1 @@', '-old', '+new'], '<div class="hd-m05-more"><span class="caption hd-faint">Stored text ends here</span></div>'), false, 'M', 1, 1) + row('Working tree', 'notes/', '') + row('Working tree', 'assets/logo.png', '', false, 'M') + '</div>' }) + '</div>';
+  }
+
   /* ---------- Artifacts tab ---------- */
   var ARTIFACTS = {
     populated: { count: '', html: function (ui) {
@@ -222,13 +249,14 @@
 
   /* ---------- Events tab: D2B content plus task facts ---------- */
   function factsGroups(spec, reveal) {
-    var group = function (id, title, body, count) { return '<details class="hd-m05-facts" data-group="' + id + '"' + (reveal === id ? ' open' : '') + '><summary tabindex="0"' + (reveal === id ? ' data-m05-focus' : '') + '>' + icon('chevron-right') + '<span>' + esc(title) + '</span>' + (count ? '<span class="hd-tab__count">' + esc(count) + '</span>' : '') + '</summary><div class="hd-m05-facts__body">' + body + '</div></details>'; };
+    var group = function (id, title, body, count) { return '<details class="hd-m05-facts" data-group="' + id + '"' + (reveal === id || (spec.eventsProposal && id === 'reported') ? ' open' : '') + '><summary tabindex="0"' + (reveal === id ? ' data-m05-focus' : '') + '>' + icon('chevron-right') + '<span>' + esc(title) + '</span>' + (count ? '<span class="hd-tab__count">' + esc(count) + '</span>' : '') + '</summary><div class="hd-m05-facts__body">' + body + '</div></details>'; };
     var kv = function (pairs) { return '<dl>' + pairs.map(function (p) { return '<dt>' + esc(p[0]) + '</dt><dd>' + esc(p[1]) + '</dd>'; }).join('') + '</dl>'; };
     var t = TASKS[spec.task];
     return group('task', 'Task', kv([['Status', BADGES[spec.badge][2]], ['Exit', spec.badge.indexOf('Inferred') >= 0 ? 'Not observed' : '—'], ['Harness', t.meta.split(' · ').slice(0, 2).join(' · ')], ['Repository', t.repo], ['Turns', spec.turns ? String(spec.turns) : '1'], ['Task ID', '7be02d91']]))
       + group('enforcement', 'What was enforced', kv([['Requested', 'Can edit this repo'], ['Mechanism', 'Harness permission rules'], ['OS sandbox', 'No'], ['Writes confined', 'No'], ['Direct commit commands', 'Denied'], ['Publish attempts', 'Not allowed'], ['Network', 'Not controlled']]) + '<p class="hd-m05-caption">Reported by the engine for this task. Each item is claimed only as far as it says.</p>')
       + group('notices', 'Notices', spec.notices ? '<ul class="hd-m05-list"><li>Checkout is on the default branch.</li>' + (spec.notices > 1 ? '<li>Inherited settings could not all be read.</li>' : '') + '</ul>' : '<p class="hd-m05-caption">No notices.</p>', spec.notices ? String(spec.notices) : '')
-      + (spec.continuity ? group('continuity', 'Continuity', '<p>Harflow began observing this run again after its dispatcher restarted. Ownership of the run did not change.</p><p class="hd-m05-caption">Time shown is process start evidence, not when the restart happened.</p>') : '');
+      + (spec.continuity ? group('continuity', 'Continuity', '<p>Harflow began observing this run again after its dispatcher restarted. Ownership of the run did not change.</p><p class="hd-m05-caption">Time shown is process start evidence, not when the restart happened.</p>') : '')
+      + (spec.eventsProposal ? group('reported', spec.eventsProposal === 'usage' ? 'Reported usage' : 'Reported result and usage', (spec.eventsProposal === 'usage' ? '' : '<h3 class="hd-m05-h">Result</h3><p>Updated the delivery queue to enforce a retry budget of five attempts per target in each hour. When the budget is exhausted, the delivery is marked exhausted rather than retried indefinitely.</p><p>Added tests covering the retry window, budget exhaustion and independent targets. The delivery queue tests passed. Existing deliveries are unchanged until their next scheduled attempt.</p>') + '<p class="hd-m05-caption">Reported by current agent run</p><div class="hd-m05-usage"><div class="hd-stat"><span class="hd-stat__label">Duration</span><span class="hd-stat__value">21m 04s</span></div><div class="hd-stat"><span class="hd-stat__label">Input tokens</span><span class="hd-stat__value">12,430</span></div><div class="hd-stat"><span class="hd-stat__label">Output tokens</span><span class="hd-stat__value">2,104</span></div><div class="hd-stat"><span class="hd-stat__label">Cost</span><span class="hd-stat__value">Unavailable</span></div></div>') : '');
   }
   var EVENTS = {
     populated: function (spec, reveal) { return '<div class="hd-m05-panebody">' + factsGroups(spec, reveal) + '<h3 class="hd-m05-h">Captured activity facts</h3><p>2 tool calls observed</p><p class="hd-m05-caption">Observed in available captured history; this does not prove complete execution capture.</p><h3 class="hd-m05-h">Captured activity</h3><p class="hd-m05-caption">Public normalized events · bounded record window</p><details class="hd-m05-record"><summary>Tool result · normalized record</summary><pre>{\n  "format": "harflow.event", "product": "harflow",\n  "product_version": "0.0.11", "v": 1,\n  "observed_at": "2026-10-14T17:46:40+00:00", "seq": 5,\n  "kind": "tool_result", "call_id": "call-1",\n  "is_error": false, "output": "Readme body"\n}</pre></details><h3 class="hd-m05-h">Recovered transcript</h3><p class="hd-m05-caption">Separate recovery source. Not used for captured activity totals.</p></div>'; },
@@ -285,14 +313,14 @@
       if (disabled.indexOf(id) >= 0) return '<button type="button" role="tab" aria-selected="false" aria-disabled="true" class="hd-tab is-disabled">' + label + '</button>';
       return '<button type="button" role="tab" aria-selected="' + (ui.tab === id) + '" class="hd-tab' + (ui.tab === id ? ' is-active' : '') + '" data-m05="tab-' + id + '">' + label + (count ? ' <span class="hd-tab__count">' + count + '</span>' : '') + '</button>';
     };
-    var body = ui.tab === 'events' && hooks && hooks.eventsBody ? hooks.eventsBody(spec, ui) : ui.tab === 'changes' ? changes.html() : ui.tab === 'artifacts' ? artifacts.html({ loaded: paged.artifacts }) : EVENTS[life || spec.events || 'populated'](spec, ui.reveal, { loaded: paged.events });
-    return '<aside class="hd-pane hd-m05-pane" aria-label="Task details"><div class="hd-pane__head"><div class="hd-tabs" role="tablist">' + tab('changes', 'Changes', changes.count) + tab('artifacts', 'Artifacts', artifacts.count) + tab('events', 'Events') + '</div><span class="hd-topbar__spacer"></span><button type="button" class="hd-btn hd-btn--icon hd-btn--sm" data-m05="pane" aria-label="Close right pane">' + icon('x') + '</button></div><div class="hd-scroll hd-m05-panescroll">' + body + '</div></aside>';
+    var body = ui.tab === 'events' && hooks && hooks.eventsBody ? hooks.eventsBody(spec, ui) : ui.tab === 'changes' ? (spec.inlineChanges ? inlineChanges() : changes.html()) : ui.tab === 'artifacts' ? artifacts.html({ loaded: paged.artifacts }) : EVENTS[life || spec.events || 'populated'](spec, ui.reveal, { loaded: paged.events });
+    return '<aside class="hd-pane hd-m05-pane" aria-label="Task details"><div class="hd-pane__head"><div class="hd-tabs" role="tablist">' + tab('changes', 'Changes', spec.inlineChanges ? '8' : changes.count) + tab('artifacts', 'Artifacts', artifacts.count) + tab('events', 'Events') + '</div><span class="hd-topbar__spacer"></span><button type="button" class="hd-btn hd-btn--icon hd-btn--sm" data-m05="pane" aria-label="Close right pane">' + icon('x') + '</button></div><div class="hd-scroll hd-m05-panescroll">' + body + '</div></aside>';
   }
   function promptHtml(spec) {
     return '<details class="hd-m05-request"><summary>' + icon('chevron-right') + 'Original request</summary><p class="hd-m05-caption">Complete stored request</p><pre>' + esc(TASKS[spec.task].prompt) + '</pre><div class="hd-row hd-m05-actions">' + btn('Copy original request') + '</div></details>';
   }
   function columnHtml(spec, hooks) {
-    var composerHtml = composer(spec.composer);
+    var composerHtml = composer(spec.composer, spec, hooks && hooks.ui);
     if (hooks && hooks.composerSlot) composerHtml = hooks.composerSlot(spec, composerHtml);
     if (hooks && hooks.transcriptSlot) return '<section class="hd-m05-column" aria-label="Task conversation">' + hooks.transcriptSlot(spec) + composerHtml + '</section>';
     var kind = spec.task === 'empty' ? 'empty' : spec.task;
@@ -300,6 +328,7 @@
     if (spec.subtask) head += '<div class="hd-m05-prov-line">' + icon('branch') + 'Sub-task started by another agent</div>';
     if (spec.resource) head += resourceCard(spec.resource);
     var flow = transcript(kind);
+    if (spec.eventsProposal === 'result') flow = flow.split('<div class="hd-turn-sep">Summary</div>')[0];
     var body = flow + (spec.banner ? BANNERS[spec.banner]() : '');
     if (hooks && hooks.transcriptTail) body = hooks.transcriptTail(spec, body);
     return '<section class="hd-m05-column" aria-label="Task conversation"><div class="hd-scroll hd-m05-scroll"><div class="hd-transcript">' + head + (spec.notice ? notice(spec.notice) : '') + body + '</div></div>' + composerHtml + '</section>';
@@ -313,7 +342,7 @@
     var frameId = ui.frame, narrow = ui.narrow || FRAMES[frameId][0] < 1100, mode = paneMode(frameId, false);
     var identity = hooks && hooks.identity;
     var pane = ui.pane ? paneHtml(spec, ui, hooks) : '';
-    return '<div class="hd-app hd-m05-app" data-theme="' + resolved + '">' + sidebarHtml(spec, selection, resolved, identity) + '<main class="hd-main hd-m05-main">' + topbar(spec, ui, narrow, identity) + '<div class="hd-m05-body hd-m05-body--' + (ui.pane ? mode : 'nopane') + '">' + columnHtml(spec, hooks) + pane + '</div>' + (ui.dialog ? DIALOGS[ui.dialog]() : '') + '</main></div>';
+    return '<div class="hd-app hd-m05-app' + (spec.eventsProposal ? ' hd-m05-events-proposal' : '') + '" data-theme="' + resolved + '">' + sidebarHtml(spec, selection, resolved, identity) + '<main class="hd-main hd-m05-main">' + topbar(spec, ui, narrow, identity) + '<div class="hd-m05-body hd-m05-body--' + (ui.pane ? mode : 'nopane') + '">' + columnHtml(spec, Object.assign({}, hooks || {}, { ui: ui })) + pane + '</div>' + (ui.dialog ? DIALOGS[ui.dialog]() : '') + '</main></div>';
   }
 
   /* ---------- Boards ---------- */
@@ -387,7 +416,7 @@
 
   /* ---------- Mount ---------- */
   function initialUi(spec) {
-    return { frame: spec.frame || 'reference', pane: !!spec.pane, tab: spec.tab || (spec.badge === 'running' || spec.composer === 'pending' ? 'events' : 'changes'), menu: !!spec.menu, dialog: spec.dialog || '', reveal: spec.reveal || '', paged: {} };
+    return { frame: spec.frame || 'reference', pane: !!spec.pane, tab: spec.tab || (spec.badge === 'running' || spec.composer === 'pending' ? 'events' : 'changes'), menu: !!spec.menu, dialog: spec.dialog || '', reveal: spec.reveal || '', paged: {}, draft: spec.draft || '', revealFocus: true };
   }
   function frameLabel(ui) {
     return '<label>Frame <select data-m05-frame><option value="reference"' + (ui.frame === 'reference' ? ' selected' : '') + '>1280 × 800</option><option value="minimum"' + (ui.frame === 'minimum' ? ' selected' : '') + '>1000 × 620</option></select></label>';
@@ -432,9 +461,9 @@
       if (ext && ext.afterRender) ext.afterRender(stage, saved);
       var target = focusSel ? stage.querySelector(focusSel) : null;
       if (target) target.focus({ preventScroll: true });
-      if (ui.reveal) { var open = stage.querySelector('[data-m05-focus]'); if (open) { open.focus({ preventScroll: true }); open.scrollIntoView({ block: 'nearest' }); } }
+      if (ui.reveal) { var open = stage.querySelector('[data-m05-focus]'); if (open) { if (!spec.eventsProposal || ui.revealFocus) open.focus({ preventScroll: true }); open.scrollIntoView({ block: 'nearest' }); } }
     }
-    function act(a) {
+    function act(a, event) {
       if (ext && ext.loading && !loadingAllows(a)) return;
       // ext.act(action) handles the actions a screen adds to the frame. It returns true, or a selector to focus, to redraw.
       if (ext && ext.act) { var handled = ext.act(a); if (handled) return render(handled === true ? undefined : handled); }
@@ -442,27 +471,42 @@
       if (a === 'menu') { ui.menu = !ui.menu; return render(ui.menu ? '.hd-m05-menu [role="menuitem"]' : '[data-m05="menu"]'); }
       if (a === 'load-more') { ui.paged[ui.tab] = true; return render('[data-m05="tab-' + ui.tab + '"]'); }
       if (a === 'takeover') { ui.menu = false; ui.dialog = 'takeover'; return render('[data-m05="dialog-close"]'); }
-      if (a === 'stop') { ui.menu = false; ui.dialog = spec.dialog && spec.dialog !== 'takeover' ? spec.dialog : 'stop'; return render('[data-m05="dialog-close"]'); }
-      if (a === 'dialog-close' || a === 'dialog-confirm') { ui.dialog = ''; return render('[data-m05="stop"]'); }
+      if (a === 'stop') { if (spec.composerProposal && !canStop(spec, ui)) return; ui.menu = false; ui.dialog = spec.dialog && spec.dialog !== 'takeover' ? spec.dialog : 'stop'; return render('[data-m05="dialog-close"]'); }
+      if (a === 'dialog-close' || a === 'dialog-confirm') { var stopDialog = ui.dialog !== 'takeover'; if (spec.composerProposal && stopDialog && a === 'dialog-confirm' && canStop(spec, ui)) ui.stopping = true; ui.dialog = ''; return render(spec.composerProposal ? (stopDialog ? '[data-m05-slot]' : '[data-m05="menu"]') : '[data-m05="stop"]'); }
       if (a.indexOf('tab-') === 0) { ui.tab = a.slice(4); ui.pane = true; ui.reveal = ''; return render('[data-m05="tab-' + ui.tab + '"]'); }
-      if (a.indexOf('reveal-') === 0) { returnFocus = '[data-m05="' + a + '"]'; ui.pane = true; ui.tab = 'events'; ui.reveal = a.slice(7); return render(); }
+      if (a.indexOf('reveal-') === 0) {
+        returnFocus = '[data-m05="' + a + '"]';
+        if (spec.eventsProposal && event && event.detail > 0 && ui.pane && ui.tab === 'events') { var target = host.querySelector('[data-group="' + a.slice(7) + '"]'); if (target) { target.open = true; target.querySelector('summary').scrollIntoView({ block: 'nearest' }); } return; }
+        var active = document.activeElement, preserve = active && active.id ? '#' + active.id : active && active.dataset.m05 ? '[data-m05="' + active.dataset.m05 + '"]' : undefined;
+        ui.pane = true; ui.tab = 'events'; ui.reveal = a.slice(7); ui.revealFocus = !event || event.detail === 0;
+        return render(spec.eventsProposal && !ui.revealFocus ? preserve : undefined);
+      }
     }
     function click(e) {
       var b = e.target.closest('[data-m05]');
-      if (b && host.contains(b)) { var a = b.dataset.m05; if (a !== 'noop') { e.preventDefault(); act(a); } return; }
+      if (b && host.contains(b)) { if (b.getAttribute('aria-disabled') === 'true') { e.preventDefault(); return; } var a = b.dataset.m05; if (a !== 'noop') { e.preventDefault(); act(a, e); } return; }
       if (ui.menu && !e.target.closest('.hd-m05-menu')) { ui.menu = false; render('[data-m05="menu"]'); }
     }
     function change(e) { if (e.target.matches('[data-m05-frame]')) { ui.frame = e.target.value; render('[data-m05-frame]'); host.querySelector('[data-m05-frame]').focus(); } }
     function keydown(e) {
+      if (spec.composerProposal && e.key === 'Enter' && !e.isComposing && e.target.matches('#m05-followup') && !e.target.value.trim()) { e.preventDefault(); return; }
       if (e.key !== 'Escape') return;
-      if (ui.dialog) { e.preventDefault(); ui.dialog = ''; return render('[data-m05="stop"]'); }
+      if (ui.dialog) { e.preventDefault(); var stopDialog = ui.dialog !== 'takeover'; ui.dialog = ''; return render(spec.composerProposal ? (stopDialog ? '[data-m05-slot]' : '[data-m05="menu"]') : '[data-m05="stop"]'); }
       if (ui.menu) { e.preventDefault(); ui.menu = false; return render('[data-m05="menu"]'); }
       if (ui.pane && (paneMode(ui.frame, false) === 'overlay' || ui.reveal)) { e.preventDefault(); ui.pane = false; ui.reveal = ''; return render(returnFocus || '[data-m05="pane"]'); }
     }
+    function input(e) {
+      if (!spec.composerProposal || !e.target.matches('#m05-followup')) return;
+      ui.draft = e.target.value;
+      var mode = composerEligibility(spec, ui), slot = host.querySelector('[data-m05-slot]'), label = mode.stop ? 'Stop task' : 'Send';
+      slot.type = mode.send ? 'submit' : 'button'; slot.dataset.m05 = mode.stop ? 'stop' : 'noop'; slot.setAttribute('aria-disabled', String(mode.disabled));
+      slot.setAttribute('aria-label', label); slot.title = label; slot.innerHTML = icon(mode.stop ? 'stop' : 'arrow-up', false);
+      host.querySelector('[data-send-now]').hidden = !mode.now; host.querySelector('[data-composer-hint]').hidden = !mode.now;
+    }
     function submit(e) { e.preventDefault(); }
-    host.addEventListener('click', click); host.addEventListener('change', change); host.addEventListener('keydown', keydown); host.addEventListener('submit', submit);
+    host.addEventListener('input', input); host.addEventListener('click', click); host.addEventListener('change', change); host.addEventListener('keydown', keydown); host.addEventListener('submit', submit);
     render();
-    return function () { disposed = true; host.removeEventListener('click', click); host.removeEventListener('change', change); host.removeEventListener('keydown', keydown); host.removeEventListener('submit', submit); };
+    return function () { disposed = true; host.removeEventListener('input', input); host.removeEventListener('click', click); host.removeEventListener('change', change); host.removeEventListener('keydown', keydown); host.removeEventListener('submit', submit); };
   }
   H.m05Proposal = { loadingAllows: loadingAllows, mount: mount, mountState: mountState, screenHtml: screenHtml, initialUi: initialUi, icon: icon, BADGES: BADGES, FRAMES: FRAMES, paneMode: paneMode, detailWidth: detailWidth, GAPS: GAPS };
 })();

@@ -35,6 +35,7 @@ const routeSet = new Set(keys);
 const descriptors = keys.map(route => HFV2.describe(route));
 const templateKeys = [...new Set(descriptors.map(d => d.templateKey))];
 const STATUSES = ['approved', 'provisional', 'record'];
+const NEW_M05_MOUNTS = new Set(['changes-inline', 'changes-inline-minimum', 'events-result-usage', 'events-result-usage-minimum', 'events-usage', 'events-usage-minimum', 'running-composer-empty', 'running-composer-empty-minimum', 'running-composer-draft', 'running-composer-draft-minimum']);
 // Hash links that were never routes: buttons and specimens drawn as links. The catalog ignores a click on
 // them, because only `#family/state[/appearance]` hashes parse as routes. Every other hash link must
 // resolve, through aliases and at most one redirect, to a registered state.
@@ -93,7 +94,8 @@ test('registry routes are unique and every descriptor resolves to a template, gu
     messages: HFV2.messageStates.map(x => x.id),
     workflowQuestions: HFV2.findFamily('needs-you').states.filter(x => x.source?.renderer === 'workflowQuestions').map(x => x.id),
     workflowNaming: HFV2.findFamily('workflow-editor').states.filter(x => x.source?.renderer === 'workflowNaming').map(x => x.id),
-    runQuestions: HFV2.findFamily('workflow-run').states.filter(x => x.source?.renderer === 'runQuestions').map(x => x.id)
+    runQuestions: HFV2.findFamily('workflow-run').states.filter(x => x.source?.renderer === 'runQuestions').map(x => x.id),
+    rootApprovals: HFV2.findFamily('workflow-run').states.filter(x => x.source?.renderer === 'rootApprovals').map(x => x.id)
   };
   for (const d of descriptors.filter(x => x.renderer)) {
     if (d.renderer === 'transcript') assert.equal(HFV2.d2bProposal.createState(d.mount).name, d.mount, `${d.route} is a known fixture`);
@@ -379,7 +381,7 @@ test('aliases resolve old routes without shadowing or chaining, and land on a li
   const redrawMounts = new Set([...HFV2.m04RedrawStates, ...HFV2.m04ModelStates, ...HFV2.m04RuntimeStates, ...HFV2.m04RepositoryStates].map(x => x.id));
   // The retired runtime card draft (2026-11-14) was a provisional route with no earlier name either.
   const nameless = new Set(['sidebar/centered-expanded', 'new-task/centered-starting', 'harness-runtime/installing-sidebar']);
-  assert.equal(entries.length, descriptors.filter(d => d.renderer && !d.skeleton && d.renderer !== 'transcript' && d.renderer !== 'messages' && d.renderer !== 'workflowQuestions' && d.renderer !== 'workflowNaming' && d.renderer !== 'runQuestions' && !(d.renderer === 'm04' && redrawMounts.has(d.mount))).length + retired.filter(e => e.renderer && !nameless.has(e.route)).length, 'every renderer route has exactly one old route, retired ones included, except the redraws');
+  assert.equal(entries.length, descriptors.filter(d => d.renderer && !d.skeleton && d.renderer !== 'transcript' && d.renderer !== 'messages' && d.renderer !== 'workflowQuestions' && d.renderer !== 'workflowNaming' && d.renderer !== 'runQuestions' && d.renderer !== 'rootApprovals' && !(d.renderer === 'm05' && NEW_M05_MOUNTS.has(d.mount)) && !(d.renderer === 'm04' && redrawMounts.has(d.mount))).length + retired.filter(e => e.renderer && !nameless.has(e.route)).length, 'every renderer route has exactly one old route, retired ones included, except the redraws');
   for (const [old, target] of entries) {
     assert.match(old, /^[a-z0-9-]+\/[a-z0-9-]+$/);
     assert.ok(!routeSet.has(old), `${old} is an alias and must not also be canonical`);
@@ -611,7 +613,7 @@ test('the decisions index lists every decision file and each screen has an ancho
     'approval.md', 'd2b-observation-approval.md', 'd2b-observation-proposal.md',
     'm04-centered-composer-proposal.md', 'm04-proposal.md',
     'm05-task-screen-approval.md', 'm05-task-screen-proposal.md',
-    'parallel-group-proposal.md', 'pending-launch-discovery.md', 'repository-picker.md', 'workflow-first-save-name.md', 'workflow-questions.md',
+    'parallel-group-proposal.md', 'pending-launch-discovery.md', 'repository-picker.md', 'task-detail-and-workflow-approvals.md', 'workflow-first-save-name.md', 'workflow-questions.md',
     'run-top-bar.md', 'parallel-run-pane.md', 'orchestrator-steering-held.md', 'run-message-locks.md'
   ].sort());
   for (const name of docs) assert.ok(index.includes(`(${name})`), `${name} is indexed`);
@@ -1151,7 +1153,7 @@ test('the task screen markup of every existing state is unchanged by the optiona
   assert.equal(typeof m05.screenHtml, 'function');
   const lines = [];
   for (const state of HFV2.m05ProposalStates) {
-    if (state.spec.board) continue;
+    if (state.spec.board || NEW_M05_MOUNTS.has(state.id)) continue;
     const base = m05.initialUi(state.spec);
     const variants = [base, { ...base, pane: true, tab: 'events' }, { ...base, pane: true, tab: 'changes' }, { ...base, pane: true, tab: 'artifacts' }, { ...base, frame: 'minimum' }, { ...base, frame: 'minimum', pane: true, tab: 'events' }, { ...base, menu: true }, { ...base, dialog: 'stop' }];
     variants.forEach((ui, i) => {

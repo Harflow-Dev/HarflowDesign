@@ -101,22 +101,41 @@
     ['platform-options', 'Top bar', 'Decision · top bar composition', 'Specimen adjacency against the accepted entry title position, three ways, at both widths.', 'MainWindowNavigationView.swift:48 principal; TaskDetailToolbar.swift:80 primaryAction.', '', { board: 'platform' }]
   ];
 
+  // Provisional drawings are separate from the approved routes.
+  [
+    ['changes-inline', 'Changes', 'Changes · inline diffs', 'Stored diffs open beneath their exact rows.', Object.assign({}, DONE, { composer: 'settled', pane: 'open', tab: 'changes', changes: 'single', inlineChanges: true })],
+    ['events-result-usage', 'Events', 'Events · reported result and usage', 'Reported result and usage share the Events flow.', Object.assign({}, DONE, { composer: 'settled', pane: 'open', tab: 'events', events: 'populated', eventsProposal: 'result', notices: 2 })],
+    ['events-usage', 'Events', 'Events · reported usage', 'Usage remains available when the transcript already has a summary.', Object.assign({}, DONE, { composer: 'settled', pane: 'open', tab: 'events', events: 'populated', eventsProposal: 'usage', notices: 2 })],
+    ['running-composer-empty', 'Status', 'Running · empty composer', 'The trailing control opens Stop confirmation for an empty draft.', Object.assign({}, RUNNING, { composer: 'running', pane: false, composerProposal: true })],
+    ['running-composer-draft', 'Status', 'Running · draft composer', 'A nonblank draft offers queued Send and Send now.', Object.assign({}, RUNNING, { composer: 'running', pane: false, composerProposal: true, draft: 'Please check the cancellation path too.' })]
+  ].forEach(function (item) {
+    [false, true].forEach(function (minimum) {
+      var id = item[0] + (minimum ? '-minimum' : '');
+      rows.push([id, item[1], item[2] + (minimum ? ' · minimum' : ''), item[3], 'Synthetic local fixture; native qualification remains separate.', '', Object.assign({}, item[4], minimum ? { frame: 'minimum' } : {})]);
+    });
+  });
+
   // Contract gaps are still open for these, so the approval does not cover them.
   var PROVISIONAL = ['state-cancel-partial', 'artifacts-populated', 'artifacts-page-error', 'artifacts-empty', 'artifacts-loading', 'artifacts-error'];
   // Boards record the decision. Options that were not chosen are not approved.
   var RECORDS = ['overview', 'retry-options', 'stop-options', 'adaptive-options', 'platform-options'];
   var DISPLAY_ONLY = 'Approved for display only: "Status unavailable" is not a task status and does not extend the status vocabulary. ';
   var states = rows.map(function (r) {
-    var kind = PROVISIONAL.indexOf(r[0]) >= 0 ? 'provisional' : RECORDS.indexOf(r[0]) >= 0 ? 'record' : 'approved';
-    var prefix = { approved: 'Approved by the owner, 2026-11-07. ', provisional: 'Provisional, not approved: contract gap open. ', record: 'Decision record. Options not chosen are not approved. ' }[kind];
-    return { id: r[0], gap: r[1], title: r[2], summary: r[3], description: prefix + (r[0] === 'state-status-unavailable' ? DISPLAY_ONLY : '') + r[3], basis: r[4], flag: r[5], spec: r[6], kind: kind, approval: kind === 'approved' ? 'approved' : kind, approvalNote: kind === 'provisional' ? 'Provisional · not approved · contract gap open' : kind === 'record' ? 'Decision record · options not chosen are not approved' : '' };
+    var redraw = /^(changes-inline|events-result-usage|events-usage|running-composer-(empty|draft))/.test(r[0]);
+    var kind = (PROVISIONAL.indexOf(r[0]) >= 0 || redraw) ? 'provisional' : RECORDS.indexOf(r[0]) >= 0 ? 'record' : 'approved';
+    var prefix = redraw ? 'Provisional, not approved. ' : { approved: 'Approved by the owner, 2026-11-07. ', provisional: 'Provisional, not approved: contract gap open. ', record: 'Decision record. Options not chosen are not approved. ' }[kind];
+    return { id: r[0], gap: r[1], title: r[2], summary: r[3], description: prefix + (r[0] === 'state-status-unavailable' ? DISPLAY_ONLY : '') + r[3], basis: r[4], flag: r[5], spec: r[6], kind: kind, approval: kind === 'approved' ? 'approved' : kind, approvalNote: kind === 'provisional' ? (redraw ? 'Provisional · not approved' : 'Provisional · not approved · contract gap open') : kind === 'record' ? 'Decision record · options not chosen are not approved' : '' };
   });
   H.m05ProposalStates = states;
 
   states.forEach(function (s) {
     var key = 'm05-proposal/' + s.id;
     T[key] = '<div class="hd-m05" data-theme="{{theme}}" data-light-on="{{lightOn}}" data-dark-on="{{darkOn}}" data-system-on="{{systemOn}}" data-m05-state="' + s.id + '"><div class="hd-m05-catalog" aria-label="' + STRIPS.label + '"></div><div class="hd-m05-stage"></div></div>';
+    if (/^(changes-inline|events-result-usage|events-usage|running-composer-(empty|draft))/.test(s.id)) {
+      docs[key] = '<p><strong>Provisional, not approved.</strong> See the <a href="docs/decisions/task-detail-and-workflow-approvals.md">decision record</a> for scope. Native fidelity and product acceptance remain separate.</p><p>Fixtures are deterministic local text; no engine, provider or network is involved.</p>';
+    } else {
     docs[key] = '<p><strong>' + (s.kind === 'approved' ? 'Approved by the owner, 2026-11-07.' : s.kind === 'provisional' ? 'Provisional, not approved.' : 'Decision record.') + '</strong> See the <a href="docs/decisions/m05-task-screen-approval.md">approval record</a> for scope. Approval does not establish native fidelity or product acceptance.</p><p>Fixtures are deterministic local text; no engine, provider or network is involved. Native toolbar, menus, materials and text rendering are browser approximations. <a href="docs/decisions/m05-task-screen-proposal.md">Semantics, copy tables and contract notes</a>.</p>';
+    }
   });
 
   // Routes: renderer id -> [family, state, group]. The renderer id stays the template key.
@@ -188,7 +207,7 @@
   };
   var APPROVAL = { by: 'the owner', date: '2026-11-07', decision: 'Task screen states, relayed by the coordinator · native and runtime qualification separate' };
   states.forEach(function (s) {
-    var route = ROUTES[s.id];
+    var route = ROUTES[s.id] || ['task', s.id, s.gap];
     H.registerState(route[0], {
       id: route[1], title: s.title, description: s.description, group: route[2], status: s.kind === 'approved' ? 'approved' : s.kind,
       approval: s.kind === 'approved' ? APPROVAL : undefined, approvalNote: s.approvalNote || undefined,

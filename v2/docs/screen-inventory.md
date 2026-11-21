@@ -163,6 +163,12 @@ Eight Needs you states approved by the owner on 2026-11-17 (“Approve these car
 
 Fourteen states of the workflow run, each with a `-minimum` twin, drawn as answers to four open questions and decided by the owner on 2026-11-20 (relayed by the coordinator after the drawings were seen). Approved: run top bar `workflow-run/topbar-no-more` ([record](decisions/run-top-bar.md)); Run pane `parallel-run-pane`, `parallel-run-pane-collapsed`, `graph-no-selection` ([record](decisions/parallel-run-pane.md)); Messages and goal `orchestrator-steering-stale`, `-expired`, `-dismissing`, `-dismissed`, `-command-refused` ([record](decisions/orchestrator-steering-held.md)); run message locks `lanes-completed`, `lanes-cancelling`, `cancelled-node-locked`, `cancelled-orchestrator-locked`, `lanes-unsupported` ([record](decisions/run-message-locks.md)). The run pane toggle is new behaviour the owner chose to add. Four top bar states the owner did not choose are retired and open `topbar-no-more`. The approved `orchestrator-steering-open`, `-waiting` and `-unknown` carry a Dismiss action since the same day. Each derives from an approved run state by exact swap.
 
+## Task Detail and workflow approval disclosures
+
+Provisional 1280 × 800 and 1000 × 620 specimens for inline Changes diffs,
+compact Events result and usage, the running task composer, and root
+workflow approvals. See the [routes and interaction rules](decisions/task-detail-and-workflow-approvals.md).
+
 ## Repository picker
 
 The five states `new-task/centered-repository-empty`, `centered-repository-recents`,
