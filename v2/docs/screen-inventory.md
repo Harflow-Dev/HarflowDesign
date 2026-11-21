@@ -177,7 +177,7 @@ composer boundary and a fade only while the feed continues below the viewport.
 
 ## Selected workflow inspector approvals
 
-Provisional states for approval details and decisions inside the inspector's
+Approved states for approval details and decisions inside the inspector's
 main scroll. Variants cover one request, five requests, several expanded
 requests, a settled decision and retained task activity with root steering.
 Each has a 1000 × 620 counterpart. The composer remains anchored and uses the

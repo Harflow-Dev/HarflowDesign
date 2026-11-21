@@ -1,10 +1,10 @@
 # Inline approvals in the selected workflow inspector
 
-**Provisional drawings.** On 2026-11-21 the owner chose expandable
+**Approved by the owner on 2026-11-21** at drawing
+`cc963375871fe91397351f425b9f1ebb3079c77b`. The owner chose expandable
 approval cards in the selected workflow inspector's main scroll, with
 each request's details and buttons together and no inner scrolling.
 The owner also reaffirmed the bottom edge fade above the task composer.
-The exact drawing approval will be recorded here.
 
 The selected task header and existing composer remain anchored.
 The goal, call or activity content and approval cards share one
