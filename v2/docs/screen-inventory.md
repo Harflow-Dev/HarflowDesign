@@ -175,6 +175,15 @@ Approved task conversation, group and workflow task views with a tighter
 composer boundary and a fade only while the feed continues below the viewport.
 [Design record and route list](decisions/task-composer-edge.md).
 
+## Selected workflow inspector approvals
+
+Provisional states for approval details and decisions inside the inspector's
+main scroll. Variants cover one request, five requests, several expanded
+requests, a settled decision and retained task activity with root steering.
+Each has a 1000 × 620 counterpart. The composer remains anchored and uses the
+conversation edge where present.
+[Design record and route list](decisions/selected-inspector-approvals.md).
+
 ## Repository picker
 
 The five states `new-task/centered-repository-empty`, `centered-repository-recents`,

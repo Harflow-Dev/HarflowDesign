@@ -156,12 +156,17 @@ test('no existing template changed: the digests equal those of the base commit a
     ...HFV2.runQuestionStates,
     ...['changes-inline', 'events-result-usage', 'events-usage', 'running-composer-empty', 'running-composer-draft'].flatMap(id => [`m05-proposal/${id}`, `m05-proposal/${id}-minimum`]),
     ...['single', 'five', 'several'].flatMap(id => [`workflow-run/root-approval-${id}`, `workflow-run/root-approval-${id}-minimum`]),
+    // The ten provisional selected-inspector approval companions derive from existing workflow shells.
+    ...['single', '', 'expanded', 'settled', 'steering'].flatMap(id => {
+      const suffix = id ? `-${id}` : '';
+      return [`workflow-run/inspector-approvals${suffix}`, `workflow-run/inspector-approvals${suffix}-minimum`];
+    }),
     // The eleven new provisional composer-edge companions derive from existing task, lane and workflow states.
     ...['task/composer-edge', 'task/composer-edge-end', 'task/composer-edge-short', 'task/composer-edge-minimum', 'task/composer-edge-embedded',
       'parallel-group/composer-edge', 'parallel-group/composer-edge-minimum',
       'workflow-run/composer-edge-parallel', 'workflow-run/composer-edge-parallel-minimum', 'workflow-run/composer-edge-graph', 'workflow-run/composer-edge-graph-minimum']
   ];
-  assert.equal(added.length, 22 + 20 + 24 + 2 + 6 + HFV2.gapStates.length + 8 + 5 + 8 + 28 + 10 + 6 + 11);
+  assert.equal(added.length, 22 + 20 + 24 + 2 + 6 + HFV2.gapStates.length + 8 + 5 + 8 + 28 + 10 + 10 + 6 + 11);
   assert.equal(HFV2.runQuestionStates.length, 28);
   const removed = ['m04-proposal/centered-starting'];
   for (const key of removed) { assert.ok(key in manifest && !(key in HFV2.templates), `${key} is removed with its retired state`); delete manifest[key]; }
@@ -397,9 +402,17 @@ test('every static template with a sidebar has the top, nav, sections and foot s
     'workflow-run/composer-edge-parallel', 'workflow-run/composer-edge-parallel-minimum',
     'workflow-run/composer-edge-graph', 'workflow-run/composer-edge-graph-minimum'
   ];
+  const inspectorApprovalSidebarTemplates = [
+    'workflow-run/inspector-approvals-single', 'workflow-run/inspector-approvals-single-minimum',
+    'workflow-run/inspector-approvals', 'workflow-run/inspector-approvals-minimum',
+    'workflow-run/inspector-approvals-expanded', 'workflow-run/inspector-approvals-expanded-minimum',
+    'workflow-run/inspector-approvals-settled', 'workflow-run/inspector-approvals-settled-minimum',
+    'workflow-run/inspector-approvals-steering', 'workflow-run/inspector-approvals-steering-minimum'
+  ];
+  for (const key of inspectorApprovalSidebarTemplates) assert.ok(keys.includes(key), `${key} retains the shared sidebar structure`);
   for (const key of composerEdgeSidebarTemplates) assert.ok(keys.includes(key), `${key} retains the shared sidebar structure`);
   for (const key of WORKFLOW_QUESTION_TEMPLATES) assert.ok(keys.includes(key), `${key} retains the shared sidebar structure`);
-  assert.equal(keys.length, 60 + 8 + HFV2.gapStates.filter(k => HFV2.templates[k].includes('<aside class="hd-sidebar"')).length + WORKFLOW_NAMING_TEMPLATES.length + HFV2.runQuestionStates.length + 6 + composerEdgeSidebarTemplates.length);
+  assert.equal(keys.length, 60 + 8 + HFV2.gapStates.filter(k => HFV2.templates[k].includes('<aside class="hd-sidebar"')).length + WORKFLOW_NAMING_TEMPLATES.length + HFV2.runQuestionStates.length + 6 + composerEdgeSidebarTemplates.length + inspectorApprovalSidebarTemplates.length);
   const odd = [];
   for (const key of keys) {
     const kids = sidebarChildren(HFV2.templates[key]);

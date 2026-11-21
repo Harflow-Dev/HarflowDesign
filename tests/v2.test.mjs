@@ -96,7 +96,8 @@ test('registry routes are unique and every descriptor resolves to a template, gu
     workflowNaming: HFV2.findFamily('workflow-editor').states.filter(x => x.source?.renderer === 'workflowNaming').map(x => x.id),
     runQuestions: HFV2.findFamily('workflow-run').states.filter(x => x.source?.renderer === 'runQuestions').map(x => x.id),
     rootApprovals: HFV2.findFamily('workflow-run').states.filter(x => x.source?.renderer === 'rootApprovals').map(x => x.id),
-    composerEdge: HFV2.findFamily('task').states.filter(x => x.source?.renderer === 'composerEdge').map(x => x.id)
+    composerEdge: HFV2.findFamily('task').states.filter(x => x.source?.renderer === 'composerEdge').map(x => x.id),
+    inspectorApprovals: HFV2.findFamily('workflow-run').states.filter(x => x.source?.renderer === 'inspectorApprovals').map(x => x.id)
   };
   for (const d of descriptors.filter(x => x.renderer)) {
     if (d.renderer === 'transcript') assert.equal(HFV2.d2bProposal.createState(d.mount).name, d.mount, `${d.route} is a known fixture`);
@@ -476,7 +477,7 @@ test('aliases resolve old routes without shadowing or chaining, and land on a li
   // The retired runtime card draft (2026-11-14) was a provisional route with no earlier name either.
   // Composer-edge states are new provisional companions and have no earlier route identity.
   const nameless = new Set(['sidebar/centered-expanded', 'new-task/centered-starting', 'harness-runtime/installing-sidebar']);
-  assert.equal(entries.length, descriptors.filter(d => d.renderer && !d.skeleton && d.renderer !== 'transcript' && d.renderer !== 'messages' && d.renderer !== 'workflowQuestions' && d.renderer !== 'workflowNaming' && d.renderer !== 'runQuestions' && d.renderer !== 'rootApprovals' && d.renderer !== 'composerEdge' && !(d.renderer === 'm05' && NEW_M05_MOUNTS.has(d.mount)) && !(d.renderer === 'm04' && redrawMounts.has(d.mount))).length + retired.filter(e => e.renderer && !nameless.has(e.route)).length, 'every renderer route has exactly one old route, retired ones included, except new companions and redraws');
+  assert.equal(entries.length, descriptors.filter(d => d.renderer && !d.skeleton && d.renderer !== 'transcript' && d.renderer !== 'messages' && d.renderer !== 'workflowQuestions' && d.renderer !== 'workflowNaming' && d.renderer !== 'runQuestions' && d.renderer !== 'rootApprovals' && d.renderer !== 'composerEdge' && d.renderer !== 'inspectorApprovals' && !(d.renderer === 'm05' && NEW_M05_MOUNTS.has(d.mount)) && !(d.renderer === 'm04' && redrawMounts.has(d.mount))).length + retired.filter(e => e.renderer && !nameless.has(e.route)).length, 'every renderer route has exactly one old route, retired ones included, except new companions and redraws');
   for (const [old, target] of entries) {
     assert.match(old, /^[a-z0-9-]+\/[a-z0-9-]+$/);
     assert.ok(!routeSet.has(old), `${old} is an alias and must not also be canonical`);
@@ -709,7 +710,7 @@ test('the decisions index lists every decision file and each screen has an ancho
     'm04-centered-composer-proposal.md', 'm04-proposal.md',
     'm05-task-screen-approval.md', 'm05-task-screen-proposal.md',
     'parallel-group-proposal.md', 'pending-launch-discovery.md', 'repository-picker.md', 'task-detail-and-workflow-approvals.md', 'workflow-first-save-name.md', 'workflow-questions.md',
-    'run-top-bar.md', 'parallel-run-pane.md', 'orchestrator-steering-held.md', 'run-message-locks.md', 'task-composer-edge.md'
+    'run-top-bar.md', 'parallel-run-pane.md', 'orchestrator-steering-held.md', 'run-message-locks.md', 'task-composer-edge.md', 'selected-inspector-approvals.md'
   ].sort());
   for (const name of docs) assert.ok(index.includes(`(${name})`), `${name} is indexed`);
   for (const family of HFV2.registry.families.filter(f => f.area)) assert.ok(index.includes(`### \`${family.id}\``), `${family.id} has a decision section`);
@@ -721,6 +722,84 @@ test('the route map lists every earlier route and its current route', () => {
   const map = read(path.join(v2, 'docs', 'route-map.md'));
   for (const [old, target] of Object.entries(HFV2.routeAliases)) assert.ok(map.includes(`| \`${old}\` | \`${target}\` |`), `${old} is mapped`);
   for (const [from, to] of Object.entries(HFV2.routeRedirects)) assert.ok(map.includes(`| \`${from}\` | \`${to}\` |`), `${from} redirects to ${to} in the map`);
+});
+
+test('selected inspector approval companions keep one expandable pane scroll and independent request decisions', () => {
+  const ids = ['inspector-approvals-single', 'inspector-approvals', 'inspector-approvals-expanded', 'inspector-approvals-settled', 'inspector-approvals-steering'];
+  const routes = ids.flatMap(id => [
+    `workflow-run/${id}`,
+    `workflow-run/${id}-minimum`
+  ]);
+  assert.equal(routes.length, 10);
+
+  for (const route of routes) {
+    const descriptor = HFV2.describe(route);
+    assert.equal(descriptor.status, 'provisional', route);
+    const html = HFV2.templates[descriptor.templateKey];
+    assert.ok(html.includes('hd-inspector-approvals-fixture'), `${route} is scoped`);
+    assert.equal((html.match(/class="hd-scroll"/g) || []).length, 1, `${route} has one pane scroll`);
+    assert.equal((html.match(/class="hd-composer"/g) || []).length, route.includes('-single') ? 0 : 1, `${route} has only the eligible composer`);
+    assert.equal((html.match(/style="flex:none;padding:var\(--space-3\);border-top:1px solid var\(--border\);"/g) || []).length, route.includes('-single') ? 0 : 1, `${route} has one anchored footer`);
+    if (route.includes('-steering')) {
+      assert.ok(!html.includes('id="msg-node"'), `${route} excludes the separate task composer`);
+      assert.ok(html.includes('id="msg-orchestrator"'), `${route} retains the root reply composer`);
+    } else if (!route.includes('-single')) {
+      assert.ok(html.includes('id="msg-node"'), `${route} retains the selected task composer`);
+    }
+    const taskSection = html.split('<section class="hd-root-approvals" aria-label="Task approval requests">')[1]?.split('</section>')[0];
+    assert.ok(taskSection, `${route} has a task request group`);
+    const taskCards = [...taskSection.matchAll(/<details class="hd-approval hd-root-approval[^>]*>/g)];
+    assert.equal(taskCards.length, route.includes('-single') ? 1 : 5, `${route} retains every task request`);
+    const taskRows = [...taskSection.matchAll(/(<details class="hd-approval hd-root-approval[^>]*>)([\s\S]*?)<\/details>/g)];
+    const openTaskNames = taskRows.filter(([, opening]) => /\sopen>/.test(opening)).map(([, , card]) => /<strong>([^<]+)<\/strong>/.exec(card)?.[1]);
+    assert.deepEqual(openTaskNames, route.includes('-expanded')
+      ? ['Run verification', 'Inspect packages', 'Check reports', 'Run final check']
+      : ['Run verification'], `${route} has the expected independently expanded task cards`);
+    if (!route.includes('-settled')) assert.ok(taskSection.includes('Approve once') && taskSection.includes('Reject'), `${route} shows request decisions`);
+    assert.ok(html.includes('aria-label="Task approval requests"'), `${route} names task requests`);
+    if (route.includes('-minimum')) assert.equal(descriptor.state.specimenSize, '1000 × 620', route);
+    assert.ok(!html.includes('Send now'), `${route} hides Send now while the draft is blank`);
+    if (route.includes('-steering')) {
+      const runStart = html.indexOf('<section class="hd-root-approvals" aria-label="Run-scoped worker approval requests">');
+      const dismiss = html.indexOf('>Dismiss</button>');
+      const reply = html.indexOf('Reply to the orchestrator');
+      const heading = html.indexOf('>Orchestrator</h3>');
+      assert.ok(taskSection && heading > html.indexOf('aria-label="Task approval requests"'), `${route} places Orchestrator after task approvals`);
+      assert.ok(runStart > heading && dismiss > runStart && reply > dismiss, `${route} orders run approvals, Dismiss and root reply`);
+      const runSection = html.slice(runStart).split('</section>')[0];
+      const runRows = [...runSection.matchAll(/(<details class="hd-approval hd-root-approval[^>]*>)([\s\S]*?)<\/details>/g)];
+      assert.equal(runRows.length, 2, `${route} has two run-scoped requests`);
+      assert.deepEqual(runRows.filter(([, opening]) => /\sopen>/.test(opening)).map(([, , card]) => /<strong>([^<]+)<\/strong>/.exec(card)?.[1]),
+        ['Install dependencies', 'Run migration check'], `${route} expands the expected run-scoped requests`);
+    }
+    if (route.includes('-settled')) {
+      assert.ok(html.includes('hd-approval--settled'), `${route} draws a settled request`);
+      const firstCard = taskCards[0][0] + taskSection.slice(taskCards[0].index + taskCards[0][0].length, taskSection.indexOf('</details>') + '</details>'.length);
+      assert.ok(!firstCard.includes('data-inspector-decision'), `${route} settled card has no decision actions`);
+    }
+    if (!route.includes('-single') && !route.includes('-steering')) {
+      const footerOpen = html.indexOf('<div style="flex:none;padding:var(--space-3);border-top:1px solid var(--border);"><div class="hd-inspector-approvals__queue">');
+      const queue = html.indexOf('class="hd-inspector-approvals__queue"');
+      const composer = html.indexOf('<form class="hd-composer"');
+      const scroll = html.indexOf('class="hd-scroll"');
+      assert.ok(footerOpen > scroll && queue > footerOpen && composer > queue, `${route} places the queued bubble in the fixed composer footer`);
+      const shortQueueText = html.indexOf('Check the lockfile too.');
+      assert.ok(!html.includes('Also check whether the lockfile pins a vulnerable transitive dependency.') && shortQueueText > queue && shortQueueText < composer,
+        `${route} keeps the short queued message between the queue container and composer`);
+    }
+  }
+
+  const css = read(path.join(v2, 'styles', 'inspector-approvals.css'));
+  const toolBodyRule = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)].find(([, selector]) =>
+    selector.includes('.hd-inspector-approvals-fixture') && selector.includes('.hd-pane') && selector.includes('.hd-tool__body'));
+  assert.ok(toolBodyRule, 'the tool body override stays scoped to the companion');
+  const declarations = Object.fromEntries(toolBodyRule[2].split(';').map(item => item.trim()).filter(Boolean).map(item => {
+    const separator = item.indexOf(':');
+    return [item.slice(0, separator).trim(), item.slice(separator + 1).trim()];
+  }));
+  assert.equal(declarations['max-height'], 'none');
+  assert.equal(declarations.overflow, 'visible');
+  assert.equal(typeof HFV2.composerEdge.setup, 'function', 'the preview exposes the shared composer edge hook');
 });
 
 test('the route map lists every redraw with the route it replaces and the Events deep links', () => {

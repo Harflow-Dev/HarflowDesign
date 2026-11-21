@@ -96,10 +96,12 @@
       wrapper.classList.toggle('has-more', more && !feed.contains(document.activeElement));
     }
     feed.addEventListener('scroll', update, {passive:true});
+    feed.addEventListener('toggle', update, true);
     feed.addEventListener('focusin', update); feed.addEventListener('focusout', function () { requestAnimationFrame(update); });
     if (end) feed.scrollTop = feed.scrollHeight;
     update();
   }
+  H.composerEdge.setup = setup;
   function scan() {
     document.querySelectorAll('.hd-composer-edge-fixture').forEach(function (app) {
       app.querySelectorAll('.hd-lane').forEach(function (lane) {
