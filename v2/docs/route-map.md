@@ -6,7 +6,7 @@ The aliases and the route grammar are defined in `v2/scripts/route-aliases.js`. 
 
 ## Unchanged routes
 
-The routes of the base screens, the brand book, the foundations and the components keep their ids (for example `needs-you/waiting`, `workflow-editor/node-selected`, `components/button`), except the 41 retired routes listed under "Retired routes".
+The routes of the base screens, the brand book, the foundations and the components keep their ids (for example `needs-you/waiting`, `workflow-editor/node-selected`, `components/button`), except the 42 retired routes listed under "Retired routes".
 
 ## Retired routes
 
@@ -55,6 +55,7 @@ The owner replaced these designs on 2026-11-08, nine of them by answering the re
 | `workflow-run/topbar-more-actions-minimum` | `workflow-run/topbar-no-more-minimum` | Run top bar · Run started line · 1000 × 620 |
 | `workflow-run/topbar-more-actions-disabled` | `workflow-run/topbar-no-more` | Run top bar · Run started line |
 | `workflow-run/topbar-more-actions-disabled-minimum` | `workflow-run/topbar-no-more-minimum` | Run top bar · Run started line · 1000 × 620 |
+| `statistics/all-time` | `statistics/overview` | Statistics · 30 days default |
 
 The earlier routes `m04-proposal/*` and `d2b-proposal/*` of the retired states (listed below) reach the same replacements through their alias followed by the redirect. `sidebar/centered-expanded` was a duplicate of `new-task/centered-empty` and opens it.
 
@@ -151,7 +152,7 @@ These are canonical routes with no earlier name; they are not aliases or redirec
 | `workflows` | `new-menu`, `generate`, `generate-builder-options`, `generate-refused`, `generate-uncertain` |
 | `workflow-run` | `orchestrator-selected`, `orchestrator-steering-open`, `orchestrator-steering-unavailable`, `orchestrator-steering-waiting`, `orchestrator-steering-cancelling` and `orchestrator-steering-unknown`, `node-message-queued`, `node-message-refused`, `node-message-unavailable`, `messages-unsupported`, `revise-goal`, `goal-revised`, `revise-goal-unavailable`, `revise-goal-answered-elsewhere`, `revise-goal-failed` |
 | `resources` | `not-enabled`, `unsupported`, `unavailable`, `unavailable-permission`, `empty`, `stale`, `over-capacity` |
-| `statistics` | `empty`, `error`, `stale`, `partial-accounting`, `all-time`, `unsupported` |
+| `statistics` | `empty`, `error`, `stale`, `partial-accounting`, `unsupported` |
 
 ## Loading routes
 

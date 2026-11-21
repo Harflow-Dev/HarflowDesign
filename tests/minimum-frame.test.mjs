@@ -184,7 +184,14 @@ test('no existing template changed: the digests equal those of the base commit a
     assert.equal(now, sha, `${key} is pinned at its new digest`);
   }
   assert.ok(!HFV2.templates['workflows/list'].includes('Search workflows'), 'the Workflows list has no search field');
+  // Owner decision 2026-11-21 removes only the All time option from the Statistics selector.
+  // Reinsert that exact historical button to prove every other byte still matches the approved template.
+  const statistics = HFV2.templates['statistics/overview'];
+  const statisticsWithHistoricalOption = statistics.replace('</button></div></div><div class="hd-grid hd-grid--4">', '</button><button type="button" class="hd-seg__item">All time</button></div></div><div class="hd-grid hd-grid--4">');
+  assert.notEqual(statisticsWithHistoricalOption, statistics, 'the Statistics period decision removes its one retired option');
+  assert.equal(crypto.createHash('sha1').update(statisticsWithHistoricalOption).digest('hex'), manifest['statistics/overview'], 'Statistics changes only by deleting the All time option');
   for (const [key, sha] of Object.entries(manifest).filter(([key]) => key !== 'overview/areas' && !(key in glyphChanged) && !(key in searchRemoved))) {
+    if (key === 'statistics/overview') continue;
     assert.equal(crypto.createHash('sha1').update(HFV2.templates[key]).digest('hex'), sha, `${key} is unchanged`);
   }
 });

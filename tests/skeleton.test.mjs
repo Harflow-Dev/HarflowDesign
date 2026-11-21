@@ -215,7 +215,8 @@ test('existing templates are byte-identical to the base commit apart from the to
   // The overview page is generated from the registry, so its counts change with every new state.
   // The status badge and the menu bar's running workflow row follow the owner's canonical task glyphs (2026-11-14).
   // workflows/list: the owner's decision of 2026-11-15 removed its search field; its new digest is pinned in minimum-frame.test.mjs.
-  const CHANGED = new Set(['foundations/colour', 'brand/visual-foundations', 'overview/areas', 'components/status-badge', 'menu-bar/busy', 'workflows/list']);
+  // statistics/overview: the owner's decision of 2026-11-21 removes only the All time period button; minimum-frame.test.mjs verifies that exact deletion.
+  const CHANGED = new Set(['foundations/colour', 'brand/visual-foundations', 'overview/areas', 'components/status-badge', 'menu-bar/busy', 'workflows/list', 'statistics/overview']);
   const RETIRED = new Set(['m04-proposal/history-loading', 'm04-proposal/centered-starting']);
   for (const [key, sha] of Object.entries(manifest)) {
     if (RETIRED.has(key)) { assert.equal(HFV2.templates[key], undefined, `${key} is removed with its state`); continue; }
@@ -223,6 +224,10 @@ test('existing templates are byte-identical to the base commit apart from the to
     if (CHANGED.has(key)) continue;
     assert.equal(crypto.createHash('sha1').update(HFV2.templates[key]).digest('hex'), sha, `${key} is unchanged`);
   }
+  const statistics = HFV2.templates['statistics/overview'];
+  const statisticsWithHistoricalOption = statistics.replace('</button></div></div><div class="hd-grid hd-grid--4">', '</button><button type="button" class="hd-seg__item">All time</button></div></div><div class="hd-grid hd-grid--4">');
+  assert.notEqual(statisticsWithHistoricalOption, statistics, 'the Statistics period decision removes its one retired option');
+  assert.equal(crypto.createHash('sha1').update(statisticsWithHistoricalOption).digest('hex'), manifest['statistics/overview'], 'Statistics changes only by deleting the All time option');
 });
 
 test('the shimmer component is drawn in both appearances and its reduced-motion form', () => {

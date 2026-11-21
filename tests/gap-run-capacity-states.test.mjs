@@ -56,14 +56,13 @@ const STATES = {
   'statistics/error': [STAT, 'statistics/overview', ['History is incomplete or unavailable. No totals are shown.', '>Retry</button>', 'hd-gap-empty--failed']],
   'statistics/stale': [STAT, 'statistics/overview', ['Showing the last complete snapshot. Refresh failed: the history read exceeded its time budget.', '>Retry refresh</button>', 'Tasks per day']],
   'statistics/partial-accounting': [STAT, 'statistics/overview', ['hd-gap-stat-value--unavailable">Unavailable', 'reported by 2 of 5 harnesses; the rest are left out, not counted as zero', 'Retained history only. Usage accounting: Partial · 212 of 284 independent executions · 340 execution records.']],
-  'statistics/all-time': [STAT, 'statistics/overview', ['is-active" aria-pressed="true">All time', 'All retained history', 'Retention: 90 days; selected ranges may exceed retained history.']],
   'statistics/unsupported': [STAT, 'statistics/overview', ['Statistics are unavailable in this runtime', 'The installed runtime does not provide the statistics history. Update the Harflow runtime.']]
 };
 const ROUTES = Object.keys(STATES);
 const stateOf = route => { const [family, id] = route.split('/'); return H.findState(H.findFamily(family), id); };
 
 test('every state is registered (approved), in its group, and listed in gapStates', () => {
-  assert.equal(ROUTES.length, 28);
+  assert.equal(ROUTES.length, 27);
   for (const route of ROUTES) {
     const [group] = STATES[route];
     const [family] = route.split('/');
@@ -149,10 +148,19 @@ test('resources and statistics gain no search or filter controls, and never show
   assert.equal((partial.match(/hd-faint">Unavailable</g) || []).length, 3, 'three harnesses without cost stay Unavailable');
 });
 
-test('statistics all-time moves the active range and nothing else of the range selector', () => {
-  const html = H.templates['statistics/all-time'];
-  assert.equal((html.match(/hd-seg__item is-active/g) || []).length, 1);
-  assert.ok(!html.includes('is-active" aria-pressed="true">30 days'));
+test('statistics offers only 7 days and 30 days, with 30 days selected by default', () => {
+  const html = H.templates['statistics/overview'];
+  const selector = html.slice(html.indexOf('aria-label="Period"'), html.indexOf('</div>', html.indexOf('aria-label="Period"')));
+  assert.deepEqual([...selector.matchAll(/>(7 days|30 days|All time)<\/button>/g)].map(([, label]) => label), ['7 days', '30 days']);
+  assert.equal((selector.match(/hd-seg__item is-active/g) || []).length, 1);
+  assert.ok(selector.includes('is-active" aria-pressed="true">30 days'));
+  assert.equal(H.resolveRoute('#statistics/all-time'), '#statistics/overview');
+  assert.equal(H.retired.find(entry => entry.route === 'statistics/all-time').pins, 'statistics/all-time at 3101abe');
+});
+
+test('statistics loading period chrome contains only the current ranges', () => {
+  const spec = H.skeletonSpecs.statistics;
+  assert.deepEqual(Object.keys(spec.chrome).filter(label => ['7 days', '30 days', 'All time'].includes(label)).sort(), ['30 days', '7 days']);
 });
 
 test('every hash link resolves to a registered route or an allowed inert link', () => {

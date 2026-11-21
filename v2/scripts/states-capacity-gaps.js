@@ -172,16 +172,6 @@
     description: 'Reported cost reads Unavailable because only some harnesses report it, and a line under the tiles states how much of the history the accounting covers.'
   }, 'Statistics when usage accounting is partial. The per-harness table already shows Unavailable, never zero, for harnesses that do not report cost. The Usage accounting label and the delta wording are design wording; the counts are fixture text.');
 
-  define(STAT, STAT_GROUP, 'all-time', OVERVIEW, function (html, base) {
-    var seg = '<button type="button" class="hd-seg__item">7 days</button><button type="button" class="hd-seg__item is-active" aria-pressed="true">30 days</button><button type="button" class="hd-seg__item">All time</button>';
-    html = swap(html, seg, '<button type="button" class="hd-seg__item">7 days</button><button type="button" class="hd-seg__item">30 days</button><button type="button" class="hd-seg__item is-active" aria-pressed="true">All time</button>', base);
-    html = swap(html, '<span class="hd-stat__delta">Last 30 days</span>', '<span class="hd-stat__delta">All retained history</span>', base);
-    return swap(html, COST_END, COST_END + note('Retained history only. Retention: 90 days; selected ranges may exceed retained history.'), base);
-  }, {
-    title: 'All time selected',
-    description: 'All time is the active range, the first tile reads All retained history, and a line under the tiles states the retention.'
-  }, 'Statistics with All time selected. The retention line is Mac copy (HarflowMac StatisticsProjection+Metrics.swift); the delta is design wording and the retention figure is fixture text. The chart below is the overview specimen and still draws the 30 day bars. The range is All time, as in the approved overview; the 90 day option of the Mac is not adopted.');
-
   define(STAT, STAT_GROUP, 'unsupported', OVERVIEW, function (html, base) {
     return replaceStatistics(html, base, empty('chart', 'Statistics are unavailable in this runtime', 'The installed runtime does not provide the statistics history. Update the Harflow runtime.'));
   }, {
