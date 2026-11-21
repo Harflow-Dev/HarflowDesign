@@ -165,7 +165,7 @@ Fourteen states of the workflow run, each with a `-minimum` twin, drawn as answe
 
 ## Task Detail and workflow approval disclosures
 
-Provisional 1280 × 800 and 1000 × 620 specimens for inline Changes diffs,
+Approved 1280 × 800 and 1000 × 620 specimens for inline Changes diffs,
 compact Events result and usage, the running task composer, and root
 workflow approvals. See the [routes and interaction rules](decisions/task-detail-and-workflow-approvals.md).
 

@@ -1,10 +1,12 @@
 # Task Detail and workflow approvals
 
-Status: **Provisional, awaiting owner review of the drawings.** The owner
-requested these changes on 2026-11-21 after reviewing the native inspector
-and a minimum-window steering capture. Each route has a `-minimum` twin
-at 1000 × 620 and is available in both appearances. The regular specimens
-are 1280 × 800. Use synthetic data for all content and interactions.
+Status: **Approved by the owner on 2026-11-21.** The owner approved the
+drawings at `5539168eee43429edc2267f2a9402daf5f9a2d15` and authorized
+native implementation. This approval covers the routes below and their
+minimum variants. The pinned preview carries its original review labels.
+Each route has a `-minimum` twin at 1000 × 620 and is available in both
+appearances. The regular specimens are 1280 × 800. Use synthetic data for
+all content and prototype interactions.
 
 | Route | Draws |
 | --- | --- |
@@ -60,6 +62,6 @@ authority. The illustrated requests belong to issued worker tasks.
   and `src/harflow_mcp/orchestrator_steering.py:227–242,694–699` define
   the independent steering reply and worker approval authorities.
 
-New drawings are companions to the approved routes. AppKit focus behavior,
+The drawings are companions to the earlier approved routes. AppKit focus behavior,
 native minimum-window controls, exact approval dispatch and native task
 composer transitions require separate validation after design approval.
