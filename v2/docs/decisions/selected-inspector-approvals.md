@@ -16,9 +16,13 @@ request. Scrolling the pane reaches the whole request and its controls.
 The 4-point composer boundary and 16-point conditional fade follow
 the approved [task composer edge](task-composer-edge.md). Clear the fade
 when the feed has reached its end or keyboard focus is inside the feed.
-A queued message stays with the fixed composer, below the fade. The
-blank task composer hides Send now. The browser specimen presents the
-blank state and leaves typed-draft behavior to the native composer.
+The task header keeps its full height at every window size. A queued
+reply uses the regular outgoing bubble with its Queued label and Cancel
+action. It sits at the bottom of the task content, inside the same
+scroll, and leaves that pending position when sent or cancelled. The
+composer stays fixed below the fade. The blank task composer hides
+Send now. The browser specimen presents the blank state and leaves
+typed-draft behavior to the native composer.
 
 The composer uses the approved edge from
 `f345556ae3f36c6ba3ded013f272fc096c83d585`,

@@ -55,14 +55,13 @@
         pane = swap(pane, '</div></aside>', '<h3 class="hd-inspector-approvals__heading">Orchestrator</h3>' + rootBody + '</div>' + root.pane.slice(root.footer));
       }
     } else {
-      // The queued bubble is fixed between the scroll and composer.
+      // Keep the queued reply as the last message in the task content.
       var originalQueue = H.laneParts.queue([{kind:'queued', text:'Also check whether the lockfile pins a vulnerable transitive dependency.'}]);
       var queue = H.laneParts.queue([{kind:'queued', text:'Check the lockfile too.'}]);
       var activity = '<div style="display:flex;flex-direction:column;gap:var(--space-3);padding-top:var(--space-3);border-top:1px solid var(--border);"><span class="caption hd-faint">Call 2';
       if (pane.indexOf(originalQueue) < 0 || pane.indexOf(activity) < 0) throw new Error('Queued bubble or call activity missing');
-      pane = swap(pane, originalQueue, '');
+      pane = swap(pane, originalQueue, queue);
       pane = swap(pane, '<span class="caption hd-faint">Call 2 · Codex · gpt-6 · HarflowMCP</span>', '<span class="caption hd-faint">Call 2 · Codex · gpt-6 · HarflowMCP</span>' + cards);
-      pane = swap(pane, '<div style="flex:none;padding:var(--space-3);border-top:1px solid var(--border);"><form', '<div style="flex:none;padding:var(--space-3);border-top:1px solid var(--border);"><div class="hd-inspector-approvals__queue">' + queue + '</div><form');
       pane = swap(pane, '<button type="button" class="hd-btn hd-btn--ghost hd-btn--sm" data-m05="noop" disabled title="Ask for immediate delivery; an engine refusal keeps the message queued">Send now</button>', '');
       pane = swap(pane, '<span class="hd-glyph hd-glyph--done" aria-label="Done"><span class="hd-i hd-i--sm hd-i-check" aria-hidden="true"></span></span><span style="flex:1;min-width:0;font-weight:600;">Call 2 · Done · 01:12</span><a class="hd-link" href="#task/done">', '<span class="hd-glyph hd-glyph--attention" aria-label="Needs you"><span class="hd-i hd-i--sm hd-i-hand" aria-hidden="true"></span></span><span style="flex:1;min-width:0;font-weight:600;">Call 2 · Needs you · 01:12</span><a class="hd-link" href="#task/approval-exact">');
       pane = swap(pane, '<div style="display:flex;align-items:center;gap:var(--space-2);font-size:13px;line-height:18px;font-weight:500;color:var(--success);"><span class="hd-glyph hd-glyph--done" aria-label="Done"><span class="hd-i hd-i--sm hd-i-check" aria-hidden="true"></span></span><span>Done · no advisories · 01:12</span></div>', '');

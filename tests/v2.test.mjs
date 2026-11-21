@@ -725,6 +725,20 @@ test('the route map lists every earlier route and its current route', () => {
 });
 
 test('selected inspector approval companions keep one expandable pane scroll and independent request decisions', () => {
+  function matchingDivClose(html, openingIndex) {
+    if (openingIndex < 0) return -1;
+    const tags = /<\/?div\b[^>]*>/g;
+    tags.lastIndex = openingIndex;
+    let depth = 0;
+    let match;
+    while ((match = tags.exec(html))) {
+      if (match[0].startsWith('</')) depth -= 1;
+      else depth += 1;
+      if (depth === 0) return match.index;
+    }
+    return -1;
+  }
+
   const ids = ['inspector-approvals-single', 'inspector-approvals', 'inspector-approvals-expanded', 'inspector-approvals-settled', 'inspector-approvals-steering'];
   const routes = ids.flatMap(id => [
     `workflow-run/${id}`,
@@ -778,14 +792,22 @@ test('selected inspector approval companions keep one expandable pane scroll and
       assert.ok(!firstCard.includes('data-inspector-decision'), `${route} settled card has no decision actions`);
     }
     if (!route.includes('-single') && !route.includes('-steering')) {
-      const footerOpen = html.indexOf('<div style="flex:none;padding:var(--space-3);border-top:1px solid var(--border);"><div class="hd-inspector-approvals__queue">');
-      const queue = html.indexOf('class="hd-inspector-approvals__queue"');
+      const scroll = html.indexOf('<div class="hd-scroll"');
+      const scrollClose = matchingDivClose(html, scroll);
+      const bubble = html.indexOf('<div class="hd-msg-user hd-msgq hd-msgq--pending">', scroll);
+      const bubbleClose = matchingDivClose(html, bubble);
+      const footerOpen = html.indexOf('<div style="flex:none;padding:var(--space-3);border-top:1px solid var(--border);"><form class="hd-composer"');
       const composer = html.indexOf('<form class="hd-composer"');
-      const scroll = html.indexOf('class="hd-scroll"');
-      assert.ok(footerOpen > scroll && queue > footerOpen && composer > queue, `${route} places the queued bubble in the fixed composer footer`);
-      const shortQueueText = html.indexOf('Check the lockfile too.');
-      assert.ok(!html.includes('Also check whether the lockfile pins a vulnerable transitive dependency.') && shortQueueText > queue && shortQueueText < composer,
-        `${route} keeps the short queued message between the queue container and composer`);
+      assert.ok(scroll >= 0 && bubble > scroll && bubbleClose > bubble, `${route} places the pending user message in the task content`);
+      assert.match(html.slice(bubble, bubbleClose), /hd-msg-user hd-msgq hd-msgq--pending[\s\S]*?hd-msgq__caption">Queued/);
+      assert.match(html.slice(bubble, bubbleClose), /hd-msgq__text">Check the lockfile too\./);
+      assert.match(html.slice(bubble, bubbleClose), /aria-label="Cancel queued message"/);
+      assert.ok(bubbleClose < scrollClose && html.slice(bubbleClose + '</div>'.length, scrollClose).trim() === '',
+        `${route} places the unsent message last in the task scroll`);
+      assert.ok(scrollClose < footerOpen && footerOpen < composer,
+        `${route} keeps the composer in its fixed footer after the scroll`);
+      assert.ok(!html.includes('Also check whether the lockfile pins a vulnerable transitive dependency.'),
+        `${route} has no duplicate queued message`);
     }
   }
 

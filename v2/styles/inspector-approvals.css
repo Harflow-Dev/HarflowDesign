@@ -6,5 +6,6 @@
 .hd-inspector-approvals-fixture .hd-tool__summary{min-width:0;overflow-wrap:anywhere}
 .hd-inspector-approvals-fixture .hd-pane .hd-tool__body{max-height:none;overflow:visible;white-space:pre-wrap}
 .hd-inspector-approvals-fixture .hd-pane .hd-tool__summary{overflow:visible;white-space:normal;text-overflow:clip}
-.hd-inspector-approvals-fixture .hd-inspector-approvals__queue{flex:none;padding:0 0 var(--space-2)}
+.hd-inspector-approvals-fixture .hd-pane > .hd-pane__head{flex:none}
+.hd-inspector-approvals-fixture .hd-scroll > .hd-msgq--pending{flex:none;margin-block-start:auto}
 .hd-inspector-approvals-fixture .hd-inspector-approvals__heading{margin:0;padding-top:var(--space-3);font-size:14px;line-height:20px}
