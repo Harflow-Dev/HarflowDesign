@@ -10,6 +10,7 @@ Routes are written as the current route, with the route used before the informat
 
 | Decision | Area | Status | Approved by and date | Recording commit | Routes | Files |
 | --- | --- | --- | --- | --- | --- | --- |
+| Engine and runtime states | Settings and setup | Provisional | None. Drawn 2026-11-23 on the owner's decisions of the same day (S2, S4, S5, O2, O3, O4, L2, N2), relayed by the coordinator | The commit titled "Draw the engine and runtime states" | `harness-runtime/update-failed`, `deep-link-held`; `app-states/contract-refused`, `capability-missing`, `engine-call-failed`, `engine-call-timed-out`, `store-unusable` (each with a `-minimum` twin); `settings/runtime-checking`, `runtime-install-required`, `runtime-update-required`, `runtime-installing`, `runtime-updating`, `runtime-update-failed`, `runtime-failed`; `settings/store-inspecting`, `store-missing`, `store-incompatible`, `store-interrupted`, `store-inspect-failed` | [engine-and-runtime.md](engine-and-runtime.md), `v2/scripts/states-engine-runtime.js`, `tests/engine-runtime.test.mjs` |
 | Owner decisions of 2026-11-23 on approved states (Settings General, first run) | Settings and setup | Approved | The owner, 2026-11-23 (decisions S4, S5 and O2, relayed by the coordinator) | This record, amendment of `settings/general` and retirement of `app-states/setup` at `be78fa4` | `settings/general` (amended), `settings/loading-general` (follows it); `app-states/setup` (retired; opens `harness-runtime/install-required`) | This file ([Owner decisions of 2026-11-23](#owner-decisions-of-2026-11-23)), `tests/minimum-frame.test.mjs` |
 | Inline approvals in the selected workflow inspector | Workflow run | Approved | The owner, 2026-11-21 | This record, drawing at `cc96337` | `workflow-run/inspector-approvals-single`, `inspector-approvals`, `inspector-approvals-expanded`, `inspector-approvals-settled`, `inspector-approvals-steering` and each `-minimum` variant | [Selected workflow inspector approvals](selected-inspector-approvals.md) |
 | Task conversation composer edge | Task; Parallel group; Workflow run | Approved | The owner, 2026-11-21 | This record, drawing at `f345556` | `task/composer-edge`, `composer-edge-end`, `composer-edge-short`, `composer-edge-minimum`, `composer-edge-embedded`; `parallel-group/composer-edge`, `composer-edge-minimum`; `workflow-run/composer-edge-parallel`, `composer-edge-graph` and their `-minimum` variants | [Task conversation composer edge](task-composer-edge.md) |
@@ -902,15 +903,15 @@ Statistics states: [Workflow and capacity states](#workflow-and-capacity-states)
 
 ### `settings`
 
-[approval.md](approval.md).
+[approval.md](approval.md). Provisional, 2026-11-23: the seven `settings/runtime-*` and five `settings/store-*` states of General ([record](engine-and-runtime.md)).
 
 ### `app-states`
 
-[approval.md](approval.md). `app-states/setup` is retired and opens `harness-runtime/install-required` (owner decision 2026-11-23, [record](#owner-decisions-of-2026-11-23)); the runtime update draft never superseded it ([record](#starting-row-and-runtime-card)).
+[approval.md](approval.md). `app-states/setup` is retired and opens `harness-runtime/install-required` (owner decision 2026-11-23, [record](#owner-decisions-of-2026-11-23)); the runtime update draft never superseded it ([record](#starting-row-and-runtime-card)). Provisional, 2026-11-23: `contract-refused`, `capability-missing`, `engine-call-failed`, `engine-call-timed-out` and `store-unusable`, each with a 1000 × 620 twin ([record](engine-and-runtime.md)). `app-states/engine-error` stays until the owner approves them.
 
 ### `harness-runtime`
 
-[m04-proposal.md](m04-proposal.md). Accepted deviation of 2026-11-14: a failed listing shows the engine message as the status line ([record](#accepted-deviations-2026-11-14)). Approved 2026-11-15: `harness-runtime/updating`, the runtime update in the main pane ([record](#starting-row-and-runtime-card)); the sidebar card draft `harness-runtime/installing-sidebar` is retired and opens it.
+[m04-proposal.md](m04-proposal.md). Accepted deviation of 2026-11-14: a failed listing shows the engine message as the status line ([record](#accepted-deviations-2026-11-14)). Approved 2026-11-15: `harness-runtime/updating`, the runtime update in the main pane ([record](#starting-row-and-runtime-card)); the sidebar card draft `harness-runtime/installing-sidebar` is retired and opens it. Provisional, 2026-11-23: `harness-runtime/update-failed` and `deep-link-held`, drawn with the engine and runtime states ([record](engine-and-runtime.md)).
 
 ### `brand`
 

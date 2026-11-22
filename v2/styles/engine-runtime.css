@@ -1,0 +1,26 @@
+/* Engine and runtime states (states-engine-runtime.js). Tokens only, so light and dark follow the theme. */
+
+/* Detail rows: a small label over a monospace value, as the Mac task store panel draws them. */
+.hd-ev-details{display:flex;flex-direction:column;gap:var(--space-3)}
+.hd-ev-detail{display:flex;flex-direction:column;gap:var(--space-1);min-width:0}
+.hd-ev-mono{font-family:var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);font-size:12px;line-height:18px;color:var(--text);overflow-wrap:anywhere;user-select:text}
+.hd-ev-msg{margin:0;font-size:13px;line-height:20px;color:var(--text-secondary);overflow-wrap:anywhere}
+.hd-ev-warn{display:inline-flex;color:var(--warning)}
+.hd-ev-disabled{opacity:.55}
+.hd-m04-gate.hd-ev-gate .hd-ev-details{margin-top:var(--space-1)}
+.hd-m04-gate.hd-ev-gate [role="status"]:empty{display:none}
+.hd-m04-gate.hd-ev-gate [role="status"]{color:var(--text-secondary);overflow-wrap:anywhere}
+.hd-m04-gate.hd-ev-gate [role="status"] code,.hd-ev-tip code{font-family:var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);font-size:.95em}
+
+/* Sidebar note above the lists when the last refresh failed. */
+.hd-ev-note{display:flex;align-items:center;gap:var(--space-2);margin:0 var(--space-2) var(--space-2);padding:var(--space-2) var(--space-2) var(--space-2) var(--space-3);border-radius:var(--radius-md);background:var(--danger-subtle);font-size:13px;line-height:18px;color:var(--text)}
+.hd-ev-note>span{flex:1;min-width:0}
+.hd-sidebar__scroll>.hd-ev-note{margin-top:var(--space-1)}
+
+/* Sidebar link of an unusable task store. */
+.hd-nav-item.hd-ev-attention .hd-i{color:var(--warning)}
+
+/* Title bar connection dot and its help tag, drawn open. */
+.hd-ev-conn{position:relative;display:flex;align-items:center;padding:0 var(--space-2)}
+.hd-ev-dot{width:8px;height:8px;border-radius:var(--radius-full);background:var(--danger);flex:none}
+.hd-ev-tip{position:absolute;top:calc(100% + 4px);right:var(--space-2);z-index:5;white-space:nowrap}

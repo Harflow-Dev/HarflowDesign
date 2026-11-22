@@ -136,6 +136,8 @@ These are canonical routes with no earlier name; they are not aliases or redirec
 | `task/loading-known-title`, `task/loading-pane-known-title` | `task/loading` and `task/loading-pane`, with the title shown and the loaded sidebar; standalone, no pending pair: the approved states stay for a title that is not known yet |
 | `parallel-group/loading-known-title`, `parallel-group/loading-known-title-minimum`, `parallel-group/loading-two-known-title` | `parallel-group/loading`, `parallel-group/loading-minimum` and `parallel-group/loading-two`, with the group title shown |
 | `workflow-run/orchestrator-steering-command-refused`, plus `-minimum` | `workflow-run/orchestrator-selected` with a refused command; drawn on the owner's answers of 2026-11-20 and not yet seen ([held conversations](decisions/orchestrator-steering-held.md)); standalone, no pending pair |
+| `harness-runtime/update-failed`, `harness-runtime/deep-link-held`; `app-states/contract-refused`, `capability-missing`, `engine-call-failed`, `engine-call-timed-out`, `store-unusable`; each with `-minimum` | The populated window of `new-task/default` with the runtime gate, the setup line or the refresh note; drawn on the owner's decisions of 2026-11-23 ([record](decisions/engine-and-runtime.md)); standalone, no pending pair |
+| `settings/runtime-checking`, `runtime-install-required`, `runtime-update-required`, `runtime-installing`, `runtime-updating`, `runtime-update-failed`, `runtime-failed`; `settings/store-inspecting`, `store-missing`, `store-incompatible`, `store-interrupted`, `store-inspect-failed` | `settings/general` with its runtime row or its task store section replaced ([record](decisions/engine-and-runtime.md)); standalone, no pending pair |
 
 ### Redraws awaiting approval
 

@@ -174,6 +174,19 @@ Approved task conversation, group and workflow task views with a tighter
 composer boundary and a fade only while the feed continues below the viewport.
 [Design record and route list](decisions/task-composer-edge.md).
 
+## Engine and runtime states
+
+Provisional states drawn on 2026-11-23, not approved ([record](decisions/engine-and-runtime.md)). Each state of the first seven rows also has a `-minimum` twin at 1000 × 620.
+
+| Area | Screen | Routes | Draws |
+| --- | --- | --- | --- |
+| Settings and setup | Harness runtime | `harness-runtime/update-failed`, `deep-link-held` | The failed runtime update; the install gate with a held task link |
+| Settings and setup | App states | `app-states/contract-refused`, `capability-missing` | The gates for a runtime that does not match the app or lacks a feature |
+| Settings and setup | App states | `app-states/engine-call-failed`, `engine-call-timed-out` | A working app after a failed or timed-out call |
+| Settings and setup | App states | `app-states/store-unusable` | The task store link and gate |
+| Settings and setup | Settings | `settings/runtime-checking`, `runtime-install-required`, `runtime-update-required`, `runtime-installing`, `runtime-updating`, `runtime-update-failed`, `runtime-failed` | The runtime row of General in each state |
+| Settings and setup | Settings | `settings/store-inspecting`, `store-missing`, `store-incompatible`, `store-interrupted`, `store-inspect-failed` | The task store row of General after an inspection |
+
 ## Selected workflow inspector approvals
 
 Approved states for approval details and decisions inside the inspector's

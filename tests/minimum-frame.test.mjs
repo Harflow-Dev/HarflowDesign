@@ -161,12 +161,14 @@ test('no existing template changed: the digests equal those of the base commit a
       const suffix = id ? `-${id}` : '';
       return [`workflow-run/inspector-approvals${suffix}`, `workflow-run/inspector-approvals${suffix}-minimum`];
     }),
+    // The provisional engine and runtime states (2026-11-23), each derived from an approved template.
+    ...HFV2.engineRuntimeStates,
     // The eleven new provisional composer-edge companions derive from existing task, lane and workflow states.
     ...['task/composer-edge', 'task/composer-edge-end', 'task/composer-edge-short', 'task/composer-edge-minimum', 'task/composer-edge-embedded',
       'parallel-group/composer-edge', 'parallel-group/composer-edge-minimum',
       'workflow-run/composer-edge-parallel', 'workflow-run/composer-edge-parallel-minimum', 'workflow-run/composer-edge-graph', 'workflow-run/composer-edge-graph-minimum']
   ];
-  assert.equal(added.length, 22 + 20 + 24 + 2 + 6 + HFV2.gapStates.length + 8 + 5 + 8 + 28 + 10 + 10 + 6 + 11);
+  assert.equal(added.length, 22 + 20 + 24 + 2 + 6 + HFV2.gapStates.length + 8 + 5 + 8 + 28 + 10 + 10 + 6 + 11 + 26);
   assert.equal(HFV2.runQuestionStates.length, 28);
   // app-states/setup is removed with its retired state (owner decision 2026-11-23, O2).
   const removed = ['m04-proposal/centered-starting', 'app-states/setup'];
@@ -408,7 +410,8 @@ function sidebarChildren(html) {
 
 test('every static template with a sidebar has the top, nav, sections and foot structure the rule needs', () => {
   // The pending-launch states carry the sidebar inside the M04 scroll wrapper (approved 2026-11-10), a different shape.
-  const keys = Object.keys(HFV2.templates).filter(k => HFV2.templates[k].includes('<aside class="hd-sidebar"') && !k.startsWith('task/pending-'));
+  // The four gates draw the setup line instead of the nav and lists; tests/engine-runtime.test.mjs checks their own shape. The other engine and runtime states keep the shared structure (the refresh note is tolerated below).
+  const keys = Object.keys(HFV2.templates).filter(k => HFV2.templates[k].includes('<aside class="hd-sidebar"') && !k.startsWith('task/pending-') && !HFV2.engineRuntimeSidebarStates.includes(k));
   // 22 static screens, plus the four templates the New task and Task renderers read and components/sidebar,
   // plus the ten provisional approval states that start from a task or Needs you screen and the provisional
   // cancelled-run lane view.
@@ -430,11 +433,14 @@ test('every static template with a sidebar has the top, nav, sections and foot s
   for (const key of inspectorApprovalSidebarTemplates) assert.ok(keys.includes(key), `${key} retains the shared sidebar structure`);
   for (const key of composerEdgeSidebarTemplates) assert.ok(keys.includes(key), `${key} retains the shared sidebar structure`);
   for (const key of WORKFLOW_QUESTION_TEMPLATES) assert.ok(keys.includes(key), `${key} retains the shared sidebar structure`);
-  assert.equal(keys.length, 59 + 8 + HFV2.gapStates.filter(k => HFV2.templates[k].includes('<aside class="hd-sidebar"')).length + WORKFLOW_NAMING_TEMPLATES.length + HFV2.runQuestionStates.length + 6 + composerEdgeSidebarTemplates.length + inspectorApprovalSidebarTemplates.length);
+  // The twelve Settings states, the two refresh failures and the unusable store (each with its twin) keep the shared sidebar structure.
+  const engineRuntimeSettingsTemplates = HFV2.engineRuntimeStates.filter(key => !HFV2.engineRuntimeSidebarStates.includes(key));
+  for (const key of engineRuntimeSettingsTemplates) assert.ok(keys.includes(key), `${key} retains the shared sidebar structure`);
+  assert.equal(keys.length, 59 + 8 + HFV2.gapStates.filter(k => HFV2.templates[k].includes('<aside class="hd-sidebar"')).length + WORKFLOW_NAMING_TEMPLATES.length + HFV2.runQuestionStates.length + 6 + composerEdgeSidebarTemplates.length + inspectorApprovalSidebarTemplates.length + engineRuntimeSettingsTemplates.length);
   const odd = [];
   for (const key of keys) {
     const kids = sidebarChildren(HFV2.templates[key]);
-    const first = kids[0], last = kids[kids.length - 1], middle = kids.slice(1, -1);
+    const first = kids[0], last = kids[kids.length - 1], middle = kids.slice(1, -1).filter(c => !c.cls.includes('hd-ev-note'));
     const ok = first.cls.includes('hd-sidebar__top') && last.cls.includes('hd-sidebar__foot') &&
       kids.filter(c => c.cls.includes('hd-sidebar__top')).length === 1 && kids.filter(c => c.cls.includes('hd-sidebar__foot')).length === 1 &&
       middle.length >= 2 && middle[0].name === 'nav' && middle.slice(1).every(c => c.name === 'section' && c.cls.includes('hd-section'));
