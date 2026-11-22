@@ -187,6 +187,16 @@ Provisional states drawn on 2026-11-23, not approved ([record](decisions/engine-
 | Settings and setup | Settings | `settings/runtime-checking`, `runtime-install-required`, `runtime-update-required`, `runtime-installing`, `runtime-updating`, `runtime-update-failed`, `runtime-failed` | The runtime row of General in each state |
 | Settings and setup | Settings | `settings/store-inspecting`, `store-missing`, `store-incompatible`, `store-interrupted`, `store-inspect-failed` | The task store row of General after an inspection |
 
+## Harness settings states
+
+Provisional states of Settings → Harnesses drawn on 2026-11-23, not approved ([record](decisions/harness-settings.md)).
+
+| Area | Screen | Routes | Draws |
+| --- | --- | --- | --- |
+| Settings and setup | Settings | `settings/harnesses-runtime-not-ready`, `harnesses-registration-failed`, `harnesses-empty`, `harnesses-setup-refused`, `harnesses-remove-confirm` | Harness registration when the runtime is not ready, a registration fails, none is found, setup is refused, and the remove confirmation |
+| Settings and setup | Settings | `settings/qualification-mixed`, `qualification-not-checked`, `qualification-cancelled`, `qualification-unsupported`, `qualification-discovery-failed` | Harness qualification in each state of the app |
+| Settings and setup | Settings | `settings/mcp-approvals-empty`, `mcp-approvals-add-confirm`, `mcp-approvals-remove-confirm`, `mcp-approvals-write-refused`, `mcp-approvals-vibe`, `mcp-approvals-unsupported`, `mcp-approvals-read-failed`, `mcp-approvals-capability-missing`, `mcp-approvals-human-only` | The inline MCP approvals panel in each state |
+
 ## Selected workflow inspector approvals
 
 Approved states for approval details and decisions inside the inspector's

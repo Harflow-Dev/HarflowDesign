@@ -46,7 +46,7 @@ test('the engine and runtime states are registered, provisional and named for th
     assert.ok(HFV2.componentDocs[route].includes('decisions/engine-and-runtime.md'), `${route} links its record`);
     assert.ok(!NAMING_RULE.test(HFV2.componentDocs[route]), `${route} guide`);
   }
-  assert.deepEqual(Array.from(HFV2.findFamily('settings').groups), ['Settings', 'Harflow runtime', 'Task store', 'Loading']);
+  assert.deepEqual(Array.from(HFV2.findFamily('settings').groups), ['Settings', 'Harflow runtime', 'Task store', 'Harness registration', 'Harness qualification', 'MCP approvals', 'Loading']);
 });
 
 test('each of the seven gate and call states has a self-rendered 1000 × 620 twin', () => {

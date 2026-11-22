@@ -1,0 +1,20 @@
+/* Harness registration, qualification and MCP approval states (states-harness-settings.js). Every selector is a new
+   hd-hs- class, so no approved state changes. Tokens only, so light and dark follow the theme. */
+.hd-hs-block{display:flex;flex-direction:column;align-items:flex-start;gap:var(--space-2);padding:var(--space-4) 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.hd-hs-sentence{margin:0;font-size:13px;line-height:20px;color:var(--text)}
+.hd-hs-message{margin:0;font-size:12px;line-height:18px;color:var(--text-secondary);overflow-wrap:anywhere}
+.hd-hs-error{margin:0;font-size:13px;line-height:18px;color:var(--danger);overflow-wrap:anywhere;user-select:text}
+.hd-form-row__hint .hd-hs-error{display:block;font-size:12px;line-height:16px}
+.hd-hs-note{display:block;font-size:12px;line-height:16px;color:var(--text-tertiary)}
+.hd-hs-note code,.hd-hs-message code,.hd-hs-sentence code{font-family:var(--font-mono);font-size:.95em}
+.hd-hs-empty{margin:0;padding-left:var(--space-3);font-size:13px;line-height:20px;color:var(--text-secondary)}
+.hd-hs-path{margin:0;font-family:var(--font-mono);user-select:text}
+.hd-hs-detail{margin:0;font-size:12px;line-height:18px;color:var(--text-secondary);overflow-wrap:anywhere}
+.hd-hs-card{display:flex;flex-direction:column;gap:var(--space-1);padding-bottom:var(--space-2)}
+.hd-hs-identity{width:190px;flex:none;font-weight:500}
+.hd-hs-state{display:inline-flex;align-items:center;gap:var(--space-2);flex:1;min-width:0;color:var(--text-secondary)}
+.hd-hs-state--plain{color:var(--text-secondary)}
+.hd-hs-feature{display:flex;align-items:baseline;flex-wrap:wrap;gap:var(--space-2);padding-left:190px;font-size:12px;line-height:18px;color:var(--text-secondary)}
+.hd-hs-feature code{font-family:var(--font-mono);color:var(--text)}
+.hd-hs-reason{flex-basis:100%;color:var(--text-tertiary)}
+.hd-hs-card>.hd-hs-message{padding-left:190px}

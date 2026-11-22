@@ -719,7 +719,7 @@ test('the decisions index lists every decision file and each screen has an ancho
     'm04-centered-composer-proposal.md', 'm04-proposal.md',
     'm05-task-screen-approval.md', 'm05-task-screen-proposal.md',
     'parallel-group-proposal.md', 'pending-launch-discovery.md', 'repository-picker.md', 'task-detail-and-workflow-approvals.md', 'workflow-first-save-name.md', 'workflow-questions.md',
-    'run-top-bar.md', 'parallel-run-pane.md', 'orchestrator-steering-held.md', 'run-message-locks.md', 'task-composer-edge.md', 'selected-inspector-approvals.md', 'engine-and-runtime.md'
+    'run-top-bar.md', 'parallel-run-pane.md', 'orchestrator-steering-held.md', 'run-message-locks.md', 'task-composer-edge.md', 'selected-inspector-approvals.md', 'engine-and-runtime.md', 'harness-settings.md'
   ].sort());
   for (const name of docs) assert.ok(index.includes(`(${name})`), `${name} is indexed`);
   for (const family of HFV2.registry.families.filter(f => f.area)) assert.ok(index.includes(`### \`${family.id}\``), `${family.id} has a decision section`);
