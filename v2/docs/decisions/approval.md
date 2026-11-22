@@ -32,3 +32,7 @@ Approval covers all 24 `m04-proposal` states in Light and Dark: `shell`, `shell-
 Sources: `v2/scripts/screens-m04-proposal.js`, `v2/scripts/m04-proposal.js` and `v2/styles/m04-proposal.css`; behavior and scope are recorded in [m04-proposal.md](m04-proposal.md). Implementation citations must pin the eventual HarflowDesign commit containing these final files and the exact route/appearance. No future commit hash is asserted here.
 
 This approval covers the visual direction and local interaction design. It does not establish native pixel fidelity, runtime qualification, engine version adoption, production capability enforcement, persistence policy acceptance, M03/M04 migration acceptance or permission to install, execute or publish runtime artifacts. Browser approximations and deferred native/runtime verification remain explicit.
+
+## Amendments after approval
+
+Owner decisions of 2026-11-23 amend `settings/general` (removing "Check for updates" and "Show backup in Finder") and retire `app-states/setup`, which opens `harness-runtime/install-required`. See [Owner decisions of 2026-11-23](README.md#owner-decisions-of-2026-11-23).

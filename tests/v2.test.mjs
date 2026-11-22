@@ -521,7 +521,7 @@ test('resolveRoute canonicalises old routes and keeps the appearance suffix', ()
 
 test('redirects send retired routes to live states and obey their invariants', () => {
   const entries = Object.entries(redirects);
-  assert.equal(entries.length, 42);
+  assert.equal(entries.length, 43);
   assert.deepEqual(Array.from(retired, e => e.route).sort(), entries.map(([from]) => from).sort(), 'every redirect is a recorded retirement');
   for (const [from, to] of entries) {
     assert.match(from, /^[a-z0-9-]+\/[a-z0-9-]+$/);
@@ -595,7 +595,7 @@ test('catalog canonicalises the address only when rendering, after alias lookup'
 test('retired states are gone from the registry; superseded-state handling no longer exists', () => {
   const stateOf = route => { const [f, s] = route.split('/'); return HFV2.findState(HFV2.findFamily(f), s); };
   assert.deepEqual(Array.from(retired, e => e.route).sort(), [
-    'harness-runtime/installing-sidebar', 'menu-bar/busy', 'menu-bar/busy-minimum', 'new-task/centered-starting', 'new-task/composer-invalid', 'new-task/composer-loading', 'new-task/composer-ready', 'new-task/composer-refused', 'new-task/composer-starting',
+    'app-states/setup', 'harness-runtime/installing-sidebar', 'menu-bar/busy', 'menu-bar/busy-minimum', 'new-task/centered-starting', 'new-task/composer-invalid', 'new-task/composer-loading', 'new-task/composer-ready', 'new-task/composer-refused', 'new-task/composer-starting',
     'new-task/composer-unknown', 'new-task/composer-unqualified', 'new-task/default', 'new-task/harness-menu', 'new-task/options-closed', 'new-task/options-open',
     'new-task/sidebar-collapsed', 'sidebar/centered-expanded', 'sidebar/collapsed', 'sidebar/expanded', 'sidebar/history-loading', 'sidebar/minimum',
     'statistics/all-time',
@@ -837,7 +837,7 @@ test('the route map lists every redraw with the route it replaces and the Events
   assert.ok(map.includes('## Redraw routes') && map.includes('### Route grammar'));
   assert.ok(!map.includes('provisional-redraws-awaiting-owner-review') && !map.includes('Provisional redraw'));
   assert.ok(map.includes('decisions/README.md#centered-and-transcript-redraws'));
-  assert.ok(map.includes('42 retired routes'));
+  assert.ok(map.includes('43 retired routes'));
   const redraws = [...COMPOSER_REDRAWS, ...SHELL_REDRAWS, ...TRANSCRIPT_REDRAWS, ['new-task/harness-menu', 'new-task/centered-harness-open']].map(([older, newer]) => ({ older, newer }));
   for (const { older, newer } of redraws) {
     const row = map.split('\n').find(line => line.startsWith(`| \`${newer}\` |`));
@@ -1008,7 +1008,14 @@ test('three redraws are pending, the workflow name and parallel group loading ti
     assert.equal(HFV2.describe(route).approval, 'Provisional · not approved');
   }
   assert.ok(!routeSet.has('harness-runtime/installing-sidebar'), 'the sidebar card draft is retired');
-  for (const route of ['harness-runtime/installing', 'app-states/setup']) { assert.equal(stateOfRoute(route)[1].status, 'approved'); assert.ok(!pending.some(pair => pair.older === route || pair.newer === route), `${route} has no pending pair`); }
+  assert.equal(stateOfRoute('harness-runtime/installing')[1].status, 'approved');
+  assert.ok(!pending.some(pair => pair.older === 'harness-runtime/installing' || pair.newer === 'harness-runtime/installing'), 'harness-runtime/installing has no pending pair');
+  // Owner decision 2026-11-23 (O2): first run keeps the runtime pane, so the setup checklist is retired.
+  assert.ok(!routeSet.has('app-states/setup'), 'app-states/setup is retired');
+  assert.equal(HFV2.routeRedirects['app-states/setup'], 'harness-runtime/install-required', 'app-states/setup opens the first-run runtime pane');
+  assert.equal(HFV2.resolveRoute('#app-states/setup/dark'), '#harness-runtime/install-required/dark');
+  assert.ok(read(path.join(v2, 'docs', 'decisions', 'README.md')).includes('| `app-states/setup` | `harness-runtime/install-required` |'), 'the retired designs table lists app-states/setup');
+  assert.ok(routeSet.has('harness-runtime/install-required'), 'the replacement is a live state');
   for (const pair of PENDING_PAIRS) {
     for (const route of [pair.older, pair.newer]) assert.ok(routeSet.has(route), `${route} stays listed`);
     assert.equal(stateOfRoute(pair.older)[1].status, 'approved', `${pair.older} keeps its approval`);
@@ -1106,7 +1113,7 @@ test('18 states are retired by the redraws and 20 redirects point at the redraws
   assert.equal(stateOfRoute('harness-runtime/updating')[1].status, 'approved', 'the redirect target is approved');
   assert.ok(!('m04-proposal/runtime-installing-sidebar' in HFV2.templates), 'the retired draft keeps no template');
   for (const suffix of SUFFIXES) assert.equal(HFV2.resolveRoute(`#harness-runtime/installing-sidebar${suffix}`), `#harness-runtime/updating${suffix}`);
-  for (const entry of retired.filter(e => !(e.pins || '').includes('3f12d29') && !(e.pins || '').includes('854caae') && !(e.pins || '').includes('d82b59f') && !(e.pins || '').includes('4ff7d83') && !(e.pins || '').includes('9709483') && !(e.pins || '').includes('eadd22d') && !(e.pins || '').includes('3101abe'))) assert.ok(/at 17739e4/.test(entry.pins), `${entry.route} keeps its generated pins`);
+  for (const entry of retired.filter(e => !(e.pins || '').includes('3f12d29') && !(e.pins || '').includes('854caae') && !(e.pins || '').includes('d82b59f') && !(e.pins || '').includes('4ff7d83') && !(e.pins || '').includes('9709483') && !(e.pins || '').includes('eadd22d') && !(e.pins || '').includes('3101abe') && !(e.pins || '').includes('be78fa4'))) assert.ok(/at 17739e4/.test(entry.pins), `${entry.route} keeps its generated pins`);
   const statisticsPeriodRetired = retired.find(e => e.route === 'statistics/all-time');
   assert.equal(statisticsPeriodRetired.redirect, 'statistics/overview');
   assert.equal(statisticsPeriodRetired.basis, 'Owner decision 2026-11-21: Statistics offers only 7 days and 30 days, with 30 days selected by default');

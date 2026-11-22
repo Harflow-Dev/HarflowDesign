@@ -25,11 +25,10 @@ Migration intent and unresolved coverage are tracked in the [migration coverage 
 | Workflow run | On-demand node selected | `workflow-run/on-demand` | Standalone on-demand node inspected with its calls |
 | Resources | Slots | `resources/slots` | Slots in use per harness, holders, and tasks waiting for a slot |
 | Statistics | Overview | `statistics/overview` | Range selector, headline tiles, tasks per day, per-harness table |
-| Settings | General | `settings/general` | Appearance, behaviour, runtime, task store |
+| Settings | General | `settings/general` | Appearance, behaviour, runtime and task store status |
 | Settings | Harnesses | `settings/harnesses` | Registration, install state and qualification per harness |
 | Settings | MCP approvals | `settings/mcp-approvals` | Global tool approvals managed inline |
 | Menu bar | Nothing running | `menu-bar/empty` | Empty popover |
-| App states | First run, setup | `app-states/setup` | Runtime preparation and harness registration |
 | App states | Loading | `app-states/loading` | Connecting to the engine |
 | App states | Engine not running | `app-states/engine-error` | Unreachable engine with the fix |
 | Brand | One state per brand book section | `brand/<section>` | Principles, brand mark, appearance, content fundamentals, visual foundations, layout, iconography, using the components, not in this system |

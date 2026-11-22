@@ -355,14 +355,8 @@
         "id": "app-states",
         "title": "App states",
         "area": "settings",
-        "description": "First run, loading and engine failure.",
+        "description": "Loading and engine failure.",
         "states": [
-          {
-            "id": "setup",
-            "title": "First run, setup",
-            "description": "Preparing the runtime and registering Harflow with the harnesses.",
-            "status": "approved"
-          },
           {
             "id": "loading",
             "title": "Loading",

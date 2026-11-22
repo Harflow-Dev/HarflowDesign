@@ -216,8 +216,9 @@ test('existing templates are byte-identical to the base commit apart from the to
   // The status badge and the menu bar's running workflow row follow the owner's canonical task glyphs (2026-11-14).
   // workflows/list: the owner's decision of 2026-11-15 removed its search field; its new digest is pinned in minimum-frame.test.mjs.
   // statistics/overview: the owner's decision of 2026-11-21 removes only the All time period button; minimum-frame.test.mjs verifies that exact deletion.
-  const CHANGED = new Set(['foundations/colour', 'brand/visual-foundations', 'overview/areas', 'components/status-badge', 'menu-bar/busy', 'workflows/list', 'statistics/overview']);
-  const RETIRED = new Set(['m04-proposal/history-loading', 'm04-proposal/centered-starting']);
+  // settings/general: the owner's decisions of 2026-11-23 remove Check for updates and Show backup in Finder; minimum-frame.test.mjs reinserts them and compares the digest.
+  const CHANGED = new Set(['foundations/colour', 'brand/visual-foundations', 'overview/areas', 'components/status-badge', 'menu-bar/busy', 'workflows/list', 'statistics/overview', 'settings/general']);
+  const RETIRED = new Set(['m04-proposal/history-loading', 'm04-proposal/centered-starting', 'app-states/setup']);
   for (const [key, sha] of Object.entries(manifest)) {
     if (RETIRED.has(key)) { assert.equal(HFV2.templates[key], undefined, `${key} is removed with its state`); continue; }
     assert.equal(typeof HFV2.templates[key], 'string', `${key} still exists`);

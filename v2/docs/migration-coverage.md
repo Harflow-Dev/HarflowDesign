@@ -71,10 +71,10 @@ Recorded by [S03](../../../HarflowMCP/docs/migration-receipts/S03.md) against Ha
 | Parallel group lanes, per-lane composer, Cancel all | Accepted | `parallel-group/lanes`; accepted deviations (owner, 2026-11-14): pinned View prompt, outcome line in the feed tail, see [decisions](decisions/parallel-group-proposal.md#accepted-deviations-owner-2026-11-14) |
 | Resource slots observation | Accepted | `resources/slots`; gap G-RESOURCES |
 | Statistics overview with range selector | Accepted | `statistics/overview`; gap G-STATS |
-| Settings: appearance, behaviour, runtime, task store status | Accepted | `settings/general` |
+| Settings: appearance, behaviour, runtime, task store status | Accepted; no Check for updates and no Show backup in Finder (owner, 2026-11-23) | `settings/general` |
 | Harness MCP registration install/update/remove and qualification | Accepted | `settings/harnesses` |
 | Global MCP approvals (existing human-only `mcp-allowlist`) | Accepted | `settings/mcp-approvals`; gap G-ALLOWLIST |
-| First run, runtime install/update, loading, engine unavailable | Accepted | `app-states/*`; gap G-TRANSPORT |
+| First run, runtime install/update, loading, engine unavailable | Accepted | `harness-runtime/*` (first run: `harness-runtime/install-required`; `app-states/setup` is retired, owner 2026-11-23), `app-states/loading`, `app-states/engine-error`; gap G-TRANSPORT |
 | Appearance System/Light/Dark in sidebar footer and rail | Accepted | Components; `new-task/sidebar-collapsed` (retired; now opens `sidebar/centered-collapsed`) |
 | Keyboard, focus, Reduce Motion, accessibility, narrow windows | Accepted | Gap G-ADAPTIVE |
 | Truthful enforcement, unknown and failure states | Accepted | Required on whichever surface displays the task; not a panel requirement |
