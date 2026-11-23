@@ -176,7 +176,7 @@ test('no existing template changed: the digests equal those of the base commit a
   assert.equal(added.length, 22 + 20 + 24 + 2 + 6 + HFV2.gapStates.length + 8 + 5 + 8 + 28 + 10 + 10 + 6 + 11 + 26 + 19 + 33);
   assert.equal(HFV2.runQuestionStates.length, 28);
   // app-states/setup is removed with its retired state (owner decision 2026-11-23, O2).
-  const removed = ['m04-proposal/centered-starting', 'app-states/setup'];
+  const removed = ['m04-proposal/centered-starting', 'app-states/setup', 'app-states/engine-error'];
   for (const key of removed) { assert.ok(key in manifest && !(key in HFV2.templates), `${key} is removed with its retired state`); delete manifest[key]; }
   for (const key of added) assert.ok(key in HFV2.templates, `${key} is a template`);
   assert.deepEqual(Object.keys(HFV2.templates).filter(key => !added.includes(key)).sort(), Object.keys(manifest).sort());
@@ -187,7 +187,8 @@ test('no existing template changed: the digests equal those of the base commit a
   // Changed on purpose by the owner's decision of 2026-11-15: the Workflows list drops its search field (nothing else of it changes).
   const searchRemoved = { 'workflows/list': '8262f5c9bd3785d5291b2671f80b89e67ce5fb6c' };
   // Changed on purpose by the owner's decisions of 2026-11-23 (S4, S5): Settings drops Check for updates and Show backup in Finder.
-  const controlsRemoved = { 'settings/general': '79c1d19472eed63174559be0835ecae4af0e3f96' };
+  // Owner decision 2026-11-23, answer 4: the ready row reads the app's copy. The digest before that amendment (257610e) was 79c1d194…
+  const controlsRemoved = { 'settings/general': '1101dc01af22c329468d1eb77e1d5102ef2625c7' };
   for (const [key, sha] of Object.entries({ ...glyphChanged, ...searchRemoved, ...controlsRemoved })) {
     const now = crypto.createHash('sha1').update(HFV2.templates[key]).digest('hex');
     assert.notEqual(now, manifest[key], `${key} changed`);
@@ -203,11 +204,16 @@ test('no existing template changed: the digests equal those of the base commit a
   // Reinsert the two retired controls to prove every other byte of the approved settings/general still matches.
   const general = HFV2.templates['settings/general'];
   assert.ok(!general.includes('Check for updates') && !general.includes('Show backup in Finder'), 'Settings General has neither retired control');
-  const generalWithRetiredControls = general
+  // Restore the earlier ready row first: its digest is the pin of 257610e (after the two controls were removed).
+  const readyRow = 'Harflow runtime is ready</span><span class="hd-form-row__hint">MCP registrations are managed separately in Harnesses.</span></div></div></section>';
+  assert.ok(general.includes(readyRow) && general.includes('hd-glyph--done'), 'the ready row reads the app\'s copy and keeps the done glyph');
+  const generalBeforeReady = general.replace(readyRow, 'Harflow runtime 0.9.3 is ready</span></div></div></section>');
+  assert.equal(crypto.createHash('sha1').update(generalBeforeReady).digest('hex'), '79c1d19472eed63174559be0835ecae4af0e3f96', 'restoring the earlier ready row reproduces the digest of 257610e');
+  const generalWithRetiredControls = generalBeforeReady
     .replace('</span></div></div></section><section aria-label="Task store"', '</span></div><button type="button" class="hd-btn hd-btn--secondary">Check for updates</button></div></section><section aria-label="Task store"')
     .replace('<button type="button" class="hd-btn hd-btn--secondary">Inspect task store</button></span>', '<button type="button" class="hd-btn hd-btn--secondary">Inspect task store</button><button type="button" class="hd-btn hd-btn--ghost">Show backup in Finder</button></span>');
-  assert.equal(generalWithRetiredControls.length - general.length, '<button type="button" class="hd-btn hd-btn--secondary">Check for updates</button>'.length + '<button type="button" class="hd-btn hd-btn--ghost">Show backup in Finder</button>'.length, 'the amendment removes exactly the two controls');
-  assert.equal(crypto.createHash('sha1').update(generalWithRetiredControls).digest('hex'), manifest['settings/general'], 'Settings General changes only by deleting Check for updates and Show backup in Finder');
+  assert.equal(generalWithRetiredControls.length - generalBeforeReady.length, '<button type="button" class="hd-btn hd-btn--secondary">Check for updates</button>'.length + '<button type="button" class="hd-btn hd-btn--ghost">Show backup in Finder</button>'.length, 'the amendment removes exactly the two controls');
+  assert.equal(crypto.createHash('sha1').update(generalWithRetiredControls).digest('hex'), manifest['settings/general'], 'Settings General changes only by deleting Check for updates and Show backup in Finder and by the ready row copy');
   for (const [key, sha] of Object.entries(manifest).filter(([key]) => key !== 'overview/areas' && !(key in glyphChanged) && !(key in searchRemoved) && !(key in controlsRemoved))) {
     if (key === 'statistics/overview') continue;
     assert.equal(crypto.createHash('sha1').update(HFV2.templates[key]).digest('hex'), sha, `${key} is unchanged`);
@@ -441,7 +447,7 @@ test('every static template with a sidebar has the top, nav, sections and foot s
   // The twelve Settings states, the two refresh failures and the unusable store (each with its twin) keep the shared sidebar structure.
   const engineRuntimeSettingsTemplates = [...HFV2.engineRuntimeStates.filter(key => !HFV2.engineRuntimeSidebarStates.includes(key)), ...HFV2.harnessSettingsStates.filter(key => HFV2.templates[key].includes('<aside class="hd-sidebar"')), ...HFV2.notificationStates.filter(key => HFV2.templates[key].includes('<aside class="hd-sidebar"'))]; // the states drawn behind a dialog mark the sidebar inert and are not counted
   for (const key of engineRuntimeSettingsTemplates) assert.ok(keys.includes(key), `${key} retains the shared sidebar structure`);
-  assert.equal(keys.length, 59 + 8 + HFV2.gapStates.filter(k => HFV2.templates[k].includes('<aside class="hd-sidebar"')).length + WORKFLOW_NAMING_TEMPLATES.length + HFV2.runQuestionStates.length + 6 + composerEdgeSidebarTemplates.length + inspectorApprovalSidebarTemplates.length + engineRuntimeSettingsTemplates.length);
+  assert.equal(keys.length, 58 + 8 + HFV2.gapStates.filter(k => HFV2.templates[k].includes('<aside class="hd-sidebar"')).length + WORKFLOW_NAMING_TEMPLATES.length + HFV2.runQuestionStates.length + 6 + composerEdgeSidebarTemplates.length + inspectorApprovalSidebarTemplates.length + engineRuntimeSettingsTemplates.length);
   const odd = [];
   for (const key of keys) {
     const kids = sidebarChildren(HFV2.templates[key]);

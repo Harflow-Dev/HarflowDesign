@@ -30,7 +30,6 @@ Migration intent and unresolved coverage are tracked in the [migration coverage 
 | Settings | MCP approvals | `settings/mcp-approvals` | Global tool approvals managed inline |
 | Menu bar | Nothing running | `menu-bar/empty` | Empty popover |
 | App states | Loading | `app-states/loading` | Connecting to the engine |
-| App states | Engine not running | `app-states/engine-error` | Unreachable engine with the fix |
 | Brand | One state per brand book section | `brand/<section>` | Principles, brand mark, appearance, content fundamentals, visual foundations, layout, iconography, using the components, not in this system |
 | Foundations | Colour, typography, spacing-radius, elevation | `foundations/<name>` | Every design token with light and dark values and usage |
 | Components | One state per component | `components/<name>` | Design system components, starting with the cover; each shows its full guideline text below the preview |
@@ -176,7 +175,7 @@ composer boundary and a fade only while the feed continues below the viewport.
 
 ## Engine and runtime states
 
-Provisional states drawn on 2026-11-23, not approved ([record](decisions/engine-and-runtime.md)). Each state of the first seven rows also has a `-minimum` twin at 1000 × 620.
+States approved by the owner on 2026-11-23 ([record](decisions/engine-and-runtime.md)); design decided, implementation open. The first four rows (seven states) also have a `-minimum` twin at 1000 × 620; the Settings states are not drawn at that frame.
 
 | Area | Screen | Routes | Draws |
 | --- | --- | --- | --- |

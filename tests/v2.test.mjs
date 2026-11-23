@@ -523,7 +523,7 @@ test('resolveRoute canonicalises old routes and keeps the appearance suffix', ()
 
 test('redirects send retired routes to live states and obey their invariants', () => {
   const entries = Object.entries(redirects);
-  assert.equal(entries.length, 43);
+  assert.equal(entries.length, 44);
   assert.deepEqual(Array.from(retired, e => e.route).sort(), entries.map(([from]) => from).sort(), 'every redirect is a recorded retirement');
   for (const [from, to] of entries) {
     assert.match(from, /^[a-z0-9-]+\/[a-z0-9-]+$/);
@@ -597,7 +597,7 @@ test('catalog canonicalises the address only when rendering, after alias lookup'
 test('retired states are gone from the registry; superseded-state handling no longer exists', () => {
   const stateOf = route => { const [f, s] = route.split('/'); return HFV2.findState(HFV2.findFamily(f), s); };
   assert.deepEqual(Array.from(retired, e => e.route).sort(), [
-    'app-states/setup', 'harness-runtime/installing-sidebar', 'menu-bar/busy', 'menu-bar/busy-minimum', 'new-task/centered-starting', 'new-task/composer-invalid', 'new-task/composer-loading', 'new-task/composer-ready', 'new-task/composer-refused', 'new-task/composer-starting',
+    'app-states/engine-error', 'app-states/setup', 'harness-runtime/installing-sidebar', 'menu-bar/busy', 'menu-bar/busy-minimum', 'new-task/centered-starting', 'new-task/composer-invalid', 'new-task/composer-loading', 'new-task/composer-ready', 'new-task/composer-refused', 'new-task/composer-starting',
     'new-task/composer-unknown', 'new-task/composer-unqualified', 'new-task/default', 'new-task/harness-menu', 'new-task/options-closed', 'new-task/options-open',
     'new-task/sidebar-collapsed', 'sidebar/centered-expanded', 'sidebar/collapsed', 'sidebar/expanded', 'sidebar/history-loading', 'sidebar/minimum',
     'statistics/all-time',
@@ -839,7 +839,7 @@ test('the route map lists every redraw with the route it replaces and the Events
   assert.ok(map.includes('## Redraw routes') && map.includes('### Route grammar'));
   assert.ok(!map.includes('provisional-redraws-awaiting-owner-review') && !map.includes('Provisional redraw'));
   assert.ok(map.includes('decisions/README.md#centered-and-transcript-redraws'));
-  assert.ok(map.includes('43 retired routes'));
+  assert.ok(map.includes('44 retired routes'));
   const redraws = [...COMPOSER_REDRAWS, ...SHELL_REDRAWS, ...TRANSCRIPT_REDRAWS, ['new-task/harness-menu', 'new-task/centered-harness-open']].map(([older, newer]) => ({ older, newer }));
   for (const { older, newer } of redraws) {
     const row = map.split('\n').find(line => line.startsWith(`| \`${newer}\` |`));
@@ -1115,7 +1115,7 @@ test('18 states are retired by the redraws and 20 redirects point at the redraws
   assert.equal(stateOfRoute('harness-runtime/updating')[1].status, 'approved', 'the redirect target is approved');
   assert.ok(!('m04-proposal/runtime-installing-sidebar' in HFV2.templates), 'the retired draft keeps no template');
   for (const suffix of SUFFIXES) assert.equal(HFV2.resolveRoute(`#harness-runtime/installing-sidebar${suffix}`), `#harness-runtime/updating${suffix}`);
-  for (const entry of retired.filter(e => !(e.pins || '').includes('3f12d29') && !(e.pins || '').includes('854caae') && !(e.pins || '').includes('d82b59f') && !(e.pins || '').includes('4ff7d83') && !(e.pins || '').includes('9709483') && !(e.pins || '').includes('eadd22d') && !(e.pins || '').includes('3101abe') && !(e.pins || '').includes('be78fa4'))) assert.ok(/at 17739e4/.test(entry.pins), `${entry.route} keeps its generated pins`);
+  for (const entry of retired.filter(e => !(e.pins || '').includes('3f12d29') && !(e.pins || '').includes('854caae') && !(e.pins || '').includes('d82b59f') && !(e.pins || '').includes('4ff7d83') && !(e.pins || '').includes('9709483') && !(e.pins || '').includes('eadd22d') && !(e.pins || '').includes('3101abe') && !(e.pins || '').includes('be78fa4') && !(e.pins || '').includes('344d56f'))) assert.ok(/at 17739e4/.test(entry.pins), `${entry.route} keeps its generated pins`);
   const statisticsPeriodRetired = retired.find(e => e.route === 'statistics/all-time');
   assert.equal(statisticsPeriodRetired.redirect, 'statistics/overview');
   assert.equal(statisticsPeriodRetired.basis, 'Owner decision 2026-11-21: Statistics offers only 7 days and 30 days, with 30 days selected by default');

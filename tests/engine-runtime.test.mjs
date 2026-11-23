@@ -28,21 +28,22 @@ const ALL = [...TWINNED, ...TWINNED.map(r => `${r}-minimum`), ...RUNTIME_ROWS, .
 const stateOf = route => { const [f, s] = route.split('/'); return HFV2.findState(HFV2.findFamily(f), s); };
 const section = (html, name) => { const from = html.indexOf(`<section aria-label="${name}"`); return html.slice(from, html.indexOf('</section>', from) + '</section>'.length); };
 
-test('the engine and runtime states are registered, provisional and named for the product screen only', () => {
+test('the engine and runtime states are registered, approved and named for the product screen only', () => {
   assert.deepEqual([...HFV2.engineRuntimeStates].sort(), [...ALL].sort());
   assert.equal(HFV2.engineRuntimeStates.length, 26);
   for (const route of ALL) {
     const state = stateOf(route);
     assert.ok(state, `${route} is registered`);
-    assert.equal(state.status, 'provisional', route);
-    assert.equal(state.approval, undefined, `${route} carries no approval`);
-    assert.equal(HFV2.describe(route).approval, 'Provisional · not approved');
+    assert.equal(state.status, 'approved', route);
+    assert.deepEqual({ ...state.approval }, { by: 'the owner', date: '2026-11-23', decision: 'Engine and runtime states' }, `${route} carries its approval`);
+    assert.equal(state.approvalNote, undefined, `${route} carries no approval note`);
+    assert.equal(HFV2.describe(route).approval, 'Approved by the owner on 2026-11-23 · Engine and runtime states');
     for (const text of [route, state.id, state.title, state.description, state.group || '']) {
       assert.ok(!NAMING_RULE.test(text), `${route}: ${text}`);
       assert.ok(!PLAN_WORDS.test(text.replace(/capability-missing/, '')), `${route} catalog text: ${text}`);
     }
     assert.equal(typeof HFV2.templates[route], 'string', `${route} has a template`);
-    assert.ok(HFV2.componentDocs[route].includes('Provisional, not approved.'), `${route} guide`);
+    assert.ok(HFV2.componentDocs[route].startsWith('<p><strong>Approved by the owner · 2026-11-23.</strong>') && !/Provisional|not approved/.test(HFV2.componentDocs[route]), `${route} guide`);
     assert.ok(HFV2.componentDocs[route].includes('decisions/engine-and-runtime.md'), `${route} links its record`);
     assert.ok(!NAMING_RULE.test(HFV2.componentDocs[route]), `${route} guide`);
   }
@@ -68,6 +69,9 @@ test('every state is an exact derivation of an approved template: the populated 
   const populated = HFV2.templates['new-task/default'], general = HFV2.templates['settings/general'];
   const main = html => html.slice(html.indexOf('<main class="hd-main">'), html.indexOf('</main>') + 7);
   const part = (html, from, to) => html.slice(html.indexOf(from), html.indexOf(to) + to.length);
+  // update-failed keeps the whole populated window: with its main pane put back, it is new-task/default exactly.
+  const failedUpdate = HFV2.templates['harness-runtime/update-failed'];
+  assert.equal(failedUpdate.replace(main(failedUpdate), main(populated)), populated, 'update-failed changes only the main pane of new-task/default');
   for (const route of GATES) {
     const html = HFV2.templates[route];
     assert.equal(part(html, '<div class="hd-sidebar__top">', '</div>\n'), part(populated, '<div class="hd-sidebar__top">', '</div>\n'), `${route} keeps the sidebar header`);
@@ -96,10 +100,10 @@ test('every state is an exact derivation of an approved template: the populated 
 test('copy follows the Mac app and the engine, with no retired or invented controls', () => {
   const t = HFV2.templates;
   assert.ok(t['harness-runtime/update-failed'].includes('Update could not finish') && t['harness-runtime/update-failed'].includes('The installed runtime was kept. Review the failure and retry when ready.') && t['harness-runtime/update-failed'].includes('Retry setup'));
-  assert.ok(t['harness-runtime/update-failed'].includes('Runtime setup required before creating or loading work.'));
+  assert.ok(!t['harness-runtime/update-failed'].includes('hd-m04-sidebar-gate') && t['harness-runtime/update-failed'].includes('aria-label="Recent work"'), 'update-failed keeps the populated, usable sidebar');
   assert.ok(t['harness-runtime/deep-link-held'].includes('After setup, Harflow opens the task you linked to.') && t['harness-runtime/deep-link-held'].includes('Install runtime'));
   assert.ok(t['app-states/contract-refused'].includes('answered with contract version 2; this app understands version 1. Update the app or harflow so they match.'));
-  assert.ok(t['app-states/capability-missing'].includes('Incompatible Harflow runtime: missing required events.v1 contract/capability (incompatible_runtime)'));
+  assert.ok(t['app-states/capability-missing'].includes('Incompatible Harflow runtime: missing required events.v1 contract/capability</div>') && !t['app-states/capability-missing'].includes('(incompatible_runtime)') && /hd-ev-detail"><span class="caption hd-faint">Code<\/span><span class="hd-ev-mono">incompatible_runtime/.test(t['app-states/capability-missing']), 'the message shows without its code, which sits on a detail line');
   assert.ok(t['app-states/engine-call-failed'].includes('exited 1 without a JSON answer.'));
   assert.ok(t['app-states/engine-call-timed-out'].includes('did not answer within 30 s.'));
   assert.ok(t['app-states/store-unusable'].includes('Unsupported state root: foreign store marker; inspect state or select a fresh state root') && t['app-states/store-unusable'].includes('foreign_store') && !t['app-states/store-unusable'].includes('unrecognized') && t['app-states/store-unusable'].includes('State root') && t['app-states/store-unusable'].includes('Reason') && t['app-states/store-unusable'].includes('Open Settings'));
@@ -121,8 +125,8 @@ test('state glyphs are the canonical ones and no state relies on colour alone', 
   assert.ok(HFV2.templates['app-states/engine-call-failed'].includes('role="img" aria-label="Harflow runtime error"'));
 });
 
-test('the sidebar of each gate carries the setup line, the unusable store its link, and the minimum twin scrolls', () => {
-  for (const route of ['harness-runtime/update-failed', 'harness-runtime/deep-link-held', 'app-states/contract-refused', 'app-states/capability-missing']) {
+test('the sidebar of each setup-line gate carries the setup line, the update failure and the unusable store keep the populated sidebar', () => {
+  for (const route of ['harness-runtime/deep-link-held', 'app-states/contract-refused', 'app-states/capability-missing']) {
     const html = HFV2.templates[route];
     assert.ok(html.includes('<div class="hd-m04-sidebar-gate">Runtime setup required before creating or loading work.</div>') && !html.includes('aria-label="Recent work"'), route);
   }
@@ -137,12 +141,15 @@ test('the sidebar of each gate carries the setup line, the unusable store its li
   assert.ok(calls.indexOf('hd-ev-note') < calls.indexOf('aria-label="Running"'), 'the note sits above the lists');
 });
 
-test('app-states/engine-error and the approved states stay as they are; the record and index carry the new states', () => {
-  assert.equal(stateOf('app-states/engine-error').status, 'approved');
-  assert.equal(typeof HFV2.templates['app-states/engine-error'], 'string');
-  assert.ok(!(('app-states/engine-error') in HFV2.routeRedirects));
+test('app-states/engine-error is retired to the call failure state; the record and index carry the states', () => {
+  assert.equal(stateOf('app-states/engine-error'), null);
+  assert.equal(HFV2.routeRedirects['app-states/engine-error'], 'app-states/engine-call-failed');
+  assert.equal(HFV2.resolveRoute('#app-states/engine-error/dark'), '#app-states/engine-call-failed/dark');
+  assert.equal(HFV2.templates['app-states/engine-error'], undefined);
+  assert.equal(HFV2.retired.find(e => e.route === 'app-states/engine-error').pins, 'app-states/engine-error at 344d56f');
+  assert.ok(read('docs/decisions/README.md').includes('| `app-states/engine-error` | `app-states/engine-call-failed` |'));
   const record = read('docs/decisions/engine-and-runtime.md');
-  for (const heading of ['## Source', '## States', '## The missing-feature pattern', '## Which path reaches which gate', '## Owner questions', '## What the app would change', '## Engine needs', '## Decisions recorded without a drawing', '## Retiring `app-states/engine-error`', '## Files']) assert.ok(record.includes(heading), heading);
+  for (const heading of ['## Source', '## States', '## The missing-feature pattern', '## Which path reaches which gate', '## Owner answers (2026-11-23)', '## What the app would change', '## Engine needs', '## Decisions recorded without a drawing', '## Retired `app-states/engine-error`', '## Files']) assert.ok(record.includes(heading), heading);
   for (const route of ALL.filter(r => !r.endsWith('-minimum'))) assert.ok(record.includes(`\`${route}\``) || record.includes(`\`${route.split('/')[1]}\``), `${route} is in the record`);
   for (const text of ['harflow-ctl', 'mcp-allowlist.v1', 'InitialWorkLoadingView', 'S9', 'O3', 'L2', 'N2', 'CtlModels.swift:310-319']) assert.ok(record.includes(text), text);
   const decisions = read('docs/decisions/README.md');

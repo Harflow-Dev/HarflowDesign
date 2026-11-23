@@ -1,6 +1,6 @@
 # Engine and runtime states
 
-Status: **Provisional, not approved.** Drawn on 2026-11-23 on the owner's decisions of the same day (S2, S4, S5, O2, O3, O4, L2 and N2), relayed by the coordinator. The amendment of `settings/general` and the retirement of `app-states/setup` that came from the same decisions are approved and recorded in [Owner decisions of 2026-11-23](README.md#owner-decisions-of-2026-11-23). Nothing here is approved until the owner decides.
+Status: **Approved by the owner on 2026-11-23** ("ok approved", relayed by the coordinator, after the owner viewed the drawings in the browser), approved in the commit titled "Approve the engine and runtime states". The states were drawn on 2026-11-23 in `8e3e5b7` on the owner's decisions of the same day (S2, S4, S5, O2, O3, O4, L2 and N2). The amendment of `settings/general` and the retirement of `app-states/setup` that came from the same decisions are recorded in [Owner decisions of 2026-11-23](README.md#owner-decisions-of-2026-11-23). The approval covers the design of the 26 routes below; it does not establish native pixel fidelity or implementation, which stays open.
 
 The states draw what the app shows when the runtime or the task store cannot be used, when a call to the runtime fails, and the runtime and task store rows of Settings → General. They fill the gaps listed for the engine transport, the contract and capability checks, and the managed runtime.
 
@@ -37,17 +37,17 @@ All routes support light and dark. The first seven rows also have a 1000 × 620 
 
 | State | Route | Status | Draws |
 | --- | --- | --- | --- |
-| Runtime · Update failed | `harness-runtime/update-failed` | Provisional | The gate "Update could not finish", the kept runtime body, the failure message and Retry setup. The sidebar shows the setup line. |
-| Runtime · Task link held | `harness-runtime/deep-link-held` | Provisional | The install gate with the status line "After setup, Harflow opens the task you linked to." |
-| Runtime does not match the app | `app-states/contract-refused` | Provisional | The gate with the refusal message and Retry. The `harflow-ctl` form of the message is design: the app prints "`harflow.ctl` answered …" today (see What the app would change). |
-| Runtime missing a feature | `app-states/capability-missing` | Provisional | The gate with the "Incompatible Harflow runtime: missing required … (incompatible_runtime)" message and Retry. |
-| Work could not be refreshed | `app-states/engine-call-failed` | Provisional | The Needs you screen of a working app: red title bar dot with its help text open, a note "Couldn't refresh your work" with Retry above the lists, the last known rows kept. |
-| Work refresh timed out | `app-states/engine-call-timed-out` | Provisional | As above with "`harflow-ctl task-list-page` did not answer within 30 s." |
-| Task store needs attention | `app-states/store-unusable` | Provisional | The sidebar link (the app's) and, in the main pane, a gate with the engine message, State root, Reason and Open Settings. **The main pane gate is design:** the app shows only the sidebar link (`SidebarView.swift:186-195`, `SidebarVM.swift:363-369`). |
-| Runtime checking, install required, update required, installing, updating, update failed, setup failed | `settings/runtime-checking`, `runtime-install-required`, `runtime-update-required`, `runtime-installing`, `runtime-updating`, `runtime-update-failed`, `runtime-failed` | Provisional | General with only the Harflow runtime row swapped for the Mac title, detail and action; the task store row is disabled. Group "Harflow runtime". |
-| Task store inspecting, not created, incompatible, recovery interrupted, inspection failed | `settings/store-inspecting`, `store-missing`, `store-incompatible`, `store-interrupted`, `store-inspect-failed` | Provisional | General with only the Task store section swapped: Mac title, the engine message, and the detail rows. Group "Task store". |
+| Runtime · Update failed | `harness-runtime/update-failed` | Approved 2026-11-23 | The gate "Update could not finish", the kept runtime body, the failure message and Retry setup. The installed runtime was kept and stays usable: the sidebar keeps its populated lists, as `harness-runtime/updating` draws it (owner answer 1). |
+| Runtime · Task link held | `harness-runtime/deep-link-held` | Approved 2026-11-23 | The install gate with the status line "After setup, Harflow opens the task you linked to." |
+| Runtime does not match the app | `app-states/contract-refused` | Approved 2026-11-23 | The gate with the refusal message and Retry. The `harflow-ctl` form of the message is design: the app prints "`harflow.ctl` answered …" today (see What the app would change). |
+| Runtime missing a feature | `app-states/capability-missing` | Approved 2026-11-23 | The gate with the message "Incompatible Harflow runtime: missing required …", the code `incompatible_runtime` on a detail line, and Retry (owner answer 6). |
+| Work could not be refreshed | `app-states/engine-call-failed` | Approved 2026-11-23 | The Needs you screen of a working app: red title bar dot with its help text open, a note "Couldn't refresh your work" with Retry above the lists, the last known rows kept. |
+| Work refresh timed out | `app-states/engine-call-timed-out` | Approved 2026-11-23 | As above with "`harflow-ctl task-list-page` did not answer within 30 s." |
+| Task store needs attention | `app-states/store-unusable` | Approved 2026-11-23 | The sidebar link (the app's) and, in the main pane, a gate with the engine message, State root, Reason and Open Settings. **The main pane gate is design:** the app shows only the sidebar link (`SidebarView.swift:186-195`, `SidebarVM.swift:363-369`). |
+| Runtime checking, install required, update required, installing, updating, update failed, setup failed | `settings/runtime-checking`, `runtime-install-required`, `runtime-update-required`, `runtime-installing`, `runtime-updating`, `runtime-update-failed`, `runtime-failed` | Approved 2026-11-23 | General with only the Harflow runtime row swapped for the Mac title, detail and action; the task store row is disabled. Group "Harflow runtime". |
+| Task store inspecting, not created, incompatible, recovery interrupted, inspection failed | `settings/store-inspecting`, `store-missing`, `store-incompatible`, `store-interrupted`, `store-inspect-failed` | Approved 2026-11-23 | General with only the Task store section swapped: Mac title, the engine message, and the detail rows. Group "Task store". |
 
-**Bases.** The five gates (`update-failed`, `deep-link-held`, `contract-refused`, `capability-missing`, `store-unusable`) keep the frame and the sidebar header and footer of the populated window, the template `new-task/default` from which the approved centered window `new-task/centered-empty` is drawn (its own route is retired, the template stays), and replace the main pane and, except for `store-unusable`, the sidebar body. `engine-call-failed` and `engine-call-timed-out` are the approved `needs-you/waiting` screen with the dot, its help text and the note added. `settings/runtime-*` and `settings/store-*` derive from the approved `settings/general` by exact swap of one section. Each derivation is by exact swap, so a changed base throws. No approved template changes.
+**Bases.** The five gates (`update-failed`, `deep-link-held`, `contract-refused`, `capability-missing`, `store-unusable`) keep the frame and the sidebar header and footer of the populated window, the template `new-task/default` from which the approved centered window `new-task/centered-empty` is drawn (its own route is retired, the template stays), and replace the main pane and, except for `update-failed` and `store-unusable`, the sidebar body. `engine-call-failed` and `engine-call-timed-out` are the approved `needs-you/waiting` screen with the dot, its help text and the note added. `settings/runtime-*` and `settings/store-*` derive from the approved `settings/general` by exact swap of one section. Each derivation is by exact swap, so a changed base throws. Two approved designs change with this approval: the ready row of `settings/general` (answer 4) and the retirement of `app-states/engine-error` (answer 7).
 
 ## The missing-feature pattern
 
@@ -96,27 +96,30 @@ Reasons and details are read from `state_ownership.py` (`_incompatible`, lines 5
 2. Keep the sidebar note of a failed refresh in the sidebar, above the lists, so the rows the user already has are never hidden by an error.
 3. Quote the app's or the engine's message once, as the status line, and keep the title and body in design wording.
 
-## Owner questions
+## Owner answers (2026-11-23)
 
-1. A runtime update that failed in an already set-up app: the drawn form shows the sidebar setup line, which is what the app does today because it refuses every call. Should the populated sidebar stay usable instead (as `harness-runtime/updating` draws it)? That is an app change.
-2. Contract and missing-feature gates offer Retry only. Should the app offer a reinstall action for the managed runtime? That is an app change; the runtime is pinned to the app version today.
-3. Settings states are drawn at the Settings window size only. Should Settings also be drawn at 1000 × 620?
-4. The approved ready row reads "Harflow runtime 0.9.3 is ready" with no detail. The app reads "Harflow runtime is ready" with the detail "MCP registrations are managed separately in Harnesses." and its versions are 0.0.x. Amend the ready row to the app's copy?
-5. The app says "engine" in the Settings runtime detail ("Installed engine 0.0.7. This app requires engine 0.0.8."); the glossary says runtime and the drawings say runtime. Change the app copy?
-6. Refusals show "<message> (<code>)" in the app, for example "(incompatible_runtime)". Drop the code from the text?
-7. Approve `app-states/engine-call-failed` and `contract-refused` as the replacement of `app-states/engine-error` (below)?
-8. Should the main pane be gated at all when the task store is unusable? The app shows only the sidebar link and leaves the rest of the window as it is; the drawn gate is design.
+The owner approved all 26 states on 2026-11-23 with these answers, relayed by the coordinator. They are numbered as the owner questions of the drawing were.
+
+1. **A failed runtime update in an already set-up app keeps the populated sidebar usable**, as `harness-runtime/updating` draws it. `harness-runtime/update-failed` is redrawn with that sidebar. An app change.
+2. **No reinstall action;** Retry only. The runtime stays pinned to the app version.
+3. **No 1000 × 620 Settings drawings.** Settings is its own window.
+4. **The ready row is amended to the app's copy:** `settings/general` reads "Harflow runtime is ready" with the detail "MCP registrations are managed separately in Harnesses.", keeping the done glyph. `settings/loading-general` follows it: its skeleton replaces the whole label of the runtime row, so the new hint shimmers with the title and no skeleton spec changes. Recorded under [Owner decisions of 2026-11-23](README.md#owner-decisions-of-2026-11-23) and [Amendments after approval](approval.md#amendments-after-approval).
+5. **The app's "engine" wording becomes "runtime"** (for example "Installed engine 0.0.7. This app requires engine 0.0.8."). An app change only; the drawings already say runtime.
+6. **Drop the code from the main message text and keep it on a detail line.** The refusal form "<message> (<code>)" is not drawn in the approved states: `app-states/capability-missing` shows the message and a detail line "Code" with `incompatible_runtime`. An app change. The same rule is proposed for the refusals of the harness settings and menu bar and notification states, which are not approved yet and stay as drawn until the owner decides.
+7. **`app-states/engine-call-failed` and `contract-refused` replace `app-states/engine-error`.** The old route is retired and opens `app-states/engine-call-failed` (see below).
+8. **The main pane is gated when the task store is unusable,** as `app-states/store-unusable` draws it. The gate is design; the app shows only the sidebar link today.
 
 ## What the app would change
 
 - `app-states/contract-refused`: print the tool as `harflow-ctl` and the version list the app really understands. Today `WireContracts.swift:156` passes the contract name, and `understoodVersions` (`CtlModels.swift:310-319`) falls back to the event log version, so the message reads "`harflow.ctl` answered with contract version 2; this app understands version 1. …" for a ctl refusal. Fix both.
 - `app-states/capability-missing` and every screen form: replace the legacy banner "harflow is incomplete or out of date" and its GitHub and uv dialog (`InstallCommands.swift:99-120`, `MenuBarVM.swift:455-540`, `HarnessesVM.swift:337-392`) and the `toolDirectory` wording with the gate and the plain sentence.
 - `app-states/engine-call-failed` and `engine-call-timed-out`: add the sidebar note with Retry; today the failure is only the title bar dot and its help text.
-- `harness-runtime/update-failed`: none for the drawn form; the question above lists the alternative.
-- `app-states/store-unusable`: if the owner approves the main pane gate, add it; the app has only the sidebar link today (`SidebarView.swift:186-195`, `SidebarVM.swift:363-369`).
+- `harness-runtime/update-failed`: keep the tools usable while an update is failed. Today `ManagedToolEnvironmentRepository.swift:72-77` refuses every runtime call and the sidebar shows the setup line (`SidebarView.swift:139-150`); the installed runtime was kept, so the app should keep working (owner answer 1).
+- `app-states/store-unusable`: add the main pane gate (owner answer 8); the app has only the sidebar link today (`SidebarView.swift:186-195`, `SidebarVM.swift:363-369`).
 - The Settings store states: hide backup, reset, resume and "Show backup in Finder" until the engine's recovery is released (S5).
 - `harness-runtime/deep-link-held`: add the status line; unknown or invalid ids stay ignored and only task links are handled (L2).
-- Settings: add the Appearance group (S2) and remove "Check for updates" (S4).
+- Settings: add the Appearance group (S2), remove "Check for updates" (S4), read "Harflow runtime is ready" with its detail, and replace "engine" with "runtime" in the runtime detail copy ("Installed engine <i>. This app requires engine <r>.", "Installing the update from engine <i> to <r>.", "Installed engine <i>; required engine <r>." (`RuntimeSetupState.swift:56`), "Required engine: <r>.") (owner answers 4 and 5).
+- Refusals: print the message without its code and show the code on a detail line, wherever the app prints "<message> (<code>)" (owner answer 6). The refusals of the harness settings and the menu bar are proposed for the same rule and not yet decided.
 
 ## Engine needs
 
@@ -131,9 +134,9 @@ The approved `harness-runtime/listing` state reads "Your runtime is ready. Recen
 
 S2 (the app adds the Appearance group to Settings → General), S9 (the agent ordering simplification of the migration ledger, line 98, is accepted), O3 (no qualification step in first run), L2 (task links only), N2 (the legacy notifiers are removed) and the legacy debt removals (`toolDirectory`; the mock-era "harflow is incomplete or out of date" banner and its GitHub and uv dialog, replaced by the missing-feature gate).
 
-## Retiring `app-states/engine-error`
+## Retired `app-states/engine-error`
 
-`app-states/engine-error` (Engine not running) is mock-era: it draws a Start engine action for a daemon the app does not run. It is not retired by this record. On the owner's approval of `app-states/contract-refused` and `engine-call-failed`, its route would open `app-states/contract-refused` or `engine-call-failed` and be recorded under Retired designs.
+`app-states/engine-error` (Engine not running) was mock-era: it drew a Start engine action for a daemon the app does not run. On the owner's approval of `app-states/contract-refused` and `app-states/engine-call-failed` (answer 7) it is retired: its route opens `app-states/engine-call-failed`, recorded under [Retired designs](README.md#retired-designs) with the pin `app-states/engine-error at 344d56f`. Its template is deleted with the state because no renderer clones it.
 
 ## Evidence and limits
 
@@ -145,4 +148,4 @@ S2 (the app adds the Appearance group to Settings → General), S9 (the agent or
 
 ## Files
 
-`v2/scripts/states-engine-runtime.js`, `v2/styles/engine-runtime.css`, `v2/index.html`, `tests/engine-runtime.test.mjs`, `tests/minimum-frame.test.mjs`, `tests/v2.test.mjs`.
+`v2/scripts/states-engine-runtime.js`, `v2/styles/engine-runtime.css`, `v2/index.html`, `tests/engine-runtime.test.mjs`, `tests/minimum-frame.test.mjs`, `tests/skeleton.test.mjs`, `tests/v2.test.mjs`, and, for the approval, `v2/scripts/screens-settings.js`, `v2/scripts/screens-app-states.js`, `v2/scripts/registry.js` and `v2/scripts/supersessions.js`.

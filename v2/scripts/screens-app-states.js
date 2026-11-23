@@ -38,38 +38,4 @@
   </main>
 </div>
 `;
-
-  T['app-states/engine-error'] = `
-<div class="hd-app" data-theme="{{theme}}" style="width: 100%; height: 800px;">
-  <aside class="hd-sidebar" aria-label="Sidebar">
-    <div class="hd-sidebar__top">
-      <span class="hd-brand"><span class="hd-brand__mark" aria-hidden="true"></span>Harflow</span>
-      <button class="hd-btn hd-btn--icon hd-btn--sm" aria-label="Collapse sidebar"><span class="hd-i hd-i-sidebar" aria-hidden="true"></span></button>
-    </div>
-    <nav class="hd-nav" aria-label="Main">
-      <a class="hd-nav-item is-active" href="#new"><span class="hd-i hd-i-plus" aria-hidden="true"></span><span class="hd-nav-item__label">New task</span><span class="hd-kbd">⌘N</span></a>
-      <a class="hd-nav-item" href="#needs-you/waiting"><span class="hd-i hd-i-hand" aria-hidden="true"></span><span class="hd-nav-item__label">Needs you</span></a>
-      <a class="hd-nav-item" href="#workflows/list"><span class="hd-i hd-i-workflow" aria-hidden="true"></span><span class="hd-nav-item__label">Workflows</span></a>
-      <a class="hd-nav-item" href="#resources/slots"><span class="hd-i hd-i-gauge" aria-hidden="true"></span><span class="hd-nav-item__label">Resources</span></a>
-      <a class="hd-nav-item" href="#statistics/overview"><span class="hd-i hd-i-chart" aria-hidden="true"></span><span class="hd-nav-item__label">Statistics</span></a>
-    </nav>
-    <section class="hd-section" aria-label="Running"><div class="hd-section__head">Running</div><div class="caption hd-faint" style="padding: 4px var(--space-2);">Unavailable</div></section>
-    <section class="hd-section hd-section--fill" aria-label="Recent work"><div class="hd-section__head">Recent work</div><div class="caption hd-faint" style="padding: 4px var(--space-2);">Unavailable</div></section>
-    <div class="hd-sidebar__foot">
-      <a class="hd-nav-item" href="#settings/general" style="flex: 1;"><span class="hd-i hd-i-settings" aria-hidden="true"></span><span class="hd-nav-item__label">Settings</span></a>
-      <div class="hd-theme" role="group" aria-label="Appearance"><button type="button" class="hd-theme__item" aria-pressed="{{systemOn}}" aria-label="System" title="System, follows this computer"><span class="hd-i hd-i--sm hd-i-monitor" aria-hidden="true"></span></button><button type="button" class="hd-theme__item" aria-pressed="{{lightOn}}" aria-label="Light" title="Light"><span class="hd-i hd-i--sm hd-i-sun" aria-hidden="true"></span></button><button type="button" class="hd-theme__item" aria-pressed="{{darkOn}}" aria-label="Dark" title="Dark"><span class="hd-i hd-i--sm hd-i-moon" aria-hidden="true"></span></button></div>
-    </div>
-  </aside>
-
-  <main class="hd-main">
-<div class="hd-topbar"><span class="hd-topbar__spacer"></span></div>
-<div class="hd-scroll" style="display: flex; align-items: center; justify-content: center;">
-<div class="hd-empty" role="alert" style="max-width: 520px; padding-top: 0;"><div class="hd-empty__icon" style="color: var(--danger);"><span class="hd-i hd-i-alert" aria-hidden="true"></span></div>
-<div class="hd-empty__title">Harflow engine is not running</div>
-<div class="hd-empty__text">The app could not reach harflow-ctl on this Mac. Start it, or check the engine path in Settings.</div>
-<div class="hd-row" style="justify-content: center; margin-top: var(--space-2);"><button type="button" class="hd-btn hd-btn--primary">Start engine</button><button type="button" class="hd-btn hd-btn--secondary">Open settings</button></div>
-<div class="hd-mono hd-faint" style="margin-top: var(--space-3);">connect ECONNREFUSED ~/.harflow/engine.sock</div></div></div>
-  </main>
-</div>
-`;
 })();

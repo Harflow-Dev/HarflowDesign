@@ -1,6 +1,6 @@
 /* Engine and runtime states the approved screens do not draw: the runtime and the task store gates of the main window,
    the app when a call to the runtime fails or times out, a runtime update that did not finish, a task link that arrives
-   before setup, and the runtime and task store rows of Settings → General. All of them are provisional.
+   before setup, and the runtime and task store rows of Settings → General. All of them are approved by the owner (2026-11-23).
    Each state is an approved template with only the blocks it changes replaced, by exact swap, so a changed base throws
    instead of silently drawing another screen: the gates keep the frame, sidebar header and footer of the populated window
    (the template new-task/default, which the approved centered window is drawn from) and replace the main pane and the
@@ -16,7 +16,7 @@
   H.engineRuntimeStates = H.engineRuntimeStates || [];
   H.engineRuntimeSidebarStates = H.engineRuntimeSidebarStates || [];
 
-  var NOTE = 'Provisional · not approved';
+  var APPROVAL = { by: 'the owner', date: '2026-11-23', decision: 'Engine and runtime states' };
   var POPULATED = 'new-task/default';
   var WORKING = 'needs-you/waiting';
   var GENERAL = 'settings/general';
@@ -89,11 +89,11 @@
   function def(o) { DEFS.push(o); }
 
   def({
-    family: 'harness-runtime', id: 'update-failed', twin: true, gateLine: true,
+    family: 'harness-runtime', id: 'update-failed', twin: true,
     title: 'Runtime · Update failed',
-    description: 'A runtime update did not finish. The installed runtime was kept, the status line gives the failure and Retry setup tries again; the sidebar shows the setup line.',
-    build: withGate({ title: 'Update could not finish', body: 'The installed runtime was kept. Review the failure and retry when ready.', status: PACKAGE_FAILURE, actions: button('Retry setup') }),
-    guide: 'The gate of an installed app whose runtime update failed. The title, body, status line shape and the Retry setup action are the Mac app\'s (RuntimeSetupWelcomeView, RuntimeSetupState); the failure message is fixture text. While the update is failed the app refuses every runtime call, so the sidebar shows the setup line instead of the lists, as it does for the first run. The frame, sidebar header and footer are those of <a href="#new-task/centered-empty">the approved centered window</a>.'
+    description: 'A runtime update did not finish. The installed runtime was kept and stays usable: the sidebar keeps its lists, and the main pane gives the failure and Retry setup.',
+    build: function (html, base) { return swap(html, mainOf(html, base), gate({ title: 'Update could not finish', body: 'The installed runtime was kept. Review the failure and retry when ready.', status: PACKAGE_FAILURE, actions: button('Retry setup') }), base); },
+    guide: 'The gate of an installed app whose runtime update failed. The title, body, status line shape and the Retry setup action are the Mac app\'s (RuntimeSetupWelcomeView, RuntimeSetupState); the failure message is fixture text. The installed runtime was kept, so the app stays usable: the sidebar is the populated one of <a href="#harness-runtime/updating">Runtime · Updating</a> and <a href="#new-task/centered-empty">the approved centered window</a>, with its navigation and lists. Today the app refuses every runtime call while an update is failed and shows the setup line; keeping the tools usable is an app change (owner answer 1).'
   });
   def({
     family: 'harness-runtime', id: 'deep-link-held', twin: true, gateLine: true,
@@ -121,10 +121,11 @@
     build: withGate({
       title: 'This Harflow runtime is missing a feature the app needs',
       body: 'Update the Harflow app to get a runtime that has it.',
-      status: 'Incompatible Harflow runtime: missing required events.v1 contract/capability (incompatible_runtime)',
+      status: 'Incompatible Harflow runtime: missing required events.v1 contract/capability',
+      rows: [['Code', 'incompatible_runtime']],
       actions: button('Retry')
     }),
-    guide: 'A runtime that does not advertise a feature the app requires. The title and body are design wording; the status line is the app\'s refusal text, with the missing feature as fixture text. A feature that only one screen needs is drawn on that screen, not as a gate: the plain sentence "This Harflow runtime can\'t …. Update Harflow to use it." with no destructive action (see the decision record).'
+    guide: 'A runtime that does not advertise a feature the app requires. The title and body are design wording; the status line is the app\'s refusal text without its code, with the missing feature as fixture text; the code sits on a detail line (owner answer 6, an app change: the app prints "&lt;message&gt; (&lt;code&gt;)" today). A feature that only one screen needs is drawn on that screen, not as a gate: the plain sentence "This Harflow runtime can\'t …. Update Harflow to use it." with no destructive action (see the decision record).'
   });
   // The engine call failures keep the working window: the last known work stays, the title bar dot turns red and its help
   // text names the failed command.
@@ -252,20 +253,20 @@
       return d.build(html, base);
     }
     lazy(route, make);
-    docs[route] = '<p><strong>Provisional, not approved.</strong> ' + d.guide + ' ' + RECORD + '.</p>';
+    docs[route] = '<p><strong>Approved by the owner · 2026-11-23.</strong> ' + d.guide + ' ' + RECORD + '.</p>';
     H.engineRuntimeStates.push(route);
-    var state = { id: d.id, title: d.title, description: d.description, status: 'provisional', approvalNote: NOTE };
+    var state = { id: d.id, title: d.title, description: d.description, status: 'approved', approval: APPROVAL };
     if (d.group) state.group = d.group;
     H.registerState(d.family, state);
     if (!d.twin) return;
     var minRoute = route + '-minimum';
     lazy(minRoute, function () { return resize(make(), base); });
-    docs[minRoute] = '<p><strong>Provisional, not approved.</strong> The same state in the minimum window (1000 × 620), with the sidebar scrolling between its fixed header and footer. ' + RECORD + '.</p>';
+    docs[minRoute] = '<p><strong>Approved by the owner · 2026-11-23.</strong> The same state in the minimum window (1000 × 620), with the sidebar scrolling between its fixed header and footer. ' + RECORD + '.</p>';
     H.engineRuntimeStates.push(minRoute);
     if (d.gateLine) H.engineRuntimeSidebarStates.push(route, minRoute);
     H.registerState(d.family, {
       id: d.id + '-minimum', title: d.title + ' · 1000 × 620', description: d.description + ' Drawn in the minimum window.',
-      status: 'provisional', approvalNote: NOTE, specimenSize: '1000 × 620',
+      status: 'approved', approval: APPROVAL, specimenSize: '1000 × 620',
       source: { renderer: 'engineRuntime', mount: d.id + '-minimum' }
     });
   });

@@ -35,4 +35,4 @@ This approval covers the visual direction and local interaction design. It does 
 
 ## Amendments after approval
 
-Owner decisions of 2026-11-23 amend `settings/general` (removing "Check for updates" and "Show backup in Finder") and retire `app-states/setup`, which opens `harness-runtime/install-required`. See [Owner decisions of 2026-11-23](README.md#owner-decisions-of-2026-11-23).
+Owner decisions of 2026-11-23 amend `settings/general` (removing "Check for updates" and "Show backup in Finder") and retire `app-states/setup`, which opens `harness-runtime/install-required`. The owner also amended the ready row of `settings/general` to the app's copy on 2026-11-23 ("Harflow runtime is ready", with the detail "MCP registrations are managed separately in Harnesses.") and retired `app-states/engine-error`, which opens `app-states/engine-call-failed`. See [Owner decisions of 2026-11-23](README.md#owner-decisions-of-2026-11-23) and [Engine and runtime states](engine-and-runtime.md).

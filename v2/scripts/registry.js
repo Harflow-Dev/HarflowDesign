@@ -369,12 +369,6 @@
             "title": "Loading",
             "description": "Connecting to the engine.",
             "status": "approved"
-          },
-          {
-            "id": "engine-error",
-            "title": "Engine not running",
-            "description": "The engine cannot be reached, with the fix.",
-            "status": "approved"
           }
         ]
       },
