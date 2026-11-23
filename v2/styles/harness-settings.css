@@ -8,8 +8,6 @@
 .hd-hs-note{display:block;font-size:12px;line-height:16px;color:var(--text-tertiary)}
 .hd-hs-note code,.hd-hs-message code,.hd-hs-sentence code{font-family:var(--font-mono);font-size:.95em}
 .hd-hs-empty{margin:0;padding-left:var(--space-3);font-size:13px;line-height:20px;color:var(--text-secondary)}
-.hd-hs-path{margin:0;font-family:var(--font-mono);user-select:text}
-.hd-hs-detail{margin:0;font-size:12px;line-height:18px;color:var(--text-secondary);overflow-wrap:anywhere}
 .hd-hs-card{display:flex;flex-direction:column;gap:var(--space-1);padding-bottom:var(--space-2)}
 .hd-hs-identity{width:190px;flex:none;font-weight:500}
 .hd-hs-state{display:inline-flex;align-items:center;gap:var(--space-2);flex:1;min-width:0;color:var(--text-secondary)}

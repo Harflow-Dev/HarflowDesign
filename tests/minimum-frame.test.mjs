@@ -183,13 +183,16 @@ test('no existing template changed: the digests equal those of the base commit a
   // The overview page is generated from the registry (state counts and links), so it changes with every state added.
   // Changed on purpose by the owner's canonical task glyphs (2026-11-14): timed out is the failed x (the status badge and the
   // colour roles), a running workflow run is the spinner (the menu bar). Each differs from the base and is pinned at its new digest.
-  const glyphChanged = { 'components/status-badge': 'b0a9eb5fbae6e49148805ab3b380d565f1619f24', 'menu-bar/busy': '958939dca2af0a6016590356b85acfe2473fd480', 'foundations/colour': '8bc4cfa8627dba1e6948d3db5a38f05fec9fd3e5' };
+  // Owner decision 2026-11-23 (menu bar answer 5): the popover's workflow row shows the elapsed time, not "2/4". menu-bar/busy was pinned at 958939dc… until then; the proof below restores the step count.
+  const glyphChanged = { 'components/status-badge': 'b0a9eb5fbae6e49148805ab3b380d565f1619f24', 'menu-bar/busy': 'a25356f88b128d418b2543a6f55007e9a3a3ecf8', 'foundations/colour': '8bc4cfa8627dba1e6948d3db5a38f05fec9fd3e5' };
   // Changed on purpose by the owner's decision of 2026-11-15: the Workflows list drops its search field (nothing else of it changes).
   const searchRemoved = { 'workflows/list': '8262f5c9bd3785d5291b2671f80b89e67ce5fb6c' };
   // Changed on purpose by the owner's decisions of 2026-11-23 (S4, S5): Settings drops Check for updates and Show backup in Finder.
   // Owner decision 2026-11-23, answer 4: the ready row reads the app's copy. The digest before that amendment (257610e) was 79c1d194…
   const controlsRemoved = { 'settings/general': '1101dc01af22c329468d1eb77e1d5102ef2625c7' };
-  for (const [key, sha] of Object.entries({ ...glyphChanged, ...searchRemoved, ...controlsRemoved })) {
+  // Owner decisions 2026-11-23 (harness settings answers 1, 3 and 5): the qualification rows and, on settings/mcp-approvals, the approvals panel are amended. The digests before were those of the manifest.
+  const qualificationAmended = { 'settings/harnesses': '80434b925a60411b5944c62d1e52fc2bbf7944a2', 'settings/mcp-approvals': '2a3fd24d675f12e3e7eeb4b2f8db0f32cf2929a8' };
+  for (const [key, sha] of Object.entries({ ...glyphChanged, ...searchRemoved, ...controlsRemoved, ...qualificationAmended })) {
     const now = crypto.createHash('sha1').update(HFV2.templates[key]).digest('hex');
     assert.notEqual(now, manifest[key], `${key} changed`);
     assert.equal(now, sha, `${key} is pinned at its new digest`);
@@ -214,10 +217,54 @@ test('no existing template changed: the digests equal those of the base commit a
     .replace('<button type="button" class="hd-btn hd-btn--secondary">Inspect task store</button></span>', '<button type="button" class="hd-btn hd-btn--secondary">Inspect task store</button><button type="button" class="hd-btn hd-btn--ghost">Show backup in Finder</button></span>');
   assert.equal(generalWithRetiredControls.length - generalBeforeReady.length, '<button type="button" class="hd-btn hd-btn--secondary">Check for updates</button>'.length + '<button type="button" class="hd-btn hd-btn--ghost">Show backup in Finder</button>'.length, 'the amendment removes exactly the two controls');
   assert.equal(crypto.createHash('sha1').update(generalWithRetiredControls).digest('hex'), manifest['settings/general'], 'Settings General changes only by deleting Check for updates and Show backup in Finder and by the ready row copy');
-  for (const [key, sha] of Object.entries(manifest).filter(([key]) => key !== 'overview/areas' && !(key in glyphChanged) && !(key in searchRemoved) && !(key in controlsRemoved))) {
+  // Restore the old qualification rows and, on the approvals page, the old panel: each page then reproduces the digest of its approved template.
+  const cell = (inner) => `<span style="display: inline-flex; align-items: center; gap: var(--space-2); flex: 1; color: var(--text-secondary);">${inner}</span>`;
+  const qualificationRow = (name, inner) => `<div class="hd-form-row" style="min-height: 28px;"><span style="width: 130px; flex: none; font-weight: 500;">${name}</span>${cell(inner)}</div>`;
+  const READY = '<span class="hd-glyph hd-glyph--done" aria-hidden="true"><span class="hd-i hd-i--sm hd-i-check" aria-hidden="true"></span></span>Ready';
+  const SIGN_IN = '<span class="hd-glyph hd-glyph--attention" aria-hidden="true"><span class="hd-i hd-i--sm hd-i-alert" aria-hidden="true"></span></span>Codex needs sign-in: run codex login, then refresh.';
+  const NO_NATIVE = 'No native qualification for this harness';
+  const restoreQualification = html => {
+    assert.ok(html.includes(qualificationRow('Codex', READY)) && html.includes(qualificationRow('Opencode', NO_NATIVE)), 'the amended rows are present');
+    return html.replace(qualificationRow('Codex', READY), qualificationRow('Codex', SIGN_IN)).replace(qualificationRow('Opencode', NO_NATIVE), qualificationRow('Opencode', READY));
+  };
+  const harnessesBefore = restoreQualification(HFV2.templates['settings/harnesses']);
+  assert.notEqual(harnessesBefore, HFV2.templates['settings/harnesses']);
+  assert.equal(crypto.createHash('sha1').update(harnessesBefore).digest('hex'), manifest['settings/harnesses'], 'restoring the qualification rows reproduces the digest of the approved settings/harnesses');
+  const PATH_LINE = '<p class="caption hd-faint" style="margin: 0; font-family: var(--font-mono); user-select: text;">~/.claude/settings.json</p><p class="caption hd-faint" style="margin: 0;">Global rules apply to future sessions. Harness deny rules and project overrides still apply.</p>';
+  const REFRESH_BUTTON = '<button type="button" class="hd-btn hd-btn--ghost">Refresh</button></form>';
+  const approvalsNow = HFV2.templates['settings/mcp-approvals'];
+  assert.ok(approvalsNow.includes(PATH_LINE) && approvalsNow.includes(REFRESH_BUTTON) && approvalsNow.includes('placeholder="server/tool or server/*"'), 'the approvals panel draws the path, the detail, Refresh and the wider placeholder');
+  const approvalsBefore = restoreQualification(approvalsNow).replace(PATH_LINE, '').replace(REFRESH_BUTTON, '</form>').replace('placeholder="server/tool or server/*"', 'placeholder="server/tool"');
+  assert.equal(approvalsNow.length - approvalsBefore.length, PATH_LINE.length + REFRESH_BUTTON.length - '</form>'.length + ' or server/*'.length + (qualificationRow('Codex', READY).length - qualificationRow('Codex', SIGN_IN).length) + (qualificationRow('Opencode', NO_NATIVE).length - qualificationRow('Opencode', READY).length), 'the amendment of the approvals page changes exactly these blocks');
+  assert.equal(crypto.createHash('sha1').update(approvalsBefore).digest('hex'), manifest['settings/mcp-approvals'], 'restoring the rows and the panel reproduces the digest of the approved settings/mcp-approvals');
+  for (const [key, sha] of Object.entries(manifest).filter(([key]) => key !== 'overview/areas' && !(key in glyphChanged) && !(key in searchRemoved) && !(key in controlsRemoved) && !(key in qualificationAmended))) {
     if (key === 'statistics/overview') continue;
     assert.equal(crypto.createHash('sha1').update(HFV2.templates[key]).digest('hex'), sha, `${key} is unchanged`);
   }
+});
+
+// Owner decision 2026-11-23 (menu bar answer 5): the popover's workflow row shows the elapsed time, as the sidebar row of the approved run top bar does.
+// The digests before are those of e1c9230; restoring the step count reproduces each.
+const POPOVER_ELAPSED = {
+  'menu-bar/busy': { before: '958939dca2af0a6016590356b85acfe2473fd480', now: 'a25356f88b128d418b2543a6f55007e9a3a3ecf8' },
+  'menu-bar/busy-approve-once': { before: 'b1eb8a1b14e2a507441621be7a12e61392848360', now: '555fc44fd27dcf27d4dc1ddb4192abf4199f69e1' },
+  'menu-bar/approval-stale': { before: '52e9acad5680b1a4b5c3b7c18ea168f1440a17f9', now: '4ba5f3146974bc1d9ba2f32945b07af86c486bca' },
+  'menu-bar/answered-elsewhere': { before: '70e91a999902df2a92ef80c80244299f4a985fa2', now: 'e003b5b23f018f2ebfba883aaf97b4c0e99a05cb' }
+};
+test('the approved popover templates draw the elapsed time on the workflow row, and restoring "2/4" reproduces their digests of e1c9230', () => {
+  const sha = html => crypto.createHash('sha1').update(html).digest('hex');
+  const WORKFLOW_ROW = 'aria-label="Workflow run, running"></span><span class="hd-task-row__title">Nightly dependency audit</span><span class="hd-task-row__meta">';
+  for (const [key, pin] of Object.entries(POPOVER_ELAPSED)) {
+    const html = HFV2.templates[key];
+    assert.equal(sha(html), pin.now, `${key} is pinned at its new digest`);
+    assert.ok(html.includes(WORKFLOW_ROW + '06:31</span>') && !html.includes('2/4'), `${key} shows the elapsed time`);
+    assert.equal(sha(html.replace(WORKFLOW_ROW + '06:31</span>', WORKFLOW_ROW + '2/4</span>')), pin.before, `${key}: restoring the step count reproduces the digest of e1c9230`);
+    assert.ok(html.includes('<span class="hd-task-row__meta">1/3</span>'), `${key}: the parallel group row is not part of the decision`);
+  }
+  // The minimum twin renders the template of its state, and the loading skeletons replace the rows with placeholders.
+  assert.equal(HFV2.describe('menu-bar/busy-approve-once-minimum').templateKey, 'menu-bar/busy-approve-once');
+  assert.equal(HFV2.describe('menu-bar/loading').templateKey, 'menu-bar/busy-approve-once');
+  assert.ok(HFV2.skeletonSpecs['menu-bar'].ops.some(op => op.sel.endsWith('[aria-label="Running"] .hd-section__list') && op.kind === 'rows'), 'the loading popover replaces the Running rows, so the meta is never drawn');
 });
 
 test('the five loading states are registered with the minimum() helper, approved, in the Minimum window group', () => {

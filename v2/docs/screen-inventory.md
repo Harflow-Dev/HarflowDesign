@@ -188,7 +188,7 @@ States approved by the owner on 2026-11-23 ([record](decisions/engine-and-runtim
 
 ## Menu bar and notification states
 
-Provisional states drawn on 2026-11-23, not approved ([record](decisions/menu-bar-and-notifications.md)). Each popover state also has a `-minimum` twin at 1000 × 620; the banners and the Settings rows are not drawn at that frame.
+States approved by the owner on 2026-11-23 ([record](decisions/menu-bar-and-notifications.md)); design decided, implementation open. The workflow row of the popover shows its elapsed time. Each popover state also has a `-minimum` twin at 1000 × 620; the banners and the Settings rows are not drawn at that frame.
 
 | Area | Screen | Routes | Draws |
 | --- | --- | --- | --- |
@@ -200,7 +200,7 @@ Provisional states drawn on 2026-11-23, not approved ([record](decisions/menu-ba
 
 ## Harness settings states
 
-Provisional states of Settings → Harnesses drawn on 2026-11-23, not approved ([record](decisions/harness-settings.md)).
+States of Settings → Harnesses approved by the owner on 2026-11-23 ([record](decisions/harness-settings.md)); design decided, implementation open. The approved qualification rows and the approvals panel of `settings/harnesses` and `settings/mcp-approvals` are amended (Codex reads Ready with no sign-in state, Opencode shows no native qualification; the panel shows the config path, the engine's detail line and Refresh).
 
 | Area | Screen | Routes | Draws |
 | --- | --- | --- | --- |

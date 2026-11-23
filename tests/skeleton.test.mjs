@@ -74,6 +74,18 @@ test('the menu bar loading states mirror the Approve once popover and look the s
   assert.ok(!/Approve|Reject/.test(op.html()), 'the placeholders carry no label');
 });
 
+test('the amended Settings pages load as placeholders: the qualification rows, the harness list and the approvals panel are replaced, so none of their new text is drawn or allowlisted', () => {
+  assert.equal(HFV2.describe('settings/loading-harnesses').skeleton.of, 'settings/harnesses');
+  assert.equal(HFV2.describe('settings/loading-mcp-approvals').skeleton.of, 'settings/mcp-approvals');
+  for (const key of ['settings-harnesses', 'settings-mcp-approvals']) {
+    const spec = HFV2.skeletonSpecs[key];
+    assert.ok(spec.ops.some(op => op.kind === 'html' && /section \.hd-form-row$/.test(op.sel)), `${key} replaces every qualification row`);
+    assert.ok(spec.ops.some(op => op.kind === 'html' && /nth-child\(2\)$/.test(op.sel)), `${key} replaces the harness list, with the open approvals panel`);
+    for (const text of ['Ready', 'No native qualification for this harness', 'Codex needs sign-in: run codex login, then refresh.', '~/.claude/settings.json', 'Add approval', 'server/tool or server/*']) assert.ok(!(text in spec.chrome), `${key} does not allowlist ${text}`);
+    assert.equal(spec.chrome['Refresh'], 1, `${key} counts only the Refresh button of the page head`);
+  }
+});
+
 test('every loading state is approved, carries its own decision and no approval note', () => {
   for (const { route, state } of loadingStates) {
     const decision = route === 'sidebar/loading' ? 'Sidebar' : 'Loading states';
@@ -217,7 +229,9 @@ test('existing templates are byte-identical to the base commit apart from the to
   // workflows/list: the owner's decision of 2026-11-15 removed its search field; its new digest is pinned in minimum-frame.test.mjs.
   // statistics/overview: the owner's decision of 2026-11-21 removes only the All time period button; minimum-frame.test.mjs verifies that exact deletion.
   // settings/general: the owner's decisions of 2026-11-23 remove Check for updates and Show backup in Finder; minimum-frame.test.mjs reinserts them and compares the digest.
-  const CHANGED = new Set(['foundations/colour', 'brand/visual-foundations', 'overview/areas', 'components/status-badge', 'menu-bar/busy', 'workflows/list', 'statistics/overview', 'settings/general']);
+  // menu-bar/busy: the owner's decision of 2026-11-23 draws the elapsed time on the workflow row; minimum-frame.test.mjs restores "2/4" and compares the digest.
+  // settings/harnesses and settings/mcp-approvals: the owner's decisions of 2026-11-23 amend the qualification rows and the approvals panel; minimum-frame.test.mjs restores them and compares the digests.
+  const CHANGED = new Set(['foundations/colour', 'brand/visual-foundations', 'overview/areas', 'components/status-badge', 'menu-bar/busy', 'workflows/list', 'statistics/overview', 'settings/general', 'settings/harnesses', 'settings/mcp-approvals']);
   const RETIRED = new Set(['m04-proposal/history-loading', 'm04-proposal/centered-starting', 'app-states/setup', 'app-states/engine-error']);
   for (const [key, sha] of Object.entries(manifest)) {
     if (RETIRED.has(key)) { assert.equal(HFV2.templates[key], undefined, `${key} is removed with its state`); continue; }

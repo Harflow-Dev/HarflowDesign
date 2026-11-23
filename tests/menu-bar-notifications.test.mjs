@@ -27,7 +27,8 @@ const stateOf = route => { const [f, s] = route.split('/'); return HFV2.findStat
 const BUSY = T['menu-bar/busy-approve-once'], EMPTY = T['menu-bar/empty'], GENERAL = T['settings/general'];
 const card = html => html.slice(html.indexOf('<form class="hd-approval'), html.indexOf('</form>', html.indexOf('<form class="hd-approval')) + 7);
 
-test('the menu bar and notification states are registered, provisional and named for the product screen only', () => {
+const APPROVAL = { by: 'the owner', date: '2026-11-23', decision: 'Menu bar and notification states' };
+test('the menu bar and notification states are registered, approved and named for the product screen only', () => {
   assert.deepEqual([...HFV2.menuBarStates, ...HFV2.notificationStates].sort(), [...ALL].sort());
   assert.equal(ALL.length, 33);
   const family = HFV2.findFamily('notifications');
@@ -35,11 +36,14 @@ test('the menu bar and notification states are registered, provisional and named
   assert.deepEqual(Array.from(family.states, s => s.id), ['banners']);
   for (const route of ALL) {
     const state = stateOf(route);
-    assert.equal(state.status, 'provisional', route);
-    assert.equal(state.approval, undefined);
-    assert.equal(HFV2.describe(route).approval, 'Provisional · not approved');
+    assert.equal(state.status, 'approved', route);
+    assert.deepEqual({ ...state.approval }, APPROVAL, `${route} carries its approval`);
+    assert.equal(state.approvalNote, undefined, `${route} carries no approval note`);
+    assert.equal(HFV2.describe(route).approval, 'Approved by the owner on 2026-11-23 · Menu bar and notification states');
     for (const text of [route, state.title, state.description, state.group || '']) assert.ok(!NAMING_RULE.test(text) && !PLAN_WORDS.test(text), `${route}: ${text}`);
-    assert.ok(HFV2.componentDocs[route].includes('Provisional, not approved.') && HFV2.componentDocs[route].includes('menu-bar-and-notifications.md'), route);
+    const guide = HFV2.componentDocs[route];
+    assert.ok(guide.startsWith('<p><strong>Approved by the owner · 2026-11-23.</strong>') && !/Provisional|not approved/.test(guide) && guide.includes('menu-bar-and-notifications.md'), `${route} guide`);
+    assert.ok(!NAMING_RULE.test(guide.replace(/<[^>]*>/g, '')), `${route} guide names the product screen only`);
     assert.equal(typeof T[route], 'string');
   }
   assert.ok(Array.from(HFV2.findFamily('settings').groups).includes('Notifications'));
@@ -83,7 +87,7 @@ test('every popover state is the approved popover with only its blocks replaced,
     assert.equal(squash(rebuilt), squash(EMPTY), `${id} keeps the approved header and footer`);
   }
   const unsupported = uncap(T['menu-bar/needs-you-unsupported']);
-  assert.ok(unsupported.includes('Run command') && !unsupported.includes('Nightly dependency audit asks') && unsupported.includes('This engine version cannot report workflow questions here.'));
+  assert.ok(unsupported.includes('Run command') && !unsupported.includes('Nightly dependency audit asks') && unsupported.includes('This Harflow runtime version cannot report workflow questions here.'));
   const workflows = uncap(T['menu-bar/workflow-status-unavailable']);
   assert.equal(squash(workflows.replace(/<section aria-label="Workflows"[\s\S]*?<\/section>/, '')), squash(BUSY));
   assert.ok(workflows.includes('Workflow status unavailable'));
@@ -96,7 +100,7 @@ test('Mac strings are verbatim, no unknown outcome is invented for questions, an
   assert.ok(t('runtime-preparing').includes('Preparing Harflow runtime…') && t('runtime-preparing').includes('Preparing the exact paired runtime. This can take a few minutes.'));
   assert.ok(!/hd-glyph--running|hd-badge__spin/.test(t('runtime-preparing')), 'no spinner for a runtime word');
   assert.ok(t('runtime-failed').includes('Harflow runtime preparation failed') && t('runtime-failed').includes('The managed runtime is unavailable. Try again to prepare it.'));
-  assert.ok(t('question-submitting').includes('Submitting…') && t('question-submitting').includes('Submitting your answer to the engine…') && t('question-submitting').includes('disabled'));
+  assert.ok(t('question-submitting').includes('Submitting…') && t('question-submitting').includes('Submitting your answer to the Harflow runtime…') && t('question-submitting').includes('disabled'));
   assert.ok(t('question-answered').includes('Answered') && !card(t('question-answered')).includes('hd-approval__actions'));
   assert.ok(t('question-already-answered').includes('Already answered by the caller') && t('question-already-answered').includes('Your saved draft'));
   for (const id of ['question-answered', 'question-already-answered', 'question-stale', 'question-caller-returned']) {
@@ -138,7 +142,7 @@ test('the Settings rows are settings/general with one block added, and the unava
   assert.ok(T['settings/notifications-allowed'].includes('Notifications are allowed for Harflow.') && !/role="switch"[^>]*disabled/.test(T['settings/notifications-allowed']));
   assert.ok(T['settings/notifications-unavailable'].includes('This Harflow runtime can\'t send notifications. Update Harflow to use it.') && (T['settings/notifications-unavailable'].match(/role="switch"[^>]*disabled/g) || []).length === 2);
   const guide = HFV2.componentDocs['settings/notifications-unavailable'];
-  assert.ok(/design-originated/i.test(guide) && guide.includes('depends on that pattern') && guide.includes('interaction-events.v1'));
+  assert.ok(/design-originated/i.test(guide) && guide.includes('interaction-events.v1') && !/depends on that pattern/.test(guide));
 });
 
 test('the stylesheet adds only new hd-mb- and hd-nt- selectors, so no approved state changes', () => {
@@ -151,13 +155,25 @@ test('the stylesheet adds only new hd-mb- and hd-nt- selectors, so no approved s
 
 test('the record carries the decisions, the click destinations, the owner questions and the dependency on the pattern', () => {
   const record = read('docs/decisions/menu-bar-and-notifications.md');
-  for (const heading of ['## Source', '## Owner decisions applied', '## States', '## Notification click destinations and removal', '## Offered answers', '## Owner questions', '## What the app would change', '## Engine needs', '## Evidence and limits', '## Files']) assert.ok(record.includes(heading), heading);
-  for (const text of ['N1', 'N2', 'N3', 'L2', 'harflow-interactions', 'Answered in Harflow', 'the workflow row', 'depends on the missing-feature pattern', 'stage2-gate.md', 'Answer button that opens the item', 'visible status word']) assert.ok(record.includes(text) || (text === 'the workflow row' && /Draw the workflow row/.test(record)), text);
+  for (const heading of ['## Source', '## Owner decisions applied', '## States', '## Notification click destinations and removal', '## Offered answers', '## Owner answers (2026-11-23)', '## What the app would change', '## Engine needs', '## Evidence and limits', '## Files']) assert.ok(record.includes(heading), heading);
+  assert.ok(record.startsWith('# Menu bar and notification states\n\nStatus: **Approved by the owner on 2026-11-23**') && !record.includes('## Owner questions'));
+  for (let n = 1; n <= 7; n += 1) assert.ok(record.includes(`\n${n}. **`), `owner answer ${n} is recorded`);
+  for (const text of ['N1', 'N2', 'N3', 'L2', 'harflow-interactions', 'Answered in Harflow', 'the workflow row', 'missing-feature pattern', 'stage2-gate.md', 'Answer button that opens the item', 'elapsed time', '06:31']) assert.ok(record.includes(text) || (text === 'the workflow row' && /workflow row/.test(record)), text);
   for (const route of [...POPOVER, 'notifications/banners', ...SETTINGS]) assert.ok(record.includes(`\`${route}\``) || record.includes(`\`${route.split('/')[1]}\``), `${route} is in the record`);
   assert.ok(read('docs/decisions/README.md').includes('[menu-bar-and-notifications.md](menu-bar-and-notifications.md)'));
   for (const doc of ['docs/migration-coverage.md', 'docs/screen-inventory.md', 'docs/route-map.md']) assert.ok(read(doc).includes('menu-bar-and-notifications.md'), doc);
-  assert.ok(fs.readFileSync(path.join(root, 'CHANGELOG.md'), 'utf8').includes('menu bar and notification states'));
+  const changelog = fs.readFileSync(path.join(root, 'CHANGELOG.md'), 'utf8');
+  assert.ok(changelog.includes('menu bar and notification states') && changelog.includes('Approve the harness settings and menu bar states'));
   assert.ok(fs.readFileSync(path.join(root, 'README.md'), 'utf8').includes('| Attention | Needs you, Menu bar, Notifications |'));
   const html = read('index.html');
   assert.ok(html.includes('styles/menu-bar-notifications.css') && html.indexOf('scripts/states-menu-bar-notifications.js') < html.indexOf('scripts/catalog.js'));
+});
+
+test('every popover state shows the elapsed time on the workflow row, as the approved run top bar does, and no step count', () => {
+  const html = route => T[route];
+  for (const route of POPOVER.filter(r => !/runtime-(setup|preparing|failed)$/.test(r))) {
+    assert.ok(html(route).includes('<span class="hd-task-row__title">Nightly dependency audit</span><span class="hd-task-row__meta">06:31</span>'), `${route} shows the elapsed time`);
+    assert.ok(!html(route).includes('<span class="hd-task-row__meta">2/4</span>'), `${route} draws no step count`);
+    assert.equal(html(route + '-minimum').includes('06:31'), true, `${route}-minimum`);
+  }
 });

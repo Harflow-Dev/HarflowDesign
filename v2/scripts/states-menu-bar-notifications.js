@@ -1,6 +1,6 @@
 /* Menu bar popover states the approved popovers do not draw (runtime not ready, a failed refresh, the stages of answering a
    question inline, an engine that cannot report workflow questions, unavailable workflow status), the notification
-   banners, and the notification rows of Settings → General. All are provisional.
+   banners, and the notification rows of Settings → General. All are approved by the owner (2026-11-23).
    Each popover state is the approved menu-bar/busy-approve-once or menu-bar/empty template with only the blocks it
    changes replaced, by exact swap, so a changed base throws instead of silently drawing another screen; the question
    card is rebuilt from the same markup and a rebuild with the approved fixture must equal the approved card. Every
@@ -17,7 +17,7 @@
   H.menuBarStates = H.menuBarStates || [];
   H.notificationStates = H.notificationStates || [];
 
-  var NOTE = 'Provisional · not approved';
+  var APPROVAL = { by: 'the owner', date: '2026-11-23', decision: 'Menu bar and notification states' };
   var RECORD = '<a href="docs/decisions/menu-bar-and-notifications.md">Decision record</a>';
   var BUSY = 'menu-bar/busy-approve-once', EMPTY = 'menu-bar/empty', GENERAL = 'settings/general';
   var G_POPOVER = 'Menu bar', G_MIN = 'Minimum window';
@@ -114,7 +114,7 @@
     description: 'The runtime is not installed or needs an update: "+" is disabled and one card sends the person to the Harflow window with Open Harflow.',
     build: notReady(block(subline('Runtime setup required') +
       '<p class="hd-mb-text">Finish setting up Harflow to see your work.</p><div>' + btn('Open Harflow', 'primary') + '</div>')),
-    guide: 'The not-ready popover for an install or update that is required. The app shows the red list error where the sections would be and keeps "+" ignored (the coordinator drops a new-task request while the runtime is not ready); the subline, the card and Open Harflow are design wording, and the disabled "+" is a design choice. Setup happens in the window, so the action opens it (owner question: a direct Install or Retry here). The sections are hidden. Derived from <a href="#menu-bar/empty">Nothing running</a>.'
+    guide: 'The not-ready popover for an install or update that is required. The app shows the red list error where the sections would be and keeps "+" ignored (the coordinator drops a new-task request while the runtime is not ready); the subline, the card and Open Harflow are design wording, and the disabled "+" is a design choice. Setup happens in the window, so the action opens it (owner answer 2: Open Harflow, not a direct Install or Retry). The sections are hidden. Derived from <a href="#menu-bar/empty">Nothing running</a>.'
   });
   def({
     id: 'runtime-preparing', base: EMPTY,
@@ -131,7 +131,7 @@
     build: notReady(block(subline('Runtime setup failed', 'hd-mb-subline--error') +
       '<p class="hd-mb-text hd-mb-text--strong">Harflow runtime preparation failed</p><p class="hd-mb-text">The managed runtime is unavailable. Try again to prepare it.</p>' +
       '<p class="hd-mb-error" role="alert">Package verification failed. No replacement was activated.</p><div>' + btn('Open Harflow', 'primary') + '</div>')),
-    guide: 'A failed preparation or update. The title and the detail are the app\'s install banner wording (MenuBarVM.swift:455-523) and the failure line is fixture text; the app offers "Try again" here, and Open Harflow is design wording (owner question). The subline is design wording.'
+    guide: 'A failed preparation or update. The title and the detail are the app\'s install banner wording (MenuBarVM.swift:455-523) and the failure line is fixture text; the app offers "Try again" here, and Open Harflow is design wording (owner answer 2, an app change). The subline is design wording.'
   });
   def({
     id: 'engine-call-failed', base: BUSY,
@@ -151,19 +151,19 @@
     title: 'Question · Typing an answer',
     description: 'The question card with an answer typed in the field; Answer is available.',
     build: withCard({ value: DRAFT, focus: true }),
-    guide: 'The approved question card with text in the field. In the app today Answer opens the Needs you item (<code>MenuBarNeedsYou.swift</code>); answering in the popover is the approved design and an app change. The button label is the approved "Answer".'
+    guide: 'The approved question card with text in the field. In the app today Answer opens the Needs you item (<code>MenuBarNeedsYou.swift</code>); answering in the popover is the approved design and an app change (owner answer 3). The button label is the approved "Answer".'
   });
   def({
     id: 'question-submitting', base: BUSY,
     title: 'Question · Submitting',
     description: 'The answer is being sent: the field is disabled and the button reads Submitting….',
-    build: withCard({ value: DRAFT, disabled: true, actions: '<button type="submit" class="hd-btn hd-btn--primary hd-btn--sm" disabled>Submitting…</button>', status: 'Submitting your answer to the engine…' }),
-    guide: 'The submit state of the Needs you card (NeedsYouDetailView.swift:116, :194): "Submitting…" and "Submitting your answer to the engine…" are the app\'s words, here on the approved popover card.'
+    build: withCard({ value: DRAFT, disabled: true, actions: '<button type="submit" class="hd-btn hd-btn--primary hd-btn--sm" disabled>Submitting…</button>', status: 'Submitting your answer to the Harflow runtime…' }),
+    guide: 'The submit state of the Needs you card (NeedsYouDetailView.swift:116, :194): "Submitting…" is the app\'s word and "Submitting your answer to the Harflow runtime…" is the app\'s "Submitting your answer to the engine…" with "engine" changed to "runtime" (owner answer 5 of the engine and runtime states), here on the approved popover card.'
   });
   def({
     id: 'question-answered', base: BUSY,
     title: 'Question · Answered',
-    description: 'The engine accepted the answer: the card says Answered and shows the answer; the row leaves on the next refresh.',
+    description: 'The runtime accepted the answer: the card says Answered and shows the answer; the row leaves on the next refresh.',
     build: withCard({ result: result('Answered', [DRAFT, SETTLED_NOTE]), actions: '' }),
     guide: 'An accepted answer (<code>NeedsYouQuestion.swift</code>: the card settles with the decision "Answered" and the answer). The card has no action and leaves the list when the popover refreshes.'
   });
@@ -186,14 +186,14 @@
     title: 'Question · Answer failed',
     description: 'The answer could not be sent: the failure shows under the field, Answer stays and Open in Harflow is offered.',
     build: withCard({ value: DRAFT, error: code('harflow-ctl workflow-resume') + ' exited 1 without a JSON answer.', actions: ANSWER_BTN + btn('Open in Harflow', 'ghost') }),
-    guide: 'A failed answer that is still current: the card keeps the draft and shows the message (NeedsYouQuestion.swift:158-165). The message is the app\'s unreadable-answer form (fixture command and exit code); a refusal reads "&lt;message&gt; (&lt;code&gt;)". Open in Harflow is design wording.'
+    guide: 'A failed answer that is still current: the card keeps the draft and shows the message (NeedsYouQuestion.swift:158-165). The message is the app\'s unreadable-answer form (fixture command and exit code); a refusal shows its message there and its code on a detail line (owner answer 6 of the engine and runtime states; the app prints "&lt;message&gt; (&lt;code&gt;)" today). Open in Harflow is design wording.'
   });
   def({
     id: 'question-unknown', base: BUSY,
     title: 'Question · Delivery unknown',
     description: 'The popover could not confirm that the answer was received: it says so, keeps the draft and sends the person to Needs you.',
     build: withCard({ value: DRAFT, disabled: true, status: 'Harflow couldn\'t confirm your answer was received. Open Needs you to check.', actions: btn('Open Needs you') }),
-    guide: 'Design wording and an app change: the app has no unknown outcome for a question (only approvals have "Delivery is unknown. The decision will not be retried."), and a question is never sent again by itself. This drawing keeps that rule: the card does not offer to send again.'
+    guide: 'Design wording and an app change (owner answer 4: a delivery of unknown outcome is a state): the app has no unknown outcome for a question (only approvals have "Delivery is unknown. The decision will not be retried."), and a question is never sent again by itself. This drawing keeps that rule: the card does not offer to send again.'
   });
   def({
     id: 'question-caller-returned', base: BUSY,
@@ -205,12 +205,12 @@
   def({
     id: 'needs-you-unsupported', base: BUSY,
     title: 'Needs you · Questions unsupported',
-    description: 'An engine that cannot report workflow questions: only the task approval stays, with the app\'s line below it.',
+    description: 'A runtime that cannot report workflow questions: only the task approval stays, with the app\'s line below it.',
     build: function (html, base) {
-      html = swap(html, cardOf(html, base), '<p class="hd-mb-text hd-mb-text--primary">This engine version cannot report workflow questions here.</p>', base);
+      html = swap(html, cardOf(html, base), '<p class="hd-mb-text hd-mb-text--primary">This Harflow runtime version cannot report workflow questions here.</p>', base);
       return swap(html, 'Needs you <span class="hd-section__count">2</span>', 'Needs you <span class="hd-section__count">1</span>', base);
     },
-    guide: 'An engine that reports no workflow inputs (MenuBarNeedsYou.swift:142-145): the section keeps the task approval and the app\'s line, verbatim (it says "engine"). The count falls to the one approval. Derived from <a href="#menu-bar/busy-approve-once">Busy, approve once</a>.'
+    guide: 'An engine that reports no workflow inputs (MenuBarNeedsYou.swift:142-145): the section keeps the task approval and the app\'s line with "engine" changed to "runtime" (owner answer 5 of the engine and runtime states; the app says "This engine version cannot report workflow questions here." today). The count falls to the one approval. Derived from <a href="#menu-bar/busy-approve-once">Busy, approve once</a>.'
   });
   def({
     id: 'workflow-status-unavailable', base: BUSY,
@@ -220,7 +220,7 @@
       var section = '<section aria-label="Workflows" style="padding: 0 var(--space-2) var(--space-1);"><div class="hd-section__head">Workflows</div><p class="hd-mb-text hd-mb-text--primary hd-mb-indent">Workflow status unavailable</p></section>';
       return swap(html, '<section aria-label="Recent"', section + '\n    <section aria-label="Recent"', base);
     },
-    guide: 'Any failure of the workflow refresh (WorkflowMenuBarStatusVM.swift:152): the section label "Workflows" and the line "Workflow status unavailable" are the app\'s. The approved popover draws no Workflows section; it appears here only for this state. The workflow row label recommendation is in the record. Derived from <a href="#menu-bar/busy-approve-once">Busy, approve once</a>.'
+    guide: 'Any failure of the workflow refresh (WorkflowMenuBarStatusVM.swift:152): the section label "Workflows" and the line "Workflow status unavailable" are the app\'s. The approved popover draws no Workflows section; it appears here only for this state. The workflow row of the popover shows its elapsed time (owner answer 5; see the record). Derived from <a href="#menu-bar/busy-approve-once">Busy, approve once</a>.'
   });
 
   // ---- Settings → General: notification permission -------------------------------------------------------------------
@@ -253,7 +253,7 @@
       'Notifications allowed in macOS. The row and its wording are design wording.'],
     ['notifications-unavailable', 'Notifications · Runtime missing a feature', 'The runtime cannot report interactions, so notifications are off: one sentence under the switches, which are disabled.',
       { off: true, row: permissionRow('Notifications', 'This Harflow runtime can\'t send notifications. Update Harflow to use it.') },
-      'A runtime that does not advertise <code>interaction-events.v1</code>. With the legacy notifiers removed (owner N2) there is no fallback, so notifications are off. Design-originated, not derived from an approved state; it uses the one-sentence pattern of the <a href="docs/decisions/engine-and-runtime.md">engine and runtime record</a> and depends on that pattern being approved.']
+      'A runtime that does not advertise <code>interaction-events.v1</code>. With the legacy notifiers removed (owner N2) there is no fallback, so notifications are off. Design-originated, not derived from an approved state; it uses the one-sentence pattern of the <a href="docs/decisions/engine-and-runtime.md">engine and runtime record</a>, approved with the owner\'s answer 7.']
   ];
   SETTINGS.forEach(function (s) {
     def({
@@ -278,7 +278,7 @@
     '  <div style="height: 28px; flex: none; display: flex; align-items: center; justify-content: flex-end; gap: var(--space-3); padding: 0 var(--space-3); background: var(--surface); border-bottom: 1px solid var(--border);">' +
     '<span class="caption hd-faint" style="margin-right: auto;">Harflow</span><span class="caption">Tue 14:32</span></div>\n' +
     '  <div class="hd-nt-stack" role="list" aria-label="Notifications">' + BANNERS.map(function (b) { return '<div role="listitem">' + banner(b) + '</div>'; }).join('') + '</div>\n</div>\n';
-  docs['notifications/banners'] = '<p><strong>Provisional, not approved.</strong> Five macOS notification banners as Harflow posts them, with no action buttons (owner N1): a click opens the task for a finished or failed task and the Needs you item for an approval, a question or a recovery. The titles are the app\'s (<code>InteractionEventNotifier.swift:143-152</code>): "Done: &lt;title&gt;", "Failed: &lt;title&gt;", "Approval: &lt;title&gt;", "Question: &lt;title&gt;" and "Recovery: &lt;title&gt;"; the thread is <code>harflow-interactions</code>; the body is the first 512 characters. The bodies, times and titles are fixture text. The banner chrome is a browser approximation of the system banner. This is a design-originated specimen, not derived from an approved template, and frames are not drawn at 1000 × 620. ' + RECORD + '.</p>';
+  docs['notifications/banners'] = '<p><strong>Approved by the owner · 2026-11-23.</strong> Five macOS notification banners as Harflow posts them, with no action buttons (owner N1): a click opens the task for a finished or failed task and the Needs you item for an approval, a question or a recovery. The titles are the app\'s (<code>InteractionEventNotifier.swift:143-152</code>): "Done: &lt;title&gt;", "Failed: &lt;title&gt;", "Approval: &lt;title&gt;", "Question: &lt;title&gt;" and "Recovery: &lt;title&gt;"; the thread is <code>harflow-interactions</code>; the body is the first 512 characters. The bodies, times and titles are fixture text. The banner chrome is a browser approximation of the system banner. This is a design-originated specimen, not derived from an approved template, and it is not drawn at 1000 × 620 (owner answer 6). ' + RECORD + '.</p>';
   H.notificationStates.push('notifications/banners');
 
   // ---- Registration -------------------------------------------------------------------------------------------------------
@@ -309,23 +309,23 @@
       return swap(html, 'overflow: hidden; display: flex; flex-direction: column;">', 'overflow-y: auto; max-height: calc(100% - 12px); display: flex; flex-direction: column;">', base);
     }
     lazy(route, capped);
-    docs[route] = '<p><strong>Provisional, not approved.</strong> ' + d.guide + ' ' + RECORD + '.</p>';
-    var state = { id: d.id, title: d.title, description: d.description, status: 'provisional', approvalNote: NOTE, group: d.group || G_POPOVER };
+    docs[route] = '<p><strong>Approved by the owner · 2026-11-23.</strong> ' + d.guide + ' ' + RECORD + '.</p>';
+    var state = { id: d.id, title: d.title, description: d.description, status: 'approved', approval: APPROVAL, group: d.group || G_POPOVER };
     if (d.plain) { H.notificationStates.push(route); H.registerState(family, state); return; }
     H.menuBarStates.push(route, route + '-minimum');
     H.registerState(family, state);
     lazy(route + '-minimum', function () { return resize(make(), base); });
-    docs[route + '-minimum'] = '<p><strong>Provisional, not approved.</strong> The same state in the minimum window (1000 × 620): the popover is 380 points wide and 560 points tall, its header and footer stay fixed and the sections between them scroll. ' + RECORD + '.</p>';
+    docs[route + '-minimum'] = '<p><strong>Approved by the owner · 2026-11-23.</strong> The same state in the minimum window (1000 × 620): the popover is 380 points wide and 560 points tall, its header and footer stay fixed and the sections between them scroll. ' + RECORD + '.</p>';
     H.registerState(family, {
       id: d.id + '-minimum', title: d.title + ' · 1000 × 620', description: d.description + ' Drawn in the minimum window.',
-      status: 'provisional', approvalNote: NOTE, group: G_MIN, specimenSize: '1000 × 620',
+      status: 'approved', approval: APPROVAL, group: G_MIN, specimenSize: '1000 × 620',
       source: { renderer: 'menuBarPopover', mount: d.id + '-minimum' }
     });
   });
   H.registerState('notifications', {
     id: 'banners', title: 'Notification banners',
     description: 'The five banners Harflow posts for finished and failed tasks and for approvals, questions and recoveries, with no action buttons.',
-    status: 'provisional', approvalNote: NOTE
+    status: 'approved', approval: APPROVAL
   });
 
   H.RENDERERS.menuBarPopover = { api: 'menuBarPopover', wrapper: 'hdc-specimen' };

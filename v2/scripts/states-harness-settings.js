@@ -2,13 +2,14 @@
    pages do not draw: the runtime not ready, a registration that failed, no harnesses, a refused setup, the remove
    confirmation; qualification in each state the app has (mixed, not checked, cancelled and changed, unsupported runtime,
    discovery failed); and the MCP approvals panel (empty, add and remove confirmations, a refused change, Vibe, an
-   unsupported harness, a failed read, a runtime without the command, and a human-only refusal). All are provisional.
+   unsupported harness, a failed read, a runtime without the command, and a human-only refusal). All are approved by the
+   owner (2026-11-23).
    Each state is the approved settings/harnesses or settings/mcp-approvals template with only the blocks it changes
    replaced, by exact swap: the head, the harness list, the approvals panel and the qualification section are rebuilt from
    the same markup, and a rebuild with the approved fixture must equal the approved block or the module throws. The inline
-   approvals panel of the approved page is kept (no sheet). Messages quoted from the Mac app or the engine, and the
-   refusal form "<message> (<code>)", are named in each guide and in docs/decisions/harness-settings.md; design wording
-   and fixture text are named there too. Templates are computed on first use. Display only: no engine calls. */
+   approvals panel of the approved page is kept (no sheet). Messages quoted from the Mac app or the engine are named in
+   each guide and in docs/decisions/harness-settings.md; a refusal shows its message and, on a detail line, its code
+   (owner answer 6 of the engine and runtime states); design wording and fixture text are named there too. Templates are computed on first use. Display only: no engine calls. */
 (function () {
   'use strict';
   var H = (window.HFV2 = window.HFV2 || {});
@@ -16,7 +17,7 @@
   var docs = (H.componentDocs = H.componentDocs || {});
   H.harnessSettingsStates = H.harnessSettingsStates || [];
 
-  var NOTE = 'Provisional · not approved';
+  var APPROVAL = { by: 'the owner', date: '2026-11-23', decision: 'Harness settings states' };
   var RECORD = '<a href="docs/decisions/harness-settings.md">Decision record</a>';
   var HARNESSES = 'settings/harnesses', APPROVALS = 'settings/mcp-approvals';
   var G_REG = 'Harness registration', G_QUAL = 'Harness qualification', G_MCP = 'MCP approvals';
@@ -51,6 +52,8 @@
   }
   function icon(name, small) { return '<span class="hd-i' + (small ? ' hd-i--sm' : '') + ' hd-i-' + name + '" aria-hidden="true"></span>'; }
   function code(text) { return '<code>' + text + '</code>'; }
+  // The refusal code on its own detail line, as the approved engine and runtime gate draws it (owner answer 6 there).
+  function codeRow(value) { return '<span class="hd-ev-details"><span class="hd-ev-detail"><span class="caption hd-faint">Code</span><span class="hd-ev-mono">' + value + '</span></span></span>'; }
 
   // ---- Markup of the approved page, rebuilt ---------------------------------------------------------------------------
   var HR = '<hr style="border: 0; border-top: 1px solid var(--border); margin: 0;">';
@@ -123,7 +126,7 @@
   var CLAUDE = 'Claude Code · 2.1.150', CODEX = 'Codex · 0.130.0', VIBE = 'Mistral Vibe · 2.4.1';
   var MSG_NOT_CHECKED = 'Check the required harness features before running.';
   var MSG_UNAVAILABLE = 'Required feature evidence is unavailable. Check this harness explicitly.';
-  var CANCELLING = 'Cancelling stops waiting for this check. The engine may still finish it.';
+  var CANCELLING = 'Cancelling stops waiting for this check. The runtime may still finish it.';
   var FAIL_FEATURES = [
     ['live_input', 'Failed · failed', 'feature is not qualified on this platform'],
     ['approval_requests', 'Failed · failed', 'probe bundle did not establish this feature']
@@ -131,6 +134,10 @@
 
   // ---- Panels ---------------------------------------------------------------------------------------------------------
   var NOTE_LINE = 'Global tool approvals apply across projects and future tasks.';
+  // The engine's read answer for Claude Code, as the amended approved panel shows it: the config path and the detail line.
+  var CLAUDE_PATH = '~/.claude/settings.json';
+  var CLAUDE_DETAIL = 'Global rules apply to future sessions. Harness deny rules and project overrides still apply.';
+  var PLACEHOLDER = 'server/tool or server/*';
   var HINT_DEFAULT = 'Use server/* to approve every tool on one server.';
   var HINT_VIBE = 'Vibe supports exact tool names only; server wildcards are unavailable.';
   var ENTRIES = ['harflow/*', 'github/create_pull_request', 'linear/get_issue'];
@@ -141,18 +148,20 @@
   function panel(o) {
     o = o || {};
     var entries = o.entries || ENTRIES;
+    // path and detail are the engine's read answer: a state with no answer (a failed read, a runtime without the command) passes false.
+    var path = o.path === undefined ? CLAUDE_PATH : o.path, detail = o.detail === undefined ? CLAUDE_DETAIL : o.detail;
     return '<div id="mcp-approvals" style="margin-left: 44px; padding: var(--space-2) 0 var(--space-3); display: flex; flex-direction: column; gap: var(--space-2);">' +
       '<p class="caption hd-faint" style="margin: 0;">' + NOTE_LINE + '</p>' +
-      (o.path ? '<p class="caption hd-faint hd-hs-path">' + o.path + '</p>' : '') +
-      (o.detail ? '<p class="hd-hs-detail">' + o.detail + '</p>' : '') +
-      (o.error ? '<p class="hd-hs-error" role="alert">' + o.error + '</p>' : '') +
+      (path ? '<p class="caption hd-faint" style="margin: 0; font-family: var(--font-mono); user-select: text;">' + path + '</p>' : '') +
+      (detail ? '<p class="caption hd-faint" style="margin: 0;">' + detail + '</p>' : '') +
+      (o.error ? '<p class="hd-hs-error" role="alert">' + o.error + '</p>' + (o.code ? codeRow(o.code) : '') : '') +
       (o.sentence ? '<p class="hd-hs-sentence" role="status">' + o.sentence + '</p>' : '') +
       (o.empty ? '<p class="hd-hs-empty">' + o.empty + '</p>' : '') +
       entries.map(function (e) { return entry(e, o.off); }).join('') +
       '<form style="display: flex; align-items: flex-start; gap: var(--space-2); padding-left: var(--space-3);"><div class="hd-field" style="flex: 1;"><label class="hd-sr" for="mcp-new">Tool approval</label>' +
-      '<input id="mcp-new" class="hd-input" type="text" placeholder="server/tool"' + (o.value ? ' value="' + o.value + '"' : '') + (o.off ? ' disabled' : '') + '><span class="hd-field__hint">' + (o.hint || HINT_DEFAULT) + '</span></div>' +
+      '<input id="mcp-new" class="hd-input" type="text" placeholder="' + (o.placeholder || PLACEHOLDER) + '"' + (o.value ? ' value="' + o.value + '"' : '') + (o.off ? ' disabled' : '') + '><span class="hd-field__hint">' + (o.hint || HINT_DEFAULT) + '</span></div>' +
       '<button type="submit" class="hd-btn hd-btn--secondary"' + (o.addOff || o.off ? ' disabled' : '') + '>Add approval</button>' +
-      (o.refresh ? '<button type="button" class="hd-btn hd-btn--ghost">Refresh</button>' : '') + '</form></div>';
+      '<button type="button" class="hd-btn hd-btn--ghost">Refresh</button></form></div>';
   }
   function panelOf(html, base) { return between(html, '<div id="mcp-approvals"', '</form></div>', base); }
 
@@ -191,14 +200,14 @@
     build: function (html, base) {
       var rows = [
         { name: 'Claude Code', badge: B_INSTALLED, actions: APPROVALS_BUTTON + REMOVE },
-        { name: 'Codex', hint: '<span class="hd-hs-error">Could not update the Codex configuration: permission denied (setup_error)</span><span class="hd-hs-note">Registered via ' + code('codex mcp add') + '.</span>', badge: B_UPDATE, actions: button('Retry') },
+        { name: 'Codex', hint: '<span class="hd-hs-error">Could not update the Codex configuration: permission denied</span>' + codeRow('setup_error') + '<span class="hd-hs-note">Registered via ' + code('codex mcp add') + '.</span>', badge: B_UPDATE, actions: button('Retry') },
         { name: 'Opencode', badge: B_INSTALLED, actions: REMOVE },
         { name: 'Mistral Vibe', badge: B_INSTALLED, actions: REMOVE },
         { name: 'Antigravity', hint: 'Install Antigravity, then refresh.', badge: B_NOT_FOUND, actions: '' }
       ];
       return mapList(html, base, list({ rows: rows }));
     },
-    guide: 'A failed install, update or removal. The app already draws the setup row\'s own <code>error</code> in red, its <code>notes</code> and a "last: &lt;action&gt;" chip on the row (HarnessRowView.swift:57-61). A tool failure of the action itself, or of the load, shows today as one red page line, <code>&lt;message&gt; (&lt;code&gt;)</code>, with no Retry (HarnessesVM.swift:294-323). The change drawn is to move that failure onto the row it acted on and add Retry (an app change). The error text is fixture text with the code <code>setup_error</code>; the note is fixture text in the form the app shows ("Registered via …").'
+    guide: 'A failed install, update or removal. The app already draws the setup row\'s own <code>error</code> in red, its <code>notes</code> and a "last: &lt;action&gt;" chip on the row (HarnessRowView.swift:57-61). A tool failure of the action itself, or of the load, shows today as one red page line, <code>&lt;message&gt; (&lt;code&gt;)</code>, with no Retry (HarnessesVM.swift:294-323). The change drawn is to move that failure onto the row it acted on and add Retry (an app change, owner answer 2), with the code on a detail line (owner answer 6 of the engine and runtime states). The error text is fixture text with the code <code>setup_error</code>; the note is fixture text in the form the app shows ("Registered via …").'
   });
   def({
     id: 'harnesses-empty', group: G_REG, base: HARNESSES,
@@ -215,9 +224,9 @@
     description: 'The setup tool of this runtime does not match the app: the page shows the refusal and Retry, without rows.',
     build: function (html, base) {
       html = swap(html, HEAD_CAPTION, '', base);
-      return mapList(html, base, '<div class="hd-hs-block"><p class="hd-hs-error" role="alert">Incompatible Harflow runtime: unsupported harflow.setup format (incompatible_runtime)</p><div><button type="button" class="hd-btn hd-btn--secondary">Retry</button></div></div>');
+      return mapList(html, base, '<div class="hd-hs-block"><p class="hd-hs-error" role="alert">Incompatible Harflow runtime: unsupported harflow.setup format</p>' + codeRow('incompatible_runtime') + '<div><button type="button" class="hd-btn hd-btn--secondary">Retry</button></div></div>');
     },
-    guide: 'A setup answer in another format. The line is the app\'s refusal form <code>&lt;message&gt; (&lt;code&gt;)</code> with the app\'s message for an unsupported format (the format name is fixture text); the Mac shows it as one red line and no Retry. The approved qualification section stays (it does not depend on the setup tool). Retry is design wording, and the legacy "harflow is incomplete or out of date" banner is not drawn.'
+    guide: 'A setup answer in another format. The line is the app\'s message for an unsupported format (the format name is fixture text) and its code <code>incompatible_runtime</code> sits on a detail line (owner answer 6 of the engine and runtime states, an app change: the Mac prints <code>&lt;message&gt; (&lt;code&gt;)</code> as one red line and no Retry). The approved qualification section stays (it does not depend on the setup tool). Retry is design wording, and the legacy "harflow is incomplete or out of date" banner is not drawn.'
   });
   def({
     id: 'harnesses-remove-confirm', group: G_REG, base: HARNESSES,
@@ -241,7 +250,7 @@
         card({ identity: VIBE, glyph: '', title: 'Qualifying', message: 'Checking required features…', features: [['live_input', 'Checking'], ['approval_requests', 'Checking']], action: 'Cancel check', note: CANCELLING })
       ]));
     },
-    guide: 'The qualification cards of the three harnesses with native qualification (Claude Code, Codex and Vibe) in three states. States, actions, messages, the cancelling note and the feature result form "&lt;Result&gt; · &lt;source&gt;" are the Mac app\'s (HarnessQualificationModel, QualificationPresentation); the two reasons are engine text; versions and feature names are fixture text. Opencode and Antigravity carry no native qualification claim: "No native qualification for this harness" is design wording and offers no action; the Antigravity line is the approved text. This does not amend the approved <a href="#settings/harnesses">Harnesses</a> rows, which show Opencode Ready and "Codex needs sign-in".'
+    guide: 'The qualification cards of the three harnesses with native qualification (Claude Code, Codex and Vibe) in three states. States, actions, messages, the cancelling note and the feature result form "&lt;Result&gt; · &lt;source&gt;" are the Mac app\'s (HarnessQualificationModel, QualificationPresentation); the two reasons are engine text; versions and feature names are fixture text. Opencode and Antigravity carry no native qualification claim: "No native qualification for this harness" is design wording and offers no action; the Antigravity line is the approved text. The approved <a href="#settings/harnesses">Harnesses</a> page draws the same rows: Claude Code, Codex and Mistral Vibe Ready, Opencode with the no-native line and no sign-in state (owner answer 1).'
   });
   def({
     id: 'qualification-not-checked', group: G_QUAL, base: HARNESSES,
@@ -271,11 +280,11 @@
     title: 'Qualification · Unsupported runtime',
     description: 'The runtime has no harness qualification: each card says so and offers no action.',
     build: function (html, base) {
-      var msg = 'Harness qualification is unavailable in the selected engine. A supporting managed runtime is required.';
-      var c = function (id) { return card({ identity: id, glyph: GLYPH.attention, title: 'Unsupported engine', message: msg }); };
+      var msg = 'Harness qualification is unavailable in this Harflow runtime. A supporting managed runtime is required.';
+      var c = function (id) { return card({ identity: id, glyph: GLYPH.attention, title: 'Unsupported runtime', message: msg }); };
       return mapQualification(html, base, qualification([c(CLAUDE), c(CODEX), c(VIBE)]));
     },
-    guide: 'A runtime that does not advertise <code>backend-qualification.v1</code>. The title and message are the Mac app\'s verbatim (they say "engine"); the cards offer no action. The one-sentence pattern of the engine and runtime record ("This Harflow runtime can\'t … Update Harflow to use it.") would replace this text if the owner approves it.'
+    guide: 'A runtime that does not advertise <code>backend-qualification.v1</code>. The message is the app\'s with "the selected engine" changed to "this Harflow runtime" (owner answer 5 of the engine and runtime states; the app says "Harness qualification is unavailable in the selected engine." today); the card title "Unsupported runtime" is the app\'s "Unsupported engine" and the cancelling note "The runtime may still finish it." is the app\'s "The engine may still finish it." (same answer); the cards offer no action. The one-sentence pattern of the engine and runtime record ("This Harflow runtime can\'t … Update Harflow to use it.") is drawn for MCP approvals (owner answer 7), not on these cards, which keep the app\'s text.'
   });
   def({
     id: 'qualification-discovery-failed', group: G_QUAL, base: HARNESSES,
@@ -328,11 +337,11 @@
   def({
     id: 'mcp-approvals-write-refused', group: G_MCP, base: APPROVALS,
     title: 'MCP approvals · Change refused',
-    description: 'The engine refused a change because the harness configuration changed: the refusal shows above the list, the entries stay and Refresh reloads.',
+    description: 'The runtime refused a change because the harness configuration changed: the refusal shows above the list, the entries stay and Refresh reloads.',
     build: approvals(function () {
-      return panel({ error: 'Harness configuration changed; reload and try again (allowlist_error)', value: 'github/get_issue', refresh: true });
+      return panel({ error: 'Harness configuration changed; reload and try again', code: 'allowlist_error', value: 'github/get_issue' });
     }),
-    guide: 'A write refused by the engine (<code>allowlist_error</code>, <code>mcp_allowlist.py:47</code>). The line is the app\'s refusal form <code>&lt;message&gt; (&lt;code&gt;)</code>; the typed value stays in the field and the list keeps its entries. Refresh is the Mac sheet\'s button; the approved panel does not draw it.'
+    guide: 'A write refused by the engine (<code>allowlist_error</code>, <code>mcp_allowlist.py:47</code>). The line is the engine\'s message and the code sits on a detail line (owner answer 6 of the engine and runtime states; the app prints <code>&lt;message&gt; (&lt;code&gt;)</code> today); the typed value stays in the field and the list keeps its entries. The config path, detail line and Refresh are those of the approved panel.'
   });
   def({
     id: 'mcp-approvals-vibe', group: G_MCP, base: APPROVALS,
@@ -347,18 +356,18 @@
         { name: 'Antigravity', hint: 'Install Antigravity, then refresh.', badge: B_NOT_FOUND, actions: '' }
       ];
       var p = panel({
-        entries: ['github/create_pull_request'], value: 'github/*', addOff: true, hint: HINT_VIBE, path: '~/.vibe/config.toml',
+        entries: ['github/create_pull_request'], value: 'github/*', addOff: true, hint: HINT_VIBE, placeholder: 'server/tool', path: '~/.vibe/config.toml',
         detail: 'Vibe requires individual server/tool entries. Global rules apply to future sessions. Harness deny rules and project overrides still apply.'
       });
       var from = html.indexOf('<div style="margin-top: var(--space-2);">'), to = html.indexOf('<section aria-label="Harness qualification"');
       return html.slice(0, from) + list({ rows: rows, open: 'Mistral Vibe', panel: p }) + html.slice(to);
     },
-    guide: 'The panel of a harness that accepts exact tool names only. The help text, the disabled Add approval for a typed wildcard (MCPAllowlistVM.swift:61-63, :66-69) and the detail line (engine, <code>mcp_approval.py:182</code>) are the app\'s; the config path is fixture text. Because the app blocks the wildcard before it reaches the engine, the engine\'s own refusal ("Vibe requires individual tool names; add server/tool entries (allowlist_error)") is recorded, not drawn. The Mac draws the MCP approvals button on every row (HarnessRowView.swift:66); the approved page draws it on Claude Code only, so the Mistral Vibe row carries it here.'
+    guide: 'The panel of a harness that accepts exact tool names only. The help text, the disabled Add approval for a typed wildcard (MCPAllowlistVM.swift:61-63, :66-69) and the detail line (engine, <code>mcp_approval.py:182</code>) are the app\'s; the config path is fixture text. The placeholder stays "server/tool": the app takes exact names for Vibe (owner answer 5). Because the app blocks the wildcard before it reaches the engine, the engine\'s own refusal ("Vibe requires individual tool names; add server/tool entries (allowlist_error)") is recorded, not drawn. The Mac draws the MCP approvals button on every row (HarnessRowView.swift:66); the approved page draws it on Claude Code only, so the Mistral Vibe row carries it here.'
   });
   def({
     id: 'mcp-approvals-unsupported', group: G_MCP, base: APPROVALS,
     title: 'MCP approvals · Unsupported harness',
-    description: 'A harness whose approvals Harflow does not edit: the engine\'s reason is shown, the field and Add approval are disabled.',
+    description: 'A harness whose approvals Harflow does not edit: the runtime\'s reason is shown, the field and Add approval are disabled.',
     build: function (html, base) {
       var rows = [
         { name: 'Claude Code', badge: B_INSTALLED, actions: APPROVALS_BUTTON + REMOVE },
@@ -372,34 +381,34 @@
       var from = html.indexOf('<div style="margin-top: var(--space-2);">'), to = html.indexOf('<section aria-label="Harness qualification"');
       return html.slice(0, from) + list({ rows: rows, open: 'Cursor', panel: p }) + html.slice(to);
     },
-    guide: 'The panel when the engine answers <code>supported: false</code> (<code>mcp_approval.py:270</code>). The detail line is the engine\'s sentence for Cursor, shown as the Mac sheet shows it; the field, Add approval and Remove are disabled, as the app disables them. The Cursor row and its config path are fixture text (the approved page lists no Cursor row); the Mac draws the MCP approvals button on every row (HarnessRowView.swift:66).'
+    guide: 'The panel when the engine answers <code>supported: false</code> (<code>mcp_approval.py:270</code>). The detail line is the engine\'s sentence for Cursor, shown as the Mac sheet shows it; the field, Add approval and Remove are disabled, as the app disables them. The Cursor row and its config path are fixture text only: the page lists the rows the engine reports, and the approved page lists no Cursor row (owner answer 6); the Mac draws the MCP approvals button on every row (HarnessRowView.swift:66).'
   });
   def({
     id: 'mcp-approvals-read-failed', group: G_MCP, base: APPROVALS,
     title: 'MCP approvals · Read failed',
     description: 'The approvals could not be read: the failed command shows above an empty list, the field is disabled and Refresh tries again.',
     build: approvals(function () {
-      return panel({ entries: [], off: true, refresh: true, error: code('harflow-ctl mcp-allowlist') + ' exited 1 without a JSON answer.' });
+      return panel({ entries: [], off: true, path: false, detail: false, error: code('harflow-ctl mcp-allowlist') + ' exited 1 without a JSON answer.' });
     }),
-    guide: 'A read that failed. The line is the app\'s message for an unreadable answer (fixture command and exit code). The Mac sheet keeps the field disabled until a read succeeds. Refresh is the sheet\'s button; the approved panel does not draw it.'
+    guide: 'A read that failed. The line is the app\'s message for an unreadable answer (fixture command and exit code). The Mac sheet keeps the field disabled until a read succeeds. The engine gave no answer, so the panel shows no config path or detail line; Refresh tries again.'
   });
   def({
     id: 'mcp-approvals-capability-missing', group: G_MCP, base: APPROVALS,
     title: 'MCP approvals · Runtime missing a feature',
     description: 'This runtime cannot edit global approvals: the panel says so in one sentence and the field is disabled.',
     build: approvals(function () {
-      return panel({ entries: [], off: true, sentence: 'This Harflow runtime can\'t edit global MCP approvals. Update Harflow to use it.' });
+      return panel({ entries: [], off: true, path: false, detail: false, sentence: 'This Harflow runtime can\'t edit global MCP approvals. Update Harflow to use it.' });
     }),
-    guide: 'The inline form of a missing feature, defined once in the <a href="docs/decisions/engine-and-runtime.md">engine and runtime record</a>: a plain sentence, no destructive action. It depends on that pattern being approved. The sentence is design wording; the app shows today "The installed <code>harflow-ctl</code> has no <code>mcp-allowlist</code> command — it predates this app. Use a compatible managed Harflow runtime." The engine advertises no allowlist feature yet (engine need <code>mcp-allowlist.v1</code>).'
+    guide: 'The inline form of a missing feature, defined once in the <a href="docs/decisions/engine-and-runtime.md">engine and runtime record</a>: a plain sentence, no destructive action. The sentence is design wording, approved with the pattern (owner answer 7); the app shows today "The installed <code>harflow-ctl</code> has no <code>mcp-allowlist</code> command — it predates this app. Use a compatible managed Harflow runtime." The engine advertises no allowlist feature yet (engine need <code>mcp-allowlist.v1</code>).'
   });
   def({
     id: 'mcp-approvals-human-only', group: G_MCP, base: APPROVALS,
     title: 'MCP approvals · Human only',
-    description: 'The engine refused a change because an agent, not a person, called it: the refusal shows above the list and the entries stay.',
+    description: 'The runtime refused a change because an agent, not a person, called it: the refusal shows above the list and the entries stay.',
     build: approvals(function () {
-      return panel({ error: 'Only a verified human may change global MCP approval rules: it was called from task 4f2a91c0 (detected by lineage) (human_only)', value: 'github/get_issue', refresh: true });
+      return panel({ error: 'Only a verified human may change global MCP approval rules: it was called from task 4f2a91c0 (detected by lineage)', code: 'human_only', value: 'github/get_issue' });
     }),
-    guide: 'The engine\'s <code>human_only</code> refusal for a change (<code>ctl.py:2316</code>), in the app\'s form <code>&lt;message&gt; (&lt;code&gt;)</code>. The reason after the colon is the engine\'s sentence for a confirmed agent caller; the task id and detection method are fixture text. Reading stays allowed.'
+    guide: 'The engine\'s <code>human_only</code> refusal for a change (<code>ctl.py:2316</code>), with its code on a detail line (owner answer 6 of the engine and runtime states; the app prints <code>&lt;message&gt; (&lt;code&gt;)</code> today). The reason after the colon is the engine\'s sentence for a confirmed agent caller; the task id and detection method are fixture text. Reading stays allowed.'
   });
 
   // ---- Registration -------------------------------------------------------------------------------------------------------
@@ -415,6 +424,7 @@
       { name: 'Antigravity', hint: 'Install Antigravity, then refresh.', badge: B_NOT_FOUND, actions: '' }] })) throw new Error('The harness list no longer matches settings/harnesses');
     var approved = a.slice(a.indexOf('<div style="margin-top: var(--space-2);">'), a.indexOf('<section aria-label="Harness qualification"'));
     if (approved !== list({ open: 'Claude Code', panel: panel() })) throw new Error('The approvals list no longer matches settings/mcp-approvals');
+    if (qualificationOf(h, HARNESSES) !== qualificationOf(a, APPROVALS)) throw new Error('The qualification section of settings/harnesses and settings/mcp-approvals differ');
     checked = true;
   }
   DEFS.forEach(function (d) {
@@ -425,8 +435,8 @@
       if (typeof html !== 'string') throw new Error('No template ' + d.base);
       return d.build(html, d.base);
     });
-    docs[route] = '<p><strong>Provisional, not approved.</strong> ' + d.guide + ' Derived from <a href="#' + d.base + '">' + (d.base === HARNESSES ? 'Harnesses' : 'MCP approvals') + '</a>. ' + RECORD + '.</p>';
+    docs[route] = '<p><strong>Approved by the owner · 2026-11-23.</strong> ' + d.guide + ' Derived from <a href="#' + d.base + '">' + (d.base === HARNESSES ? 'Harnesses' : 'MCP approvals') + '</a>. ' + RECORD + '.</p>';
     H.harnessSettingsStates.push(route);
-    H.registerState('settings', { id: d.id, title: d.title, description: d.description, group: d.group, status: 'provisional', approvalNote: NOTE });
+    H.registerState('settings', { id: d.id, title: d.title, description: d.description, group: d.group, status: 'approved', approval: APPROVAL });
   });
 })();
