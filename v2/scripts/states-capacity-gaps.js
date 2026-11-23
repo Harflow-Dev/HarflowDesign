@@ -164,13 +164,16 @@
   }, 'Statistics showing the last complete snapshot after a failed refresh. The prefix of the warning is the wording the Mac app uses; the reason after it is fixture text.');
 
   define(STAT, STAT_GROUP, 'partial-accounting', OVERVIEW, function (html, base) {
-    var tile = '<span class="hd-stat__value hd-gap-stat-value--unavailable">Unavailable</span><span class="hd-stat__delta">reported by 2 of 5 harnesses; the rest are left out, not counted as zero</span></div></div>' +
+    var tile = '<span class="hd-stat__value">$157.20</span><span class="hd-stat__delta">from 148 of 284 executions; Codex, Vibe and Antigravity don\'t report cost</span></div></div>' +
       note('Retained history only. Usage accounting: Partial · 212 of 284 independent executions · 340 execution records.');
-    return swap(html, '<span class="hd-stat__value">$182.40</span><span class="hd-stat__delta">' + COST_END, tile, base);
+    html = swap(html, '<span class="hd-stat__value">$182.40</span><span class="hd-stat__delta">' + COST_END, tile, base);
+    var CELL = 'font-variant-numeric: tabular-nums;">';
+    html = swap(html, CELL + '$118.20</td>', CELL + '$104.90<span class="caption hd-faint hd-gap-cost-cover">118 of 130 executions</span></td>', base);
+    return swap(html, CELL + '$64.20</td>', CELL + '$52.30<span class="caption hd-faint hd-gap-cost-cover">30 of 38 executions</span></td>', base);
   }, {
     title: 'Partial usage accounting',
-    description: 'Reported cost reads Unavailable because only some harnesses report it, and a line under the tiles states how much of the history the accounting covers.'
-  }, 'Statistics when usage accounting is partial. The per-harness table already shows Unavailable, never zero, for harnesses that do not report cost. The Usage accounting label and the delta wording are design wording; the counts are fixture text.');
+    description: 'Reported cost shows the sum of what was reported and how many executions reported it, a harness note beside the total, and a line under the tiles states how much of the history the accounting covers.'
+  }, 'Statistics when usage accounting is partial. Reported cost is the sum over the executions that reported a cost, with the count of executions that did; harnesses that never report cost (Codex, Vibe, Antigravity) are named beside the total and read Unavailable in the By harness card, never zero. Unavailable is only for a total or harness where no execution reported. The sums, counts and the Usage accounting label are design wording or fixture text; the 148 of 284 total equals the sum of the two harness lines.');
 
   define(STAT, STAT_GROUP, 'unsupported', OVERVIEW, function (html, base) {
     return replaceStatistics(html, base, empty('chart', 'Statistics are unavailable in this runtime', 'The installed runtime does not provide the statistics history. Update the Harflow runtime.'));

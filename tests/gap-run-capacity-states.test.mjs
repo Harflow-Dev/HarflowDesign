@@ -55,7 +55,7 @@ const STATES = {
   'statistics/empty': [STAT, 'statistics/overview', ['No finished work in this retained history.', 'Choose another range to look for retained finished work.']],
   'statistics/error': [STAT, 'statistics/overview', ['History is incomplete or unavailable. No totals are shown.', '>Retry</button>', 'hd-gap-empty--failed']],
   'statistics/stale': [STAT, 'statistics/overview', ['Showing the last complete snapshot. Refresh failed: the history read exceeded its time budget.', '>Retry refresh</button>', 'Tasks per day']],
-  'statistics/partial-accounting': [STAT, 'statistics/overview', ['hd-gap-stat-value--unavailable">Unavailable', 'reported by 2 of 5 harnesses; the rest are left out, not counted as zero', 'Retained history only. Usage accounting: Partial · 212 of 284 independent executions · 340 execution records.']],
+  'statistics/partial-accounting': [STAT, 'statistics/overview', ['<span class="hd-stat__value">$157.20</span>', 'from 148 of 284 executions; Codex, Vibe and Antigravity don\'t report cost', '$104.90<span class="caption hd-faint hd-gap-cost-cover">118 of 130 executions</span>', '$52.30<span class="caption hd-faint hd-gap-cost-cover">30 of 38 executions</span>', 'Retained history only. Usage accounting: Partial · 212 of 284 independent executions · 340 execution records.']],
   'statistics/unsupported': [STAT, 'statistics/overview', ['Statistics are unavailable in this runtime', 'The installed runtime does not provide the statistics history. Update the Harflow runtime.']]
 };
 const ROUTES = Object.keys(STATES);
@@ -146,6 +146,15 @@ test('resources and statistics gain no search or filter controls, and never show
   const partial = H.templates['statistics/partial-accounting'];
   assert.ok(!/\$0(\.00)?\b/.test(partial.slice(partial.indexOf('<main'))), 'no $0 cost');
   assert.equal((partial.match(/hd-faint">Unavailable</g) || []).length, 3, 'three harnesses without cost stay Unavailable');
+  assert.ok(!/>Unavailable<\/span><span class="hd-stat__delta">/.test(partial), 'a partial total is a sum, not Unavailable');
+  // The fixture sums are consistent: the harness lines add up to the total and its count.
+  const body = partial.slice(partial.indexOf('<main'));
+  const total = body.match(/hd-stat__label">Reported cost<\/span><span class="hd-stat__value">\$([\d.]+)<\/span><span class="hd-stat__delta">from (\d+) of (\d+) executions/);
+  const lines = [...body.matchAll(/>\$([\d.]+)<span class="caption hd-faint hd-gap-cost-cover">(\d+) of (\d+) executions</g)];
+  assert.ok(total && lines.length === 2, 'total and two harness lines parsed');
+  assert.equal(Math.round(lines.reduce((n, m) => n + Number(m[1]) * 100, 0)), Math.round(Number(total[1]) * 100));
+  assert.equal(lines.reduce((n, m) => n + Number(m[2]), 0), Number(total[2]));
+  assert.ok(lines.every(m => Number(m[2]) <= Number(m[3])) && Number(total[2]) <= Number(total[3]));
 });
 
 test('statistics offers only 7 days and 30 days, with 30 days selected by default', () => {

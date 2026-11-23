@@ -25,4 +25,4 @@
 /* Statistics: failed empty state and the notes under the tiles. */
 .hd-gap-empty--failed .hd-empty__icon{background:var(--danger-subtle);color:var(--danger)}
 .hd-gap-stat-note{margin:var(--space-2) 0 0}
-.hd-stat__value.hd-gap-stat-value--unavailable{color:var(--text-tertiary)}
+.hd-gap-cost-cover{display:block;font-weight:400}
