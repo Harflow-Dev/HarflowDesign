@@ -10,6 +10,7 @@ Routes are written as the current route, with the route used before the informat
 
 | Decision | Area | Status | Approved by and date | Recording commit | Routes | Files |
 | --- | --- | --- | --- | --- | --- | --- |
+| Menu bar and notification states | Attention; Settings and setup | Provisional | None. Drawn 2026-11-23 on the owner's decisions N1, N2 and L2 of the same day (N3 confirmed), relayed by the coordinator | The commit titled "Draw the menu bar and notification states" | `menu-bar/runtime-setup`, `runtime-preparing`, `runtime-failed`, `engine-call-failed`, `question-typing`, `question-submitting`, `question-answered`, `question-already-answered`, `question-stale`, `question-failed`, `question-unknown`, `question-caller-returned`, `needs-you-unsupported`, `workflow-status-unavailable` (each with a `-minimum` twin); `notifications/banners`; `settings/notifications-not-requested`, `notifications-denied`, `notifications-allowed`, `notifications-unavailable` | [menu-bar-and-notifications.md](menu-bar-and-notifications.md), `v2/scripts/states-menu-bar-notifications.js`, `tests/menu-bar-notifications.test.mjs` |
 | Harness settings states | Settings and setup | Provisional | None. Drawn 2026-11-23 on the owner's decisions O3 and N2 of the same day, relayed by the coordinator, from the Mac inventory items S6, S7 and S8 | The commit titled "Draw the harness settings states" | `settings/harnesses-runtime-not-ready`, `harnesses-registration-failed`, `harnesses-empty`, `harnesses-setup-refused`, `harnesses-remove-confirm`; `settings/qualification-mixed`, `qualification-not-checked`, `qualification-cancelled`, `qualification-unsupported`, `qualification-discovery-failed`; `settings/mcp-approvals-empty`, `mcp-approvals-add-confirm`, `mcp-approvals-remove-confirm`, `mcp-approvals-write-refused`, `mcp-approvals-vibe`, `mcp-approvals-unsupported`, `mcp-approvals-read-failed`, `mcp-approvals-capability-missing`, `mcp-approvals-human-only` | [harness-settings.md](harness-settings.md), `v2/scripts/states-harness-settings.js`, `tests/harness-settings.test.mjs` |
 | Engine and runtime states | Settings and setup | Provisional | None. Drawn 2026-11-23 on the owner's decisions of the same day (S2, S4, S5, O2, O3, O4, L2, N2), relayed by the coordinator | The commit titled "Draw the engine and runtime states" | `harness-runtime/update-failed`, `deep-link-held`; `app-states/contract-refused`, `capability-missing`, `engine-call-failed`, `engine-call-timed-out`, `store-unusable` (each with a `-minimum` twin); `settings/runtime-checking`, `runtime-install-required`, `runtime-update-required`, `runtime-installing`, `runtime-updating`, `runtime-update-failed`, `runtime-failed`; `settings/store-inspecting`, `store-missing`, `store-incompatible`, `store-interrupted`, `store-inspect-failed` | [engine-and-runtime.md](engine-and-runtime.md), `v2/scripts/states-engine-runtime.js`, `tests/engine-runtime.test.mjs` |
 | Owner decisions of 2026-11-23 on approved states (Settings General, first run) | Settings and setup | Approved | The owner, 2026-11-23 (decisions S4, S5 and O2, relayed by the coordinator) | This record, amendment of `settings/general` and retirement of `app-states/setup` at `be78fa4` | `settings/general` (amended), `settings/loading-general` (follows it); `app-states/setup` (retired; opens `harness-runtime/install-required`) | This file ([Owner decisions of 2026-11-23](#owner-decisions-of-2026-11-23)), `tests/minimum-frame.test.mjs` |
@@ -870,6 +871,12 @@ Approved 2026-11-19: `new-task/centered-repository-empty`, `centered-repository-
 
 [approval.md](approval.md). Approval states: [Queued messages and approval states](#queued-messages-and-approval-states) (approved 2026-11-15). `menu-bar/busy` and `menu-bar/busy-minimum` are retired and open `menu-bar/busy-approve-once` and `menu-bar/busy-approve-once-minimum`.
 
+Provisional, 2026-11-23: fourteen popover states with 1000 × 620 twins (runtime not ready, a failed refresh, the stages of answering a question, unsupported questions, unavailable workflow status) ([record](menu-bar-and-notifications.md)).
+
+### `notifications`
+
+Provisional, 2026-11-23: `notifications/banners`, the banners Harflow posts, with no action buttons ([record](menu-bar-and-notifications.md)). Settings → General notification permission rows are `settings/notifications-*` ([record](menu-bar-and-notifications.md)).
+
 ### `workflows`
 
 [approval.md](approval.md).
@@ -904,7 +911,7 @@ Statistics states: [Workflow and capacity states](#workflow-and-capacity-states)
 
 ### `settings`
 
-[approval.md](approval.md). Provisional, 2026-11-23: the seven `settings/runtime-*` and five `settings/store-*` states of General ([record](engine-and-runtime.md)). Provisional, 2026-11-23: nineteen harness registration, qualification and MCP approval states of Harnesses ([record](harness-settings.md)).
+[approval.md](approval.md). Provisional, 2026-11-23: the seven `settings/runtime-*` and five `settings/store-*` states of General ([record](engine-and-runtime.md)). Provisional, 2026-11-23: four notification permission rows of General ([record](menu-bar-and-notifications.md)). Provisional, 2026-11-23: nineteen harness registration, qualification and MCP approval states of Harnesses ([record](harness-settings.md)).
 
 ### `app-states`
 

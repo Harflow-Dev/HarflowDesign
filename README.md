@@ -25,7 +25,7 @@ The catalog is organised by area. An area groups screens, a screen holds states,
 | --- | --- |
 | Start work | New task, Sidebar |
 | Task | Task, Parallel group |
-| Attention | Needs you, Menu bar |
+| Attention | Needs you, Menu bar, Notifications |
 | Workflows | Workflows, Workflow editor, Workflow run |
 | Capacity and usage | Resources, Statistics |
 | Settings and setup | Settings, App states, Harness runtime |

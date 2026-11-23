@@ -173,6 +173,13 @@
         ]
       },
       {
+        "id": "notifications",
+        "title": "Notifications",
+        "area": "attention",
+        "description": "The macOS notification banners Harflow posts.",
+        "states": []
+      },
+      {
         "id": "workflows",
         "title": "Workflows",
         "area": "workflows",

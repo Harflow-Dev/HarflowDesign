@@ -165,12 +165,15 @@ test('no existing template changed: the digests equal those of the base commit a
     ...HFV2.engineRuntimeStates,
     // The provisional harness registration, qualification and MCP approval states (2026-11-23), each derived from an approved Settings template.
     ...HFV2.harnessSettingsStates,
+    // The provisional menu bar popover states and twins, the notification banners and the Settings notification rows (2026-11-23).
+    ...HFV2.menuBarStates,
+    ...HFV2.notificationStates,
     // The eleven new provisional composer-edge companions derive from existing task, lane and workflow states.
     ...['task/composer-edge', 'task/composer-edge-end', 'task/composer-edge-short', 'task/composer-edge-minimum', 'task/composer-edge-embedded',
       'parallel-group/composer-edge', 'parallel-group/composer-edge-minimum',
       'workflow-run/composer-edge-parallel', 'workflow-run/composer-edge-parallel-minimum', 'workflow-run/composer-edge-graph', 'workflow-run/composer-edge-graph-minimum']
   ];
-  assert.equal(added.length, 22 + 20 + 24 + 2 + 6 + HFV2.gapStates.length + 8 + 5 + 8 + 28 + 10 + 10 + 6 + 11 + 26 + 19);
+  assert.equal(added.length, 22 + 20 + 24 + 2 + 6 + HFV2.gapStates.length + 8 + 5 + 8 + 28 + 10 + 10 + 6 + 11 + 26 + 19 + 33);
   assert.equal(HFV2.runQuestionStates.length, 28);
   // app-states/setup is removed with its retired state (owner decision 2026-11-23, O2).
   const removed = ['m04-proposal/centered-starting', 'app-states/setup'];
@@ -436,7 +439,7 @@ test('every static template with a sidebar has the top, nav, sections and foot s
   for (const key of composerEdgeSidebarTemplates) assert.ok(keys.includes(key), `${key} retains the shared sidebar structure`);
   for (const key of WORKFLOW_QUESTION_TEMPLATES) assert.ok(keys.includes(key), `${key} retains the shared sidebar structure`);
   // The twelve Settings states, the two refresh failures and the unusable store (each with its twin) keep the shared sidebar structure.
-  const engineRuntimeSettingsTemplates = [...HFV2.engineRuntimeStates.filter(key => !HFV2.engineRuntimeSidebarStates.includes(key)), ...HFV2.harnessSettingsStates.filter(key => HFV2.templates[key].includes('<aside class="hd-sidebar"'))]; // the states drawn behind a dialog mark the sidebar inert and are not counted
+  const engineRuntimeSettingsTemplates = [...HFV2.engineRuntimeStates.filter(key => !HFV2.engineRuntimeSidebarStates.includes(key)), ...HFV2.harnessSettingsStates.filter(key => HFV2.templates[key].includes('<aside class="hd-sidebar"')), ...HFV2.notificationStates.filter(key => HFV2.templates[key].includes('<aside class="hd-sidebar"'))]; // the states drawn behind a dialog mark the sidebar inert and are not counted
   for (const key of engineRuntimeSettingsTemplates) assert.ok(keys.includes(key), `${key} retains the shared sidebar structure`);
   assert.equal(keys.length, 59 + 8 + HFV2.gapStates.filter(k => HFV2.templates[k].includes('<aside class="hd-sidebar"')).length + WORKFLOW_NAMING_TEMPLATES.length + HFV2.runQuestionStates.length + 6 + composerEdgeSidebarTemplates.length + inspectorApprovalSidebarTemplates.length + engineRuntimeSettingsTemplates.length);
   const odd = [];

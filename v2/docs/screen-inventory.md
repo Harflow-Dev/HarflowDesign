@@ -187,6 +187,18 @@ Provisional states drawn on 2026-11-23, not approved ([record](decisions/engine-
 | Settings and setup | Settings | `settings/runtime-checking`, `runtime-install-required`, `runtime-update-required`, `runtime-installing`, `runtime-updating`, `runtime-update-failed`, `runtime-failed` | The runtime row of General in each state |
 | Settings and setup | Settings | `settings/store-inspecting`, `store-missing`, `store-incompatible`, `store-interrupted`, `store-inspect-failed` | The task store row of General after an inspection |
 
+## Menu bar and notification states
+
+Provisional states drawn on 2026-11-23, not approved ([record](decisions/menu-bar-and-notifications.md)). Each popover state also has a `-minimum` twin at 1000 × 620; the banners and the Settings rows are not drawn at that frame.
+
+| Area | Screen | Routes | Draws |
+| --- | --- | --- | --- |
+| Attention | Menu bar | `menu-bar/runtime-setup`, `runtime-preparing`, `runtime-failed` | The popover while the runtime is not ready |
+| Attention | Menu bar | `menu-bar/engine-call-failed`, `workflow-status-unavailable`, `needs-you-unsupported` | A failed refresh, unavailable workflow status, and questions an engine cannot report |
+| Attention | Menu bar | `menu-bar/question-typing`, `question-submitting`, `question-answered`, `question-already-answered`, `question-stale`, `question-failed`, `question-unknown`, `question-caller-returned` | Answering a question in the popover, stage by stage |
+| Attention | Notifications | `notifications/banners` | The macOS banners Harflow posts, with no action buttons |
+| Settings and setup | Settings | `settings/notifications-not-requested`, `notifications-denied`, `notifications-allowed`, `notifications-unavailable` | The notification permission row of General |
+
 ## Harness settings states
 
 Provisional states of Settings → Harnesses drawn on 2026-11-23, not approved ([record](decisions/harness-settings.md)).

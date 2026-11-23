@@ -1,0 +1,29 @@
+/* Menu bar popover states and notification banners (states-menu-bar-notifications.js). Every selector is a new hd-mb- or
+   hd-nt- class, so no approved state changes. Tokens only, so light and dark follow the theme. */
+.hd-mb-block{display:flex;flex-direction:column;align-items:flex-start;gap:var(--space-2);padding:var(--space-4) var(--space-4) var(--space-4)}
+.hd-mb-subline{margin:0;font-size:12px;line-height:16px;color:var(--text-secondary)}
+.hd-mb-subline--error{color:var(--danger)}
+.hd-mb-text{margin:0;font-size:13px;line-height:18px;color:var(--text-secondary);overflow-wrap:anywhere}
+.hd-mb-text--strong{color:var(--text);font-weight:600}
+.hd-mb-text--primary{color:var(--text)}
+.hd-mb-text code,.hd-mb-note code,.hd-mb-error code{font-family:var(--font-mono);font-size:.95em}
+.hd-mb-indent{padding-left:var(--space-1)}
+.hd-mb-error{margin:0;font-size:12px;line-height:16px;color:var(--danger);overflow-wrap:anywhere}
+.hd-mb-status{margin:0;font-size:12px;line-height:16px;color:var(--text-secondary)}
+.hd-mb-dot{width:8px;height:8px;border-radius:var(--radius-full);background:var(--danger);flex:none;margin-right:var(--space-2)}
+.hd-mb-note{display:flex;align-items:center;gap:var(--space-2);margin:0 var(--space-3) var(--space-2);padding:var(--space-2) var(--space-2) var(--space-2) var(--space-3);border-radius:var(--radius-md);background:var(--danger-subtle)}
+.hd-mb-note>div{flex:1;min-width:0}
+.hd-mb-focus{outline:2px solid var(--accent);outline-offset:1px}
+
+/* Notification banners: a column of system banners over the desktop strip. */
+.hd-nt-stack{display:flex;flex-direction:column;gap:var(--space-3);align-items:flex-end;padding:var(--space-4) var(--space-5);flex:1;min-height:0;overflow:auto}
+.hd-nt-banner{display:flex;gap:var(--space-3);width:360px;padding:var(--space-3);border-radius:var(--radius-xl);background:var(--surface);border:1px solid var(--border);box-shadow:var(--shadow-popover)}
+.hd-nt-icon{margin-top:2px}
+.hd-nt-text{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.hd-nt-head{display:flex;align-items:baseline;gap:var(--space-2)}
+.hd-nt-title{flex:1;min-width:0;font-size:13px;line-height:18px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hd-nt-time{font-size:11px;color:var(--text-tertiary);flex:none}
+.hd-nt-body{font-size:12.5px;line-height:17px;color:var(--text-secondary);overflow-wrap:anywhere}
+
+/* The 1280 specimen: a popover taller than the frame scrolls, its parts kept whole. */
+.hd-mb-capped>*{flex-shrink:0}
